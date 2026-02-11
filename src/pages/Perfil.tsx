@@ -1,9 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { callWebApi } from "@/services/webApiService";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { UserCircle, Users, AlertTriangle, Loader2, Plus, Trash2, Edit2, X, Check } from "lucide-react";
+import { UserCircle, Users, AlertTriangle, Loader2, Plus, Trash2, Edit2, X, Check, Camera } from "lucide-react";
 import { EnderecoForm, emptyEndereco, EnderecoFields } from "@/components/EnderecoForm";
+import { useToast } from "@/hooks/use-toast";
 
 function formatPhone(value: string): string {
   const digits = value.replace(/\D/g, "").slice(0, 11);
@@ -28,6 +30,7 @@ interface PerfilData {
   endereco_referencia: string | null;
   tem_filhos: boolean;
   mora_com_agressor: boolean;
+  avatar_url: string | null;
 }
 
 interface GuardiaoData {
@@ -51,6 +54,7 @@ interface VinculoData {
 
 export default function PerfilPage() {
   const { usuario, sessionToken } = useAuth();
+  const { toast } = useToast();
   const [perfil, setPerfil] = useState<PerfilData | null>(null);
   const [guardioes, setGuardioes] = useState<GuardiaoData[]>([]);
   const [vinculos, setVinculos] = useState<VinculoData[]>([]);
@@ -59,6 +63,8 @@ export default function PerfilPage() {
   const [perfilForm, setPerfilForm] = useState<Partial<PerfilData>>({});
   const [enderecoForm, setEnderecoForm] = useState<EnderecoFields>(emptyEndereco);
   const [saving, setSaving] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // New guardian form
   const [showAddGuardiao, setShowAddGuardiao] = useState(false);
@@ -83,6 +89,45 @@ export default function PerfilPage() {
   useEffect(() => {
     if (sessionToken) loadData();
   }, [sessionToken]);
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !usuario) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "Formato inválido", description: "Selecione uma imagem (JPG, PNG, etc.)", variant: "destructive" });
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "Arquivo muito grande", description: "O tamanho máximo é 5MB.", variant: "destructive" });
+      return;
+    }
+
+    setUploadingAvatar(true);
+    try {
+      const ext = file.name.split(".").pop() || "jpg";
+      const path = `${usuario.id}/avatar.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(path, file, { upsert: true, contentType: file.type });
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(path);
+      const avatarUrl = `${urlData.publicUrl}?t=${Date.now()}`;
+
+      await api("updateMe", { avatar_url: avatarUrl });
+      setPerfil(prev => prev ? { ...prev, avatar_url: avatarUrl } : prev);
+      toast({ title: "Foto atualizada!" });
+    } catch (err) {
+      console.error("Avatar upload error:", err);
+      toast({ title: "Erro ao enviar foto", variant: "destructive" });
+    } finally {
+      setUploadingAvatar(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
 
   const savePerfil = async () => {
     setSaving(true);
@@ -130,9 +175,33 @@ export default function PerfilPage() {
       <div className="ampara-card space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
-              <UserCircle className="w-6 h-6 text-muted-foreground" />
-            </div>
+            {/* Avatar */}
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploadingAvatar}
+              className="relative w-14 h-14 rounded-full bg-muted flex items-center justify-center overflow-hidden group shrink-0 ring-2 ring-border hover:ring-primary transition-colors"
+            >
+              {perfil?.avatar_url ? (
+                <img src={perfil.avatar_url} alt="Foto" className="w-full h-full object-cover" />
+              ) : (
+                <UserCircle className="w-8 h-8 text-muted-foreground" />
+              )}
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                {uploadingAvatar ? (
+                  <Loader2 className="w-5 h-5 text-white animate-spin" />
+                ) : (
+                  <Camera className="w-5 h-5 text-white" />
+                )}
+              </div>
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleAvatarUpload}
+            />
             <div>
               <p className="font-semibold text-foreground">{perfil?.nome_completo}</p>
               <p className="text-sm text-muted-foreground">{perfil?.email}</p>
