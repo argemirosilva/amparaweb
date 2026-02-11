@@ -214,6 +214,128 @@ export type Database = {
           },
         ]
       }
+      gravacoes: {
+        Row: {
+          created_at: string
+          device_id: string | null
+          duracao_segundos: number | null
+          erro_processamento: string | null
+          file_url: string | null
+          id: string
+          processado_em: string | null
+          status: string
+          storage_path: string | null
+          tamanho_mb: number | null
+          timezone: string | null
+          timezone_offset_minutes: number | null
+          transcricao: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          device_id?: string | null
+          duracao_segundos?: number | null
+          erro_processamento?: string | null
+          file_url?: string | null
+          id?: string
+          processado_em?: string | null
+          status?: string
+          storage_path?: string | null
+          tamanho_mb?: number | null
+          timezone?: string | null
+          timezone_offset_minutes?: number | null
+          transcricao?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          device_id?: string | null
+          duracao_segundos?: number | null
+          erro_processamento?: string | null
+          file_url?: string | null
+          id?: string
+          processado_em?: string | null
+          status?: string
+          storage_path?: string | null
+          tamanho_mb?: number | null
+          timezone?: string | null
+          timezone_offset_minutes?: number | null
+          transcricao?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gravacoes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gravacoes_segmentos: {
+        Row: {
+          created_at: string
+          device_id: string | null
+          duracao_segundos: number | null
+          file_url: string | null
+          id: string
+          monitor_session_id: string | null
+          segmento_idx: number | null
+          storage_path: string | null
+          tamanho_mb: number | null
+          timezone: string | null
+          timezone_offset_minutes: number | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          device_id?: string | null
+          duracao_segundos?: number | null
+          file_url?: string | null
+          id?: string
+          monitor_session_id?: string | null
+          segmento_idx?: number | null
+          storage_path?: string | null
+          tamanho_mb?: number | null
+          timezone?: string | null
+          timezone_offset_minutes?: number | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          device_id?: string | null
+          duracao_segundos?: number | null
+          file_url?: string | null
+          id?: string
+          monitor_session_id?: string | null
+          segmento_idx?: number | null
+          storage_path?: string | null
+          tamanho_mb?: number | null
+          timezone?: string | null
+          timezone_offset_minutes?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gravacoes_segmentos_monitor_session_id_fkey"
+            columns: ["monitor_session_id"]
+            isOneToOne: false
+            referencedRelation: "monitoramento_sessoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gravacoes_segmentos_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       localizacoes: {
         Row: {
           alerta_id: string | null

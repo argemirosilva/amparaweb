@@ -956,10 +956,308 @@ async function handleCancelarPanico(
   });
 }
 
-// ── Stub for unimplemented actions ──
+// ── Fase 4 Handlers ──
 
-function stubResponse(): Response {
-  return jsonResponse({ success: false, error: "NOT_IMPLEMENTED" }, 501);
+async function handleReceberAudio(
+  body: Record<string, unknown>,
+  supabase: ReturnType<typeof createClient>,
+  ip: string
+): Promise<Response> {
+  const emailUsuario = (body.email_usuario as string)?.trim().toLowerCase();
+  if (!emailUsuario) return errorResponse("email_usuario obrigatório", 400);
+
+  const fileUrl = body.file_url as string;
+  if (!fileUrl) return errorResponse("file_url obrigatório", 400);
+
+  const { data: user } = await supabase
+    .from("usuarios")
+    .select("id")
+    .eq("email", emailUsuario)
+    .maybeSingle();
+
+  if (!user) return errorResponse("Usuário não encontrado", 404);
+
+  const deviceId = body.device_id as string || null;
+  const duracaoSegundos = body.duracao_segundos as number || null;
+  const tamanhoMb = body.tamanho_mb as number || null;
+  const segmentoIdx = body.segmento_idx as number | undefined;
+  const timezone = body.timezone as string || null;
+  const tzOffset = body.timezone_offset_minutes as number | undefined;
+
+  const timestamp = Date.now();
+  const storagePath = `${user.id}/${timestamp}.audio`;
+
+  // Check active monitoring session (bifurcated flow)
+  const { data: activeSession } = await supabase
+    .from("monitoramento_sessoes")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("status", "ativa")
+    .maybeSingle();
+
+  if (activeSession) {
+    // Monitoring segment: gravacoes_segmentos, no individual transcription
+    const { data: segmento } = await supabase
+      .from("gravacoes_segmentos")
+      .insert({
+        user_id: user.id,
+        monitor_session_id: activeSession.id,
+        device_id: deviceId,
+        file_url: fileUrl,
+        storage_path: storagePath,
+        segmento_idx: segmentoIdx ?? null,
+        duracao_segundos: duracaoSegundos,
+        tamanho_mb: tamanhoMb,
+        timezone,
+        timezone_offset_minutes: tzOffset ?? null,
+      })
+      .select("id")
+      .single();
+
+    return jsonResponse({
+      success: true,
+      segmento_id: segmento?.id,
+      monitor_session_id: activeSession.id,
+      storage_path: storagePath,
+      message: `Segmento ${segmentoIdx ?? 0} salvo com sucesso`,
+    });
+  }
+
+  // Normal recording or panic: gravacoes + pipeline
+  const { data: gravacao } = await supabase
+    .from("gravacoes")
+    .insert({
+      user_id: user.id,
+      device_id: deviceId,
+      file_url: fileUrl,
+      storage_path: storagePath,
+      duracao_segundos: duracaoSegundos,
+      tamanho_mb: tamanhoMb,
+      status: "pendente",
+      timezone,
+      timezone_offset_minutes: tzOffset ?? null,
+    })
+    .select("id")
+    .single();
+
+  await supabase.from("audit_logs").insert({
+    user_id: user.id,
+    action_type: "audio_recebido",
+    success: true,
+    ip_address: ip,
+    details: { gravacao_id: gravacao?.id },
+  });
+
+  return jsonResponse({
+    success: true,
+    gravacao_id: gravacao?.id,
+    message: "Áudio salvo. Processamento iniciado.",
+  });
+}
+
+async function handleGetAudioSignedUrl(
+  body: Record<string, unknown>,
+  supabase: ReturnType<typeof createClient>
+): Promise<Response> {
+  const sessionToken = body.session_token as string;
+  const { user, error } = await validateSession(supabase, sessionToken);
+  if (error || !user) return errorResponse(error || "Sessão inválida", 401);
+
+  const gravacaoId = body.gravacao_id as string;
+  if (!gravacaoId) return errorResponse("gravacao_id obrigatório", 400);
+
+  const userId = (user as Record<string, unknown>).id as string;
+
+  const { data: gravacao } = await supabase
+    .from("gravacoes")
+    .select("id, storage_path")
+    .eq("id", gravacaoId)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (!gravacao) return errorResponse("Gravação não encontrada", 404);
+  if (!gravacao.storage_path) return errorResponse("Arquivo de áudio não disponível", 404);
+
+  const { data: signedUrl } = await supabase.storage
+    .from("audio-recordings")
+    .createSignedUrl(gravacao.storage_path, 3600);
+
+  return jsonResponse({
+    success: true,
+    gravacao_id: gravacao.id,
+    signed_url: signedUrl?.signedUrl || null,
+    expires_in_seconds: 3600,
+  });
+}
+
+async function handleReprocessarGravacao(
+  body: Record<string, unknown>,
+  supabase: ReturnType<typeof createClient>,
+  ip: string
+): Promise<Response> {
+  const sessionToken = body.session_token as string;
+  const { user, error } = await validateSession(supabase, sessionToken);
+  if (error || !user) return errorResponse(error || "Sessão inválida", 401);
+
+  const gravacaoId = body.gravacao_id as string;
+  if (!gravacaoId) return errorResponse("gravacao_id obrigatório", 400);
+
+  const userId = (user as Record<string, unknown>).id as string;
+
+  const { data: gravacao } = await supabase
+    .from("gravacoes")
+    .select("id, status")
+    .eq("id", gravacaoId)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (!gravacao) return errorResponse("Gravação não encontrada", 404);
+
+  await supabase
+    .from("gravacoes")
+    .update({ status: "pendente", processado_em: null, erro_processamento: null, transcricao: null })
+    .eq("id", gravacao.id);
+
+  await supabase.from("audit_logs").insert({
+    user_id: userId,
+    action_type: "reprocessar_gravacao",
+    success: true,
+    ip_address: ip,
+    details: { gravacao_id: gravacao.id },
+  });
+
+  return jsonResponse({
+    success: true,
+    gravacao_id: gravacao.id,
+    message: "Reprocessamento iniciado",
+    status: "pendente",
+  });
+}
+
+const handleReprocessRecording = handleReprocessarGravacao;
+
+async function handleReportarStatusMonitoramento(
+  body: Record<string, unknown>,
+  supabase: ReturnType<typeof createClient>,
+  ip: string
+): Promise<Response> {
+  const sessionToken = body.session_token as string;
+  const { user, error } = await validateSession(supabase, sessionToken);
+  if (error || !user) return errorResponse(error || "Sessão inválida", 401);
+
+  const userId = (user as Record<string, unknown>).id as string;
+  const sessaoId = body.sessao_id as string;
+  const status = body.status as string;
+  const deviceId = body.device_id as string || null;
+
+  if (!sessaoId) return errorResponse("sessao_id obrigatório", 400);
+  if (!status) return errorResponse("status obrigatório", 400);
+
+  const validStatuses = ["ativa", "finalizada", "cancelada"];
+  if (!validStatuses.includes(status)) {
+    return errorResponse(`status inválido. Valores aceitos: ${validStatuses.join(", ")}`, 400);
+  }
+
+  const { data: sessao } = await supabase
+    .from("monitoramento_sessoes")
+    .select("id, status")
+    .eq("id", sessaoId)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (!sessao) return errorResponse("Sessão de monitoramento não encontrada", 404);
+
+  const updateData: Record<string, unknown> = { status };
+  if (status === "finalizada" || status === "cancelada") {
+    updateData.finalizado_em = new Date().toISOString();
+  }
+
+  await supabase.from("monitoramento_sessoes").update(updateData).eq("id", sessaoId);
+
+  if (deviceId) {
+    await supabase
+      .from("device_status")
+      .update({ is_monitoring: status === "ativa" })
+      .eq("user_id", userId)
+      .eq("device_id", deviceId);
+  }
+
+  await supabase.from("audit_logs").insert({
+    user_id: userId,
+    action_type: "reportar_status_monitoramento",
+    success: true,
+    ip_address: ip,
+    details: { sessao_id: sessaoId, status },
+  });
+
+  return jsonResponse({
+    success: true,
+    sessao_id: sessaoId,
+    status,
+    message: `Status do monitoramento atualizado para '${status}'`,
+  });
+}
+
+async function handleReportarStatusGravacao(
+  body: Record<string, unknown>,
+  supabase: ReturnType<typeof createClient>,
+  ip: string
+): Promise<Response> {
+  const sessionToken = body.session_token as string;
+  const { user, error } = await validateSession(supabase, sessionToken);
+  if (error || !user) return errorResponse(error || "Sessão inválida", 401);
+
+  const userId = (user as Record<string, unknown>).id as string;
+  const gravacaoId = body.gravacao_id as string;
+  const status = body.status as string;
+  const deviceId = body.device_id as string || null;
+
+  if (!gravacaoId) return errorResponse("gravacao_id obrigatório", 400);
+  if (!status) return errorResponse("status obrigatório", 400);
+
+  const validStatuses = ["pendente", "processando", "concluido", "erro"];
+  if (!validStatuses.includes(status)) {
+    return errorResponse(`status inválido. Valores aceitos: ${validStatuses.join(", ")}`, 400);
+  }
+
+  const { data: gravacao } = await supabase
+    .from("gravacoes")
+    .select("id")
+    .eq("id", gravacaoId)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (!gravacao) return errorResponse("Gravação não encontrada", 404);
+
+  const updateData: Record<string, unknown> = { status };
+  if (status === "concluido") updateData.processado_em = new Date().toISOString();
+  if (status === "erro" && body.erro_processamento) updateData.erro_processamento = body.erro_processamento as string;
+  if (body.transcricao) updateData.transcricao = body.transcricao as string;
+
+  await supabase.from("gravacoes").update(updateData).eq("id", gravacaoId);
+
+  if (deviceId) {
+    await supabase
+      .from("device_status")
+      .update({ is_recording: status === "processando" })
+      .eq("user_id", userId)
+      .eq("device_id", deviceId);
+  }
+
+  await supabase.from("audit_logs").insert({
+    user_id: userId,
+    action_type: "reportar_status_gravacao",
+    success: true,
+    ip_address: ip,
+    details: { gravacao_id: gravacaoId, status },
+  });
+
+  return jsonResponse({
+    success: true,
+    gravacao_id: gravacaoId,
+    status,
+    message: `Status da gravação atualizado para '${status}'`,
+  });
 }
 
 // ── Main Router ──
@@ -1016,14 +1314,19 @@ serve(async (req) => {
       case "cancelarPanicoMobile":
         return await handleCancelarPanico(body, supabase, ip);
 
-      // ── Stubs: 501 ──
+      // ── Fase 4: Implemented ──
       case "receberAudioMobile":
+        return await handleReceberAudio(body, supabase, ip);
       case "getAudioSignedUrl":
+        return await handleGetAudioSignedUrl(body, supabase);
       case "reprocessarGravacao":
+        return await handleReprocessarGravacao(body, supabase, ip);
       case "reprocess_recording":
+        return await handleReprocessRecording(body, supabase, ip);
       case "reportarStatusMonitoramento":
+        return await handleReportarStatusMonitoramento(body, supabase, ip);
       case "reportarStatusGravacao":
-        return stubResponse();
+        return await handleReportarStatusGravacao(body, supabase, ip);
 
       default:
         return errorResponse("Action desconhecida", 400);
