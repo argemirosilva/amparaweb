@@ -1,40 +1,257 @@
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { callWebApi } from "@/services/webApiService";
 import { Button } from "@/components/ui/button";
-import { UserCircle } from "lucide-react";
+import { UserCircle, Users, AlertTriangle, Loader2, Plus, Trash2, Edit2, X, Check } from "lucide-react";
+
+function formatPhone(value: string): string {
+  const digits = value.replace(/\D/g, "").slice(0, 11);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+}
+
+interface PerfilData {
+  nome_completo: string;
+  email: string;
+  telefone: string;
+  data_nascimento: string | null;
+  endereco_fixo: string | null;
+  tem_filhos: boolean;
+  mora_com_agressor: boolean;
+}
+
+interface GuardiaoData {
+  id: string;
+  nome: string;
+  vinculo: string;
+  telefone_whatsapp: string;
+}
+
+interface VinculoData {
+  id: string;
+  tipo_vinculo: string;
+  agressor: {
+    nome: string;
+    data_nascimento: string | null;
+    telefone: string | null;
+    forca_seguranca: boolean;
+    tem_arma_em_casa: boolean;
+  };
+}
 
 export default function PerfilPage() {
-  const { usuario } = useAuth();
+  const { usuario, sessionToken } = useAuth();
+  const [perfil, setPerfil] = useState<PerfilData | null>(null);
+  const [guardioes, setGuardioes] = useState<GuardiaoData[]>([]);
+  const [vinculos, setVinculos] = useState<VinculoData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editingPerfil, setEditingPerfil] = useState(false);
+  const [perfilForm, setPerfilForm] = useState<Partial<PerfilData>>({});
+  const [saving, setSaving] = useState(false);
+
+  // New guardian form
+  const [showAddGuardiao, setShowAddGuardiao] = useState(false);
+  const [newGuardiao, setNewGuardiao] = useState({ nome: "", vinculo: "", telefone_whatsapp: "" });
+
+  const api = (action: string, params: Record<string, any> = {}) =>
+    callWebApi(action, sessionToken!, params);
+
+  const loadData = async () => {
+    setLoading(true);
+    const [meRes, gRes, aRes] = await Promise.all([
+      api("getMe"),
+      api("getGuardioes"),
+      api("getMyAgressores"),
+    ]);
+    if (meRes.ok) setPerfil(meRes.data.usuario);
+    if (gRes.ok) setGuardioes(gRes.data.guardioes);
+    if (aRes.ok) setVinculos(aRes.data.vinculos);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    if (sessionToken) loadData();
+  }, [sessionToken]);
+
+  const savePerfil = async () => {
+    setSaving(true);
+    await api("updateMe", perfilForm);
+    await loadData();
+    setEditingPerfil(false);
+    setSaving(false);
+  };
+
+  const addGuardiao = async () => {
+    if (!newGuardiao.nome.trim() || !newGuardiao.vinculo.trim() || newGuardiao.telefone_whatsapp.replace(/\D/g, "").length < 10) return;
+    setSaving(true);
+    await api("createGuardiao", newGuardiao);
+    setNewGuardiao({ nome: "", vinculo: "", telefone_whatsapp: "" });
+    setShowAddGuardiao(false);
+    await loadData();
+    setSaving(false);
+  };
+
+  const deleteGuardiao = async (id: string) => {
+    await api("deleteGuardiao", { guardiao_id: id });
+    await loadData();
+  };
+
+  const deleteVinculo = async (id: string) => {
+    await api("deleteVinculo", { vinculo_id: id });
+    await loadData();
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in max-w-2xl">
       <h1 className="text-2xl font-display font-bold text-foreground">Perfil</h1>
-      <div className="ampara-card max-w-lg space-y-6">
-        <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
-            <UserCircle className="w-8 h-8 text-muted-foreground" />
+
+      {/* Personal Data */}
+      <div className="ampara-card space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+              <UserCircle className="w-6 h-6 text-muted-foreground" />
+            </div>
+            <div>
+              <p className="font-semibold text-foreground">{perfil?.nome_completo}</p>
+              <p className="text-sm text-muted-foreground">{perfil?.email}</p>
+            </div>
           </div>
-          <div>
-            <p className="font-semibold text-foreground text-lg">{usuario?.nome_completo}</p>
-            <p className="text-sm text-muted-foreground">{usuario?.email}</p>
-          </div>
+          <Button variant="outline" size="sm" onClick={() => {
+            setEditingPerfil(!editingPerfil);
+            setPerfilForm({
+              telefone: perfil?.telefone || "",
+              data_nascimento: perfil?.data_nascimento || "",
+              endereco_fixo: perfil?.endereco_fixo || "",
+              tem_filhos: perfil?.tem_filhos || false,
+              mora_com_agressor: perfil?.mora_com_agressor || false,
+            });
+          }}>
+            {editingPerfil ? <X className="w-4 h-4" /> : <Edit2 className="w-4 h-4" />}
+          </Button>
         </div>
 
-        <div className="space-y-3 text-sm">
-          <div>
-            <p className="text-muted-foreground">Nome completo</p>
-            <p className="text-foreground">{usuario?.nome_completo}</p>
+        {!editingPerfil ? (
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div><p className="text-muted-foreground">Telefone</p><p className="text-foreground">{perfil?.telefone || "—"}</p></div>
+            <div><p className="text-muted-foreground">Nascimento</p><p className="text-foreground">{perfil?.data_nascimento || "—"}</p></div>
+            <div className="col-span-2"><p className="text-muted-foreground">Endereço</p><p className="text-foreground">{perfil?.endereco_fixo || "—"}</p></div>
+            <div><p className="text-muted-foreground">Tem filhos?</p><p className="text-foreground">{perfil?.tem_filhos ? "Sim" : "Não"}</p></div>
+            <div><p className="text-muted-foreground">Mora com agressor?</p><p className="text-foreground">{perfil?.mora_com_agressor ? "Sim" : "Não"}</p></div>
           </div>
-          <div>
-            <p className="text-muted-foreground">E-mail</p>
-            <p className="text-foreground">{usuario?.email}</p>
+        ) : (
+          <div className="space-y-3">
+            <input type="tel" className="ampara-input" placeholder="Telefone" value={formatPhone(perfilForm.telefone || "")}
+              onChange={e => setPerfilForm({ ...perfilForm, telefone: e.target.value })} />
+            <input type="date" className="ampara-input" value={perfilForm.data_nascimento || ""}
+              onChange={e => setPerfilForm({ ...perfilForm, data_nascimento: e.target.value })} />
+            <input type="text" className="ampara-input" placeholder="Endereço" value={perfilForm.endereco_fixo || ""}
+              onChange={e => setPerfilForm({ ...perfilForm, endereco_fixo: e.target.value })} />
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input type="checkbox" checked={perfilForm.tem_filhos || false}
+                onChange={e => setPerfilForm({ ...perfilForm, tem_filhos: e.target.checked })}
+                className="h-4 w-4 rounded border-input accent-primary" />
+              <span className="text-sm">Tem filhos?</span>
+            </label>
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input type="checkbox" checked={perfilForm.mora_com_agressor || false}
+                onChange={e => setPerfilForm({ ...perfilForm, mora_com_agressor: e.target.checked })}
+                className="h-4 w-4 rounded border-input accent-primary" />
+              <span className="text-sm">Mora com agressor?</span>
+            </label>
+            <Button onClick={savePerfil} disabled={saving} className="w-full">
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Check className="w-4 h-4 mr-1" /> Salvar</>}
+            </Button>
           </div>
-          <div>
-            <p className="text-muted-foreground">Telefone</p>
-            <p className="text-foreground">—</p>
+        )}
+      </div>
+
+      {/* Guardians */}
+      <div className="ampara-card space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Users className="w-5 h-5 text-primary" />
+            <h2 className="font-semibold text-foreground">Rede de Apoio (Guardiões)</h2>
           </div>
+          <Button variant="outline" size="sm" onClick={() => setShowAddGuardiao(!showAddGuardiao)}>
+            {showAddGuardiao ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+          </Button>
         </div>
 
-        <Button variant="outline" disabled>Editar</Button>
+        {showAddGuardiao && (
+          <div className="border border-border rounded-xl p-3 space-y-2">
+            <input type="text" className="ampara-input" placeholder="Nome" value={newGuardiao.nome}
+              onChange={e => setNewGuardiao({ ...newGuardiao, nome: e.target.value })} />
+            <input type="text" className="ampara-input" placeholder="Vínculo (mãe, irmã...)" value={newGuardiao.vinculo}
+              onChange={e => setNewGuardiao({ ...newGuardiao, vinculo: e.target.value })} />
+            <input type="tel" className="ampara-input" placeholder="(00) 00000-0000" value={newGuardiao.telefone_whatsapp}
+              onChange={e => setNewGuardiao({ ...newGuardiao, telefone_whatsapp: formatPhone(e.target.value) })} />
+            <Button onClick={addGuardiao} disabled={saving} size="sm" className="w-full">
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Adicionar"}
+            </Button>
+          </div>
+        )}
+
+        {guardioes.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Nenhum guardião cadastrado.</p>
+        ) : (
+          <div className="space-y-2">
+            {guardioes.map(g => (
+              <div key={g.id} className="flex items-center justify-between border border-border rounded-xl p-3">
+                <div>
+                  <p className="font-medium text-foreground text-sm">{g.nome}</p>
+                  <p className="text-xs text-muted-foreground">{g.vinculo} • {formatPhone(g.telefone_whatsapp)}</p>
+                </div>
+                <button onClick={() => deleteGuardiao(g.id)} className="text-destructive hover:text-destructive/80">
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Aggressors */}
+      <div className="ampara-card space-y-4">
+        <div className="flex items-center gap-2">
+          <AlertTriangle className="w-5 h-5 text-destructive" />
+          <h2 className="font-semibold text-foreground">Agressor(es) Vinculado(s)</h2>
+        </div>
+
+        {vinculos.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Nenhum agressor vinculado.</p>
+        ) : (
+          <div className="space-y-2">
+            {vinculos.map(v => (
+              <div key={v.id} className="flex items-center justify-between border border-border rounded-xl p-3">
+                <div>
+                  <p className="font-medium text-foreground text-sm">{v.agressor.nome}</p>
+                  <div className="flex flex-wrap gap-1.5 mt-1">
+                    <span className="ampara-tag !py-0.5 !px-2 text-xs">{v.tipo_vinculo}</span>
+                    {v.agressor.forca_seguranca && (
+                      <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-destructive/10 text-destructive">Força seg.</span>
+                    )}
+                    {v.agressor.tem_arma_em_casa && (
+                      <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-destructive/10 text-destructive">Arma</span>
+                    )}
+                  </div>
+                </div>
+                <button onClick={() => deleteVinculo(v.id)} className="text-destructive hover:text-destructive/80">
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

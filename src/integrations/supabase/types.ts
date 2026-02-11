@@ -43,6 +43,45 @@ export type Database = {
           },
         ]
       }
+      agressores: {
+        Row: {
+          created_at: string
+          data_nascimento: string | null
+          forca_seguranca: boolean | null
+          id: string
+          nome: string
+          nome_mae_parcial: string | null
+          nome_pai_parcial: string | null
+          telefone: string | null
+          tem_arma_em_casa: boolean | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          data_nascimento?: string | null
+          forca_seguranca?: boolean | null
+          id?: string
+          nome: string
+          nome_mae_parcial?: string | null
+          nome_pai_parcial?: string | null
+          telefone?: string | null
+          tem_arma_em_casa?: boolean | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          data_nascimento?: string | null
+          forca_seguranca?: boolean | null
+          id?: string
+          nome?: string
+          nome_mae_parcial?: string | null
+          nome_pai_parcial?: string | null
+          telefone?: string | null
+          tem_arma_em_casa?: boolean | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       alertas_panico: {
         Row: {
           autoridades_acionadas: boolean
@@ -336,6 +375,44 @@ export type Database = {
           },
         ]
       }
+      guardioes: {
+        Row: {
+          created_at: string
+          id: string
+          nome: string
+          telefone_whatsapp: string
+          updated_at: string
+          usuario_id: string
+          vinculo: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nome: string
+          telefone_whatsapp: string
+          updated_at?: string
+          usuario_id: string
+          vinculo: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nome?: string
+          telefone_whatsapp?: string
+          updated_at?: string
+          usuario_id?: string
+          vinculo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guardioes_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       localizacoes: {
         Row: {
           alerta_id: string | null
@@ -549,14 +626,19 @@ export type Database = {
           codigo_verificacao: string | null
           codigo_verificacao_expira: string | null
           created_at: string
+          data_nascimento: string | null
           email: string
           email_verificado: boolean
+          endereco_fixo: string | null
           id: string
+          mora_com_agressor: boolean | null
           nome_completo: string
+          onboarding_completo: boolean | null
           senha_coacao_hash: string | null
           senha_hash: string
           status: Database["public"]["Enums"]["user_status"]
           telefone: string
+          tem_filhos: boolean | null
           termos_aceitos_em: string | null
           tipo_interesse: string | null
           ultimo_acesso: string | null
@@ -566,14 +648,19 @@ export type Database = {
           codigo_verificacao?: string | null
           codigo_verificacao_expira?: string | null
           created_at?: string
+          data_nascimento?: string | null
           email: string
           email_verificado?: boolean
+          endereco_fixo?: string | null
           id?: string
+          mora_com_agressor?: boolean | null
           nome_completo: string
+          onboarding_completo?: boolean | null
           senha_coacao_hash?: string | null
           senha_hash: string
           status?: Database["public"]["Enums"]["user_status"]
           telefone: string
+          tem_filhos?: boolean | null
           termos_aceitos_em?: string | null
           tipo_interesse?: string | null
           ultimo_acesso?: string | null
@@ -583,20 +670,70 @@ export type Database = {
           codigo_verificacao?: string | null
           codigo_verificacao_expira?: string | null
           created_at?: string
+          data_nascimento?: string | null
           email?: string
           email_verificado?: boolean
+          endereco_fixo?: string | null
           id?: string
+          mora_com_agressor?: boolean | null
           nome_completo?: string
+          onboarding_completo?: boolean | null
           senha_coacao_hash?: string | null
           senha_hash?: string
           status?: Database["public"]["Enums"]["user_status"]
           telefone?: string
+          tem_filhos?: boolean | null
           termos_aceitos_em?: string | null
           tipo_interesse?: string | null
           ultimo_acesso?: string | null
           updated_at?: string
         }
         Relationships: []
+      }
+      vitimas_agressores: {
+        Row: {
+          agressor_id: string
+          created_at: string
+          id: string
+          status_relacao: string | null
+          tipo_vinculo: string
+          updated_at: string
+          usuario_id: string
+        }
+        Insert: {
+          agressor_id: string
+          created_at?: string
+          id?: string
+          status_relacao?: string | null
+          tipo_vinculo: string
+          updated_at?: string
+          usuario_id: string
+        }
+        Update: {
+          agressor_id?: string
+          created_at?: string
+          id?: string
+          status_relacao?: string | null
+          tipo_vinculo?: string
+          updated_at?: string
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vitimas_agressores_agressor_id_fkey"
+            columns: ["agressor_id"]
+            isOneToOne: false
+            referencedRelation: "agressores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vitimas_agressores_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

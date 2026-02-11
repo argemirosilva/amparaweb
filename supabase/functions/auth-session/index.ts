@@ -49,7 +49,7 @@ serve(async (req) => {
 
     const { data: user } = await supabase
       .from("usuarios")
-      .select("id, email, nome_completo")
+      .select("id, email, nome_completo, onboarding_completo")
       .eq("id", session.user_id)
       .single();
 

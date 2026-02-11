@@ -7,6 +7,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import Cadastro from "./pages/Cadastro";
 import ValidarEmail from "./pages/ValidarEmail";
 import Login from "./pages/Login";
+import Onboarding from "./pages/Onboarding";
 import AppLayout from "./components/layout/AppLayout";
 import Home from "./pages/Home";
 import Gravacoes from "./pages/Gravacoes";
@@ -28,6 +29,7 @@ const App = () => (
             <Route path="/cadastro" element={<Cadastro />} />
             <Route path="/validar-email" element={<ValidarEmail />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/onboarding" element={<Onboarding />} />
             <Route element={<AppLayout />}>
               <Route path="/home" element={<Home />} />
               <Route path="/gravacoes" element={<Gravacoes />} />

@@ -126,6 +126,13 @@ serve(async (req) => {
       user_id: user.id, action_type: "session_created", success: true, ip_address: ip,
     });
 
+    // Get onboarding status
+    const { data: fullUser } = await supabase
+      .from("usuarios")
+      .select("onboarding_completo")
+      .eq("id", user.id)
+      .single();
+
     return new Response(JSON.stringify({
       success: true,
       session: { token, expires_at: expiresAt },
@@ -133,6 +140,7 @@ serve(async (req) => {
         id: user.id,
         email: user.email,
         nome_completo: user.nome_completo,
+        onboarding_completo: fullUser?.onboarding_completo || false,
       },
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
