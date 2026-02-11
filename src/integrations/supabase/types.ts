@@ -623,6 +623,7 @@ export type Database = {
       }
       usuarios: {
         Row: {
+          avatar_url: string | null
           codigo_verificacao: string | null
           codigo_verificacao_expira: string | null
           created_at: string
@@ -653,6 +654,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          avatar_url?: string | null
           codigo_verificacao?: string | null
           codigo_verificacao_expira?: string | null
           created_at?: string
@@ -683,6 +685,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          avatar_url?: string | null
           codigo_verificacao?: string | null
           codigo_verificacao_expira?: string | null
           created_at?: string
