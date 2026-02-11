@@ -358,6 +358,70 @@ serve(async (req) => {
         return json({ success: true });
       }
 
+      // ========== GRAVAÇÕES ==========
+      case "getGravacoes": {
+        const { page = 1, per_page = 20, status: filterStatus } = params;
+        const offset = (page - 1) * per_page;
+
+        let query = supabase
+          .from("gravacoes")
+          .select("id, created_at, duracao_segundos, tamanho_mb, status, storage_path, transcricao, device_id, timezone", { count: "exact" })
+          .eq("user_id", userId)
+          .order("created_at", { ascending: false })
+          .range(offset, offset + per_page - 1);
+
+        if (filterStatus) query = query.eq("status", filterStatus);
+
+        const { data, count, error } = await query;
+        if (error) return json({ error: "Erro ao buscar gravações" }, 500);
+        return json({ success: true, gravacoes: data || [], total: count || 0, page, per_page });
+      }
+
+      case "getGravacaoSignedUrl": {
+        const { storage_path } = params;
+        if (!storage_path) return json({ error: "storage_path obrigatório" }, 400);
+
+        // Verify ownership
+        const { data: rec } = await supabase
+          .from("gravacoes")
+          .select("id")
+          .eq("user_id", userId)
+          .eq("storage_path", storage_path)
+          .maybeSingle();
+
+        if (!rec) {
+          // Also check segments
+          const { data: seg } = await supabase
+            .from("gravacoes_segmentos")
+            .select("id")
+            .eq("user_id", userId)
+            .eq("storage_path", storage_path)
+            .maybeSingle();
+          if (!seg) return json({ error: "Gravação não encontrada" }, 404);
+        }
+
+        const { data: signedData, error: signError } = await supabase.storage
+          .from("audio-recordings")
+          .createSignedUrl(storage_path, 3600); // 1h
+
+        if (signError) return json({ error: "Erro ao gerar URL" }, 500);
+        return json({ success: true, url: signedData.signedUrl });
+      }
+
+      case "getSegmentos": {
+        const { session_id } = params;
+        if (!session_id) return json({ error: "session_id obrigatório" }, 400);
+
+        const { data } = await supabase
+          .from("gravacoes_segmentos")
+          .select("id, created_at, segmento_idx, duracao_segundos, tamanho_mb, storage_path")
+          .eq("user_id", userId)
+          .eq("monitor_session_id", session_id)
+          .order("segmento_idx", { ascending: true });
+
+        return json({ success: true, segmentos: data || [] });
+      }
+
       default:
         return json({ error: `Action desconhecida: ${action}` }, 400);
     }
