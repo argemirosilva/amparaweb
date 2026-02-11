@@ -4,7 +4,7 @@ export function AuthLayout({ children, title, subtitle }: { children: React.Reac
   return (
     <div className="flex min-h-screen">
       {/* Left panel - decorative */}
-      <div className="hidden lg:flex lg:w-1/2 ampara-gradient-bg items-center justify-center p-12 relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-1/2 ampara-panel-bg items-center justify-center p-12 relative overflow-hidden">
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-20 left-20 w-64 h-64 rounded-full bg-primary-foreground/20 blur-3xl" />
           <div className="absolute bottom-32 right-16 w-48 h-48 rounded-full bg-primary-foreground/15 blur-2xl" />
