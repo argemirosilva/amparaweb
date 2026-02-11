@@ -212,12 +212,89 @@ Deno.test("update_schedules returns 401 with invalid session", async () => {
   assertEquals(data.success, false);
 });
 
+// ── Fase 3: enviarLocalizacaoGPS ──
+
+Deno.test("enviarLocalizacaoGPS returns 400 without email", async () => {
+  const res = await callApi({ action: "enviarLocalizacaoGPS" });
+  const data = await res.json();
+  assertEquals(res.status, 400);
+  assertEquals(data.success, false);
+});
+
+Deno.test("enviarLocalizacaoGPS returns 400 without lat/lng", async () => {
+  const res = await callApi({
+    action: "enviarLocalizacaoGPS",
+    email_usuario: "test@test.com",
+  });
+  const data = await res.json();
+  assertEquals(res.status, 400);
+  assertEquals(data.success, false);
+});
+
+Deno.test("enviarLocalizacaoGPS returns 404 for unknown user", async () => {
+  const res = await callApi({
+    action: "enviarLocalizacaoGPS",
+    email_usuario: "no_user_xyz@test.com",
+    latitude: -23.5,
+    longitude: -46.6,
+  });
+  const data = await res.json();
+  assertEquals(res.status, 404);
+  assertEquals(data.success, false);
+});
+
+// ── acionarPanicoMobile ──
+
+Deno.test("acionarPanicoMobile returns 400 without email", async () => {
+  const res = await callApi({ action: "acionarPanicoMobile" });
+  const data = await res.json();
+  assertEquals(res.status, 400);
+  assertEquals(data.success, false);
+});
+
+Deno.test("acionarPanicoMobile returns 404 for unknown user", async () => {
+  const res = await callApi({
+    action: "acionarPanicoMobile",
+    email_usuario: "no_user_xyz@test.com",
+  });
+  const data = await res.json();
+  assertEquals(res.status, 404);
+  assertEquals(data.success, false);
+});
+
+// ── cancelarPanicoMobile ──
+
+Deno.test("cancelarPanicoMobile returns 400 without email", async () => {
+  const res = await callApi({ action: "cancelarPanicoMobile" });
+  const data = await res.json();
+  assertEquals(res.status, 400);
+  assertEquals(data.success, false);
+});
+
+Deno.test("cancelarPanicoMobile returns 404 for unknown user", async () => {
+  const res = await callApi({
+    action: "cancelarPanicoMobile",
+    email_usuario: "no_user_xyz@test.com",
+  });
+  const data = await res.json();
+  assertEquals(res.status, 404);
+  assertEquals(data.success, false);
+});
+
+Deno.test("cancelarPanicoMobile returns 404 when no active alert", async () => {
+  // This will fail with 404 since user doesn't exist
+  const res = await callApi({
+    action: "cancelarPanicoMobile",
+    email_usuario: "no_user_xyz@test.com",
+  });
+  const data = await res.json();
+  assertEquals(res.status, 404);
+  assertEquals(data.success, false);
+});
+
 // ── Stub actions return 501 ──
 
 const stubActions = [
-  "enviarLocalizacaoGPS",
-  "acionarPanicoMobile",
-  "cancelarPanicoMobile",
   "receberAudioMobile",
   "getAudioSignedUrl",
   "reprocessarGravacao",

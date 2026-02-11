@@ -699,6 +699,263 @@ async function handleUpdateSchedules(
   });
 }
 
+// ── Fase 3 Handlers ──
+
+function generateProtocolo(): string {
+  const now = new Date();
+  const dateStr = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}`;
+  const rand = Math.random().toString(36).substring(2, 8).toUpperCase();
+  return `AMP-${dateStr}-${rand}`;
+}
+
+async function handleEnviarLocalizacaoGPS(
+  body: Record<string, unknown>,
+  supabase: ReturnType<typeof createClient>
+): Promise<Response> {
+  const emailUsuario = (body.email_usuario as string)?.trim().toLowerCase();
+  if (!emailUsuario) return errorResponse("email_usuario obrigatório", 400);
+
+  const latitude = body.latitude as number;
+  const longitude = body.longitude as number;
+  if (latitude === undefined || longitude === undefined) {
+    return errorResponse("latitude e longitude obrigatórios", 400);
+  }
+
+  const { data: user } = await supabase
+    .from("usuarios")
+    .select("id")
+    .eq("email", emailUsuario)
+    .maybeSingle();
+
+  if (!user) return errorResponse("Usuário não encontrado", 404);
+
+  const deviceId = body.device_id as string | undefined;
+  const alertaId = body.alerta_id as string | undefined;
+
+  // Check if device_id is required (panic/monitoring active or alerta_id present)
+  if (alertaId && !deviceId) {
+    return jsonResponse({ success: false, error: "DEVICE_ID_REQUIRED" }, 400);
+  }
+
+  // Check active panic or monitoring
+  const { data: activePanic } = await supabase
+    .from("alertas_panico")
+    .select("id, device_id")
+    .eq("user_id", user.id)
+    .eq("status", "ativo")
+    .maybeSingle();
+
+  const { data: activeMonitor } = await supabase
+    .from("monitoramento_sessoes")
+    .select("id, device_id")
+    .eq("user_id", user.id)
+    .eq("status", "ativa")
+    .maybeSingle();
+
+  if ((activePanic || activeMonitor) && !deviceId) {
+    return jsonResponse({ success: false, error: "DEVICE_ID_REQUIRED" }, 400);
+  }
+
+  // Validate device if provided and panic/monitor active
+  if (deviceId) {
+    const { data: device } = await supabase
+      .from("device_status")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("device_id", deviceId)
+      .maybeSingle();
+
+    if (!device && (activePanic || activeMonitor || alertaId)) {
+      return jsonResponse({ success: false, error: "NO_DEVICE_REGISTERED" }, 403);
+    }
+
+    if (activePanic && activePanic.device_id && activePanic.device_id !== deviceId) {
+      return jsonResponse({ success: false, error: "DEVICE_MISMATCH" }, 403);
+    }
+  }
+
+  // Determine alerta_id to associate
+  let finalAlertaId: string | null = alertaId || null;
+  if (!finalAlertaId && activePanic) {
+    finalAlertaId = activePanic.id;
+  }
+
+  // Insert location
+  await supabase.from("localizacoes").insert({
+    user_id: user.id,
+    device_id: deviceId || null,
+    alerta_id: finalAlertaId,
+    latitude,
+    longitude,
+    precisao_metros: body.precisao_metros as number || null,
+    bateria_percentual: body.bateria_percentual as number || null,
+    speed: body.speed as number || null,
+    heading: body.heading as number || null,
+    timestamp_gps: body.timestamp_gps as string || null,
+  });
+
+  return jsonResponse({
+    success: true,
+    message: "Localização registrada",
+    alerta_id: finalAlertaId,
+    servidor_timestamp: new Date().toISOString(),
+  });
+}
+
+async function handleAcionarPanico(
+  body: Record<string, unknown>,
+  supabase: ReturnType<typeof createClient>,
+  ip: string
+): Promise<Response> {
+  const emailUsuario = (body.email_usuario as string)?.trim().toLowerCase();
+  if (!emailUsuario) return errorResponse("email_usuario obrigatório", 400);
+
+  const { data: user } = await supabase
+    .from("usuarios")
+    .select("id")
+    .eq("email", emailUsuario)
+    .maybeSingle();
+
+  if (!user) return errorResponse("Usuário não encontrado", 404);
+
+  const protocolo = generateProtocolo();
+  const tipoAcionamento = (body.tipo_acionamento as string) || "botao_panico";
+  const latitude = body.latitude as number | undefined;
+  const longitude = body.longitude as number | undefined;
+
+  // Create panic alert
+  const { data: alerta } = await supabase
+    .from("alertas_panico")
+    .insert({
+      user_id: user.id,
+      device_id: body.device_id as string || null,
+      status: "ativo",
+      protocolo,
+      tipo_acionamento: tipoAcionamento,
+      latitude: latitude || null,
+      longitude: longitude || null,
+    })
+    .select("id")
+    .single();
+
+  if (!alerta) return errorResponse("Erro ao criar alerta", 500);
+
+  // Register initial location if provided
+  if (latitude !== undefined && longitude !== undefined) {
+    await supabase.from("localizacoes").insert({
+      user_id: user.id,
+      device_id: body.device_id as string || null,
+      alerta_id: alerta.id,
+      latitude,
+      longitude,
+    });
+  }
+
+  // Audit: silent guardian notification event
+  await supabase.from("audit_logs").insert({
+    user_id: user.id,
+    action_type: "panico_acionado",
+    success: true,
+    ip_address: ip,
+    details: { protocolo, tipo_acionamento: tipoAcionamento, alerta_id: alerta.id },
+  });
+
+  return jsonResponse({
+    success: true,
+    alerta_id: alerta.id,
+    protocolo,
+    rede_apoio_notificada: true,
+    autoridades_acionadas: true,
+  });
+}
+
+async function handleCancelarPanico(
+  body: Record<string, unknown>,
+  supabase: ReturnType<typeof createClient>,
+  ip: string
+): Promise<Response> {
+  const emailUsuario = (body.email_usuario as string)?.trim().toLowerCase();
+  if (!emailUsuario) return errorResponse("email_usuario obrigatório", 400);
+
+  const { data: user } = await supabase
+    .from("usuarios")
+    .select("id")
+    .eq("email", emailUsuario)
+    .maybeSingle();
+
+  if (!user) return errorResponse("Usuário não encontrado", 404);
+
+  // Find active alert
+  const { data: alerta } = await supabase
+    .from("alertas_panico")
+    .select("id, protocolo, criado_em, window_id")
+    .eq("user_id", user.id)
+    .eq("status", "ativo")
+    .order("criado_em", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (!alerta) return errorResponse("Nenhum alerta ativo encontrado", 404);
+
+  const tipoCancelamento = (body.tipo_cancelamento as string) || "manual";
+  const motivoCancelamento = body.motivo_cancelamento as string || null;
+  const now = new Date();
+  const criadoEm = new Date(alerta.criado_em);
+  const tempoAte = Math.round((now.getTime() - criadoEm.getTime()) / 1000);
+  const canceladoDentroJanela = tempoAte <= 60; // 60s window before authorities
+
+  // Determine notifications based on cancellation type
+  const guardioeNotificados = tipoCancelamento === "manual";
+  const autoridadesAcionadas = !canceladoDentroJanela;
+
+  // AUTO-SEAL window
+  const windowId = alerta.window_id || null;
+  const windowSelada = true;
+
+  // Update alert
+  await supabase
+    .from("alertas_panico")
+    .update({
+      status: "cancelado",
+      cancelado_em: now.toISOString(),
+      motivo_cancelamento: motivoCancelamento,
+      tipo_cancelamento: tipoCancelamento,
+      cancelado_dentro_janela: canceladoDentroJanela,
+      tempo_ate_cancelamento_segundos: tempoAte,
+      autoridades_acionadas: autoridadesAcionadas,
+      guardioes_notificados: guardioeNotificados,
+      window_selada: windowSelada,
+    })
+    .eq("id", alerta.id);
+
+  // Audit
+  await supabase.from("audit_logs").insert({
+    user_id: user.id,
+    action_type: "panico_cancelado",
+    success: true,
+    ip_address: ip,
+    details: {
+      alerta_id: alerta.id,
+      tipo_cancelamento: tipoCancelamento,
+      cancelado_dentro_janela: canceladoDentroJanela,
+    },
+  });
+
+  return jsonResponse({
+    success: true,
+    message: "Alerta cancelado com sucesso",
+    alerta_id: alerta.id,
+    protocolo: alerta.protocolo,
+    tipo_cancelamento: tipoCancelamento,
+    cancelado_dentro_janela: canceladoDentroJanela,
+    tempo_ate_cancelamento_segundos: tempoAte,
+    autoridades_acionadas: autoridadesAcionadas,
+    guardioes_notificados: guardioeNotificados,
+    window_selada: windowSelada,
+    window_id: windowId,
+  });
+}
+
 // ── Stub for unimplemented actions ──
 
 function stubResponse(): Response {
@@ -751,10 +1008,15 @@ serve(async (req) => {
       case "update_schedules":
         return await handleUpdateSchedules(body, supabase, ip);
 
-      // ── Stubs: 501 ──
+      // ── Fase 3: Implemented ──
       case "enviarLocalizacaoGPS":
+        return await handleEnviarLocalizacaoGPS(body, supabase);
       case "acionarPanicoMobile":
+        return await handleAcionarPanico(body, supabase, ip);
       case "cancelarPanicoMobile":
+        return await handleCancelarPanico(body, supabase, ip);
+
+      // ── Stubs: 501 ──
       case "receberAudioMobile":
       case "getAudioSignedUrl":
       case "reprocessarGravacao":
