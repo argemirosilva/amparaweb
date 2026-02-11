@@ -1,4 +1,4 @@
-import { Shield } from "lucide-react";
+import amparaLogo from "@/assets/ampara-logo.png";
 
 export function AuthLayout({ children, title, subtitle }: { children: React.ReactNode; title: string; subtitle?: string }) {
   return (
@@ -10,9 +10,7 @@ export function AuthLayout({ children, title, subtitle }: { children: React.Reac
           <div className="absolute bottom-32 right-16 w-48 h-48 rounded-full bg-primary-foreground/15 blur-2xl" />
         </div>
         <div className="relative text-center max-w-md">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-primary-foreground/20 mb-8">
-            <Shield className="w-10 h-10 text-primary-foreground" />
-          </div>
+          <img src={amparaLogo} alt="AMPARA" className="w-32 h-32 mx-auto mb-6 object-contain drop-shadow-lg" />
           <h1 className="text-4xl font-display font-bold text-primary-foreground mb-4">
             AMPARA Mulher
           </h1>
@@ -27,9 +25,7 @@ export function AuthLayout({ children, title, subtitle }: { children: React.Reac
         <div className="w-full max-w-md animate-fade-in">
           {/* Mobile logo */}
           <div className="lg:hidden text-center mb-8">
-            <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl ampara-gradient-bg mb-4">
-              <Shield className="w-7 h-7 text-primary-foreground" />
-            </div>
+            <img src={amparaLogo} alt="AMPARA" className="w-20 h-20 mx-auto mb-3 object-contain" />
             <h2 className="text-2xl font-display font-bold text-foreground">AMPARA Mulher</h2>
           </div>
 
