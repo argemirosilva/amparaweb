@@ -1,0 +1,100 @@
+import { useState } from "react";
+import { useNavigate, Link, useLocation } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { AuthLayout } from "@/components/auth/AuthLayout";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
+
+export default function LoginPage() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { login } = useAuth();
+  const verified = (location.state as any)?.verified;
+
+  const [email, setEmail] = useState("");
+  const [senha, setSenha] = useState("");
+  const [showSenha, setShowSenha] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+
+    if (!email.trim() || !senha) {
+      setError("Email e senha são obrigatórios");
+      return;
+    }
+
+    setLoading(true);
+    const result = await login(email.trim(), senha);
+    if (result.success) {
+      navigate("/home");
+    } else if (result.redirect === "verify") {
+      navigate(`/validar-email?email=${encodeURIComponent(result.email!)}`);
+    } else {
+      setError(result.error || "Email ou senha incorretos");
+    }
+    setLoading(false);
+  };
+
+  return (
+    <AuthLayout title="Entrar" subtitle="Acesse sua conta AMPARA">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {verified && (
+          <div className="rounded-xl bg-accent border border-border p-3 text-sm text-accent-foreground">
+            Email verificado com sucesso! Faça login para continuar.
+          </div>
+        )}
+
+        {error && (
+          <div className="rounded-xl bg-destructive/10 border border-destructive/20 p-3 text-sm text-destructive">
+            {error}
+          </div>
+        )}
+
+        <div>
+          <label className="block text-sm font-medium text-foreground mb-1.5">Email</label>
+          <input
+            type="email"
+            className="ampara-input"
+            placeholder="seu@email.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            maxLength={255}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-foreground mb-1.5">Senha</label>
+          <div className="relative">
+            <input
+              type={showSenha ? "text" : "password"}
+              className="ampara-input pr-12"
+              placeholder="Sua senha"
+              value={senha}
+              onChange={(e) => setSenha(e.target.value)}
+            />
+            <button
+              type="button"
+              onClick={() => setShowSenha(!showSenha)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {showSenha ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" disabled={loading} className="ampara-btn-primary mt-2">
+          {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : "Entrar"}
+        </button>
+
+        <p className="text-center text-sm text-muted-foreground pt-2">
+          Não tem uma conta?{" "}
+          <Link to="/cadastro" className="text-primary font-medium hover:underline">
+            Criar conta
+          </Link>
+        </p>
+      </form>
+    </AuthLayout>
+  );
+}
