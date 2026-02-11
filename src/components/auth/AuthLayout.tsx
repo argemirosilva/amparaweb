@@ -41,7 +41,7 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
             <img
               src={amparaLogo}
               alt="AMPARA"
-              className="w-16 h-16 mx-auto mb-3 object-contain"
+              className="w-48 h-48 mx-auto mb-3 object-contain"
             />
           </div>
 
