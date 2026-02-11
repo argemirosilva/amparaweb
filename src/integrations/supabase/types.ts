@@ -43,6 +43,59 @@ export type Database = {
           },
         ]
       }
+      alertas_panico: {
+        Row: {
+          cancelado_em: string | null
+          criado_em: string
+          device_id: string | null
+          id: string
+          latitude: number | null
+          longitude: number | null
+          motivo_cancelamento: string | null
+          protocolo: string | null
+          status: string
+          tipo_acionamento: string | null
+          tipo_cancelamento: string | null
+          user_id: string
+        }
+        Insert: {
+          cancelado_em?: string | null
+          criado_em?: string
+          device_id?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          motivo_cancelamento?: string | null
+          protocolo?: string | null
+          status?: string
+          tipo_acionamento?: string | null
+          tipo_cancelamento?: string | null
+          user_id: string
+        }
+        Update: {
+          cancelado_em?: string | null
+          criado_em?: string
+          device_id?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          motivo_cancelamento?: string | null
+          protocolo?: string | null
+          status?: string
+          tipo_acionamento?: string | null
+          tipo_cancelamento?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alertas_panico_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           action_type: string

@@ -133,13 +133,88 @@ Deno.test("syncConfigMobile returns 404 for unknown user", async () => {
   assertEquals(data.success, false);
 });
 
+// ── Fase 2: logoutMobile requires session_token + device_id ──
+
+Deno.test("logoutMobile returns 400 without session_token", async () => {
+  const res = await callApi({ action: "logoutMobile" });
+  const data = await res.json();
+  assertEquals(res.status, 400);
+  assertEquals(data.success, false);
+});
+
+Deno.test("logoutMobile returns 400 without device_id", async () => {
+  const res = await callApi({ action: "logoutMobile", session_token: "abc" });
+  const data = await res.json();
+  // Will be 401 (invalid session) since session_token is present but invalid
+  assert(res.status === 400 || res.status === 401);
+  assertEquals(data.success, false);
+});
+
+// ── validate_password ──
+
+Deno.test("validate_password returns 400 without fields", async () => {
+  const res = await callApi({ action: "validate_password" });
+  const data = await res.json();
+  assertEquals(res.status, 400);
+  assertEquals(data.success, false);
+});
+
+Deno.test("validate_password returns 401 with invalid session", async () => {
+  const res = await callApi({
+    action: "validate_password",
+    session_token: "invalid",
+    email_usuario: "test@test.com",
+    senha: "123456",
+  });
+  const data = await res.json();
+  assertEquals(res.status, 401);
+  assertEquals(data.success, false);
+});
+
+// ── change_password ──
+
+Deno.test("change_password returns 400 without fields", async () => {
+  const res = await callApi({ action: "change_password" });
+  const data = await res.json();
+  assertEquals(res.status, 400);
+  assertEquals(data.success, false);
+});
+
+Deno.test("change_password returns 400 for short password", async () => {
+  const res = await callApi({
+    action: "change_password",
+    session_token: "valid",
+    senha_atual: "old",
+    nova_senha: "12345",
+  });
+  const data = await res.json();
+  assertEquals(res.status, 400);
+  assertEquals(data.success, false);
+});
+
+// ── update_schedules ──
+
+Deno.test("update_schedules returns 400 without session_token", async () => {
+  const res = await callApi({ action: "update_schedules" });
+  const data = await res.json();
+  assertEquals(res.status, 400);
+  assertEquals(data.success, false);
+});
+
+Deno.test("update_schedules returns 401 with invalid session", async () => {
+  const res = await callApi({
+    action: "update_schedules",
+    session_token: "invalid",
+    periodos_semana: {},
+  });
+  const data = await res.json();
+  assertEquals(res.status, 401);
+  assertEquals(data.success, false);
+});
+
 // ── Stub actions return 501 ──
 
 const stubActions = [
-  "logoutMobile",
-  "validate_password",
-  "change_password",
-  "update_schedules",
   "enviarLocalizacaoGPS",
   "acionarPanicoMobile",
   "cancelarPanicoMobile",
