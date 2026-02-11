@@ -7,6 +7,7 @@ interface Usuario {
   id: string;
   email: string;
   nome_completo: string;
+  onboarding_completo?: boolean;
 }
 
 interface AuthContextType {
