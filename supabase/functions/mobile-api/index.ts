@@ -464,6 +464,241 @@ async function handleSyncConfig(
   });
 }
 
+// ── Fase 2 Handlers ──
+
+async function handleLogout(
+  body: Record<string, unknown>,
+  supabase: ReturnType<typeof createClient>,
+  ip: string
+): Promise<Response> {
+  const sessionToken = body.session_token as string;
+  const deviceId = body.device_id as string;
+
+  if (!sessionToken) return errorResponse("session_token obrigatório", 400);
+  if (!deviceId) return errorResponse("device_id obrigatório", 400);
+
+  const { user, error } = await validateSession(supabase, sessionToken);
+  if (error || !user) return errorResponse(error || "Sessão inválida", 401);
+
+  const userId = (user as Record<string, unknown>).id as string;
+
+  // Check active panic for this device
+  const { data: activePanic } = await supabase
+    .from("alertas_panico")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("device_id", deviceId)
+    .eq("status", "ativo")
+    .maybeSingle();
+
+  if (activePanic) {
+    return jsonResponse({ success: false, error: "PANIC_ACTIVE_CANNOT_LOGOUT" }, 403);
+  }
+
+  // Revoke session
+  const tokenHash = await hashToken(sessionToken);
+  await supabase
+    .from("user_sessions")
+    .update({ revoked_at: new Date().toISOString() })
+    .eq("token_hash", tokenHash);
+
+  // Audit
+  await supabase.from("audit_logs").insert({
+    user_id: userId,
+    action_type: "logout_mobile",
+    success: true,
+    ip_address: ip,
+    details: { device_id: deviceId },
+  });
+
+  return jsonResponse({ success: true, message: "Logout realizado com sucesso" });
+}
+
+async function handleValidatePassword(
+  body: Record<string, unknown>,
+  supabase: ReturnType<typeof createClient>,
+  ip: string
+): Promise<Response> {
+  const sessionToken = body.session_token as string;
+  const emailUsuario = (body.email_usuario as string)?.trim().toLowerCase();
+  const senha = body.senha as string;
+
+  if (!sessionToken) return errorResponse("session_token obrigatório", 400);
+  if (!emailUsuario || !senha) return errorResponse("email_usuario e senha obrigatórios", 400);
+
+  const { user: sessionUser, error } = await validateSession(supabase, sessionToken);
+  if (error || !sessionUser) return errorResponse(error || "Sessão inválida", 401);
+
+  // Rate limit
+  const identifier = `${emailUsuario}:${ip}`;
+  const limited = await checkRateLimit(supabase, identifier, "validate_password", 5, 15);
+  if (limited) return errorResponse("Muitas tentativas. Aguarde 15 minutos", 429);
+
+  await supabase.from("rate_limit_attempts").insert({
+    identifier,
+    action_type: "validate_password",
+  });
+
+  const { data: user } = await supabase
+    .from("usuarios")
+    .select("id, senha_hash, senha_coacao_hash")
+    .eq("email", emailUsuario)
+    .maybeSingle();
+
+  if (!user) return errorResponse("Usuário não encontrado", 404);
+
+  const normalMatch = bcrypt.compareSync(senha, user.senha_hash);
+  const coercaoMatch = user.senha_coacao_hash
+    ? bcrypt.compareSync(senha, user.senha_coacao_hash)
+    : false;
+
+  if (!normalMatch && !coercaoMatch) {
+    return errorResponse("Senha incorreta", 401);
+  }
+
+  let loginTipo = "normal";
+  if (coercaoMatch && !normalMatch) {
+    loginTipo = "coacao";
+    // Silent audit for coercion - response visually indistinguishable
+    await supabase.from("audit_logs").insert({
+      user_id: user.id,
+      action_type: "coacao_validate_password",
+      success: true,
+      ip_address: ip,
+      details: { silent: true },
+    });
+  }
+
+  return jsonResponse({ success: true, loginTipo });
+}
+
+async function handleChangePassword(
+  body: Record<string, unknown>,
+  supabase: ReturnType<typeof createClient>,
+  ip: string
+): Promise<Response> {
+  const sessionToken = body.session_token as string;
+  const senhaAtual = body.senha_atual as string;
+  const novaSenha = body.nova_senha as string;
+
+  if (!sessionToken) return errorResponse("session_token obrigatório", 400);
+  if (!senhaAtual || !novaSenha) return errorResponse("senha_atual e nova_senha obrigatórios", 400);
+  if (novaSenha.length < 6) return errorResponse("nova_senha deve ter no mínimo 6 caracteres", 400);
+
+  const { user, error } = await validateSession(supabase, sessionToken);
+  if (error || !user) return errorResponse(error || "Sessão inválida", 401);
+
+  const userId = (user as Record<string, unknown>).id as string;
+
+  // Get current hash
+  const { data: fullUser } = await supabase
+    .from("usuarios")
+    .select("senha_hash")
+    .eq("id", userId)
+    .single();
+
+  if (!fullUser) return errorResponse("Usuário não encontrado", 404);
+
+  // Validate current password
+  const currentMatch = bcrypt.compareSync(senhaAtual, fullUser.senha_hash);
+  if (!currentMatch) return errorResponse("Senha atual incorreta", 401);
+
+  // Hash new password and update (does NOT alter coercion password)
+  const novaSenhaHash = bcrypt.hashSync(novaSenha);
+  await supabase
+    .from("usuarios")
+    .update({ senha_hash: novaSenhaHash })
+    .eq("id", userId);
+
+  // Audit
+  await supabase.from("audit_logs").insert({
+    user_id: userId,
+    action_type: "change_password",
+    success: true,
+    ip_address: ip,
+  });
+
+  return jsonResponse({ success: true, message: "Senha alterada com sucesso" });
+}
+
+async function handleUpdateSchedules(
+  body: Record<string, unknown>,
+  supabase: ReturnType<typeof createClient>,
+  ip: string
+): Promise<Response> {
+  const sessionToken = body.session_token as string;
+  const periodosSemana = body.periodos_semana as Record<string, unknown>;
+
+  if (!sessionToken) return errorResponse("session_token obrigatório", 400);
+  if (periodosSemana === undefined) return errorResponse("periodos_semana obrigatório", 400);
+
+  const { user, error } = await validateSession(supabase, sessionToken);
+  if (error || !user) return errorResponse(error || "Sessão inválida", 401);
+
+  const userId = (user as Record<string, unknown>).id as string;
+
+  // Validate schedule: HH:MM format, max 8h/day, array empty disables day
+  const validDays = ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"];
+  const timeRegex = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+  for (const [day, periods] of Object.entries(periodosSemana)) {
+    if (!validDays.includes(day)) {
+      return errorResponse(`Dia inválido: ${day}`, 400);
+    }
+    if (!Array.isArray(periods)) {
+      return errorResponse(`Períodos do dia ${day} devem ser um array`, 400);
+    }
+    let totalMinutes = 0;
+    for (const p of periods as Array<{ inicio: string; fim: string }>) {
+      if (!p.inicio || !p.fim || !timeRegex.test(p.inicio) || !timeRegex.test(p.fim)) {
+        return errorResponse(`Formato HH:MM inválido em ${day}`, 400);
+      }
+      if (p.inicio >= p.fim) {
+        return errorResponse(`Período inválido em ${day}: inicio deve ser antes de fim`, 400);
+      }
+      const [hi, mi] = p.inicio.split(":").map(Number);
+      const [hf, mf] = p.fim.split(":").map(Number);
+      totalMinutes += (hf * 60 + mf) - (hi * 60 + mi);
+    }
+    if (totalMinutes > 8 * 60) {
+      return errorResponse(`Limite de 8h/dia excedido em ${day}`, 400);
+    }
+  }
+
+  // Upsert agendamentos_monitoramento (replaces all periods)
+  const { data: existing } = await supabase
+    .from("agendamentos_monitoramento")
+    .select("id")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (existing) {
+    await supabase
+      .from("agendamentos_monitoramento")
+      .update({ periodos_semana: periodosSemana })
+      .eq("id", existing.id);
+  } else {
+    await supabase.from("agendamentos_monitoramento").insert({
+      user_id: userId,
+      periodos_semana: periodosSemana,
+    });
+  }
+
+  // Audit
+  await supabase.from("audit_logs").insert({
+    user_id: userId,
+    action_type: "update_schedules",
+    success: true,
+    ip_address: ip,
+  });
+
+  return jsonResponse({
+    success: true,
+    message: "Horários atualizados com sucesso",
+    periodos_atualizados: periodosSemana,
+  });
+}
+
 // ── Stub for unimplemented actions ──
 
 function stubResponse(): Response {
@@ -506,11 +741,17 @@ serve(async (req) => {
       case "syncConfigMobile":
         return await handleSyncConfig(body, supabase);
 
-      // ── Stubs: 501 ──
+      // ── Fase 2: Implemented ──
       case "logoutMobile":
+        return await handleLogout(body, supabase, ip);
       case "validate_password":
+        return await handleValidatePassword(body, supabase, ip);
       case "change_password":
+        return await handleChangePassword(body, supabase, ip);
       case "update_schedules":
+        return await handleUpdateSchedules(body, supabase, ip);
+
+      // ── Stubs: 501 ──
       case "enviarLocalizacaoGPS":
       case "acionarPanicoMobile":
       case "cancelarPanicoMobile":
