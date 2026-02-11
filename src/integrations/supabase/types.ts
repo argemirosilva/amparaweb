@@ -45,46 +45,64 @@ export type Database = {
       }
       alertas_panico: {
         Row: {
+          autoridades_acionadas: boolean
+          cancelado_dentro_janela: boolean | null
           cancelado_em: string | null
           criado_em: string
           device_id: string | null
+          guardioes_notificados: boolean
           id: string
           latitude: number | null
           longitude: number | null
           motivo_cancelamento: string | null
           protocolo: string | null
           status: string
+          tempo_ate_cancelamento_segundos: number | null
           tipo_acionamento: string | null
           tipo_cancelamento: string | null
           user_id: string
+          window_id: string | null
+          window_selada: boolean
         }
         Insert: {
+          autoridades_acionadas?: boolean
+          cancelado_dentro_janela?: boolean | null
           cancelado_em?: string | null
           criado_em?: string
           device_id?: string | null
+          guardioes_notificados?: boolean
           id?: string
           latitude?: number | null
           longitude?: number | null
           motivo_cancelamento?: string | null
           protocolo?: string | null
           status?: string
+          tempo_ate_cancelamento_segundos?: number | null
           tipo_acionamento?: string | null
           tipo_cancelamento?: string | null
           user_id: string
+          window_id?: string | null
+          window_selada?: boolean
         }
         Update: {
+          autoridades_acionadas?: boolean
+          cancelado_dentro_janela?: boolean | null
           cancelado_em?: string | null
           criado_em?: string
           device_id?: string | null
+          guardioes_notificados?: boolean
           id?: string
           latitude?: number | null
           longitude?: number | null
           motivo_cancelamento?: string | null
           protocolo?: string | null
           status?: string
+          tempo_ate_cancelamento_segundos?: number | null
           tipo_acionamento?: string | null
           tipo_cancelamento?: string | null
           user_id?: string
+          window_id?: string | null
+          window_selada?: boolean
         }
         Relationships: [
           {
@@ -189,6 +207,66 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "device_status_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      localizacoes: {
+        Row: {
+          alerta_id: string | null
+          bateria_percentual: number | null
+          created_at: string
+          device_id: string | null
+          heading: number | null
+          id: string
+          latitude: number
+          longitude: number
+          precisao_metros: number | null
+          speed: number | null
+          timestamp_gps: string | null
+          user_id: string
+        }
+        Insert: {
+          alerta_id?: string | null
+          bateria_percentual?: number | null
+          created_at?: string
+          device_id?: string | null
+          heading?: number | null
+          id?: string
+          latitude: number
+          longitude: number
+          precisao_metros?: number | null
+          speed?: number | null
+          timestamp_gps?: string | null
+          user_id: string
+        }
+        Update: {
+          alerta_id?: string | null
+          bateria_percentual?: number | null
+          created_at?: string
+          device_id?: string | null
+          heading?: number | null
+          id?: string
+          latitude?: number
+          longitude?: number
+          precisao_metros?: number | null
+          speed?: number | null
+          timestamp_gps?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "localizacoes_alerta_id_fkey"
+            columns: ["alerta_id"]
+            isOneToOne: false
+            referencedRelation: "alertas_panico"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "localizacoes_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "usuarios"
