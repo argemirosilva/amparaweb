@@ -629,7 +629,15 @@ export type Database = {
           data_nascimento: string | null
           email: string
           email_verificado: boolean
+          endereco_bairro: string | null
+          endereco_cep: string | null
+          endereco_cidade: string | null
+          endereco_complemento: string | null
           endereco_fixo: string | null
+          endereco_logradouro: string | null
+          endereco_numero: string | null
+          endereco_referencia: string | null
+          endereco_uf: string | null
           id: string
           mora_com_agressor: boolean | null
           nome_completo: string
@@ -651,7 +659,15 @@ export type Database = {
           data_nascimento?: string | null
           email: string
           email_verificado?: boolean
+          endereco_bairro?: string | null
+          endereco_cep?: string | null
+          endereco_cidade?: string | null
+          endereco_complemento?: string | null
           endereco_fixo?: string | null
+          endereco_logradouro?: string | null
+          endereco_numero?: string | null
+          endereco_referencia?: string | null
+          endereco_uf?: string | null
           id?: string
           mora_com_agressor?: boolean | null
           nome_completo: string
@@ -673,7 +689,15 @@ export type Database = {
           data_nascimento?: string | null
           email?: string
           email_verificado?: boolean
+          endereco_bairro?: string | null
+          endereco_cep?: string | null
+          endereco_cidade?: string | null
+          endereco_complemento?: string | null
           endereco_fixo?: string | null
+          endereco_logradouro?: string | null
+          endereco_numero?: string | null
+          endereco_referencia?: string | null
+          endereco_uf?: string | null
           id?: string
           mora_com_agressor?: boolean | null
           nome_completo?: string

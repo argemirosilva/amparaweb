@@ -4,6 +4,7 @@ import { AuthLayout } from "@/components/auth/AuthLayout";
 import { Loader2, ChevronRight, ChevronLeft, Plus, Trash2, Search, Shield, AlertTriangle } from "lucide-react";
 import { callWebApi } from "@/services/webApiService";
 import { useNavigate } from "react-router-dom";
+import { EnderecoForm, emptyEndereco, EnderecoFields } from "@/components/EnderecoForm";
 
 function formatPhone(value: string): string {
   const digits = value.replace(/\D/g, "").slice(0, 11);
@@ -53,10 +54,10 @@ export default function OnboardingPage() {
   // Step 1 - Victim data
   const [vitima, setVitima] = useState({
     data_nascimento: "",
-    endereco_fixo: "",
     tem_filhos: false,
     mora_com_agressor: false,
   });
+  const [endereco, setEndereco] = useState<EnderecoFields>(emptyEndereco);
 
   // Step 2 - Guardians
   const [guardioes, setGuardioes] = useState<Guardiao[]>([{ nome: "", vinculo: "", telefone_whatsapp: "" }]);
@@ -81,8 +82,14 @@ export default function OnboardingPage() {
   const handleStep1 = async () => {
     setError("");
     if (!vitima.data_nascimento) { setError("Data de nascimento é obrigatória"); return; }
+    if (!endereco.endereco_cep || endereco.endereco_cep.replace(/\D/g, "").length !== 8) { setError("CEP é obrigatório"); return; }
     setLoading(true);
-    const { ok, data } = await api("updateMe", vitima);
+    const payload = {
+      ...vitima,
+      ...endereco,
+      endereco_fixo: `${endereco.endereco_logradouro}, ${endereco.endereco_numero} - ${endereco.endereco_bairro}, ${endereco.endereco_cidade}/${endereco.endereco_uf}`,
+    };
+    const { ok, data } = await api("updateMe", payload);
     if (!ok) { setError(data.error || "Erro ao salvar"); setLoading(false); return; }
     setLoading(false);
     setStep(2);
@@ -181,12 +188,7 @@ export default function OnboardingPage() {
             <input type="date" className="ampara-input" value={vitima.data_nascimento}
               onChange={e => setVitima({ ...vitima, data_nascimento: e.target.value })} />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">Endereço fixo</label>
-            <input type="text" className="ampara-input" placeholder="Rua, número, bairro, cidade"
-              value={vitima.endereco_fixo} maxLength={300}
-              onChange={e => setVitima({ ...vitima, endereco_fixo: e.target.value })} />
-          </div>
+          <EnderecoForm value={endereco} onChange={setEndereco} />
           <label className="flex items-center gap-3 cursor-pointer">
             <input type="checkbox" checked={vitima.tem_filhos}
               onChange={e => setVitima({ ...vitima, tem_filhos: e.target.checked })}
