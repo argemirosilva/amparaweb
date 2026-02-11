@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -19,13 +20,15 @@ serve(async (req) => {
       });
     }
 
-    const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+    const SMTP_HOST = Deno.env.get("SMTP_HOST");
+    const SMTP_PORT = parseInt(Deno.env.get("SMTP_PORT") || "465");
+    const SMTP_USER = Deno.env.get("SMTP_USER");
+    const SMTP_PASS = Deno.env.get("SMTP_PASS");
 
-    if (!RESEND_API_KEY) {
-      // Fallback: log that email would be sent (for development)
-      console.log(`[DEV] Verification email for ${email} - code NOT logged for security`);
-      return new Response(JSON.stringify({ success: true, dev_mode: true }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+    if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS) {
+      console.error("SMTP credentials not configured");
+      return new Response(JSON.stringify({ error: "Configuração de email não encontrada" }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -42,34 +45,36 @@ serve(async (req) => {
       </div>
     `;
 
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${RESEND_API_KEY}`,
+    const client = new SMTPClient({
+      connection: {
+        hostname: SMTP_HOST,
+        port: SMTP_PORT,
+        tls: true,
+        auth: {
+          username: SMTP_USER,
+          password: SMTP_PASS,
+        },
       },
-      body: JSON.stringify({
-        from: "AMPARA <noreply@resend.dev>",
-        to: [email],
-        subject: "Seu código de verificação AMPARA",
-        html: htmlBody,
-      }),
     });
 
-    if (!res.ok) {
-      const errorText = await res.text();
-      console.error("Resend error:", errorText);
-      return new Response(JSON.stringify({ error: "Falha ao enviar email" }), {
-        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    await client.send({
+      from: SMTP_USER,
+      to: email,
+      subject: "Seu código de verificação AMPARA",
+      content: "auto",
+      html: htmlBody,
+    });
+
+    await client.close();
+
+    console.log(`Verification email sent to ${email}`);
 
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
     console.error("Send email error:", err);
-    return new Response(JSON.stringify({ error: "Erro interno" }), {
+    return new Response(JSON.stringify({ error: "Falha ao enviar email" }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
