@@ -74,7 +74,18 @@ export default function DeviceStatusCard() {
   const online = isOnline(device.last_ping_at);
 
   return (
-    <div className="ampara-card flex items-center gap-4 p-4">
+    <div className="ampara-card flex items-center gap-4 p-4 relative overflow-hidden">
+      {/* Monitoring ear */}
+      {device.is_monitoring && (
+        <div className="absolute top-0 right-0 flex items-center gap-1 bg-primary/10 text-primary text-[10px] font-medium pl-2 pr-2.5 py-0.5 rounded-bl-lg">
+          <span className="relative flex h-1.5 w-1.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60" />
+            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
+          </span>
+          Monitorando
+        </div>
+      )}
+
       <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10 shrink-0">
         <Smartphone className="w-6 h-6 text-primary" />
       </div>
