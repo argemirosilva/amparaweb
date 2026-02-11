@@ -3,6 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { callWebApi } from "@/services/webApiService";
 import { Button } from "@/components/ui/button";
 import { UserCircle, Users, AlertTriangle, Loader2, Plus, Trash2, Edit2, X, Check } from "lucide-react";
+import { EnderecoForm, emptyEndereco, EnderecoFields } from "@/components/EnderecoForm";
 
 function formatPhone(value: string): string {
   const digits = value.replace(/\D/g, "").slice(0, 11);
@@ -17,6 +18,14 @@ interface PerfilData {
   telefone: string;
   data_nascimento: string | null;
   endereco_fixo: string | null;
+  endereco_cep: string | null;
+  endereco_logradouro: string | null;
+  endereco_numero: string | null;
+  endereco_complemento: string | null;
+  endereco_bairro: string | null;
+  endereco_cidade: string | null;
+  endereco_uf: string | null;
+  endereco_referencia: string | null;
   tem_filhos: boolean;
   mora_com_agressor: boolean;
 }
@@ -48,6 +57,7 @@ export default function PerfilPage() {
   const [loading, setLoading] = useState(true);
   const [editingPerfil, setEditingPerfil] = useState(false);
   const [perfilForm, setPerfilForm] = useState<Partial<PerfilData>>({});
+  const [enderecoForm, setEnderecoForm] = useState<EnderecoFields>(emptyEndereco);
   const [saving, setSaving] = useState(false);
 
   // New guardian form
@@ -76,7 +86,9 @@ export default function PerfilPage() {
 
   const savePerfil = async () => {
     setSaving(true);
-    await api("updateMe", perfilForm);
+    await api("updateMe", { ...perfilForm, ...enderecoForm,
+      endereco_fixo: `${enderecoForm.endereco_logradouro}, ${enderecoForm.endereco_numero} - ${enderecoForm.endereco_bairro}, ${enderecoForm.endereco_cidade}/${enderecoForm.endereco_uf}`,
+    });
     await loadData();
     setEditingPerfil(false);
     setSaving(false);
@@ -131,9 +143,18 @@ export default function PerfilPage() {
             setPerfilForm({
               telefone: perfil?.telefone || "",
               data_nascimento: perfil?.data_nascimento || "",
-              endereco_fixo: perfil?.endereco_fixo || "",
               tem_filhos: perfil?.tem_filhos || false,
               mora_com_agressor: perfil?.mora_com_agressor || false,
+            });
+            setEnderecoForm({
+              endereco_cep: perfil?.endereco_cep || "",
+              endereco_logradouro: perfil?.endereco_logradouro || "",
+              endereco_numero: perfil?.endereco_numero || "",
+              endereco_complemento: perfil?.endereco_complemento || "",
+              endereco_bairro: perfil?.endereco_bairro || "",
+              endereco_cidade: perfil?.endereco_cidade || "",
+              endereco_uf: perfil?.endereco_uf || "",
+              endereco_referencia: perfil?.endereco_referencia || "",
             });
           }}>
             {editingPerfil ? <X className="w-4 h-4" /> : <Edit2 className="w-4 h-4" />}
@@ -144,7 +165,11 @@ export default function PerfilPage() {
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div><p className="text-muted-foreground">Telefone</p><p className="text-foreground">{perfil?.telefone || "—"}</p></div>
             <div><p className="text-muted-foreground">Nascimento</p><p className="text-foreground">{perfil?.data_nascimento || "—"}</p></div>
-            <div className="col-span-2"><p className="text-muted-foreground">Endereço</p><p className="text-foreground">{perfil?.endereco_fixo || "—"}</p></div>
+            <div className="col-span-2">
+              <p className="text-muted-foreground">Endereço</p>
+              <p className="text-foreground">{perfil?.endereco_fixo || "—"}</p>
+              {perfil?.endereco_referencia && <p className="text-xs text-muted-foreground mt-0.5">Ref: {perfil.endereco_referencia}</p>}
+            </div>
             <div><p className="text-muted-foreground">Tem filhos?</p><p className="text-foreground">{perfil?.tem_filhos ? "Sim" : "Não"}</p></div>
             <div><p className="text-muted-foreground">Mora com agressor?</p><p className="text-foreground">{perfil?.mora_com_agressor ? "Sim" : "Não"}</p></div>
           </div>
@@ -154,8 +179,7 @@ export default function PerfilPage() {
               onChange={e => setPerfilForm({ ...perfilForm, telefone: e.target.value })} />
             <input type="date" className="ampara-input" value={perfilForm.data_nascimento || ""}
               onChange={e => setPerfilForm({ ...perfilForm, data_nascimento: e.target.value })} />
-            <input type="text" className="ampara-input" placeholder="Endereço" value={perfilForm.endereco_fixo || ""}
-              onChange={e => setPerfilForm({ ...perfilForm, endereco_fixo: e.target.value })} />
+            <EnderecoForm value={enderecoForm} onChange={setEnderecoForm} />
             <label className="flex items-center gap-3 cursor-pointer">
               <input type="checkbox" checked={perfilForm.tem_filhos || false}
                 onChange={e => setPerfilForm({ ...perfilForm, tem_filhos: e.target.checked })}
