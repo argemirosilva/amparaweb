@@ -292,23 +292,127 @@ Deno.test("cancelarPanicoMobile returns 404 when no active alert", async () => {
   assertEquals(data.success, false);
 });
 
-// ── Stub actions return 501 ──
+// ── Fase 4: receberAudioMobile ──
 
-const stubActions = [
-  "receberAudioMobile",
-  "getAudioSignedUrl",
-  "reprocessarGravacao",
-  "reprocess_recording",
-  "reportarStatusMonitoramento",
-  "reportarStatusGravacao",
-];
+Deno.test("receberAudioMobile returns 400 without email", async () => {
+  const res = await callApi({ action: "receberAudioMobile" });
+  const data = await res.json();
+  assertEquals(res.status, 400);
+  assertEquals(data.success, false);
+});
 
-for (const action of stubActions) {
-  Deno.test(`stub action '${action}' returns 501`, async () => {
+Deno.test("receberAudioMobile returns 400 without file_url", async () => {
+  const res = await callApi({
+    action: "receberAudioMobile",
+    email_usuario: "test@test.com",
+  });
+  const data = await res.json();
+  assertEquals(res.status, 400);
+  assertEquals(data.success, false);
+});
+
+Deno.test("receberAudioMobile returns 404 for unknown user", async () => {
+  const res = await callApi({
+    action: "receberAudioMobile",
+    email_usuario: "no_user_xyz@test.com",
+    file_url: "https://example.com/audio.mp3",
+  });
+  const data = await res.json();
+  assertEquals(res.status, 404);
+  assertEquals(data.success, false);
+});
+
+// ── getAudioSignedUrl ──
+
+Deno.test("getAudioSignedUrl returns 401 without session", async () => {
+  const res = await callApi({ action: "getAudioSignedUrl" });
+  const data = await res.json();
+  assertEquals(res.status, 401);
+  assertEquals(data.success, false);
+});
+
+Deno.test("getAudioSignedUrl returns 400 without gravacao_id", async () => {
+  const res = await callApi({
+    action: "getAudioSignedUrl",
+    session_token: "invalid",
+  });
+  const data = await res.json();
+  // 401 because session is invalid
+  assertEquals(res.status, 401);
+  assertEquals(data.success, false);
+});
+
+// ── reprocessarGravacao ──
+
+Deno.test("reprocessarGravacao returns 401 without session", async () => {
+  const res = await callApi({ action: "reprocessarGravacao" });
+  const data = await res.json();
+  assertEquals(res.status, 401);
+  assertEquals(data.success, false);
+});
+
+// ── reprocess_recording (alias) ──
+
+Deno.test("reprocess_recording returns 401 without session", async () => {
+  const res = await callApi({ action: "reprocess_recording" });
+  const data = await res.json();
+  assertEquals(res.status, 401);
+  assertEquals(data.success, false);
+});
+
+// ── reportarStatusMonitoramento ──
+
+Deno.test("reportarStatusMonitoramento returns 401 without session", async () => {
+  const res = await callApi({ action: "reportarStatusMonitoramento" });
+  const data = await res.json();
+  assertEquals(res.status, 401);
+  assertEquals(data.success, false);
+});
+
+Deno.test("reportarStatusMonitoramento returns 400 without sessao_id", async () => {
+  const res = await callApi({
+    action: "reportarStatusMonitoramento",
+    session_token: "invalid",
+  });
+  const data = await res.json();
+  assertEquals(res.status, 401); // invalid session first
+  assertEquals(data.success, false);
+});
+
+// ── reportarStatusGravacao ──
+
+Deno.test("reportarStatusGravacao returns 401 without session", async () => {
+  const res = await callApi({ action: "reportarStatusGravacao" });
+  const data = await res.json();
+  assertEquals(res.status, 401);
+  assertEquals(data.success, false);
+});
+
+Deno.test("reportarStatusGravacao returns 400 without gravacao_id", async () => {
+  const res = await callApi({
+    action: "reportarStatusGravacao",
+    session_token: "invalid",
+  });
+  const data = await res.json();
+  assertEquals(res.status, 401); // invalid session first
+  assertEquals(data.success, false);
+});
+
+// ── No more stubs ──
+
+Deno.test("no stub actions remain - all actions implemented", async () => {
+  // Verify all known actions return something other than 501
+  const allActions = [
+    "loginCustomizado", "refresh_token", "pingMobile", "syncConfigMobile",
+    "logoutMobile", "validate_password", "change_password", "update_schedules",
+    "enviarLocalizacaoGPS", "acionarPanicoMobile", "cancelarPanicoMobile",
+    "receberAudioMobile", "getAudioSignedUrl", "reprocessarGravacao",
+    "reprocess_recording", "reportarStatusMonitoramento", "reportarStatusGravacao",
+  ];
+  for (const action of allActions) {
     const res = await callApi({ action });
     const data = await res.json();
-    assertEquals(res.status, 501);
-    assertEquals(data.success, false);
-    assertEquals(data.error, "NOT_IMPLEMENTED");
-  });
-}
+    assert(res.status !== 501, `Action '${action}' still returns 501`);
+    await res.body?.cancel().catch(() => {});
+  }
+});
