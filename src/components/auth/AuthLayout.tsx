@@ -43,9 +43,6 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
               alt="AMPARA"
               className="w-16 h-16 mx-auto mb-3 object-contain"
             />
-            <h2 className="text-xl font-display font-bold text-foreground">
-              AMPARA Mulher
-            </h2>
           </div>
 
           <div className="mb-8">
