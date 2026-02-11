@@ -1,7 +1,8 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { Shield, LogOut } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { useEffect } from "react";
+import amparaLogo from "@/assets/ampara-logo.png";
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -31,9 +32,7 @@ export default function HomePage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-6">
       <div className="ampara-card max-w-md w-full text-center animate-fade-in">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl ampara-gradient-bg mb-6">
-          <Shield className="w-8 h-8 text-primary-foreground" />
-        </div>
+        <img src={amparaLogo} alt="AMPARA" className="w-24 h-24 mx-auto mb-6 object-contain" />
 
         <h1 className="text-3xl font-display font-bold text-foreground mb-2">
           Bem-vinda ao AMPARA
