@@ -10,6 +10,11 @@ import {
   Wifi,
   WifiOff,
 } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 function timeSince(date: Date): string {
   const s = Math.floor((Date.now() - date.getTime()) / 1000);
@@ -24,7 +29,7 @@ function isOnline(lastPing: string | null): boolean {
 }
 
 export default function DeviceStatusCard() {
-  const { device, location, address, addressLoading, loading, error, lastFetch } = useDeviceStatus();
+  const { device, location, geo, addressLoading, loading, error, lastFetch } = useDeviceStatus();
 
   if (loading) {
     return (
@@ -144,11 +149,23 @@ export default function DeviceStatusCard() {
           <div className="text-sm text-muted-foreground space-y-1 pl-6">
             <p>Lat: {location.latitude.toFixed(6)} — Lng: {location.longitude.toFixed(6)}</p>
             {location.precisao_metros !== null && <p>Precisão: ~{Math.round(location.precisao_metros)}m</p>}
-            <p>
-              {addressLoading
-                ? "Buscando endereço..."
-                : address || "Endereço não disponível"}
-            </p>
+            {addressLoading ? (
+              <p className="text-muted-foreground italic">Buscando endereço...</p>
+            ) : geo ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <p className="text-foreground cursor-help">
+                    {geo.display_address}
+                    {geo.cached && <span className="text-xs text-muted-foreground ml-1">(cache)</span>}
+                  </p>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="max-w-xs text-xs">
+                  {geo.full_address}
+                </TooltipContent>
+              </Tooltip>
+            ) : (
+              <p>Endereço não disponível</p>
+            )}
           </div>
           <a
             href={`https://www.google.com/maps?q=${location.latitude},${location.longitude}`}
