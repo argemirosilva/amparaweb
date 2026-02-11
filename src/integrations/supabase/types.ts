@@ -14,6 +14,35 @@ export type Database = {
   }
   public: {
     Tables: {
+      agendamentos_monitoramento: {
+        Row: {
+          id: string
+          periodos_semana: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          periodos_semana?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          periodos_semana?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agendamentos_monitoramento_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           action_type: string
@@ -52,6 +81,106 @@ export type Database = {
           },
         ]
       }
+      device_status: {
+        Row: {
+          bateria_percentual: number | null
+          created_at: string
+          device_id: string
+          dispositivo_info: string | null
+          id: string
+          is_charging: boolean | null
+          is_monitoring: boolean
+          is_recording: boolean
+          last_ping_at: string | null
+          status: string
+          timezone: string | null
+          timezone_offset_minutes: number | null
+          updated_at: string
+          user_id: string
+          versao_app: string | null
+        }
+        Insert: {
+          bateria_percentual?: number | null
+          created_at?: string
+          device_id: string
+          dispositivo_info?: string | null
+          id?: string
+          is_charging?: boolean | null
+          is_monitoring?: boolean
+          is_recording?: boolean
+          last_ping_at?: string | null
+          status?: string
+          timezone?: string | null
+          timezone_offset_minutes?: number | null
+          updated_at?: string
+          user_id: string
+          versao_app?: string | null
+        }
+        Update: {
+          bateria_percentual?: number | null
+          created_at?: string
+          device_id?: string
+          dispositivo_info?: string | null
+          id?: string
+          is_charging?: boolean | null
+          is_monitoring?: boolean
+          is_recording?: boolean
+          last_ping_at?: string | null
+          status?: string
+          timezone?: string | null
+          timezone_offset_minutes?: number | null
+          updated_at?: string
+          user_id?: string
+          versao_app?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "device_status_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      monitoramento_sessoes: {
+        Row: {
+          created_at: string
+          device_id: string | null
+          finalizado_em: string | null
+          id: string
+          iniciado_em: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          device_id?: string | null
+          finalizado_em?: string | null
+          id?: string
+          iniciado_em?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          device_id?: string | null
+          finalizado_em?: string | null
+          id?: string
+          iniciado_em?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "monitoramento_sessoes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rate_limit_attempts: {
         Row: {
           action_type: string
@@ -72,6 +201,54 @@ export type Database = {
           identifier?: string
         }
         Relationships: []
+      }
+      refresh_tokens: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          ip_address: string | null
+          replaced_by: string | null
+          revoked_at: string | null
+          token_hash: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          ip_address?: string | null
+          replaced_by?: string | null
+          revoked_at?: string | null
+          token_hash: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          ip_address?: string | null
+          replaced_by?: string | null
+          revoked_at?: string | null
+          token_hash?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "refresh_tokens_replaced_by_fkey"
+            columns: ["replaced_by"]
+            isOneToOne: false
+            referencedRelation: "refresh_tokens"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refresh_tokens_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_sessions: {
         Row: {
@@ -128,6 +305,7 @@ export type Database = {
           status: Database["public"]["Enums"]["user_status"]
           telefone: string
           termos_aceitos_em: string | null
+          tipo_interesse: string | null
           ultimo_acesso: string | null
           updated_at: string
         }
@@ -144,6 +322,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["user_status"]
           telefone: string
           termos_aceitos_em?: string | null
+          tipo_interesse?: string | null
           ultimo_acesso?: string | null
           updated_at?: string
         }
@@ -160,6 +339,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["user_status"]
           telefone?: string
           termos_aceitos_em?: string | null
+          tipo_interesse?: string | null
           ultimo_acesso?: string | null
           updated_at?: string
         }
