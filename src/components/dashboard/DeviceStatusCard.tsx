@@ -1,12 +1,8 @@
 import { useDeviceStatus } from "@/hooks/useDeviceStatus";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Smartphone,
-  Wifi,
-  WifiOff,
-  Clock,
-} from "lucide-react";
+import { Smartphone, Clock } from "lucide-react";
+import badgeOnline from "@/assets/badge-online.png";
+import badgeOffline from "@/assets/badge-offline.png";
 
 function timeSince(date: string): string {
   const s = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
@@ -43,9 +39,7 @@ export default function DeviceStatusCard() {
             {error || "Nenhum dado recebido"}
           </p>
         </div>
-        <Badge variant="secondary" className="shrink-0 gap-1 bg-muted text-muted-foreground">
-          <WifiOff className="w-3 h-3" /> Offline
-        </Badge>
+        <img src={badgeOffline} alt="Offline" className="h-7 shrink-0" />
       </div>
     );
   }
@@ -75,13 +69,9 @@ export default function DeviceStatusCard() {
 
       {/* Status badge */}
       {online ? (
-        <Badge className="shrink-0 gap-1 bg-emerald-100 text-emerald-700 border-emerald-200 hover:bg-emerald-100">
-          <Wifi className="w-3 h-3" /> Online
-        </Badge>
+        <img src={badgeOnline} alt="Online" className="h-7 shrink-0" />
       ) : (
-        <Badge variant="secondary" className="shrink-0 gap-1 bg-muted text-muted-foreground">
-          <WifiOff className="w-3 h-3" /> Offline
-        </Badge>
+        <img src={badgeOffline} alt="Offline" className="h-7 shrink-0" />
       )}
     </div>
   );
