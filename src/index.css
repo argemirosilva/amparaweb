@@ -2,38 +2,39 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Playfair+Display:wght@500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Poppins:wght@400;500;600;700&display=swap');
 
 @layer base {
   :root {
     --background: 0 0% 99%;
-    --foreground: 240 20% 20%;
+    --foreground: 240 20% 16%;
 
     --card: 0 0% 100%;
-    --card-foreground: 240 20% 20%;
+    --card-foreground: 240 20% 16%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 240 20% 20%;
+    --popover-foreground: 240 20% 16%;
 
-    /* Magenta-purple from the gradient buttons */
-    --primary: 320 75% 48%;
+    /* Magenta primary — from the gradient buttons */
+    --primary: 316 72% 48%;
     --primary-foreground: 0 0% 100%;
 
+    /* Purple secondary */
     --secondary: 280 25% 96%;
-    --secondary-foreground: 320 75% 45%;
+    --secondary-foreground: 316 72% 42%;
 
-    --muted: 260 15% 95%;
-    --muted-foreground: 240 8% 50%;
+    --muted: 260 12% 95%;
+    --muted-foreground: 240 8% 46%;
 
     --accent: 280 30% 93%;
     --accent-foreground: 280 55% 40%;
 
-    --destructive: 0 84.2% 60.2%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 260 15% 90%;
-    --input: 260 12% 88%;
-    --ring: 320 75% 48%;
+    --border: 260 12% 91%;
+    --input: 260 10% 89%;
+    --ring: 316 72% 48%;
 
     --radius: 0.75rem;
 
@@ -46,12 +47,18 @@
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
 
-    /* AMPARA brand tokens — magenta→purple gradient + deep blue panel */
-    --ampara-gradient: linear-gradient(135deg, hsl(320, 75%, 48%), hsl(265, 65%, 42%));
-    --ampara-gradient-soft: linear-gradient(135deg, hsl(290, 30%, 96%), hsl(260, 35%, 94%));
-    --ampara-panel-bg: linear-gradient(160deg, hsl(265, 65%, 38%), hsl(225, 70%, 32%));
-    --ampara-shadow: 0 4px 24px -4px hsl(320 75% 48% / 0.18);
-    --ampara-shadow-lg: 0 8px 40px -8px hsl(320 75% 48% / 0.25);
+    /* AMPARA brand tokens */
+    --ampara-magenta: 316 72% 48%;
+    --ampara-purple: 270 60% 42%;
+    --ampara-deep-blue: 225 65% 28%;
+    --ampara-cyan: 175 80% 45%;
+
+    --ampara-gradient: linear-gradient(135deg, hsl(316, 72%, 48%), hsl(270, 60%, 42%));
+    --ampara-gradient-soft: linear-gradient(135deg, hsl(290, 25%, 97%), hsl(260, 30%, 95%));
+    --ampara-gradient-icon: linear-gradient(160deg, hsl(316, 72%, 50%), hsl(270, 60%, 42%));
+    --ampara-panel-bg: linear-gradient(160deg, hsl(265, 55%, 35%), hsl(225, 65%, 28%));
+    --ampara-shadow: 0 4px 20px -4px hsl(316 72% 48% / 0.15);
+    --ampara-shadow-lg: 0 8px 36px -6px hsl(316 72% 48% / 0.25);
   }
 
   .dark {
@@ -64,24 +71,25 @@
     --popover: 240 18% 10%;
     --popover-foreground: 260 10% 95%;
 
-    --primary: 320 70% 55%;
+    --primary: 316 68% 55%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 260 20% 15%;
-    --secondary-foreground: 320 60% 70%;
+    --secondary-foreground: 316 60% 70%;
 
     --muted: 260 15% 18%;
     --muted-foreground: 260 10% 60%;
 
     --accent: 260 20% 18%;
-    --accent-foreground: 320 60% 70%;
+    --accent-foreground: 316 60% 70%;
 
-    --destructive: 0 62.8% 30.6%;
+    --destructive: 0 63% 31%;
     --destructive-foreground: 0 0% 100%;
 
     --border: 260 15% 20%;
     --input: 260 15% 20%;
-    --ring: 320 70% 55%;
+    --ring: 316 68% 55%;
+
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
@@ -103,17 +111,20 @@
     font-family: 'DM Sans', sans-serif;
   }
 
-  h1, h2, h3 {
-    font-family: 'Playfair Display', serif;
+  h1, h2, h3, h4 {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
   }
 }
 
 @layer components {
+  /* ---- Card ---- */
   .ampara-card {
-    @apply bg-card rounded-2xl p-8 shadow-sm border border-border;
+    @apply bg-card rounded-2xl p-8 border border-border;
     box-shadow: var(--ampara-shadow);
   }
 
+  /* ---- Gradient utilities ---- */
   .ampara-gradient-bg {
     background: var(--ampara-gradient);
   }
@@ -126,14 +137,33 @@
     background: var(--ampara-panel-bg);
   }
 
+  /* ---- Icon circle (gradient background with white icon) ---- */
+  .ampara-icon-circle {
+    @apply inline-flex items-center justify-center w-16 h-16 rounded-full text-primary-foreground;
+    background: var(--ampara-gradient-icon);
+  }
+
+  .ampara-icon-circle-sm {
+    @apply inline-flex items-center justify-center w-10 h-10 rounded-full text-primary-foreground;
+    background: var(--ampara-gradient-icon);
+  }
+
+  /* ---- Numbered badge (small purple circle) ---- */
+  .ampara-badge-number {
+    @apply inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold text-primary-foreground;
+    background: hsl(var(--ampara-purple));
+  }
+
+  /* ---- Input ---- */
   .ampara-input {
     @apply w-full rounded-xl border border-input bg-background px-4 py-3 text-sm transition-all duration-200;
-    @apply focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary;
+    @apply focus:outline-none focus:ring-2 focus:ring-ring/40 focus:border-primary;
     @apply placeholder:text-muted-foreground;
   }
 
+  /* ---- Primary button (gradient pill) ---- */
   .ampara-btn-primary {
-    @apply w-full rounded-full py-3.5 px-6 font-semibold text-primary-foreground transition-all duration-200;
+    @apply w-full rounded-full py-3.5 px-8 font-semibold text-primary-foreground transition-all duration-200 text-base;
     background: var(--ampara-gradient);
     box-shadow: var(--ampara-shadow);
   }
@@ -154,11 +184,47 @@
     transform: none;
   }
 
+  /* ---- Secondary button (outlined pill) ---- */
   .ampara-btn-secondary {
-    @apply w-full rounded-full py-3 px-6 font-medium text-primary bg-card border-2 border-primary transition-all duration-200;
+    @apply w-full rounded-full py-3 px-8 font-semibold text-primary bg-transparent border-2 border-primary transition-all duration-200 text-base;
   }
 
   .ampara-btn-secondary:hover {
     @apply bg-secondary;
+  }
+
+  .ampara-btn-secondary:disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
+
+  /* ---- Section title ---- */
+  .ampara-section-title {
+    @apply text-2xl font-semibold text-foreground text-center;
+  }
+
+  .ampara-section-subtitle {
+    @apply text-muted-foreground text-center mt-2 max-w-xl mx-auto;
+  }
+
+  /* ---- Feature card (icon-based) ---- */
+  .ampara-feature-card {
+    @apply bg-card rounded-2xl p-6 border border-border text-center transition-all duration-200;
+    box-shadow: 0 2px 12px -2px hsl(260 15% 50% / 0.06);
+  }
+
+  .ampara-feature-card:hover {
+    box-shadow: var(--ampara-shadow);
+    transform: translateY(-2px);
+  }
+
+  /* ---- Quote block ---- */
+  .ampara-quote {
+    @apply relative bg-card rounded-2xl p-6 border-l-4 border-primary italic text-foreground/80;
+  }
+
+  /* ---- Tag / chip ---- */
+  .ampara-tag {
+    @apply inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium;
+    @apply bg-primary/10 text-primary;
   }
 }
