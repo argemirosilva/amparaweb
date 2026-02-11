@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { resolveAddress, type GeoResult } from "@/services/reverseGeocodeService";
 
 interface DeviceData {
   status: string;
@@ -19,17 +20,10 @@ interface LocationData {
   created_at: string;
 }
 
-interface GeoCache {
-  lat: number;
-  lng: number;
-  address: string;
-  timestamp: number;
-}
-
-interface DeviceStatusResult {
+export interface DeviceStatusResult {
   device: DeviceData | null;
   location: LocationData | null;
-  address: string | null;
+  geo: GeoResult | null;
   addressLoading: boolean;
   loading: boolean;
   error: string | null;
@@ -37,28 +31,17 @@ interface DeviceStatusResult {
 }
 
 const POLL_INTERVAL = 30_000;
-const GEO_CACHE_TTL = 5 * 60_000;
-const DISTANCE_THRESHOLD = 50; // meters
-
-function haversineDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
-  const R = 6371e3;
-  const toRad = (d: number) => (d * Math.PI) / 180;
-  const dLat = toRad(lat2 - lat1);
-  const dLng = toRad(lng2 - lng1);
-  const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
 
 export function useDeviceStatus(): DeviceStatusResult {
   const { usuario } = useAuth();
   const [device, setDevice] = useState<DeviceData | null>(null);
   const [location, setLocation] = useState<LocationData | null>(null);
-  const [address, setAddress] = useState<string | null>(null);
+  const [geo, setGeo] = useState<GeoResult | null>(null);
   const [addressLoading, setAddressLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastFetch, setLastFetch] = useState<Date | null>(null);
-  const geoCacheRef = useRef<GeoCache | null>(null);
+  const lastGeocodedRef = useRef<string | null>(null);
 
   const fetchData = useCallback(async () => {
     if (!usuario) return;
@@ -94,39 +77,24 @@ export function useDeviceStatus(): DeviceStatusResult {
     }
   }, [usuario]);
 
-  // Reverse geocoding with cache
+  // Reverse geocoding via service (dedup + cache + rate-limit built in)
   useEffect(() => {
     if (!location) return;
     const { latitude, longitude } = location;
-    const cache = geoCacheRef.current;
-
-    if (cache) {
-      const dist = haversineDistance(cache.lat, cache.lng, latitude, longitude);
-      const age = Date.now() - cache.timestamp;
-      if (dist < DISTANCE_THRESHOLD && age < GEO_CACHE_TTL) {
-        setAddress(cache.address);
-        return;
-      }
-    }
+    // Only re-geocode if lat/lon actually changed (rounded key)
+    const coordKey = `${Math.round(latitude * 1e4)},${Math.round(longitude * 1e4)}`;
+    if (coordKey === lastGeocodedRef.current) return;
 
     let cancelled = false;
     setAddressLoading(true);
-    fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&accept-language=pt-BR`)
-      .then((r) => r.json())
-      .then((data) => {
-        if (cancelled) return;
-        const addr = data.display_name || null;
-        setAddress(addr);
-        if (addr) {
-          geoCacheRef.current = { lat: latitude, lng: longitude, address: addr, timestamp: Date.now() };
-        }
-      })
-      .catch(() => {
-        if (!cancelled) setAddress(null);
-      })
-      .finally(() => {
-        if (!cancelled) setAddressLoading(false);
-      });
+
+    resolveAddress(latitude, longitude).then((result) => {
+      if (cancelled) return;
+      setGeo(result);
+      lastGeocodedRef.current = coordKey;
+    }).finally(() => {
+      if (!cancelled) setAddressLoading(false);
+    });
 
     return () => { cancelled = true; };
   }, [location]);
@@ -138,5 +106,5 @@ export function useDeviceStatus(): DeviceStatusResult {
     return () => clearInterval(id);
   }, [fetchData]);
 
-  return { device, location, address, addressLoading, loading, error, lastFetch };
+  return { device, location, geo, addressLoading, loading, error, lastFetch };
 }
