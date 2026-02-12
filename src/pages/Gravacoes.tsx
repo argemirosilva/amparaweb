@@ -176,6 +176,7 @@ export default function GravacoesPage() {
             return (
               <div
                 key={g.id}
+                ref={isExpanded ? (el) => { if (el) setTimeout(() => el.scrollIntoView({ behavior: "smooth", block: "start" }), 100); } : undefined}
                 className="ampara-card overflow-hidden relative"
                 style={g.nivel_risco ? { borderLeftWidth: "3px", borderLeftStyle: "solid", borderLeftColor: `${RISCO_COLORS[g.nivel_risco] || "transparent"}90` } : undefined}
               >
