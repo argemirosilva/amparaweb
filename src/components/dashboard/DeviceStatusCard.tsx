@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useDeviceStatus } from "@/hooks/useDeviceStatus";
 import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -63,26 +63,42 @@ export default function DeviceStatusCard() {
   const avatarUrl = usuario?.avatar_url || null;
   const [showMap, setShowMap] = useState(false);
   const [elapsed, setElapsed] = useState(0);
+  const counterStartRef = useRef<number | null>(null);
+  const prevActiveRef = useRef(false);
 
-  // Determine the active timestamp for the counter
-  const activeTimestamp = device?.is_recording
-    ? device.recordingStartedAt
-    : device?.is_monitoring
-      ? device.monitoringStartedAt
-      : null;
+  const isActive = !!(device?.is_recording || device?.is_monitoring);
 
-  // Timer based on real server timestamp
+  // When activity starts via Realtime, mark local start time; when it stops, reset
   useEffect(() => {
-    if (!activeTimestamp) {
+    if (isActive && !prevActiveRef.current) {
+      // Just became active — start counter from now
+      counterStartRef.current = Date.now();
+    } else if (!isActive && prevActiveRef.current) {
+      // Just became inactive — reset
+      counterStartRef.current = null;
+      setElapsed(0);
+    }
+    prevActiveRef.current = isActive;
+  }, [isActive]);
+
+  // Tick every second while active
+  useEffect(() => {
+    if (!isActive) {
       setElapsed(0);
       return;
     }
-    const startMs = new Date(activeTimestamp).getTime();
-    const tick = () => setElapsed(Math.max(0, Math.floor((Date.now() - startMs) / 1000)));
-    tick(); // immediate correct value
+    if (!counterStartRef.current) {
+      counterStartRef.current = Date.now();
+    }
+    const tick = () => {
+      if (counterStartRef.current) {
+        setElapsed(Math.max(0, Math.floor((Date.now() - counterStartRef.current) / 1000)));
+      }
+    };
+    tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
-  }, [activeTimestamp]);
+  }, [isActive]);
 
   if (loading) {
     return (
