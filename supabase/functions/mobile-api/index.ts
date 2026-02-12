@@ -354,28 +354,10 @@ async function handlePing(
     if (body.dispositivo_info !== undefined) deviceData.dispositivo_info = body.dispositivo_info;
     else if (body.device_model !== undefined) deviceData.dispositivo_info = body.device_model;
     if (body.versao_app !== undefined) deviceData.versao_app = body.versao_app;
+    if (body.is_recording !== undefined) deviceData.is_recording = body.is_recording;
+    if (body.is_monitoring !== undefined) deviceData.is_monitoring = body.is_monitoring;
     if (body.timezone !== undefined) deviceData.timezone = body.timezone;
     if (body.timezone_offset_minutes !== undefined) deviceData.timezone_offset_minutes = body.timezone_offset_minutes;
-
-    // Check if there's an active monitoring session for this device
-    // to ensure is_recording/is_monitoring reflect the real server state
-    const { data: activeSession } = await supabase
-      .from("monitoramento_sessoes")
-      .select("id")
-      .eq("user_id", userId)
-      .eq("device_id", deviceId)
-      .eq("status", "ativa")
-      .maybeSingle();
-
-    if (activeSession) {
-      // Server has an active session — override whatever the app sends
-      deviceData.is_recording = true;
-      deviceData.is_monitoring = true;
-    } else {
-      // No active session — trust the app's values
-      if (body.is_recording !== undefined) deviceData.is_recording = body.is_recording;
-      if (body.is_monitoring !== undefined) deviceData.is_monitoring = body.is_monitoring;
-    }
 
     if (existing) {
       await supabase
@@ -1637,12 +1619,7 @@ async function handleReportarStatusGravacao(
 
       console.log(`Created monitoring session ${newSession?.id} for device ${deviceId}, origem: ${origemGravacao}`);
 
-      // Update device status
-      await supabase
-        .from("device_status")
-        .update({ is_recording: true, is_monitoring: true })
-        .eq("user_id", userId)
-        .eq("device_id", deviceId);
+      // Device status is controlled by the app via pingMobile — no override here
 
       await supabase.from("audit_logs").insert({
         user_id: userId,
