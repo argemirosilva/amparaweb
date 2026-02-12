@@ -847,11 +847,16 @@ serve(async (req) => {
           acionamentos: {
             whatsapp_guardioes: { grave: true, critico: true },
             autoridades_190_180: { critico: false },
+            senha_coacao: { notificar_guardioes: true },
           },
         };
-        const config = data?.configuracao_alertas && Object.keys(data.configuracao_alertas).length > 0
+        let config = data?.configuracao_alertas && Object.keys(data.configuracao_alertas).length > 0
           ? data.configuracao_alertas
           : defaults;
+        // Ensure senha_coacao exists for users with old config
+        if (config.acionamentos && !config.acionamentos.senha_coacao) {
+          config = { ...config, acionamentos: { ...config.acionamentos, senha_coacao: { notificar_guardioes: true } } };
+        }
 
         return json({ success: true, configuracao: config });
       }
@@ -865,14 +870,18 @@ serve(async (req) => {
         // Validate structure
         const wg = acionamentos.whatsapp_guardioes;
         const au = acionamentos.autoridades_190_180;
+        const sc = acionamentos.senha_coacao;
         if (!wg || typeof wg.grave !== "boolean" || typeof wg.critico !== "boolean") {
           return json({ error: "whatsapp_guardioes inválido" }, 400);
         }
         if (!au || typeof au.critico !== "boolean") {
           return json({ error: "autoridades_190_180 inválido" }, 400);
         }
+        if (!sc || typeof sc.notificar_guardioes !== "boolean") {
+          return json({ error: "senha_coacao inválido" }, 400);
+        }
 
-        const configValue = { acionamentos: { whatsapp_guardioes: { grave: wg.grave, critico: wg.critico }, autoridades_190_180: { critico: au.critico } } };
+        const configValue = { acionamentos: { whatsapp_guardioes: { grave: wg.grave, critico: wg.critico }, autoridades_190_180: { critico: au.critico }, senha_coacao: { notificar_guardioes: sc.notificar_guardioes } } };
 
         const { error } = await supabase
           .from("usuarios")

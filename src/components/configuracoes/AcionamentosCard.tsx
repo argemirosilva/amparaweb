@@ -10,11 +10,13 @@ import { toast } from "sonner";
 interface AcionamentosConfig {
   whatsapp_guardioes: { grave: boolean; critico: boolean };
   autoridades_190_180: { critico: boolean };
+  senha_coacao: { notificar_guardioes: boolean };
 }
 
 const DEFAULTS: AcionamentosConfig = {
   whatsapp_guardioes: { grave: true, critico: true },
   autoridades_190_180: { critico: false },
+  senha_coacao: { notificar_guardioes: true },
 };
 
 export default function AcionamentosCard() {
@@ -60,6 +62,8 @@ export default function AcionamentosCard() {
       next.whatsapp_guardioes = { ...next.whatsapp_guardioes, critico: value };
     } else if (path === "au_critico") {
       next.autoridades_190_180 = { ...next.autoridades_190_180, critico: value };
+    } else if (path === "sc_guardioes") {
+      next.senha_coacao = { ...next.senha_coacao, notificar_guardioes: value };
     }
     setConfig(next);
     save(next);
@@ -133,6 +137,28 @@ export default function AcionamentosCard() {
             <Switch
               checked={config.autoridades_190_180.critico}
               onCheckedChange={(v) => toggle("au_critico", v)}
+              disabled={saving}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Senha de Coação */}
+      <Card>
+        <CardContent className="px-4 py-3 space-y-3">
+          <p className="text-sm font-semibold text-foreground">Senha de Coação</p>
+          <p className="text-xs text-muted-foreground">
+            Quando a senha de coação for detectada, o sistema pode notificar silenciosamente seus guardiões via WhatsApp.
+          </p>
+
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-foreground">Notificar Guardiões</p>
+              <p className="text-xs text-muted-foreground">Enviar WhatsApp aos guardiões ao detectar senha de coação</p>
+            </div>
+            <Switch
+              checked={config.senha_coacao.notificar_guardioes}
+              onCheckedChange={(v) => toggle("sc_guardioes", v)}
               disabled={saving}
             />
           </div>
