@@ -20,10 +20,16 @@ interface LocationData {
   created_at: string;
 }
 
+interface UserInfo {
+  nome_completo: string;
+  avatar_url: string | null;
+}
+
 export default function Rastreamento() {
   const { codigo } = useParams<{ codigo: string }>();
   const [share, setShare] = useState<ShareData | null>(null);
   const [location, setLocation] = useState<LocationData | null>(null);
+  const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
   const [status, setStatus] = useState<"loading" | "active" | "expired" | "not_found">("loading");
   const [timeLeft, setTimeLeft] = useState("");
   const mapRef = useRef<any>(null);
@@ -47,6 +53,14 @@ export default function Rastreamento() {
       }
       setShare(data as ShareData);
       setStatus("active");
+
+      // Fetch user info (name + avatar)
+      const { data: userData } = await supabase
+        .from("usuarios")
+        .select("nome_completo, avatar_url")
+        .eq("id", data.user_id)
+        .maybeSingle();
+      if (userData) setUserInfo(userData);
     };
     fetchShare();
   }, [codigo]);
@@ -129,45 +143,105 @@ export default function Rastreamento() {
         L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(mapRef.current);
       }
 
-      const isPanic = share?.tipo === "panico";
-      const pulseColor = isPanic ? "hsl(0,80%,50%)" : "hsl(220,80%,55%)";
-      const pulseAnim = isPanic ? "track-pulse-red" : "track-pulse-blue";
-
-      // Inject styles once
-      if (!document.getElementById("track-marker-styles")) {
+      // Inject ampara-marker styles (same as Mapa.tsx) once
+      if (!document.getElementById("ampara-marker-styles")) {
         const style = document.createElement("style");
-        style.id = "track-marker-styles";
+        style.id = "ampara-marker-styles";
         style.textContent = `
-          .track-marker { display:flex; align-items:center; justify-content:center; }
-          .track-ring {
-            width:40px; height:40px; border-radius:50%;
-            border:3px solid ${pulseColor};
-            display:flex; align-items:center; justify-content:center;
-            background:white;
-            animation: ${pulseAnim} 2s ease-in-out infinite;
+          .ampara-marker {
+            display: flex; flex-direction: column; align-items: center; gap: 2px;
+            filter: drop-shadow(0 2px 6px rgba(0,0,0,0.3));
           }
-          .track-ring img { width:28px; height:28px; }
-          @keyframes track-pulse-blue {
-            0%,100% { box-shadow:0 0 0 0 hsla(220,80%,55%,0.5); }
-            50% { box-shadow:0 0 0 12px hsla(220,80%,55%,0); }
+          .ampara-marker-ring-wrapper { position: relative; display: inline-flex; }
+          .ampara-marker-ring {
+            width: 52px; height: 52px; border-radius: 50%; padding: 3px;
+            background: linear-gradient(135deg, hsl(280 70% 50%), hsl(320 80% 55%));
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0; overflow: hidden;
           }
-          @keyframes track-pulse-red {
-            0%,100% { box-shadow:0 0 0 0 hsla(0,80%,50%,0.5); }
-            50% { box-shadow:0 0 0 12px hsla(0,80%,50%,0); }
+          .ampara-marker-active .ampara-marker-ring {
+            animation: ampara-pulse-blue 2s ease-in-out infinite;
           }
+          @keyframes ampara-pulse-blue {
+            0%, 100% { box-shadow: 0 0 0 0 hsla(220, 80%, 55%, 0.5); }
+            50% { box-shadow: 0 0 0 10px hsla(220, 80%, 55%, 0); }
+          }
+          .ampara-panic-badge {
+            position: absolute; top: -4px; right: -4px;
+            width: 20px; height: 20px; border-radius: 50%;
+            background: hsl(0 80% 50%); color: white;
+            font-size: 13px; font-weight: 900;
+            display: flex; align-items: center; justify-content: center;
+            border: 2px solid white;
+            animation: ampara-badge-pulse 1s ease-in-out infinite; z-index: 10;
+          }
+          @keyframes ampara-badge-pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+          }
+          .ampara-marker-panic .ampara-marker-ring {
+            background: hsl(0 80% 50%);
+            animation: ampara-pulse 1.2s ease-in-out infinite;
+          }
+          @keyframes ampara-pulse {
+            0%, 100% { box-shadow: 0 0 0 0 hsla(0, 80%, 50%, 0.6); }
+            50% { box-shadow: 0 0 0 14px hsla(0, 80%, 50%, 0); }
+          }
+          .ampara-marker-img {
+            width: 44px; height: 44px; min-width: 44px; min-height: 44px;
+            border-radius: 50%; object-fit: cover; aspect-ratio: 1;
+          }
+          .ampara-marker-placeholder {
+            display: flex; align-items: center; justify-content: center;
+            background: hsl(240 5% 26%); color: white; font-weight: 700; font-size: 18px;
+          }
+          .ampara-marker-info {
+            display: flex; flex-direction: column; align-items: center;
+            background: hsl(0 0% 10% / 0.85); backdrop-filter: blur(4px);
+            border-radius: 8px; padding: 3px 8px; max-width: 180px;
+          }
+          .ampara-marker-name { color: white; font-size: 11px; font-weight: 700; line-height: 1.2; }
+          .ampara-marker-status { color: hsl(0 0% 80%); font-size: 10px; line-height: 1.2; }
+          .leaflet-control-attribution, .leaflet-control-attribution a { display: none !important; }
         `;
         document.head.appendChild(style);
       }
 
+      const isPanic = share?.tipo === "panico";
+      const firstName = userInfo?.nome_completo?.split(" ")[0] || "";
+      const avatarUrl = userInfo?.avatar_url || "";
+      const recentLocation = Date.now() - new Date(location.created_at).getTime() < 60_000;
+
+      const imgHtml = avatarUrl
+        ? `<img src="${avatarUrl}" class="ampara-marker-img" alt="${firstName}" />`
+        : `<div class="ampara-marker-img ampara-marker-placeholder">${firstName.charAt(0).toUpperCase() || "?"}</div>`;
+
+      const pulseClass = isPanic ? "ampara-marker-panic" : recentLocation ? "ampara-marker-active" : "";
+      const panicBadge = isPanic ? `<div class="ampara-panic-badge">!</div>` : "";
+
+      const html = `
+        <div class="ampara-marker ${pulseClass}">
+          <div class="ampara-marker-ring-wrapper">
+            <div class="ampara-marker-ring">${imgHtml}</div>
+            ${panicBadge}
+          </div>
+          <div class="ampara-marker-info">
+            <span class="ampara-marker-name">${firstName}</span>
+            <span class="ampara-marker-status">${isPanic ? "🚨 Pânico" : "📍 Ao vivo"}</span>
+          </div>
+        </div>
+      `;
+
       const icon = L.divIcon({
-        className: "track-marker",
-        html: `<div class="track-ring"><img src="${amparaIcon}" alt=""/></div>`,
-        iconSize: [46, 46],
-        iconAnchor: [23, 23],
+        html,
+        className: "",
+        iconSize: [180, 120],
+        iconAnchor: [90, 60],
       });
 
       if (markerRef.current) {
         markerRef.current.setLatLng([location.latitude, location.longitude]);
+        markerRef.current.setIcon(icon);
       } else {
         markerRef.current = L.marker([location.latitude, location.longitude], { icon }).addTo(mapRef.current);
       }
@@ -175,7 +249,7 @@ export default function Rastreamento() {
     };
 
     initMap();
-  }, [location, share]);
+  }, [location, share, userInfo]);
 
   if (status === "loading") {
     return (
