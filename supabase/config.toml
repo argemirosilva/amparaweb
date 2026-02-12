@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.session-maintenance]
 verify_jwt = false
+
+[functions.cleanup-recordings]
+verify_jwt = false
