@@ -70,45 +70,37 @@ export default function GpsSharingCard() {
   const gpsEnabled = gpsPanico || gpsRiscoAlto;
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center gap-2">
-        <MapPin className="w-5 h-5 text-primary" />
-        <h2 className="text-lg font-semibold text-foreground">Compartilhamento de GPS</h2>
+    <div className="space-y-1.5">
+      <div className="flex items-center gap-1.5">
+        <MapPin className="w-4 h-4 text-primary" />
+        <h2 className="text-sm font-semibold text-foreground">Compartilhamento de GPS</h2>
       </div>
 
       <Card>
-        <CardContent className="px-4 py-3 space-y-3">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-foreground">Alerta de Pânico</p>
-              
-            </div>
-            <Switch checked={gpsPanico} onCheckedChange={handlePanico} />
+        <CardContent className="px-3 py-2 space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-xs text-foreground">Alerta de Pânico</p>
+            <Switch checked={gpsPanico} onCheckedChange={handlePanico} className="scale-90" />
           </div>
 
           <div className="border-t border-border" />
 
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-foreground">Risco Alto / Crítico</p>
-              
-            </div>
-            <Switch checked={gpsRiscoAlto} onCheckedChange={handleRisco} />
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-xs text-foreground">Risco Alto / Crítico</p>
+            <Switch checked={gpsRiscoAlto} onCheckedChange={handleRisco} className="scale-90" />
           </div>
 
           {gpsEnabled && (
             <>
               <div className="border-t border-border" />
-
               <div>
-                <p className="text-sm font-medium text-foreground mb-1.5">Duração do compartilhamento</p>
-                
-                <div className="flex gap-2">
+                <p className="text-xs text-foreground mb-1">Duração</p>
+                <div className="flex gap-1.5">
                   {DURACAO_OPTIONS.map((opt) => (
                     <button
                       key={opt.value}
                       onClick={() => handleDuracao(opt.value)}
-                      className="px-3 py-1 rounded-full text-xs font-medium border transition-colors"
+                      className="px-2.5 py-0.5 rounded-full text-[10px] font-medium border transition-colors"
                       style={
                         gpsDuracao === opt.value
                           ? { backgroundColor: "hsl(var(--primary))", color: "hsl(var(--primary-foreground))", borderColor: "hsl(var(--primary))" }

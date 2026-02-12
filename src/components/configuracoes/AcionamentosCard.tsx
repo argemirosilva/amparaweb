@@ -76,91 +76,59 @@ export default function AcionamentosCard() {
   }
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center gap-2">
-        <Bell className="w-5 h-5 text-primary" />
-        <h2 className="text-lg font-semibold text-foreground">Acionamentos Automáticos</h2>
+    <div className="space-y-1.5">
+      <div className="flex items-center gap-1.5">
+        <Bell className="w-4 h-4 text-primary" />
+        <h2 className="text-sm font-semibold text-foreground">Acionamentos Automáticos</h2>
       </div>
-      <p className="text-sm text-muted-foreground">
-        Configure quando o sistema deve notificar automaticamente.
-      </p>
 
       {/* WhatsApp Guardiões */}
       <Card>
-        <CardContent className="px-4 py-3 space-y-3">
-          <p className="text-sm font-semibold text-foreground">WhatsApp para Guardiões</p>
-          <p className="text-xs text-muted-foreground">
-            Quando habilitado, o sistema notifica seus guardiões automaticamente.
-          </p>
+        <CardContent className="px-3 py-2 space-y-2">
+          <p className="text-xs font-semibold text-foreground">WhatsApp para Guardiões</p>
 
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center justify-between gap-2">
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-foreground">Alerta Grave</p>
-              <p className="text-xs text-muted-foreground">Enviar WhatsApp em alerta grave</p>
+              <p className="text-xs text-foreground">Alerta Grave</p>
             </div>
-            <Switch
-              checked={config.whatsapp_guardioes.grave}
-              onCheckedChange={(v) => toggle("wg_grave", v)}
-              disabled={saving}
-            />
+            <Switch checked={config.whatsapp_guardioes.grave} onCheckedChange={(v) => toggle("wg_grave", v)} disabled={saving} className="scale-90" />
           </div>
 
           <div className="border-t border-border" />
 
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center justify-between gap-2">
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-foreground">Alerta Crítico</p>
-              <p className="text-xs text-muted-foreground">Enviar WhatsApp em alerta crítico</p>
+              <p className="text-xs text-foreground">Alerta Crítico</p>
             </div>
-            <Switch
-              checked={config.whatsapp_guardioes.critico}
-              onCheckedChange={(v) => toggle("wg_critico", v)}
-              disabled={saving}
-            />
+            <Switch checked={config.whatsapp_guardioes.critico} onCheckedChange={(v) => toggle("wg_critico", v)} disabled={saving} className="scale-90" />
           </div>
         </CardContent>
       </Card>
 
       {/* Autoridades */}
       <Card>
-        <CardContent className="px-4 py-3 space-y-3">
-          <p className="text-sm font-semibold text-foreground">Autoridades (190 e 180)</p>
-          <p className="text-xs text-muted-foreground">
-            Quando habilitado, o sistema pode acionar automaticamente os canais 190 e 180 em situações críticas.
-          </p>
+        <CardContent className="px-3 py-2 space-y-2">
+          <p className="text-xs font-semibold text-foreground">Autoridades (190 / 180)</p>
 
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center justify-between gap-2">
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-foreground">Alerta Crítico</p>
-              <p className="text-xs text-muted-foreground">Acionar 190/180 em alerta crítico</p>
+              <p className="text-xs text-foreground">Acionar em alerta crítico</p>
             </div>
-            <Switch
-              checked={config.autoridades_190_180.critico}
-              onCheckedChange={(v) => toggle("au_critico", v)}
-              disabled={saving}
-            />
+            <Switch checked={config.autoridades_190_180.critico} onCheckedChange={(v) => toggle("au_critico", v)} disabled={saving} className="scale-90" />
           </div>
         </CardContent>
       </Card>
 
       {/* Senha de Coação */}
       <Card>
-        <CardContent className="px-4 py-3 space-y-3">
-          <p className="text-sm font-semibold text-foreground">Senha de Coação</p>
-          <p className="text-xs text-muted-foreground">
-            Quando a senha de coação for detectada, o sistema pode notificar silenciosamente seus guardiões via WhatsApp.
-          </p>
+        <CardContent className="px-3 py-2 space-y-2">
+          <p className="text-xs font-semibold text-foreground">Senha de Coação</p>
 
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center justify-between gap-2">
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-foreground">Notificar Guardiões</p>
-              <p className="text-xs text-muted-foreground">Enviar WhatsApp aos guardiões ao detectar senha de coação</p>
+              <p className="text-xs text-foreground">Notificar guardiões via WhatsApp</p>
             </div>
-            <Switch
-              checked={config.senha_coacao.notificar_guardioes}
-              onCheckedChange={(v) => toggle("sc_guardioes", v)}
-              disabled={saving}
-            />
+            <Switch checked={config.senha_coacao.notificar_guardioes} onCheckedChange={(v) => toggle("sc_guardioes", v)} disabled={saving} className="scale-90" />
           </div>
         </CardContent>
       </Card>
