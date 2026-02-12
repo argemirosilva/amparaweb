@@ -460,7 +460,8 @@ serve(async (req) => {
         }
 
         const ext = (file_name || "audio.webm").split(".").pop() || "webm";
-        const storagePath = `${userId}/${crypto.randomUUID()}.${ext}`;
+        const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+        const storagePath = `${userId}/${today}/${crypto.randomUUID()}.${ext}`;
         const mime = content_type || "audio/webm";
         const sizeMb = +(bytes.length / (1024 * 1024)).toFixed(3);
 
