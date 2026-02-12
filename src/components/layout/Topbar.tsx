@@ -14,9 +14,13 @@ export default function Topbar() {
           <p className="text-sm font-medium text-foreground leading-tight">{usuario?.nome_completo}</p>
           <p className="text-xs text-muted-foreground">{usuario?.email}</p>
         </div>
-        <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center">
-          <User className="w-4 h-4 text-muted-foreground" />
-        </div>
+        {usuario?.avatar_url ? (
+          <img src={usuario.avatar_url} alt="Avatar" className="w-9 h-9 rounded-full object-cover" />
+        ) : (
+          <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center">
+            <User className="w-4 h-4 text-muted-foreground" />
+          </div>
+        )}
       </div>
     </header>
   );
