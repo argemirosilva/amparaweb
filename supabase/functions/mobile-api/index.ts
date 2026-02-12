@@ -332,6 +332,7 @@ async function handlePing(
     if (body.bateria_percentual !== undefined) deviceData.bateria_percentual = body.bateria_percentual;
     if (body.is_charging !== undefined) deviceData.is_charging = body.is_charging;
     if (body.dispositivo_info !== undefined) deviceData.dispositivo_info = body.dispositivo_info;
+    else if (body.device_model !== undefined) deviceData.dispositivo_info = body.device_model;
     if (body.versao_app !== undefined) deviceData.versao_app = body.versao_app;
     if (body.is_recording !== undefined) deviceData.is_recording = body.is_recording;
     if (body.is_monitoring !== undefined) deviceData.is_monitoring = body.is_monitoring;
