@@ -66,14 +66,22 @@ export default function DeviceStatusCard() {
   return (
     <>
       <div className="ampara-card p-5 relative overflow-hidden">
-        {/* Monitoring indicator */}
-        {device?.is_monitoring && (
-          <div className="absolute top-0 right-0 flex items-center gap-1 bg-primary/10 text-primary text-[10px] font-medium pl-2 pr-2.5 py-0.5 rounded-bl-lg">
+        {/* Recording / Monitoring indicator */}
+        {(device?.is_recording || device?.is_monitoring) && (
+          <div className={`absolute top-0 right-0 flex items-center gap-1 text-[10px] font-medium pl-2 pr-2.5 py-0.5 rounded-bl-lg ${
+            device.is_recording
+              ? "bg-destructive/10 text-destructive"
+              : "bg-primary/10 text-primary"
+          }`}>
             <span className="relative flex h-1.5 w-1.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60" />
-              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
+              <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-60 ${
+                device.is_recording ? "bg-destructive" : "bg-emerald-400"
+              }`} />
+              <span className={`relative inline-flex rounded-full h-1.5 w-1.5 ${
+                device.is_recording ? "bg-destructive" : "bg-emerald-500"
+              }`} />
             </span>
-            Monitorando
+            {device.is_recording ? "Gravando" : "Monitorando"}
           </div>
         )}
 
