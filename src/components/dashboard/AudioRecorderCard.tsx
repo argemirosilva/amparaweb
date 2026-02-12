@@ -213,8 +213,11 @@ export default function AudioRecorderCard({ onUploaded }: AudioRecorderCardProps
       toast.error("Arquivo muito grande. Máximo: 50 MB");
       return;
     }
-    if (!file.type.startsWith("audio/")) {
-      toast.error("Selecione um arquivo de áudio válido");
+    const allowedTypes = ["audio/mpeg", "audio/mp3", "audio/wav", "audio/x-wav", "audio/ogg"];
+    const allowedExts = [".mp3", ".wav", ".ogg"];
+    const fileExt = file.name.toLowerCase().slice(file.name.lastIndexOf("."));
+    if (!allowedTypes.includes(file.type) && !allowedExts.includes(fileExt)) {
+      toast.error("Formato não suportado. Envie arquivos MP3, WAV ou OGG.");
       return;
     }
 
@@ -310,7 +313,7 @@ export default function AudioRecorderCard({ onUploaded }: AudioRecorderCardProps
 
         {!recording && !uploading && !converting && (
           <label className="cursor-pointer">
-            <input type="file" accept="audio/*" className="hidden" onChange={handleFileUpload} />
+            <input type="file" accept="audio/mpeg,audio/mp3,audio/wav,audio/x-wav,audio/ogg,.mp3,.wav,.ogg" className="hidden" onChange={handleFileUpload} />
             <div className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border text-sm text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-colors">
               <Upload className="w-4 h-4" />
               <span className="hidden sm:inline">Enviar arquivo</span>
