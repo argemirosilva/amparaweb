@@ -2,6 +2,7 @@ import MonitoringScheduleEditor from "@/components/configuracoes/MonitoringSched
 import ChangePasswordCard from "@/components/configuracoes/ChangePasswordCard";
 import RetentionSettingCard from "@/components/configuracoes/RetentionSettingCard";
 import GpsSharingCard from "@/components/configuracoes/GpsSharingCard";
+import AcionamentosCard from "@/components/configuracoes/AcionamentosCard";
 
 export default function ConfiguracoesPage() {
   return (
@@ -10,6 +11,7 @@ export default function ConfiguracoesPage() {
       <div className="max-w-lg space-y-6">
         <ChangePasswordCard />
         <MonitoringScheduleEditor />
+        <AcionamentosCard />
         <GpsSharingCard />
         <RetentionSettingCard />
       </div>

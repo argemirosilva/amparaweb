@@ -775,6 +775,7 @@ export type Database = {
           codigo_verificacao_expira: string | null
           compartilhar_gps_panico: boolean
           compartilhar_gps_risco_alto: boolean
+          configuracao_alertas: Json
           created_at: string
           data_nascimento: string | null
           email: string
@@ -810,6 +811,7 @@ export type Database = {
           codigo_verificacao_expira?: string | null
           compartilhar_gps_panico?: boolean
           compartilhar_gps_risco_alto?: boolean
+          configuracao_alertas?: Json
           created_at?: string
           data_nascimento?: string | null
           email: string
@@ -845,6 +847,7 @@ export type Database = {
           codigo_verificacao_expira?: string | null
           compartilhar_gps_panico?: boolean
           compartilhar_gps_risco_alto?: boolean
+          configuracao_alertas?: Json
           created_at?: string
           data_nascimento?: string | null
           email?: string
