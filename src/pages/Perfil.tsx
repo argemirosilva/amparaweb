@@ -284,8 +284,16 @@ export default function PerfilPage() {
           <div className="border border-border rounded-xl p-3 space-y-2">
             <input type="text" className="ampara-input" placeholder="Nome" value={newGuardiao.nome}
               onChange={e => setNewGuardiao({ ...newGuardiao, nome: e.target.value })} />
-            <input type="text" className="ampara-input" placeholder="Vínculo (mãe, irmã...)" value={newGuardiao.vinculo}
-              onChange={e => setNewGuardiao({ ...newGuardiao, vinculo: e.target.value })} />
+            <select
+              className="ampara-input"
+              value={newGuardiao.vinculo}
+              onChange={e => setNewGuardiao({ ...newGuardiao, vinculo: e.target.value })}
+            >
+              <option value="" disabled>Selecione o vínculo</option>
+              <option value="Amigo(a)">Amigo(a)</option>
+              <option value="Irmão(ã)">Irmão(ã)</option>
+              <option value="Pais">Pais</option>
+            </select>
             <input type="tel" className="ampara-input" placeholder="(00) 00000-0000" value={newGuardiao.telefone_whatsapp}
               onChange={e => setNewGuardiao({ ...newGuardiao, telefone_whatsapp: formatPhone(e.target.value) })} />
             <Button onClick={addGuardiao} disabled={saving} size="sm" className="w-full">
