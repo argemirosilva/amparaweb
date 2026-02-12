@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { callWebApi } from "@/services/webApiService";
-import { Trash2, Loader2 } from "lucide-react";
+import { RefreshCw, Loader2 } from "lucide-react";
 import GradientIcon from "@/components/ui/gradient-icon";
 import { toast } from "sonner";
 
@@ -48,7 +48,7 @@ export default function RetentionSettingCard() {
   return (
     <div className="ampara-card p-5 space-y-3">
       <div className="flex items-center gap-3">
-        <GradientIcon icon={Trash2} size="sm" />
+        <GradientIcon icon={RefreshCw} size="sm" />
         <div>
           <p className="text-sm font-semibold text-foreground">Retenção de gravações</p>
           <p className="text-xs text-muted-foreground">
