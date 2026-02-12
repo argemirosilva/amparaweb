@@ -1609,7 +1609,9 @@ async function handleReportarStatusGravacao(
   }
 
   // ── Session sealing flow ──
-  // Seal active session on finalization, regardless of origem_gravacao
+  // Only seal immediately for specific motivos; otherwise just update device flags
+  const MOTIVOS_SEAL_IMEDIATO = ["botao_manual", "parada_panico"];
+
   if (statusGravacao === "finalizada") {
     let sessionQuery = supabase
       .from("monitoramento_sessoes")
@@ -1624,11 +1626,37 @@ async function handleReportarStatusGravacao(
     const { data: activeSession } = await sessionQuery.maybeSingle();
 
     if (activeSession) {
-      // Update device status — reset by user_id (device_id may differ)
+      const shouldSealNow = MOTIVOS_SEAL_IMEDIATO.includes(motivoParada ?? "");
+
+      // Update device status — only reset is_recording; is_monitoring stays true
+      // until the monitoring window expires via session-maintenance
       await supabase
         .from("device_status")
-        .update({ is_recording: false, is_monitoring: false })
+        .update({ is_recording: false })
         .eq("user_id", userId);
+
+      if (!shouldSealNow) {
+        // Not an immediate seal motivo — just log and acknowledge
+        await supabase.from("audit_logs").insert({
+          user_id: userId,
+          action_type: "recording_finalized_no_seal",
+          success: true,
+          ip_address: ip,
+          details: { session_id: activeSession.id, motivo_parada: motivoParada, origem: origemGravacao, total_segmentos: totalSegmentos },
+        });
+
+        return jsonResponse({
+          success: true,
+          message: "Gravação finalizada, sessão permanece ativa",
+          sessao_id: activeSession.id,
+          status: "ativa",
+          total_segmentos: totalSegmentos ?? null,
+          motivo_parada: motivoParada ?? null,
+          servidor_timestamp: new Date().toISOString(),
+        });
+      }
+
+      // ── Immediate seal: botao_manual or parada_panico ──
 
       // If total_segments is 0, recording was too short (<15s) — discard entirely
       if (totalSegmentos === 0) {

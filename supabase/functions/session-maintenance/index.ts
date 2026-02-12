@@ -194,6 +194,12 @@ serve(async (req) => {
           })
           .eq("id", session.id);
 
+        // Reset device flags — monitoring window has ended
+        await supabase
+          .from("device_status")
+          .update({ is_recording: false, is_monitoring: false })
+          .eq("user_id", session.user_id);
+
         await supabase.from("audit_logs").insert({
           user_id: session.user_id,
           action_type: "session_sealed",
