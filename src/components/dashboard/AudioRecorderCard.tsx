@@ -100,13 +100,13 @@ export default function AudioRecorderCard({ onUploaded }: AudioRecorderCardProps
         file_base64: base64,
         file_name: fileName,
         content_type: contentType,
-        duracao_segundos: duration,
+        duracao_segundos: duration
       });
 
       if (res.ok) {
         toast.success("Gravação enviada com sucesso!");
         onUploaded?.();
-        
+
       } else {
         toast.error(res.data?.error || "Erro ao enviar gravação");
       }
@@ -120,8 +120,6 @@ export default function AudioRecorderCard({ onUploaded }: AudioRecorderCardProps
 
   const startRecording = async () => {
     try {
-      // Stop any playing waveform players
-      window.dispatchEvent(new CustomEvent("waveform-player-stop-all"));
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mediaRecorder = new MediaRecorder(stream, { mimeType: "audio/webm;codecs=opus" });
       mediaRecorderRef.current = mediaRecorder;
@@ -193,9 +191,9 @@ export default function AudioRecorderCard({ onUploaded }: AudioRecorderCardProps
           resolve(isFinite(audio.duration) ? audio.duration : 0);
           URL.revokeObjectURL(url);
         };
-        audio.onerror = () => { resolve(0); URL.revokeObjectURL(url); };
+        audio.onerror = () => {resolve(0);URL.revokeObjectURL(url);};
       });
-    } catch { /* ignore */ }
+    } catch {/* ignore */}
 
     const isWav = file.type === "audio/wav" || file.type === "audio/x-wav" || file.name.toLowerCase().endsWith(".wav");
     if (isWav) {
@@ -223,30 +221,30 @@ export default function AudioRecorderCard({ onUploaded }: AudioRecorderCardProps
     <div className="ampara-card p-4 space-y-4">
       <div className="flex items-center gap-3">
         <GradientIcon icon={Mic} size="sm" />
-        <h3 className="text-sm font-semibold text-foreground">Gravar</h3>
+        
       </div>
       {/* Recorder / Upload controls */}
       <div className="flex items-center gap-3 flex-wrap">
-        {recording ? (
-          <button
-            onClick={stopRecording}
-            className="w-12 h-12 rounded-full bg-destructive flex items-center justify-center shrink-0 hover:bg-destructive/90 transition-colors shadow-lg animate-pulse"
-          >
+        {recording ?
+        <button
+          onClick={stopRecording}
+          className="w-12 h-12 rounded-full bg-destructive flex items-center justify-center shrink-0 hover:bg-destructive/90 transition-colors shadow-lg animate-pulse">
+
             <Square className="w-5 h-5 text-destructive-foreground" />
-          </button>
-        ) : (
-          <button
-            onClick={startRecording}
-            disabled={uploading || converting}
-            className="w-12 h-12 rounded-full bg-primary flex items-center justify-center shrink-0 hover:bg-primary/90 transition-colors shadow-lg disabled:opacity-50"
-          >
+          </button> :
+
+        <button
+          onClick={startRecording}
+          disabled={uploading || converting}
+          className="w-12 h-12 rounded-full bg-primary flex items-center justify-center shrink-0 hover:bg-primary/90 transition-colors shadow-lg disabled:opacity-50">
+
             <Mic className="w-5 h-5 text-primary-foreground" />
           </button>
-        )}
+        }
 
         <div className="flex-1 min-w-0">
-          {recording ? (
-            <div className="space-y-1">
+          {recording ?
+          <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <span className="relative flex h-2.5 w-2.5">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75" />
@@ -256,39 +254,39 @@ export default function AudioRecorderCard({ onUploaded }: AudioRecorderCardProps
                 <span className="text-sm text-muted-foreground tabular-nums">{formatRecDuration(elapsed)}</span>
               </div>
               <p className="text-xs text-muted-foreground">Toque no botão para parar e enviar</p>
-            </div>
-          ) : converting ? (
-            <span className="text-sm font-medium text-foreground flex items-center gap-2">
+            </div> :
+          converting ?
+          <span className="text-sm font-medium text-foreground flex items-center gap-2">
               <Loader2 className="w-4 h-4 animate-spin text-primary" />
               Convertendo para MP3...
-            </span>
-          ) : uploading ? (
-            <div className="space-y-1.5">
+            </span> :
+          uploading ?
+          <div className="space-y-1.5">
               <span className="text-sm font-medium text-foreground flex items-center gap-2">
                 <Loader2 className="w-4 h-4 animate-spin text-primary" />
                 Enviando gravação...
               </span>
               <Progress value={undefined} className="h-1.5" />
-            </div>
-          ) : (
-            <div>
+            </div> :
+
+          <div>
               <p className="text-sm font-medium text-foreground">Gravar ou enviar áudio</p>
               <p className="text-xs text-muted-foreground">Grave pelo microfone ou envie um arquivo</p>
             </div>
-          )}
+          }
         </div>
 
-        {!recording && !uploading && !converting && (
-          <label className="cursor-pointer">
+        {!recording && !uploading && !converting &&
+        <label className="cursor-pointer">
             <input type="file" accept="audio/mpeg,audio/mp3,audio/wav,audio/x-wav,audio/ogg,.mp3,.wav,.ogg" className="hidden" onChange={handleFileUpload} />
             <div className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border text-sm text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-colors">
               <Upload className="w-4 h-4" />
               <span className="hidden sm:inline">Enviar arquivo</span>
             </div>
           </label>
-        )}
+        }
       </div>
 
-    </div>
-  );
+    </div>);
+
 }
