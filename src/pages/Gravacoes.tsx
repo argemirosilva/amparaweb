@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import AudioRecorderCard from "@/components/dashboard/AudioRecorderCard";
 import GravacaoExpandedContent from "@/components/gravacoes/GravacaoExpandedContent";
+import GradientIcon from "@/components/ui/gradient-icon";
 import {
   Mic,
   Clock,
@@ -133,9 +134,7 @@ export default function GravacoesPage() {
         </div>
       ) : gravacoes.length === 0 ? (
         <div className="ampara-card flex flex-col items-center justify-center py-16 gap-3">
-          <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center">
-            <Mic className="w-8 h-8 text-primary" />
-          </div>
+          <GradientIcon icon={Mic} size="lg" />
           <p className="text-foreground font-medium">Nenhuma gravação encontrada</p>
           <p className="text-sm text-muted-foreground text-center max-w-xs">
             Grave um áudio ou envie um arquivo usando o painel acima.
@@ -157,9 +156,7 @@ export default function GravacoesPage() {
                   onClick={() => setExpanded(isExpanded ? null : g.id)}
                   className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-accent/30 transition-colors"
                 >
-                  <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                    <Volume2 className="w-3.5 h-3.5 text-primary" />
-                  </div>
+                  <GradientIcon icon={Volume2} size="sm" />
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">

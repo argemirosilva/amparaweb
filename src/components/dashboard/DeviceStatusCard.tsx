@@ -1,6 +1,7 @@
 import { useDeviceStatus } from "@/hooks/useDeviceStatus";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Smartphone, Clock, BatteryFull, BatteryMedium, BatteryLow, BatteryCharging, Wifi, WifiOff } from "lucide-react";
+import GradientIcon from "@/components/ui/gradient-icon";
 
 function timeSince(date: string): string {
   const s = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
@@ -69,12 +70,7 @@ export default function DeviceStatusCard() {
       )}
 
       {/* Icon */}
-      <div
-        className="w-14 h-14 rounded-2xl flex items-center justify-center mb-3 shadow-md"
-        style={{ background: "var(--ampara-gradient)" }}
-      >
-        <Smartphone className="w-7 h-7 text-white" />
-      </div>
+      <GradientIcon icon={Smartphone} />
 
       {/* Title */}
       <p className="text-sm font-semibold text-primary mb-0.5">Dispositivo</p>

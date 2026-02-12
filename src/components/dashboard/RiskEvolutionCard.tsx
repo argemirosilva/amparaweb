@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TrendingUp, TrendingDown, Minus, ShieldAlert, AlertTriangle, Shield, ShieldCheck, ChevronDown, ChevronUp } from "lucide-react";
+import GradientIcon from "@/components/ui/gradient-icon";
 import { useAuth } from "@/contexts/AuthContext";
 import { callWebApi } from "@/services/webApiService";
 import {
@@ -102,7 +103,7 @@ export default function RiskEvolutionCard() {
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base font-semibold flex items-center gap-2">
-            <LevelIcon className="w-5 h-5" style={{ color: level.color }} />
+            <GradientIcon icon={LevelIcon} size="sm" />
             Evolução do Risco
           </CardTitle>
           <Tabs value={String(window)} onValueChange={handleWindowChange}>
