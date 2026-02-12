@@ -55,6 +55,8 @@ function injectStyles() {
       display: flex;
       align-items: center;
       justify-content: center;
+      flex-shrink: 0;
+      overflow: hidden;
     }
     .ampara-marker-panic .ampara-marker-ring {
       background: hsl(0 80% 50%);
@@ -67,8 +69,12 @@ function injectStyles() {
     .ampara-marker-img {
       width: 44px;
       height: 44px;
+      min-width: 44px;
+      min-height: 44px;
       border-radius: 50%;
       object-fit: cover;
+      aspect-ratio: 1;
+    }
       background: hsl(240 5% 26%);
     }
     .ampara-marker-placeholder {
@@ -173,8 +179,8 @@ export default function Mapa() {
     const icon = L.divIcon({
       html,
       className: "",
-      iconSize: [80, 90],
-      iconAnchor: [40, 45],
+      iconSize: [180, 120],
+      iconAnchor: [90, 60],
     });
 
     if (markerRef.current) {
