@@ -1211,21 +1211,25 @@ async function handleReceberAudio(
 
   // If no active session exists but we have a device_id, auto-create one
   // so segments are always saved in gravacoes_segmentos
+  const origemGravacao = body.origem_gravacao as string || "auto_segmento";
   if (!activeSession && deviceId) {
+    const validOrigens = ["automatico", "botao_panico", "agendado", "comando_voz", "botao_manual"];
+    const sessionOrigem = validOrigens.includes(origemGravacao) ? origemGravacao : "auto_segmento";
+
     const { data: newSession } = await supabase
       .from("monitoramento_sessoes")
       .insert({
         user_id: user.id,
         device_id: deviceId,
         status: "ativa",
-        origem: "auto_segmento",
+        origem: sessionOrigem,
       })
       .select("id")
       .single();
 
     if (newSession) {
       activeSession = newSession;
-      console.log(`Auto-created monitoring session ${newSession.id} for device ${deviceId}`);
+      console.log(`Auto-created monitoring session ${newSession.id} for device ${deviceId}, origem: ${sessionOrigem}`);
     }
   }
 
@@ -1588,8 +1592,68 @@ async function handleReportarStatusGravacao(
     return errorResponse(`status_gravacao inválido. Valores aceitos: ${validStatuses.join(", ")}`, 400);
   }
 
+  const validOrigens = ["automatico", "botao_panico", "agendado", "comando_voz", "botao_manual"];
+
+  // ── Session creation flow (iniciarGravacao) ──
+  if (statusGravacao === "iniciada" && deviceId) {
+    // Check if there's already an active session for this device
+    const { data: existingSession } = await supabase
+      .from("monitoramento_sessoes")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("device_id", deviceId)
+      .eq("status", "ativa")
+      .maybeSingle();
+
+    if (!existingSession) {
+      const { data: newSession } = await supabase
+        .from("monitoramento_sessoes")
+        .insert({
+          user_id: userId,
+          device_id: deviceId,
+          status: "ativa",
+          origem: origemGravacao && validOrigens.includes(origemGravacao) ? origemGravacao : "manual",
+        })
+        .select("id")
+        .single();
+
+      console.log(`Created monitoring session ${newSession?.id} for device ${deviceId}, origem: ${origemGravacao}`);
+
+      // Update device status
+      await supabase
+        .from("device_status")
+        .update({ is_recording: true, is_monitoring: true })
+        .eq("user_id", userId)
+        .eq("device_id", deviceId);
+
+      await supabase.from("audit_logs").insert({
+        user_id: userId,
+        action_type: "session_created",
+        success: true,
+        ip_address: ip,
+        details: { session_id: newSession?.id, origem: origemGravacao, device_id: deviceId },
+      });
+
+      return jsonResponse({
+        success: true,
+        message: "Sessão de gravação iniciada",
+        sessao_id: newSession?.id,
+        origem_gravacao: origemGravacao,
+        servidor_timestamp: new Date().toISOString(),
+      });
+    }
+
+    // Session already exists, just acknowledge
+    return jsonResponse({
+      success: true,
+      message: "Sessão de gravação já ativa",
+      sessao_id: existingSession.id,
+      servidor_timestamp: new Date().toISOString(),
+    });
+  }
+
   // ── Session sealing flow ──
-  if (statusGravacao === "finalizada" && origemGravacao && ["automatico", "botao_panico", "agendado", "comando_voz", "botao_manual"].includes(origemGravacao)) {
+  if (statusGravacao === "finalizada" && origemGravacao && validOrigens.includes(origemGravacao)) {
     let sessionQuery = supabase
       .from("monitoramento_sessoes")
       .select("id")
