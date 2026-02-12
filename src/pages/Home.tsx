@@ -2,17 +2,28 @@ import DeviceStatusCard from "@/components/dashboard/DeviceStatusCard";
 import MonitoringStatusCard from "@/components/dashboard/MonitoringStatusCard";
 import AudioRecorderCard from "@/components/dashboard/AudioRecorderCard";
 import RiskEvolutionCard from "@/components/dashboard/RiskEvolutionCard";
+import amparaCircle from "@/assets/ampara-circle-logo.png";
 
 export default function HomePage() {
   return (
-    <div className="space-y-6 animate-fade-in">
-      <h1 className="text-2xl font-display font-bold text-foreground">Dashboard</h1>
-      <RiskEvolutionCard />
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <DeviceStatusCard />
-        <AudioRecorderCard />
+    <div className="relative space-y-6 animate-fade-in overflow-hidden">
+      {/* Background watermark */}
+      <img
+        src={amparaCircle}
+        alt=""
+        aria-hidden="true"
+        className="pointer-events-none fixed bottom-[-15%] left-1/2 -translate-x-1/2 w-[140vw] max-w-none opacity-30 z-0 select-none"
+      />
+
+      <div className="relative z-10 space-y-6">
+        <h1 className="text-2xl font-display font-bold text-foreground">Dashboard</h1>
+        <RiskEvolutionCard />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <DeviceStatusCard />
+          <AudioRecorderCard />
+        </div>
+        <MonitoringStatusCard />
       </div>
-      <MonitoringStatusCard />
     </div>
   );
 }
