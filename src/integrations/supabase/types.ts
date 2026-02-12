@@ -773,6 +773,8 @@ export type Database = {
           avatar_url: string | null
           codigo_verificacao: string | null
           codigo_verificacao_expira: string | null
+          compartilhar_gps_panico: boolean
+          compartilhar_gps_risco_alto: boolean
           created_at: string
           data_nascimento: string | null
           email: string
@@ -805,6 +807,8 @@ export type Database = {
           avatar_url?: string | null
           codigo_verificacao?: string | null
           codigo_verificacao_expira?: string | null
+          compartilhar_gps_panico?: boolean
+          compartilhar_gps_risco_alto?: boolean
           created_at?: string
           data_nascimento?: string | null
           email: string
@@ -837,6 +841,8 @@ export type Database = {
           avatar_url?: string | null
           codigo_verificacao?: string | null
           codigo_verificacao_expira?: string | null
+          compartilhar_gps_panico?: boolean
+          compartilhar_gps_risco_alto?: boolean
           created_at?: string
           data_nascimento?: string | null
           email?: string
