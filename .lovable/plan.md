@@ -1,128 +1,45 @@
 
 
-# Risk Engine -- Plano de Implementacao
+# Atualizar Prompt do Gemini no Risk Engine
 
-## Visao Geral
+## O que muda
 
-Criar um motor de avaliacao de risco que consolida dados historicos do banco (alertas de panico, gravacoes, analises, audit logs, perfil do agressor), envia um payload resumido ao Gemini, salva o resultado e plota um grafico de evolucao no dashboard.
+Substituir o prompt de sistema atual (generico e curto) na funcao `computeRiskWithGemini` pelo prompt detalhado fornecido, que inclui:
 
----
+- Metodologia de pesos por tipo de evento (panic_activated: +20, coercion: +25, etc.)
+- Regras de calculo de tendencia (media dos primeiros 30% vs ultimos 30%)
+- Faixas de nivel: 0-25 Baixo, 26-50 Moderado, 51-75 Alto, 76-100 Critico
+- Regras de auto-escalada para Critico (coercao + ameaca + arma, descumprimento de medida protetiva)
+- Instrucoes para fatores principais (3-6 itens, linguagem tecnica e curta)
+- Conduta: nao inventar fatos, nao inserir dados pessoais
 
-## 1. Nova Tabela: `risk_assessments`
+## Alteracoes
 
-Criar via migration:
+### Arquivo: `supabase/functions/web-api/index.ts`
 
-```text
-Campos:
-- id uuid PK default gen_random_uuid()
-- usuario_id uuid NOT NULL (FK -> usuarios.id)
-- window_days int NOT NULL (7, 15 ou 30)
-- period_start date NOT NULL
-- period_end date NOT NULL
-- risk_score int NOT NULL (0..100)
-- risk_level text NOT NULL
-- trend text NOT NULL
-- trend_percentage numeric
-- fatores jsonb
-- resumo_tecnico text
-- computed_at timestamptz default now()
+**1. Substituir `systemPrompt` (linhas 862-872)**
 
-Indice: (usuario_id, window_days, period_end DESC)
-RLS: policy restritiva (false) igual as demais tabelas sensiveis -- acesso apenas via service_role na edge function.
-```
+Trocar o prompt atual de ~10 linhas pelo prompt completo fornecido pelo usuario, com todas as regras de analise contextual/temporal, heuristica de pesos, calculo de tendencia, faixas de nivel e regras de auto-escalada.
 
----
+**2. Atualizar `risk_level` enum no tool calling (linha 904)**
 
-## 2. Backend: Nova action `getRiskAssessment` na `web-api`
+Ajustar os valores do enum para alinhar com as faixas do novo prompt:
+- Remover "Sem Risco" (o prompt usa 0-25 como "Baixo")
+- Manter: `["Baixo", "Moderado", "Alto", "Critico"]`
 
-Adicionar ao switch da `web-api/index.ts` uma action que:
+**3. Adicionar `trend_percentage` como required no schema (linha 910)**
 
-1. Recebe `{ window_days: 7|15|30 }` do frontend
-2. Verifica cache: busca `risk_assessments` onde `usuario_id = userId`, `window_days` = pedido, `period_end` = hoje, e `computed_at` < 1h atras
-3. Se existe e e recente, retorna direto (sem chamar Gemini)
-4. Se nao existe ou esta velho:
-   a. Chama `buildRiskHistoryPayload(supabase, userId, windowDays)`
-   b. Chama `computeRiskWithGemini(payload)` via Lovable AI Gateway
-   c. Salva/upsert em `risk_assessments`
-   d. Retorna resultado
+O novo prompt define calculo especifico para trend_percentage, entao deve ser obrigatorio.
 
-### 2a. Funcao `buildRiskHistoryPayload`
+**4. Atualizar fallback default (linhas 924-931 e 942-948)**
 
-Consulta as tabelas existentes e monta o JSON:
+Mudar `risk_level` default de "Sem Risco" para "Baixo" nos fallbacks de erro, alinhando com o novo prompt.
 
-| Fonte | Tabela | Dados extraidos |
-|---|---|---|
-| Alertas de panico | `alertas_panico` | Contagens por dia: ativados, cancelados (manual, timeout, coercao), status |
-| Gravacoes | `gravacoes` | Contagens por dia: total de audios, status |
-| Segmentos | `gravacoes_segmentos` | Contagem de segmentos por dia |
-| Analises de audio | `gravacoes_analises` | Categorias detectadas (ameaca, violencia_fisica, psicologica, moral, patrimonial), nivel_risco por gravacao |
-| Perfil agressor | `vitimas_agressores` + `agressores` | Flags: arma, forca_seguranca |
-| Audit logs | `audit_logs` | Eventos de coercao (login_coercion etc.) |
+### Deploy
 
-Resultado: array `daily_summary` com contagens por dia, `aggressor_profile_flags`, e `last_N_days_totals`. Sem textos sensiveis -- apenas contagens e labels.
-
-### 2b. Funcao `computeRiskWithGemini`
-
-- Envia o payload ao Lovable AI Gateway (`google/gemini-3-flash-preview`) com tool calling para extrair JSON estruturado
-- Prompt de sistema instrui o modelo a retornar: `risk_score` (0-100), `risk_level`, `trend`, `trend_percentage`, `fatores_principais[]`, `resumo_tecnico`
-- Usa tool calling (structured output) para garantir JSON valido
-
-### 2c. Nova action `getRiskHistory`
-
-Para plotar o grafico, retorna os ultimos N registros de `risk_assessments` para o usuario em uma janela especifica, ordenados por `period_end`.
-
----
-
-## 3. Frontend: Card "Evolucao do Risco" no Dashboard
-
-### Novo componente: `src/components/dashboard/RiskEvolutionCard.tsx`
-
-- Seletor de janela: 7 / 15 / 30 dias (tabs ou botoes)
-- Grafico de linha (`recharts`, ja instalado) mostrando `risk_score` ao longo do tempo
-- Badge com nivel atual e cor correspondente (usando o sistema de cores ja existente)
-- Indicador de tendencia (seta + percentual)
-- 3 bullets com fatores principais
-- Estado de loading enquanto computa
-- Chamada nao-bloqueante ao montar (useEffect)
-
-### Alteracao em `src/pages/Home.tsx`
-
-Adicionar `<RiskEvolutionCard />` apos o `DeviceStatusCard`.
-
----
-
-## 4. Sequencia de Implementacao
-
-```text
-Passo 1: Migration -- criar tabela risk_assessments + indice + RLS
-Passo 2: Edge function -- adicionar buildRiskHistoryPayload, computeRiskWithGemini, actions getRiskAssessment e getRiskHistory na web-api
-Passo 3: Deploy web-api
-Passo 4: Criar RiskEvolutionCard.tsx com recharts
-Passo 5: Integrar no Home.tsx
-```
-
----
+Redeploy da `web-api` apos as alteracoes.
 
 ## Detalhes Tecnicos
 
-**Prompt Gemini (resumo):**
-- System prompt define o modelo como especialista em avaliacao de risco de violencia domestica
-- Recebe apenas contagens e flags, nunca textos sensiveis
-- Retorna via tool calling: `{ risk_score, risk_level, trend, trend_percentage, fatores_principais, resumo_tecnico }`
-
-**Cache:**
-- Chave: `(usuario_id, window_days, period_end = hoje)`
-- TTL: 1 hora (comparando `computed_at` com `now()`)
-- Se cache valido, zero chamadas ao Gemini
-
-**Grafico:**
-- `LineChart` do recharts com area preenchida
-- Cor da linha dinamica baseada no nivel de risco atual
-- Tooltip mostrando score e data
-- Responsivo para mobile
-
-**Seguranca:**
-- Tabela com RLS restritiva (acesso bloqueado via client direto)
-- Acesso somente via `web-api` com `service_role_key`
-- Nenhum texto sensivel exposto -- apenas scores, labels e contagens
+O prompt completo sera inserido como template literal no `systemPrompt`, mantendo a mesma estrutura de chamada ao Lovable AI Gateway com tool calling. Nenhuma outra parte do codigo (buildRiskHistoryPayload, cache, frontend) sera alterada.
 
