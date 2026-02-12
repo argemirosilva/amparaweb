@@ -136,7 +136,7 @@ export default function GravacoesPage() {
             <button
               key={r}
               onClick={() => { setFilterRisco(r); setPage(1); }}
-              className="px-3 py-1 rounded-full text-xs font-medium border transition-colors"
+              className="px-2 py-0.5 rounded-full text-[10px] md:text-xs md:px-3 md:py-1 font-medium border transition-colors whitespace-nowrap"
               style={
                 r === ""
                   ? isActive
