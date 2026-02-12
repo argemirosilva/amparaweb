@@ -75,12 +75,11 @@ function injectStyles() {
       object-fit: cover;
       aspect-ratio: 1;
     }
-      background: hsl(240 5% 26%);
-    }
     .ampara-marker-placeholder {
       display: flex;
       align-items: center;
       justify-content: center;
+      background: hsl(240 5% 26%);
       color: white;
       font-weight: 700;
       font-size: 18px;
