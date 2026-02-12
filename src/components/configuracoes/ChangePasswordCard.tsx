@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Lock, Loader2 } from "lucide-react";
-import GradientIcon from "@/components/ui/gradient-icon";
 import { toast } from "sonner";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
@@ -63,63 +63,36 @@ export default function ChangePasswordCard() {
   if (!sessionToken) return null;
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center gap-2">
-        <Lock className="w-5 h-5 text-primary" />
-        <h2 className="text-lg font-semibold text-foreground">Trocar senha</h2>
+    <div className="space-y-1.5">
+      <div className="flex items-center gap-1.5">
+        <Lock className="w-4 h-4 text-primary" />
+        <h2 className="text-sm font-semibold text-foreground">Trocar senha</h2>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-2.5">
-        <div className="space-y-1">
-          <Label htmlFor="senha-atual" className="text-xs">Senha atual</Label>
-          <Input
-            id="senha-atual"
-            type="password"
-            autoComplete="current-password"
-            value={senhaAtual}
-            onChange={(e) => setSenhaAtual(e.target.value)}
-            disabled={loading}
-            className="h-8 text-sm"
-          />
-        </div>
-
-        <div className="space-y-1">
-          <Label htmlFor="nova-senha" className="text-xs">Nova senha</Label>
-          <Input
-            id="nova-senha"
-            type="password"
-            autoComplete="new-password"
-            value={novaSenha}
-            onChange={(e) => setNovaSenha(e.target.value)}
-            disabled={loading}
-            className="h-8 text-sm"
-          />
-          {novaSenha.length > 0 && !novaSenhaValida && (
-            <p className="text-[10px] text-destructive">Mínimo de 6 caracteres</p>
-          )}
-        </div>
-
-        <div className="space-y-1">
-          <Label htmlFor="confirmar-senha" className="text-xs">Confirmar nova senha</Label>
-          <Input
-            id="confirmar-senha"
-            type="password"
-            autoComplete="new-password"
-            value={confirmarSenha}
-            onChange={(e) => setConfirmarSenha(e.target.value)}
-            disabled={loading}
-            className="h-8 text-sm"
-          />
-          {confirmarSenha.length > 0 && !senhasConferem && (
-            <p className="text-[10px] text-destructive">As senhas não conferem</p>
-          )}
-        </div>
-
-        <Button type="submit" disabled={!formValido || loading} size="sm" className="w-full">
-          {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : null}
-          Alterar senha
-        </Button>
-      </form>
+      <Card>
+        <CardContent className="px-3 py-2">
+          <form onSubmit={handleSubmit} className="space-y-2">
+            <div className="space-y-1">
+              <Label htmlFor="senha-atual" className="text-xs">Senha atual</Label>
+              <Input id="senha-atual" type="password" autoComplete="current-password" value={senhaAtual} onChange={(e) => setSenhaAtual(e.target.value)} disabled={loading} className="h-8 text-sm" />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="nova-senha" className="text-xs">Nova senha</Label>
+              <Input id="nova-senha" type="password" autoComplete="new-password" value={novaSenha} onChange={(e) => setNovaSenha(e.target.value)} disabled={loading} className="h-8 text-sm" />
+              {novaSenha.length > 0 && !novaSenhaValida && <p className="text-[10px] text-destructive">Mínimo de 6 caracteres</p>}
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="confirmar-senha" className="text-xs">Confirmar nova senha</Label>
+              <Input id="confirmar-senha" type="password" autoComplete="new-password" value={confirmarSenha} onChange={(e) => setConfirmarSenha(e.target.value)} disabled={loading} className="h-8 text-sm" />
+              {confirmarSenha.length > 0 && !senhasConferem && <p className="text-[10px] text-destructive">As senhas não conferem</p>}
+            </div>
+            <Button type="submit" disabled={!formValido || loading} size="sm" className="w-full">
+              {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : null}
+              Alterar senha
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 }
