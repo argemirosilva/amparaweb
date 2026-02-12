@@ -61,7 +61,11 @@ export default function WaveformPlayer({ storagePath, sessionToken, markers = []
         wsRef.current?.pause();
       }
     };
+    const handleStopAll = () => {
+      wsRef.current?.pause();
+    };
     window.addEventListener(WAVEFORM_PLAY_EVENT, handleOtherPlay);
+    window.addEventListener("waveform-player-stop-all", handleStopAll);
 
     (async () => {
       const proxyUrl = `${SUPABASE_URL}/functions/v1/web-api?action=proxyAudio&session_token=${encodeURIComponent(sessionToken)}&storage_path=${encodeURIComponent(storagePath)}`;
@@ -118,6 +122,7 @@ export default function WaveformPlayer({ storagePath, sessionToken, markers = []
     return () => {
       cancelled = true;
       window.removeEventListener(WAVEFORM_PLAY_EVENT, handleOtherPlay);
+      window.removeEventListener("waveform-player-stop-all", handleStopAll);
       ws?.destroy();
     };
   }, [storagePath, sessionToken, accentCssVar]);
