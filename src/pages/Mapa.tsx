@@ -2,24 +2,17 @@ import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useMapDeviceData } from "@/hooks/useMapDeviceData";
+import { useMovementStatus } from "@/hooks/useMovementStatus";
 import { Loader2, MapPin } from "lucide-react";
-
-function getMovementLabel(speed: number | null, isHome: boolean): { label: string; emoji: string } {
-  if (isHome) return { label: "Em Casa", emoji: "🏠" };
-  if (speed === null || speed === 0) return { label: "Parada", emoji: "📍" };
-  if (speed >= 1 && speed <= 15) return { label: "Caminhando", emoji: "🚶‍♀️" };
-  return { label: "Em Veículo", emoji: "🚗" };
-}
 
 function buildMarkerHtml(
   avatarUrl: string | null,
   firstName: string,
-  speed: number | null,
+  movementLabel: string,
+  movementEmoji: string,
   panicActive: boolean,
-  isHome: boolean,
   address: string,
 ): string {
-  const { label, emoji } = getMovementLabel(speed, isHome);
   const imgSrc = avatarUrl || "";
   const imgHtml = imgSrc
     ? `<img src="${imgSrc}" class="ampara-marker-img" alt="${firstName}" />`
@@ -32,7 +25,7 @@ function buildMarkerHtml(
       <div class="ampara-marker-ring">${imgHtml}</div>
       <div class="ampara-marker-info">
         <span class="ampara-marker-name">${firstName}</span>
-        <span class="ampara-marker-status">${emoji} ${label}</span>
+        <span class="ampara-marker-status">${movementEmoji} ${movementLabel}</span>
         <span class="ampara-marker-address">${address}</span>
       </div>
     </div>
@@ -131,6 +124,7 @@ export default function Mapa() {
   const mapRef = useRef<L.Map | null>(null);
   const markerRef = useRef<L.Marker | null>(null);
   const { data, loading, error } = useMapDeviceData();
+  const { update: updateMovement } = useMovementStatus();
 
   // Init map
   useEffect(() => {
@@ -158,6 +152,11 @@ export default function Mapa() {
   useEffect(() => {
     if (!mapRef.current || !data) return;
 
+    const movement = updateMovement(data.speed, data.precisao_metros);
+
+    const movementLabel = data.isHome ? "Em Casa" : movement.label;
+    const movementEmoji = data.isHome ? "🏠" : movement.emoji;
+
     const address = data.isHome
       ? "🏠 Em Casa"
       : data.geo?.display_address || "Localizando...";
@@ -165,9 +164,9 @@ export default function Mapa() {
     const html = buildMarkerHtml(
       data.avatarUrl,
       data.firstName,
-      data.speed,
+      movementLabel,
+      movementEmoji,
       data.panicActive,
-      data.isHome,
       address,
     );
 
