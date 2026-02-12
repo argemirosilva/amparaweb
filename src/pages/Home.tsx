@@ -1,5 +1,4 @@
 import DeviceStatusCard from "@/components/dashboard/DeviceStatusCard";
-import MonitoringStatusCard from "@/components/dashboard/MonitoringStatusCard";
 import AudioRecorderCard from "@/components/dashboard/AudioRecorderCard";
 import RiskEvolutionCard from "@/components/dashboard/RiskEvolutionCard";
 import amparaCircle from "@/assets/ampara-circle-logo.png";
@@ -21,7 +20,6 @@ export default function HomePage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-4">
             <DeviceStatusCard />
-            <MonitoringStatusCard />
           </div>
           <AudioRecorderCard />
         </div>
