@@ -236,9 +236,8 @@ export default function AudioRecorderCard({ onUploaded }: AudioRecorderCardProps
         <button
           onClick={startRecording}
           disabled={uploading || converting}
-          className="w-12 h-12 rounded-full bg-primary flex items-center justify-center shrink-0 hover:bg-primary/90 transition-colors shadow-lg disabled:opacity-50">
-
-            <Mic className="w-5 h-5 text-primary-foreground" />
+          className="disabled:opacity-50 transition-opacity">
+            <GradientIcon icon={Mic} size="sm" />
           </button>
         }
 
