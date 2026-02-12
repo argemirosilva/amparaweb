@@ -1,6 +1,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
+  MapPin,
   Mic,
   UserCircle,
   Settings,
@@ -8,6 +9,7 @@ import {
 
 const items = [
   { title: "Início", url: "/home", icon: LayoutDashboard },
+  { title: "Mapa", url: "/mapa", icon: MapPin },
   { title: "Gravações", url: "/gravacoes", icon: Mic },
   { title: "Perfil", url: "/perfil", icon: UserCircle },
   { title: "Config", url: "/configuracoes", icon: Settings },

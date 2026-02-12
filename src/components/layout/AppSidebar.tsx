@@ -3,6 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { NavLink } from "@/components/NavLink";
 import {
   LayoutDashboard,
+  MapPin,
   Mic,
   UserCircle,
   Settings,
@@ -22,6 +23,7 @@ import amparaLogo from "@/assets/ampara-icon-transparent.png";
 
 const menuItems = [
   { title: "Dashboard", url: "/home", icon: LayoutDashboard },
+  { title: "Mapa", url: "/mapa", icon: MapPin },
   { title: "Gravações", url: "/gravacoes", icon: Mic },
   { title: "Perfil", url: "/perfil", icon: UserCircle },
   { title: "Configurações", url: "/configuracoes", icon: Settings },
