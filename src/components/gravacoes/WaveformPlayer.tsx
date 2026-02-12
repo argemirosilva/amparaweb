@@ -53,7 +53,6 @@ export default function WaveformPlayer({ storagePath, sessionToken, markers = []
 
       // Use an audio element to avoid CORS issues with R2 URLs
       const audio = new Audio();
-      audio.crossOrigin = "anonymous";
       audio.src = res.data.url;
 
       ws = WaveSurfer.create({
