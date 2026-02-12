@@ -4,10 +4,12 @@ import { callWebApi } from "@/services/webApiService";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Trash2, Save, Loader2, Clock } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Plus, Trash2, Save, Loader2, Clock, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import TimeSelect from "./TimeSelect";
 
+// ... keep existing code (DIAS, types, constants, helper functions)
 const DIAS = [
   { key: "seg", label: "Seg" },
   { key: "ter", label: "Ter" },
@@ -55,7 +57,6 @@ function hasOverlap(periodos: Periodo[], skipIdx: number): string | null {
       const aEnd = minutesFromHHMM(periodos[i].fim);
       const bStart = minutesFromHHMM(periodos[j].inicio);
       const bEnd = minutesFromHHMM(periodos[j].fim);
-      // overlap if NOT (aEnd <= bStart || bEnd <= aStart)
       if (!(aEnd <= bStart || bEnd <= aStart)) {
         return "Períodos não podem se sobrepor";
       }
@@ -82,6 +83,7 @@ export default function MonitoringScheduleEditor() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Partial<Record<DiaKey, string>>>({});
+  const [open, setOpen] = useState(false);
 
   const fetchSchedule = useCallback(async () => {
     if (!sessionToken) return;
@@ -107,7 +109,6 @@ export default function MonitoringScheduleEditor() {
       const updated = { ...prev };
       updated[dia] = [...prev[dia]];
       updated[dia][idx] = { ...updated[dia][idx], [field]: value };
-      // Auto-fill fim when inicio is set and fim is empty
       if (field === "inicio" && !updated[dia][idx].fim) {
         const nextHour = Math.min(23, parseInt(value.split(":")[0]) + 1);
         updated[dia][idx].fim = `${String(nextHour).padStart(2, "0")}:00`;
@@ -175,94 +176,108 @@ export default function MonitoringScheduleEditor() {
   if (!sessionToken) return null;
 
   if (loading) {
-    return (
-      <div className="space-y-3">
-        <Skeleton className="h-8 w-48" />
-        <Skeleton className="h-40 w-full" />
-      </div>
-    );
+    return <Skeleton className="h-12 w-full" />;
   }
 
+  // Summary for collapsed state
+  const totalDays = DIAS.filter((d) => periodos[d.key].length > 0).length;
+  const totalWeekHours = DIAS.reduce((sum, d) => sum + totalHours(periodos[d.key]), 0);
+
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Clock className="w-5 h-5 text-primary" />
-          <h2 className="text-lg font-semibold text-foreground">Períodos de Monitoramento</h2>
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Clock className="w-5 h-5 text-primary" />
+            <h2 className="text-lg font-semibold text-foreground">Períodos de Monitoramento</h2>
+          </div>
+          {open && (
+            <Button onClick={handleSave} disabled={saving} size="sm" className="gap-1.5">
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              Salvar
+            </Button>
+          )}
         </div>
-        <Button onClick={handleSave} disabled={saving} size="sm" className="gap-1.5">
-          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-          Salvar
-        </Button>
-      </div>
 
-      <p className="text-sm text-muted-foreground">
-        Configure os horários em que o monitoramento ficará ativo. Máximo de {MAX_HORAS_DIA}h por dia.
-      </p>
+        <CollapsibleTrigger asChild>
+          <Card className="cursor-pointer hover:bg-accent/50 transition-colors">
+            <CardContent className="px-4 py-3 flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">
+                {totalDays > 0
+                  ? `${totalDays} dia${totalDays > 1 ? "s" : ""} ativo${totalDays > 1 ? "s" : ""} · ${totalWeekHours.toFixed(1)}h/semana`
+                  : "Nenhum período configurado"}
+              </p>
+              <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
+            </CardContent>
+          </Card>
+        </CollapsibleTrigger>
 
-      <div className="grid gap-3">
-        {DIAS.map((dia) => {
-          const dayPeriodos = periodos[dia.key];
-          const hours = totalHours(dayPeriodos);
-          const dayError = errors[dia.key];
+        <CollapsibleContent className="space-y-3">
+          <div className="grid gap-3">
+            {DIAS.map((dia) => {
+              const dayPeriodos = periodos[dia.key];
+              const hours = totalHours(dayPeriodos);
+              const dayError = errors[dia.key];
 
-          return (
-            <Card key={dia.key} className={dayError ? "border-destructive" : ""}>
-              <CardContent className="px-3 py-2 space-y-1">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-semibold text-foreground w-7">{dia.label}</span>
-                    {dayPeriodos.length > 0 && (
-                      <span className="text-[10px] text-muted-foreground">
-                        {hours.toFixed(1)}h
-                      </span>
+              return (
+                <Card key={dia.key} className={dayError ? "border-destructive" : ""}>
+                  <CardContent className="px-3 py-2 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-semibold text-foreground w-7">{dia.label}</span>
+                        {dayPeriodos.length > 0 && (
+                          <span className="text-[10px] text-muted-foreground">
+                            {hours.toFixed(1)}h
+                          </span>
+                        )}
+                        {dayPeriodos.length === 0 && (
+                          <span className="text-[10px] text-muted-foreground italic">Sem monitoramento</span>
+                        )}
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 text-[10px] gap-1 text-primary px-1.5"
+                        onClick={() => addPeriodo(dia.key)}
+                        disabled={dayPeriodos.length >= MAX_PERIODOS_DIA}
+                      >
+                        <Plus className="w-3 h-3" />
+                        Período
+                      </Button>
+                    </div>
+
+                    {dayPeriodos.map((p, idx) => (
+                      <div key={idx} className="flex items-center gap-1.5">
+                        <TimeSelect
+                          value={p.inicio}
+                          onChange={(v) => updatePeriodo(dia.key, idx, "inicio", v)}
+                        />
+                        <span className="text-muted-foreground text-[10px]">até</span>
+                        <TimeSelect
+                          value={p.fim}
+                          onChange={(v) => updatePeriodo(dia.key, idx, "fim", v)}
+                        />
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                          onClick={() => removePeriodo(dia.key, idx)}
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    ))}
+
+                    {dayError && (
+                      <p className="text-[10px] text-destructive">{dayError}</p>
                     )}
-                    {dayPeriodos.length === 0 && (
-                      <span className="text-[10px] text-muted-foreground italic">Sem monitoramento</span>
-                    )}
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 text-[10px] gap-1 text-primary px-1.5"
-                    onClick={() => addPeriodo(dia.key)}
-                    disabled={dayPeriodos.length >= MAX_PERIODOS_DIA}
-                  >
-                    <Plus className="w-3 h-3" />
-                    Período
-                  </Button>
-                </div>
-
-                {dayPeriodos.map((p, idx) => (
-                  <div key={idx} className="flex items-center gap-1.5">
-                    <TimeSelect
-                      value={p.inicio}
-                      onChange={(v) => updatePeriodo(dia.key, idx, "inicio", v)}
-                    />
-                    <span className="text-muted-foreground text-[10px]">até</span>
-                    <TimeSelect
-                      value={p.fim}
-                      onChange={(v) => updatePeriodo(dia.key, idx, "fim", v)}
-                    />
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6 text-muted-foreground hover:text-destructive"
-                      onClick={() => removePeriodo(dia.key, idx)}
-                    >
-                      <Trash2 className="w-3 h-3" />
-                    </Button>
-                  </div>
-                ))}
-
-                {dayError && (
-                  <p className="text-[10px] text-destructive">{dayError}</p>
-                )}
-              </CardContent>
-            </Card>
-          );
-        })}
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </CollapsibleContent>
       </div>
-    </div>
+    </Collapsible>
   );
 }
