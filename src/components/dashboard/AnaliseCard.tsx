@@ -209,19 +209,7 @@ export default function AnaliseCard({
             </Section>
           )}
 
-          {/* Análise de linguagem */}
-          {linguagem.length > 0 && (
-            <Section icon={Brain} title="Análise de Linguagem">
-              <ul className="space-y-0.5">
-                {linguagem.map((l, i) => (
-                  <li key={i} className="text-xs text-foreground flex items-start gap-1.5">
-                    <span className="text-muted-foreground mt-0.5">•</span>
-                    {l}
-                  </li>
-                ))}
-              </ul>
-            </Section>
-          )}
+          {/* Análise de linguagem removed — highlights shown in transcription */}
 
           {/* Justificativa do risco */}
           {completa?.justificativa_risco && (
