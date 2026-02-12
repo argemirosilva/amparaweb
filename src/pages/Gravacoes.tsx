@@ -215,9 +215,11 @@ export default function GravacoesPage() {
                             {RISCO_LABELS[g.nivel_risco] || g.nivel_risco}
                           </span>
                         )}
-                        <Badge variant={statusInfo.variant} className="text-[9px] px-1.5 py-0">
-                          {statusInfo.label}
-                        </Badge>
+                        {statusInfo.variant === "destructive" && (
+                          <Badge variant={statusInfo.variant} className="text-[9px] px-1.5 py-0">
+                            {statusInfo.label}
+                          </Badge>
+                        )}
                       </div>
                     </>
                   ) : (
@@ -232,9 +234,11 @@ export default function GravacoesPage() {
                             {formatTime(g.created_at)}
                           </span>
                         </div>
-                        <Badge variant={statusInfo.variant} className="text-[9px] px-1.5 py-0">
-                          {statusInfo.label}
-                        </Badge>
+                        {statusInfo.variant === "destructive" && (
+                          <Badge variant={statusInfo.variant} className="text-[9px] px-1.5 py-0">
+                            {statusInfo.label}
+                          </Badge>
+                        )}
                       </div>
                       <div className="flex items-center justify-between mt-0.5">
                         <span className="text-[10px] text-muted-foreground inline-flex items-center gap-0.5">
