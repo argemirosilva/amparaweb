@@ -208,39 +208,38 @@ export default function MonitoringScheduleEditor() {
 
           return (
             <Card key={dia.key} className={dayError ? "border-destructive" : ""}>
-              <CardContent className="p-4 space-y-2">
+              <CardContent className="px-3 py-2 space-y-1">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold text-foreground w-8">{dia.label}</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-semibold text-foreground w-7">{dia.label}</span>
                     {dayPeriodos.length > 0 && (
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-[10px] text-muted-foreground">
                         {hours.toFixed(1)}h
                       </span>
+                    )}
+                    {dayPeriodos.length === 0 && (
+                      <span className="text-[10px] text-muted-foreground italic">Sem monitoramento</span>
                     )}
                   </div>
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-7 text-xs gap-1 text-primary"
+                    className="h-6 text-[10px] gap-1 text-primary px-1.5"
                     onClick={() => addPeriodo(dia.key)}
                     disabled={dayPeriodos.length >= MAX_PERIODOS_DIA}
                   >
-                    <Plus className="w-3.5 h-3.5" />
+                    <Plus className="w-3 h-3" />
                     Período
                   </Button>
                 </div>
 
-                {dayPeriodos.length === 0 && (
-                  <p className="text-xs text-muted-foreground italic">Sem monitoramento</p>
-                )}
-
                 {dayPeriodos.map((p, idx) => (
-                  <div key={idx} className="flex items-center gap-2">
+                  <div key={idx} className="flex items-center gap-1.5">
                     <TimeSelect
                       value={p.inicio}
                       onChange={(v) => updatePeriodo(dia.key, idx, "inicio", v)}
                     />
-                    <span className="text-muted-foreground text-xs">até</span>
+                    <span className="text-muted-foreground text-[10px]">até</span>
                     <TimeSelect
                       value={p.fim}
                       onChange={(v) => updatePeriodo(dia.key, idx, "fim", v)}
@@ -248,16 +247,16 @@ export default function MonitoringScheduleEditor() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                      className="h-6 w-6 text-muted-foreground hover:text-destructive"
                       onClick={() => removePeriodo(dia.key, idx)}
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      <Trash2 className="w-3 h-3" />
                     </Button>
                   </div>
                 ))}
 
                 {dayError && (
-                  <p className="text-xs text-destructive">{dayError}</p>
+                  <p className="text-[10px] text-destructive">{dayError}</p>
                 )}
               </CardContent>
             </Card>
