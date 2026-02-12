@@ -31,7 +31,7 @@ async function deleteFromR2(storagePath: string): Promise<boolean> {
   try {
     const r2 = getR2Client();
     const response = await r2.fetch(r2Url(storagePath), { method: "DELETE" });
-    return response.ok || response.status === 404; // 404 = already gone
+    return response.ok || response.status === 404;
   } catch (e) {
     console.error(`R2 delete error for ${storagePath}:`, e);
     return false;
@@ -49,59 +49,51 @@ serve(async (req) => {
   );
 
   try {
-    // Find processed recordings older than 7 days with "sem_risco" analysis
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    // Get all users with their retention settings
+    const { data: users, error: usersErr } = await supabase
+      .from("usuarios")
+      .select("id, retencao_dias_sem_risco");
 
-    const { data: candidates, error: queryErr } = await supabase
-      .from("gravacoes")
-      .select("id, storage_path, user_id, gravacoes_analises!inner(nivel_risco)")
-      .eq("status", "processado")
-      .lt("created_at", sevenDaysAgo)
-      .eq("gravacoes_analises.nivel_risco", "sem_risco");
-
-    if (queryErr) {
-      console.error("Query error:", queryErr);
-      return json({ error: "Erro ao buscar gravações" }, 500);
+    if (usersErr) {
+      console.error("Users query error:", usersErr);
+      return json({ error: "Erro ao buscar usuários" }, 500);
     }
 
-    if (!candidates || candidates.length === 0) {
-      console.log("No recordings to clean up.");
-      return json({ success: true, deleted: 0, message: "Nenhuma gravação para limpar" });
-    }
+    let totalDeleted = 0;
+    let totalErrors = 0;
 
-    console.log(`Found ${candidates.length} recordings to clean up.`);
+    for (const user of (users || [])) {
+      const retentionDays = user.retencao_dias_sem_risco ?? 7;
+      const cutoff = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000).toISOString();
 
-    let deleted = 0;
-    let errors = 0;
+      const { data: candidates, error: queryErr } = await supabase
+        .from("gravacoes")
+        .select("id, storage_path, gravacoes_analises!inner(nivel_risco)")
+        .eq("user_id", user.id)
+        .eq("status", "processado")
+        .lt("created_at", cutoff)
+        .eq("gravacoes_analises.nivel_risco", "sem_risco");
 
-    for (const g of candidates) {
-      try {
-        // 1. Delete audio file from R2
-        if (g.storage_path) {
-          const r2Ok = await deleteFromR2(g.storage_path);
-          if (!r2Ok) {
-            console.error(`Failed to delete R2 file: ${g.storage_path}`);
-            errors++;
-            continue; // Don't delete DB records if file deletion failed
+      if (queryErr || !candidates || candidates.length === 0) continue;
+
+      for (const g of candidates) {
+        try {
+          if (g.storage_path) {
+            const r2Ok = await deleteFromR2(g.storage_path);
+            if (!r2Ok) {
+              console.error(`Failed to delete R2 file: ${g.storage_path}`);
+              totalErrors++;
+              continue;
+            }
           }
+
+          await supabase.from("gravacoes_analises").delete().eq("gravacao_id", g.id);
+          await supabase.from("gravacoes").delete().eq("id", g.id);
+          totalDeleted++;
+        } catch (e) {
+          console.error(`Error cleaning recording ${g.id}:`, e);
+          totalErrors++;
         }
-
-        // 2. Delete analysis records
-        await supabase
-          .from("gravacoes_analises")
-          .delete()
-          .eq("gravacao_id", g.id);
-
-        // 3. Delete recording record
-        await supabase
-          .from("gravacoes")
-          .delete()
-          .eq("id", g.id);
-
-        deleted++;
-      } catch (e) {
-        console.error(`Error cleaning recording ${g.id}:`, e);
-        errors++;
       }
     }
 
@@ -109,11 +101,11 @@ serve(async (req) => {
     await supabase.from("audit_logs").insert({
       action_type: "cleanup_sem_risco",
       success: true,
-      details: { deleted, errors, candidates: candidates.length },
+      details: { deleted: totalDeleted, errors: totalErrors },
     });
 
-    console.log(`Cleanup done: ${deleted} deleted, ${errors} errors.`);
-    return json({ success: true, deleted, errors });
+    console.log(`Cleanup done: ${totalDeleted} deleted, ${totalErrors} errors.`);
+    return json({ success: true, deleted: totalDeleted, errors: totalErrors });
   } catch (err) {
     console.error("cleanup-recordings error:", err);
     return json({ error: "Erro interno na limpeza" }, 500);
