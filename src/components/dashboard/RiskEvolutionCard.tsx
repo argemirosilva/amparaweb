@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -99,13 +98,13 @@ export default function RiskEvolutionCard() {
   }));
 
   return (
-    <Card>
-      <CardHeader className="pb-3">
+    <div className="ampara-card">
+      <div className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-base font-semibold flex items-center gap-2">
+          <p className="text-base font-semibold flex items-center gap-2">
             <GradientIcon icon={LevelIcon} size="sm" />
             Evolução do Risco
-          </CardTitle>
+          </p>
           <Tabs value={String(window)} onValueChange={handleWindowChange}>
             <TabsList className="h-8">
               <TabsTrigger value="7" className="text-xs px-2 h-6">7d</TabsTrigger>
@@ -114,8 +113,8 @@ export default function RiskEvolutionCard() {
             </TabsList>
           </Tabs>
         </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
+      </div>
+      <div className="space-y-4">
         {loading ? (
           <div className="space-y-3">
             <Skeleton className="h-4 w-32" />
@@ -217,7 +216,7 @@ export default function RiskEvolutionCard() {
         ) : (
           <p className="text-sm text-muted-foreground">Nenhuma avaliação disponível.</p>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
