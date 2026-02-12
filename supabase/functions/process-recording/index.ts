@@ -236,7 +236,9 @@ serve(async (req) => {
       return json({ error: "Erro ao baixar áudio" }, 500);
     }
 
-    const ext = gravacao.storage_path.split(".").pop() || "mp3";
+    let ext = gravacao.storage_path.split(".").pop() || "mp3";
+    // Agreggar API doesn't support webm; treat as ogg (both use Opus codec)
+    if (ext === "webm") ext = "ogg";
 
     // 4. Transcribe via Agreggar API
     console.log("Starting transcription via Agreggar...");
