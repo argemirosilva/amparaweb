@@ -132,15 +132,12 @@ export default function MonitoringStatusCard() {
       <div className="flex items-center gap-2.5">
         <GradientIcon icon={Shield} size="sm" />
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-primary">Monitoramento</p>
+          <p className="text-sm font-semibold text-primary">
+            {state?.type === "monitoring" || state?.type === "monitoring_no_window" ? "Monitorando" : "Monitoramento"}
+          </p>
           {state?.type === "monitoring" && (
-            <p className="text-xs font-medium text-emerald-600">
-              Monitorando até {state.fim}
-            </p>
-          )}
-          {state?.type === "monitoring_no_window" && (
-            <p className="text-xs font-medium text-emerald-600">
-              Monitorando
+            <p className="text-xs font-medium text-blue-600">
+              até {state.fim}
             </p>
           )}
           {state?.type === "next" && (
