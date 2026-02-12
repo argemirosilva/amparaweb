@@ -395,6 +395,18 @@ serve(async (req) => {
             details: { session_id: session.id, count: cleanupCount },
           });
 
+          // ── Fire-and-forget: trigger process-recording ──
+          const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+          const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+          fetch(`${supabaseUrl}/functions/v1/process-recording`, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${serviceKey}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ gravacao_id: gravacao.id }),
+          }).catch((e) => console.error("process-recording trigger error:", e));
+
           results.push({
             action: "concatenated",
             session_id: session.id,
