@@ -72,11 +72,11 @@ export default function WaveformPlayer({ storagePath, sessionToken, markers = []
 
       ws = WaveSurfer.create({
         container: containerRef.current,
-        waveColor: "rgba(255,255,255,0.2)",
+        waveColor: "hsl(var(--foreground) / 0.3)",
         progressColor: accent,
-        cursorColor: "rgba(255,255,255,0.6)",
+        cursorColor: "hsl(var(--foreground) / 0.6)",
         cursorWidth: 1,
-        barWidth: 2,
+        barWidth: 3,
         barGap: 2,
         barRadius: 3,
         height: 56,
