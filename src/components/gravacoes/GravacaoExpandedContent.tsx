@@ -143,6 +143,7 @@ export default function GravacaoExpandedContent({
           sessionToken={sessionToken}
           markers={markers}
           accentCssVar={cssVar}
+          durationHint={gravacao.duracao_segundos || undefined}
         />
       ) : (
         <p className="text-xs text-muted-foreground italic">Áudio não disponível</p>
