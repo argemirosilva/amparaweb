@@ -7,11 +7,33 @@ import GradientIcon from "@/components/ui/gradient-icon";
 
 const DAY_KEYS = ["dom", "seg", "ter", "qua", "qui", "sex", "sab"] as const;
 
-function getTodaySchedule(periodos: Record<string, { ativo: boolean; inicio: string; fim: string }>): string | null {
+interface ScheduleInfo {
+  label: string;
+  isActive: boolean; // currently within the period
+}
+
+function getTodayScheduleInfo(periodos: Record<string, { ativo: boolean; inicio: string; fim: string }>): ScheduleInfo {
   const todayKey = DAY_KEYS[new Date().getDay()];
   const p = periodos?.[todayKey];
-  if (!p?.ativo) return null;
-  return `${p.inicio} – ${p.fim}`;
+  if (!p?.ativo) return { label: "Sem horário", isActive: false };
+
+  const now = new Date();
+  const [hI, mI] = p.inicio.split(":").map(Number);
+  const [hF, mF] = p.fim.split(":").map(Number);
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+  const inicioMin = hI * 60 + mI;
+  const fimMin = hF * 60 + mF;
+
+  if (nowMin >= inicioMin && nowMin < fimMin) {
+    // Currently within period
+    return { label: `${p.inicio} – ${p.fim}`, isActive: true };
+  }
+  if (nowMin < inicioMin) {
+    // Period hasn't started yet
+    return { label: `Próximo: ${p.inicio} – ${p.fim}`, isActive: false };
+  }
+  // Period already ended
+  return { label: "Sem mais hoje", isActive: false };
 }
 
 export default function MonitoringStatusCard() {
@@ -38,7 +60,7 @@ export default function MonitoringStatusCard() {
     ]).then(([sessionRes, scheduleRes]) => {
       setSessionActive(!!sessionRes.data);
       if (scheduleRes.data?.periodos_semana) {
-        setSchedule(getTodaySchedule(scheduleRes.data.periodos_semana as any));
+        setSchedule(getTodayScheduleInfo(scheduleRes.data.periodos_semana as any).label);
       }
       setLoading(false);
     });
