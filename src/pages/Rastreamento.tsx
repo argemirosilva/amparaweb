@@ -289,11 +289,22 @@ export default function Rastreamento() {
       {/* Top bar */}
       <div className="absolute top-0 left-0 right-0 z-10 p-4">
         <div className={`flex items-center justify-between rounded-xl px-4 py-3 backdrop-blur-md ${isPanic ? "bg-red-900/80" : "bg-zinc-900/80"}`}>
-          <div className="flex items-center gap-3">
-            <img src={amparaIcon} alt="Ampara" className="w-8 h-8" />
-            <div>
-              <p className="text-xs font-medium opacity-70">
-                {isPanic ? "🚨 ALERTA DE PÂNICO" : "📍 Rastreamento Ativo"}
+          <div className="flex items-center gap-3 min-w-0">
+            <img src={amparaIcon} alt="Ampara" className="w-8 h-8 shrink-0" />
+            {userInfo && (
+              <div className="shrink-0 h-9 w-9 rounded-full p-[2px]" style={{ background: "linear-gradient(135deg, hsl(280 70% 50%), hsl(320 80% 55%))" }}>
+                {userInfo.avatar_url ? (
+                  <img src={userInfo.avatar_url} alt={userInfo.nome_completo} className="h-full w-full rounded-full object-cover bg-zinc-800" />
+                ) : (
+                  <div className="h-full w-full rounded-full bg-zinc-700 flex items-center justify-center text-white text-sm font-bold">
+                    {userInfo.nome_completo.charAt(0).toUpperCase()}
+                  </div>
+                )}
+              </div>
+            )}
+            <div className="min-w-0">
+              <p className="text-xs font-medium opacity-70 truncate">
+                {userInfo ? `${userInfo.nome_completo.split(" ")[0]} · ` : ""}{isPanic ? "🚨 Pânico" : "📍 Ao vivo"}
               </p>
               <p className="text-[10px] opacity-50">Código: {share?.codigo}</p>
             </div>
