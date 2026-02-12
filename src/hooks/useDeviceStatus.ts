@@ -31,7 +31,8 @@ export interface DeviceStatusResult {
   lastFetch: Date | null;
 }
 
-const POLL_INTERVAL = 30_000;
+const POLL_ONLINE = 1_000;
+const POLL_OFFLINE = 10_000;
 
 export function useDeviceStatus(): DeviceStatusResult {
   const { usuario } = useAuth();
@@ -110,12 +111,14 @@ export function useDeviceStatus(): DeviceStatusResult {
     return () => { cancelled = true; };
   }, [location]);
 
-  // Polling
+  // Adaptive polling: 1s when online, 10s when offline
   useEffect(() => {
     fetchData();
-    const id = setInterval(fetchData, POLL_INTERVAL);
+    const online = device ? Date.now() - new Date(device.last_ping_at || 0).getTime() < 45_000 : false;
+    const interval = online ? POLL_ONLINE : POLL_OFFLINE;
+    const id = setInterval(fetchData, interval);
     return () => clearInterval(id);
-  }, [fetchData]);
+  }, [fetchData, device?.last_ping_at]);
 
   return { device, location, geo, addressLoading, loading, error, lastFetch };
 }
