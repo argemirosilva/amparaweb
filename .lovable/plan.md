@@ -1,34 +1,52 @@
 
+# Card de Periodo de Monitoramento
 
-## Adicionar nome e foto da usuaria no header da pagina de rastreamento
+## Objetivo
+Reescrever o `MonitoringStatusCard` para exibir de forma clara o estado do monitoramento com tres cenarios distintos:
 
-### O que muda
+1. **Monitorando** -- quando o horario atual esta dentro de um periodo agendado. Exibe "Monitorando" com o intervalo (ex: "08:00 - 12:00") em destaque verde.
+2. **Proximo periodo** -- quando nao esta monitorando mas ainda ha um periodo agendado para mais tarde no mesmo dia. Exibe "Inicia o monitoramento as XX:XX".
+3. **Fora do periodo** -- quando nao ha mais nenhum periodo restante para o dia. Exibe "Fora do periodo de monitoramento".
 
-A pagina `/r/:codigo` (`Rastreamento.tsx`) ja busca `nome_completo` e `avatar_url` da tabela `usuarios`. Porem o header (barra superior) nao exibe essas informacoes — mostra apenas o tipo de alerta e o codigo.
+## Visual
+- Mantemos o estilo `ampara-card` existente, com o `GradientIcon` do escudo.
+- Estado ativo: badge/texto em verde (emerald) com o intervalo do periodo.
+- Estado proximo: texto em amarelo/amber com o horario do proximo periodo.
+- Estado fora: texto em cinza (muted).
 
-### Alteracao
+## Detalhes Tecnicos
 
-**Arquivo: `src/pages/Rastreamento.tsx`**
+### Arquivo: `src/components/dashboard/MonitoringStatusCard.tsx`
+Reescrever a logica do componente:
 
-No bloco do top bar (div com `bg-zinc-900/80` ou `bg-red-900/80`), adicionar entre o icone Ampara e o timer:
+- Buscar `agendamentos_monitoramento.periodos_semana` para o usuario.
+- Determinar o dia da semana atual e extrair os periodos do dia.
+- Comparar o horario atual (HH:MM) com cada periodo:
+  - Se `nowMin >= inicio && nowMin < fim` --> estado "monitorando", exibir intervalo.
+  - Senao, filtrar periodos com `inicio > nowMin` e ordenar. Se houver --> estado "proximo", exibir horario.
+  - Se nenhum periodo restante --> estado "fora".
+- Tambem buscar sessao ativa em `monitoramento_sessoes` (como ja faz) para complementar -- se houver sessao ativa com `window_start_at`/`window_end_at`, usar esses valores como o periodo exibido.
+- Adicionar realtime subscription na tabela `monitoramento_sessoes` para atualizar em tempo real quando uma sessao iniciar/encerrar.
 
-- A foto da usuaria (ou iniciais como fallback) em um avatar circular de 36px com borda gradiente, usando o mesmo estilo visual do marcador do mapa.
-- O primeiro nome da usuaria em texto branco, abaixo do label de status existente.
+### Arquivo: `src/pages/Home.tsx`
+- Importar e adicionar o `MonitoringStatusCard` na lista de cards, posicionado antes do `DeviceStatusCard`.
 
-A estrutura do header ficara:
+### Renderizacao por estado
 
-```text
-[Logo Ampara] [Avatar + Nome] .................. [Timer]
-               Alerta de Panico / Ao vivo         restante
-               Codigo: X4K9NP
+**Monitorando:**
+```
+[Shield] Monitoramento
+         Monitorando · 08:00 - 12:00    (texto verde)
 ```
 
-Nenhuma consulta adicional ao banco e necessaria — os dados `userInfo.nome_completo` e `userInfo.avatar_url` ja estao disponiveis no state.
+**Proximo periodo:**
+```
+[Shield] Monitoramento
+         Inicia o monitoramento as 14:00  (texto amber)
+```
 
-### Detalhes tecnicos
-
-1. Extrair `firstName` de `userInfo.nome_completo` (ja feito no bloco do marcador, reutilizar).
-2. Renderizar um `img` com `rounded-full` e borda gradiente se `avatar_url` existir, ou um div com a inicial em fallback.
-3. Colocar o nome ao lado do avatar, substituindo o layout atual do bloco esquerdo do header.
-4. Manter responsividade — o avatar e nome devem truncar em telas pequenas sem quebrar o layout.
-
+**Fora do periodo:**
+```
+[Shield] Monitoramento
+         Fora do periodo de monitoramento  (texto cinza)
+```
