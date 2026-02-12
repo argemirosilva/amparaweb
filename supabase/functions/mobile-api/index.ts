@@ -1624,14 +1624,11 @@ async function handleReportarStatusGravacao(
     const { data: activeSession } = await sessionQuery.maybeSingle();
 
     if (activeSession) {
-      // Update device status first
-      if (deviceId) {
-        await supabase
-          .from("device_status")
-          .update({ is_recording: false, is_monitoring: false })
-          .eq("user_id", userId)
-          .eq("device_id", deviceId);
-      }
+      // Update device status — reset by user_id (device_id may differ)
+      await supabase
+        .from("device_status")
+        .update({ is_recording: false, is_monitoring: false })
+        .eq("user_id", userId);
 
       // If total_segments is 0, recording was too short (<15s) — discard entirely
       if (totalSegmentos === 0) {
