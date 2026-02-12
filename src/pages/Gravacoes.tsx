@@ -80,7 +80,7 @@ export default function GravacoesPage() {
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
-  const [filterStatus, setFilterStatus] = useState<string>("");
+  const [filterRisco, setFilterRisco] = useState<string>("");
   const [expanded, setExpanded] = useState<string | null>(null);
   const perPage = 15;
 
@@ -90,27 +90,27 @@ export default function GravacoesPage() {
     const res = await callWebApi("getGravacoes", sessionToken, {
       page,
       per_page: perPage,
-      ...(filterStatus ? { status: filterStatus } : {}),
+      ...(filterRisco ? { nivel_risco: filterRisco } : {}),
     });
     if (res.ok) {
       setGravacoes(res.data.gravacoes);
       setTotal(res.data.total);
     }
     setLoading(false);
-  }, [sessionToken, page, filterStatus]);
+  }, [sessionToken, page, filterRisco]);
 
   const handleRefresh = useCallback(async () => {
     if (!sessionToken) return;
     const res = await callWebApi("getGravacoes", sessionToken, {
       page,
       per_page: perPage,
-      ...(filterStatus ? { status: filterStatus } : {}),
+      ...(filterRisco ? { nivel_risco: filterRisco } : {}),
     });
     if (res.ok) {
       setGravacoes(res.data.gravacoes);
       setTotal(res.data.total);
     }
-  }, [sessionToken, page, filterStatus]);
+  }, [sessionToken, page, filterRisco]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
@@ -129,17 +129,17 @@ export default function GravacoesPage() {
 
       {/* Filters */}
       <div className="flex items-center gap-2 flex-wrap">
-        {["", "pendente", "processado", "transcrito", "erro"].map((s) => (
+        {["", "sem_risco", "moderado", "alto", "critico"].map((r) => (
           <button
-            key={s}
-            onClick={() => { setFilterStatus(s); setPage(1); }}
+            key={r}
+            onClick={() => { setFilterRisco(r); setPage(1); }}
             className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
-              filterStatus === s
+              filterRisco === r
                 ? "bg-primary text-primary-foreground border-primary"
                 : "bg-background text-muted-foreground border-border hover:border-primary/50"
             }`}
           >
-            {s === "" ? "Todas" : STATUS_MAP[s]?.label || s}
+            {r === "" ? "Todas" : RISCO_LABELS[r] || r}
           </button>
         ))}
       </div>
