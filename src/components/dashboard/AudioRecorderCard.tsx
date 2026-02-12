@@ -120,6 +120,8 @@ export default function AudioRecorderCard({ onUploaded }: AudioRecorderCardProps
 
   const startRecording = async () => {
     try {
+      // Stop any playing waveform players
+      window.dispatchEvent(new CustomEvent("waveform-player-stop-all"));
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mediaRecorder = new MediaRecorder(stream, { mimeType: "audio/webm;codecs=opus" });
       mediaRecorderRef.current = mediaRecorder;
