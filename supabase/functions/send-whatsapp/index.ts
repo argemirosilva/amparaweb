@@ -64,10 +64,12 @@ async function reverseGeocode(lat: number, lon: number): Promise<string> {
 
 // ── Send WhatsApp template message ──
 
+interface NamedParam { name: string; value: string }
+
 async function sendWhatsAppTemplate(
   phone: string,
   templateName: string,
-  parameters: string[]
+  namedParams: NamedParam[]
 ): Promise<{ ok: boolean; error?: string }> {
   const token = Deno.env.get("META_WHATSAPP_TOKEN");
   const phoneId = Deno.env.get("META_WHATSAPP_PHONE_ID");
@@ -87,7 +89,11 @@ async function sendWhatsAppTemplate(
       components: [
         {
           type: "body",
-          parameters: parameters.map((text) => ({ type: "text", text })),
+          parameters: namedParams.map((p) => ({
+            type: "text",
+            parameter_name: p.name,
+            text: p.value,
+          })),
         },
       ],
     },
@@ -259,12 +265,12 @@ async function notifyGuardiansAlert(
   let sentCount = 0;
   const results = await Promise.allSettled(
     guardioes.map(async (g) => {
-      const params = [
-        usuario.nome_completo,
-        agressorParam,
-        minutos,
-        shareLink || "Indisponível",
-        endereco,
+      const params: NamedParam[] = [
+        { name: "vitima", value: usuario.nome_completo },
+        { name: "nome_do_agressor", value: agressorParam },
+        { name: "min", value: minutos },
+        { name: "localizacao", value: shareLink || "Indisponível" },
+        { name: "endereco", value: endereco },
       ];
       console.log("WhatsApp params:", JSON.stringify(params), "phone:", g.telefone_whatsapp);
       const result = await sendWhatsAppTemplate(g.telefone_whatsapp, "ampara2", params);
@@ -316,7 +322,10 @@ async function notifyGuardiansResolved(
   let sentCount = 0;
   await Promise.allSettled(
     guardioes.map(async (g) => {
-      const params = [g.nome, usuario.nome_completo];
+      const params: NamedParam[] = [
+        { name: "GUARDIAO", value: g.nome },
+        { name: "VITIMA", value: usuario.nome_completo },
+      ];
       const result = await sendWhatsAppTemplate(g.telefone_whatsapp, "amparasafe", params);
 
       await supabase.from("audit_logs").insert({
