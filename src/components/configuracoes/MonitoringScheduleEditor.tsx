@@ -240,6 +240,7 @@ export default function MonitoringScheduleEditor() {
                     <TimeSelect
                       value={p.fim}
                       onChange={(v) => updatePeriodo(dia.key, idx, "fim", v)}
+                      scrollTo={p.inicio ? String(Math.min(23, parseInt(p.inicio.split(":")[0]) + 1)).padStart(2, "0") : undefined}
                     />
                     <Button
                       variant="ghost"
