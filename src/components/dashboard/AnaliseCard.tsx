@@ -33,7 +33,7 @@ interface AnaliseData {
 }
 
 const RISCO_CONFIG: Record<string, { icon: typeof ShieldCheck; color: string; bg: string; label: string }> = {
-  baixo: { icon: ShieldCheck, color: "text-emerald-600", bg: "bg-emerald-500/10", label: "Baixo" },
+  sem_risco: { icon: ShieldCheck, color: "text-emerald-600", bg: "bg-emerald-500/10", label: "Sem Risco" },
   moderado: { icon: ShieldQuestion, color: "text-amber-600", bg: "bg-amber-500/10", label: "Moderado" },
   alto: { icon: ShieldAlert, color: "text-orange-600", bg: "bg-orange-500/10", label: "Alto" },
   critico: { icon: AlertTriangle, color: "text-red-600", bg: "bg-red-500/10", label: "Crítico" },
@@ -120,7 +120,7 @@ export default function AnaliseCard({
     );
   }
 
-  const risco = RISCO_CONFIG[analise.nivel_risco || "baixo"] || RISCO_CONFIG.baixo;
+  const risco = RISCO_CONFIG[analise.nivel_risco || "sem_risco"] || RISCO_CONFIG.sem_risco;
   const RiscoIcon = risco.icon;
   const sentimento = SENTIMENTO_MAP[analise.sentimento || "neutro"] || SENTIMENTO_MAP.neutro;
   const completa = analise.analise_completa;
