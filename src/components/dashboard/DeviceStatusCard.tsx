@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import { useDeviceStatus } from "@/hooks/useDeviceStatus";
+import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Smartphone, Clock, BatteryFull, BatteryMedium, BatteryLow, BatteryCharging, Wifi, WifiOff, MapPin, X, Mic, AlertTriangle } from "lucide-react";
 import GradientIcon from "@/components/ui/gradient-icon";
+import MiniLeafletMap from "./MiniLeafletMap";
 
 function timeSince(date: string): string {
   const s = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
@@ -56,6 +58,9 @@ function formatDateTime(iso: string): string {
 
 export default function DeviceStatusCard() {
   const { device, location, geo, addressLoading, loading, error } = useDeviceStatus();
+  const { usuario } = useAuth();
+  const firstName = (usuario?.nome_completo || "").split(" ")[0];
+  const avatarUrl = usuario?.avatar_url || null;
   const [showMap, setShowMap] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const recordingStartRef = useRef<number | null>(null);
@@ -205,17 +210,13 @@ export default function DeviceStatusCard() {
             <div className="p-4">
               {location ? (
                 <div className="space-y-3">
-                  {/* Map image via OSM static */}
-                  <div className="rounded-xl overflow-hidden border border-border">
-                    <iframe
-                      title="Localização"
-                      width="100%"
-                      height="200"
-                      style={{ border: 0 }}
-                      loading="lazy"
-                      src={`https://www.openstreetmap.org/export/embed.html?bbox=${location.longitude - 0.003},${location.latitude - 0.002},${location.longitude + 0.003},${location.latitude + 0.002}&layer=mapnik&marker=${location.latitude},${location.longitude}`}
-                    />
-                  </div>
+                  <MiniLeafletMap
+                    latitude={location.latitude}
+                    longitude={location.longitude}
+                    avatarUrl={avatarUrl}
+                    firstName={firstName}
+                    panicActive={panicActive}
+                  />
 
                   {/* Address */}
                   <div className="space-y-1">
