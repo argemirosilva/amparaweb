@@ -1618,7 +1618,15 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    const body = await req.json();
+    let body: Record<string, unknown>;
+    try {
+      body = await req.json();
+    } catch (parseErr) {
+      const rawBody = await req.clone().text().catch(() => "<unreadable>");
+      console.error("JSON parse error. Raw body (first 200 chars):", rawBody.substring(0, 200));
+      return errorResponse("JSON inválido no body da requisição", 400);
+    }
+
     const action = body.action as string;
     const ip = req.headers.get("x-forwarded-for") || req.headers.get("cf-connecting-ip") || "unknown";
 
