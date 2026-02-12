@@ -19,10 +19,12 @@ export default function HomePage() {
         <h1 className="text-2xl font-display font-bold text-foreground">Dashboard</h1>
         <RiskEvolutionCard />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <DeviceStatusCard />
+          <div className="space-y-4">
+            <DeviceStatusCard />
+            <MonitoringStatusCard />
+          </div>
           <AudioRecorderCard />
         </div>
-        <MonitoringStatusCard />
       </div>
     </div>
   );
