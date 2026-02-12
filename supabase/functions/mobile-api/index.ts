@@ -1,6 +1,26 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import * as bcrypt from "https://deno.land/x/bcrypt@v0.4.1/mod.ts";
+import { AwsClient } from "https://esm.sh/aws4fetch@1.0.4";
+
+function getR2Client() {
+  return new AwsClient({
+    accessKeyId: Deno.env.get("R2_ACCESS_KEY_ID")!,
+    secretAccessKey: Deno.env.get("R2_SECRET_ACCESS_KEY")!,
+    service: "s3",
+    region: "auto",
+  });
+}
+
+function r2Endpoint() {
+  return `https://${Deno.env.get("R2_ACCOUNT_ID")}.r2.cloudflarestorage.com`;
+}
+
+function r2Url(key: string) {
+  return `${r2Endpoint()}/${Deno.env.get("R2_BUCKET_NAME")}/${key}`;
+}
+
+const R2_PUBLIC_URL = () => Deno.env.get("R2_PUBLIC_URL") || "";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -1115,20 +1135,28 @@ async function handleReceberAudio(
   supabase: ReturnType<typeof createClient>,
   ip: string
 ): Promise<Response> {
+  // Support both session_token and email_usuario for auth
+  const sessionToken = body.session_token as string | undefined;
   const emailUsuario = (body.email_usuario as string)?.trim().toLowerCase();
-  if (!emailUsuario) return errorResponse("email_usuario obrigatório", 400);
 
-  const fileUrl = body.file_url as string;
-  if (!fileUrl) return errorResponse("file_url obrigatório", 400);
+  let user: { id: string } | null = null;
 
-  const { data: user } = await supabase
-    .from("usuarios")
-    .select("id")
-    .eq("email", emailUsuario)
-    .maybeSingle();
+  if (sessionToken) {
+    const result = await validateSession(supabase, sessionToken);
+    if (result.error || !result.user) return errorResponse(result.error || "Sessão inválida", 401);
+    user = { id: (result.user as Record<string, unknown>).id as string };
+  } else if (emailUsuario) {
+    const found = await findUserByEmail(supabase, emailUsuario);
+    if (!found) return errorResponse("Usuário não encontrado", 404);
+    user = { id: found.id as string };
+  } else {
+    return errorResponse("session_token ou email_usuario obrigatório", 400);
+  }
 
-  if (!user) return errorResponse("Usuário não encontrado", 404);
+  // Handle audio file from multipart upload
+  const audioFileData = body._audioFile as { data: Uint8Array; name: string; type: string } | undefined;
 
+  let fileUrl = body.file_url as string | undefined;
   const deviceId = body.device_id as string || null;
   const duracaoSegundos = body.duracao_segundos as number || null;
   const tamanhoMb = body.tamanho_mb as number || null;
@@ -1136,8 +1164,37 @@ async function handleReceberAudio(
   const timezone = body.timezone as string || null;
   const tzOffset = body.timezone_offset_minutes as number | undefined;
 
-  const timestamp = Date.now();
-  const storagePath = `${user.id}/${timestamp}.audio`;
+  const now = new Date();
+  const dateStr = now.toISOString().split("T")[0];
+  const fileId = crypto.randomUUID();
+  const ext = audioFileData?.name?.split(".").pop() || "mp4";
+  const storagePath = `${user.id}/${dateStr}/${fileId}.${ext}`;
+
+  // Upload binary to R2 if multipart file was provided
+  if (audioFileData) {
+    try {
+      const r2 = getR2Client();
+      const url = r2Url(storagePath);
+      const uploadResp = await r2.fetch(url, {
+        method: "PUT",
+        body: audioFileData.data,
+        headers: { "content-type": audioFileData.type },
+      });
+      if (!uploadResp.ok) {
+        const errText = await uploadResp.text();
+        console.error("R2 upload error:", uploadResp.status, errText);
+        return errorResponse("Erro ao enviar arquivo de áudio para storage", 500);
+      }
+      const publicUrl = R2_PUBLIC_URL();
+      fileUrl = publicUrl ? `${publicUrl}/${storagePath}` : storagePath;
+      console.log(`Audio uploaded to R2: ${storagePath} (${(audioFileData.data.length / 1024 / 1024).toFixed(2)} MB)`);
+    } catch (e) {
+      console.error("R2 upload error:", e);
+      return errorResponse("Erro ao enviar arquivo de áudio para storage", 500);
+    }
+  }
+
+  if (!fileUrl) return errorResponse("file_url ou arquivo de áudio obrigatório", 400);
 
   // Check active monitoring session (bifurcated flow)
   let sessionQuery = supabase
@@ -1620,13 +1677,41 @@ serve(async (req) => {
     );
 
     let body: Record<string, unknown>;
-    const reqClone = req.clone();
-    try {
-      body = await req.json();
-    } catch (_parseErr) {
-      const rawBody = await reqClone.text().catch(() => "<unreadable>");
-      console.error("JSON parse error. Raw body (first 200 chars):", rawBody.substring(0, 200));
-      return errorResponse("JSON inválido no body da requisição", 400);
+    let audioFile: { data: Uint8Array; name: string; type: string } | null = null;
+    const contentType = req.headers.get("content-type") || "";
+
+    if (contentType.includes("multipart/form-data")) {
+      // ── Multipart: extract text fields + audio file ──
+      const formData = await req.formData();
+      body = {};
+      for (const [key, value] of formData.entries()) {
+        if (value instanceof File) {
+          audioFile = {
+            data: new Uint8Array(await value.arrayBuffer()),
+            name: value.name,
+            type: value.type || "audio/mp4",
+          };
+        } else {
+          // Try to parse numeric values
+          const num = Number(value);
+          body[key] = value === "true" ? true : value === "false" ? false : !isNaN(num) && value !== "" ? num : value;
+        }
+      }
+    } else {
+      // ── JSON body ──
+      const reqClone = req.clone();
+      try {
+        body = await req.json();
+      } catch (_parseErr) {
+        const rawBody = await reqClone.text().catch(() => "<unreadable>");
+        console.error("JSON parse error. Raw body (first 200 chars):", rawBody.substring(0, 200));
+        return errorResponse("JSON inválido no body da requisição", 400);
+      }
+    }
+
+    // Attach audio file to body for handlers that need it
+    if (audioFile) {
+      body._audioFile = audioFile;
     }
 
     const action = body.action as string;
