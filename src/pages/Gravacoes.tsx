@@ -129,19 +129,28 @@ export default function GravacoesPage() {
 
       {/* Filters */}
       <div className="flex items-center gap-2 flex-wrap">
-        {["", "sem_risco", "moderado", "alto", "critico"].map((r) => (
-          <button
-            key={r}
-            onClick={() => { setFilterRisco(r); setPage(1); }}
-            className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
-              filterRisco === r
-                ? "bg-primary text-primary-foreground border-primary"
-                : "bg-background text-muted-foreground border-border hover:border-primary/50"
-            }`}
-          >
-            {r === "" ? "Todas" : RISCO_LABELS[r] || r}
-          </button>
-        ))}
+        {["", "sem_risco", "moderado", "alto", "critico"].map((r) => {
+          const isActive = filterRisco === r;
+          const color = r ? RISCO_COLORS[r] : undefined;
+          return (
+            <button
+              key={r}
+              onClick={() => { setFilterRisco(r); setPage(1); }}
+              className="px-3 py-1 rounded-full text-xs font-medium border transition-colors"
+              style={
+                r === ""
+                  ? isActive
+                    ? { backgroundColor: "hsl(var(--primary))", color: "hsl(var(--primary-foreground))", borderColor: "hsl(var(--primary))" }
+                    : { backgroundColor: "hsl(var(--background))", color: "hsl(var(--muted-foreground))", borderColor: "hsl(var(--border))" }
+                  : isActive
+                    ? { backgroundColor: color, color: "#fff", borderColor: color }
+                    : { backgroundColor: `${color}15`, color, borderColor: `${color}40` }
+              }
+            >
+              {r === "" ? "Todas" : RISCO_LABELS[r] || r}
+            </button>
+          );
+        })}
       </div>
 
       {/* Content */}
