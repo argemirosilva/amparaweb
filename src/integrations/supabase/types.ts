@@ -191,6 +191,54 @@ export type Database = {
           },
         ]
       }
+      compartilhamento_gps: {
+        Row: {
+          alerta_id: string | null
+          ativo: boolean
+          codigo: string
+          criado_em: string
+          expira_em: string
+          id: string
+          tipo: string
+          user_id: string
+        }
+        Insert: {
+          alerta_id?: string | null
+          ativo?: boolean
+          codigo: string
+          criado_em?: string
+          expira_em: string
+          id?: string
+          tipo?: string
+          user_id: string
+        }
+        Update: {
+          alerta_id?: string | null
+          ativo?: boolean
+          codigo?: string
+          criado_em?: string
+          expira_em?: string
+          id?: string
+          tipo?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compartilhamento_gps_alerta_id_fkey"
+            columns: ["alerta_id"]
+            isOneToOne: false
+            referencedRelation: "alertas_panico"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compartilhamento_gps_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       device_status: {
         Row: {
           bateria_percentual: number | null
