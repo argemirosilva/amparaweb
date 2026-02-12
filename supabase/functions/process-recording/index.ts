@@ -1,6 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { S3Client, GetObjectCommand } from "https://esm.sh/@aws-sdk/client-s3@3.540.0";
+import { AwsClient } from "https://esm.sh/aws4fetch@1.0.4";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -15,39 +15,27 @@ function json(data: unknown, status = 200) {
 }
 
 function getR2Client() {
-  return new S3Client({
+  return new AwsClient({
+    accessKeyId: Deno.env.get("R2_ACCESS_KEY_ID")!,
+    secretAccessKey: Deno.env.get("R2_SECRET_ACCESS_KEY")!,
+    service: "s3",
     region: "auto",
-    endpoint: `https://${Deno.env.get("R2_ACCOUNT_ID")}.r2.cloudflarestorage.com`,
-    credentials: {
-      accessKeyId: Deno.env.get("R2_ACCESS_KEY_ID")!,
-      secretAccessKey: Deno.env.get("R2_SECRET_ACCESS_KEY")!,
-    },
   });
+}
+
+function r2Url(key: string) {
+  return `https://${Deno.env.get("R2_ACCOUNT_ID")}.r2.cloudflarestorage.com/${Deno.env.get("R2_BUCKET_NAME")}/${key}`;
 }
 
 async function downloadFromR2(storagePath: string): Promise<Uint8Array> {
   const r2 = getR2Client();
-  const command = new GetObjectCommand({
-    Bucket: Deno.env.get("R2_BUCKET_NAME")!,
-    Key: storagePath,
-  });
-  const response = await r2.send(command);
-  const stream = response.Body as ReadableStream;
-  const reader = stream.getReader();
-  const chunks: Uint8Array[] = [];
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    chunks.push(value);
+  const url = r2Url(storagePath);
+  const response = await r2.fetch(url, { method: "GET" });
+  if (!response.ok) {
+    throw new Error(`R2 download failed: ${response.status}`);
   }
-  const total = chunks.reduce((s, c) => s + c.length, 0);
-  const result = new Uint8Array(total);
-  let offset = 0;
-  for (const chunk of chunks) {
-    result.set(chunk, offset);
-    offset += chunk.length;
-  }
-  return result;
+  const buffer = await response.arrayBuffer();
+  return new Uint8Array(buffer);
 }
 
 
