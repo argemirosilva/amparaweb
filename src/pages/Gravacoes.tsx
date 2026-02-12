@@ -4,6 +4,7 @@ import { callWebApi } from "@/services/webApiService";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import AudioRecorderCard from "@/components/dashboard/AudioRecorderCard";
+import AnaliseCard from "@/components/dashboard/AnaliseCard";
 import {
   Mic,
   Play,
@@ -322,7 +323,7 @@ export default function GravacoesPage() {
                       </div>
                     )}
 
-                    <div className="flex items-center gap-2 pt-1">
+                    <div className="flex items-center gap-2 pt-1 flex-wrap">
                       {g.storage_path && (
                         <Button
                           variant="outline"
@@ -338,6 +339,13 @@ export default function GravacoesPage() {
                         ID: {g.id.slice(0, 8)}
                       </span>
                     </div>
+
+                    {/* Análise de IA */}
+                    <AnaliseCard
+                      gravacaoId={g.id}
+                      status={g.status}
+                      sessionToken={sessionToken!}
+                    />
                   </div>
                 )}
               </div>
