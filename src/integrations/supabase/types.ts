@@ -833,7 +833,9 @@ export type Database = {
           endereco_cidade: string | null
           endereco_complemento: string | null
           endereco_fixo: string | null
+          endereco_lat: number | null
           endereco_logradouro: string | null
+          endereco_lon: number | null
           endereco_numero: string | null
           endereco_referencia: string | null
           endereco_uf: string | null
@@ -869,7 +871,9 @@ export type Database = {
           endereco_cidade?: string | null
           endereco_complemento?: string | null
           endereco_fixo?: string | null
+          endereco_lat?: number | null
           endereco_logradouro?: string | null
+          endereco_lon?: number | null
           endereco_numero?: string | null
           endereco_referencia?: string | null
           endereco_uf?: string | null
@@ -905,7 +909,9 @@ export type Database = {
           endereco_cidade?: string | null
           endereco_complemento?: string | null
           endereco_fixo?: string | null
+          endereco_lat?: number | null
           endereco_logradouro?: string | null
+          endereco_lon?: number | null
           endereco_numero?: string | null
           endereco_referencia?: string | null
           endereco_uf?: string | null
