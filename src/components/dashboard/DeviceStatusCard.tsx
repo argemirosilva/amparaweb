@@ -1,8 +1,6 @@
 import { useDeviceStatus } from "@/hooks/useDeviceStatus";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Smartphone, Clock, BatteryFull, BatteryMedium, BatteryLow, BatteryCharging } from "lucide-react";
-import badgeOnline from "@/assets/badge-online.png";
-import badgeOffline from "@/assets/badge-offline.png";
+import { Smartphone, Clock, BatteryFull, BatteryMedium, BatteryLow, BatteryCharging, Wifi, WifiOff } from "lucide-react";
 
 function timeSince(date: string): string {
   const s = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
@@ -48,35 +46,19 @@ export default function DeviceStatusCard() {
 
   if (loading) {
     return (
-      <div className="ampara-card">
-        <Skeleton className="h-16 w-full" />
+      <div className="ampara-card p-5">
+        <Skeleton className="h-24 w-full" />
       </div>
     );
   }
 
-  if (error || !device) {
-    return (
-      <div className="ampara-card flex items-center gap-4 p-4">
-        <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10">
-          <Smartphone className="w-6 h-6 text-primary" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-primary">Dispositivo</p>
-          <p className="text-sm text-muted-foreground truncate">
-            {error || "Nenhum dado recebido"}
-          </p>
-        </div>
-        <img src={badgeOffline} alt="Offline" className="h-3.5 shrink-0" />
-      </div>
-    );
-  }
-
-  const online = isOnline(device.last_ping_at);
+  const online = device ? isOnline(device.last_ping_at) : false;
+  const noDevice = error || !device;
 
   return (
-    <div className="ampara-card flex items-center gap-4 p-4 relative overflow-hidden">
-      {/* Monitoring ear */}
-      {device.is_monitoring && (
+    <div className="ampara-card p-5 relative overflow-hidden">
+      {/* Monitoring indicator */}
+      {device?.is_monitoring && (
         <div className="absolute top-0 right-0 flex items-center gap-1 bg-primary/10 text-primary text-[10px] font-medium pl-2 pr-2.5 py-0.5 rounded-bl-lg">
           <span className="relative flex h-1.5 w-1.5">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60" />
@@ -86,16 +68,41 @@ export default function DeviceStatusCard() {
         </div>
       )}
 
-      <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10 shrink-0">
-        <Smartphone className="w-6 h-6 text-primary" />
+      {/* Icon */}
+      <div
+        className="w-14 h-14 rounded-2xl flex items-center justify-center mb-3 shadow-md"
+        style={{ background: "var(--ampara-gradient)" }}
+      >
+        <Smartphone className="w-7 h-7 text-white" />
       </div>
 
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-primary">Dispositivo</p>
+      {/* Title */}
+      <p className="text-sm font-semibold text-primary mb-0.5">Dispositivo</p>
+
+      {/* Info row */}
+      <div className="flex items-center justify-between gap-2">
         <p className="text-sm text-foreground truncate">
-          {device.dispositivo_info || "App móvel Ampara"}
+          {noDevice
+            ? (error || "Nenhum dado recebido")
+            : (device.dispositivo_info || "App móvel Ampara")}
         </p>
-        <div className="flex items-center gap-3 mt-0.5">
+
+        {/* Status badge */}
+        <span
+          className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full shrink-0 ${
+            online
+              ? "bg-emerald-500/10 text-emerald-600"
+              : "bg-muted text-muted-foreground"
+          }`}
+        >
+          {online ? <Wifi className="w-3.5 h-3.5" /> : <WifiOff className="w-3.5 h-3.5" />}
+          {online ? "Online" : "Offline"}
+        </span>
+      </div>
+
+      {/* Meta row */}
+      {device && (
+        <div className="flex items-center gap-3 mt-1.5">
           {device.last_ping_at && (
             <span className="text-xs text-muted-foreground inline-flex items-center gap-1">
               <Clock className="w-3 h-3" />
@@ -104,12 +111,6 @@ export default function DeviceStatusCard() {
           )}
           <BatteryIndicator percent={device.bateria_percentual} charging={device.is_charging} />
         </div>
-      </div>
-
-      {online ? (
-        <img src={badgeOnline} alt="Online" className="h-3.5 shrink-0" />
-      ) : (
-        <img src={badgeOffline} alt="Offline" className="h-3.5 shrink-0" />
       )}
     </div>
   );
