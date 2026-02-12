@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useDeviceStatus } from "@/hooks/useDeviceStatus";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Smartphone, Clock, BatteryFull, BatteryMedium, BatteryLow, BatteryCharging, Wifi, WifiOff, MapPin, X, Mic } from "lucide-react";
+import { Smartphone, Clock, BatteryFull, BatteryMedium, BatteryLow, BatteryCharging, Wifi, WifiOff, MapPin, X, Mic, AlertTriangle } from "lucide-react";
 import GradientIcon from "@/components/ui/gradient-icon";
 
 function timeSince(date: string): string {
@@ -87,13 +87,26 @@ export default function DeviceStatusCard() {
 
   const online = device ? isOnline(device.last_ping_at) : false;
   const noDevice = error || !device;
+  const panicActive = device?.panicActive ?? false;
 
   return (
     <>
-      <div className="ampara-card p-5 relative overflow-hidden">
+      <div className={`ampara-card p-5 relative overflow-hidden transition-all duration-500 ${
+        panicActive ? "animate-[panic-pulse_2s_ease-in-out_infinite] ring-2 ring-destructive/50" : ""
+      }`}>
+        {/* Panic banner */}
+        {panicActive && (
+          <div className="absolute top-0 left-0 right-0 flex items-center justify-center gap-1.5 bg-destructive text-destructive-foreground text-[11px] font-bold py-1 tracking-wide">
+            <AlertTriangle className="w-3.5 h-3.5" />
+            PÂNICO ATIVO
+            <AlertTriangle className="w-3.5 h-3.5" />
+          </div>
+        )}
         {/* Recording / Monitoring indicator */}
         {(device?.is_recording || device?.is_monitoring) && (
-          <div className={`absolute top-0 right-0 flex items-center gap-1 text-[10px] font-medium pl-2 pr-2.5 py-0.5 rounded-bl-lg ${
+          <div className={`absolute right-0 flex items-center gap-1 text-[10px] font-medium pl-2 pr-2.5 py-0.5 rounded-bl-lg ${
+            panicActive ? "top-[24px]" : "top-0"
+          } ${
             device.is_recording
               ? "bg-destructive/10 text-destructive"
               : "bg-primary/10 text-primary"
@@ -112,7 +125,9 @@ export default function DeviceStatusCard() {
         )}
 
         {/* Icon */}
+        <div className={panicActive ? "mt-4" : ""}>
         <GradientIcon icon={Smartphone} size="sm" />
+        </div>
 
         {/* Title + device name */}
         <p className="text-sm font-semibold text-primary mb-0.5 truncate">

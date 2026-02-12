@@ -90,12 +90,17 @@ export default {
           from: { opacity: "0", transform: "translateY(24px)" },
           to: { opacity: "1", transform: "translateY(0)" },
         },
+        "panic-pulse": {
+          "0%, 100%": { boxShadow: "0 0 0 0 hsl(var(--destructive) / 0)" },
+          "50%": { boxShadow: "0 0 16px 4px hsl(var(--destructive) / 0.25)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "fade-in": "fade-in 0.4s ease-out forwards",
         "fade-in-up": "fade-in-up 0.5s ease-out forwards",
+        "panic-pulse": "panic-pulse 2s ease-in-out infinite",
       },
     },
   },
