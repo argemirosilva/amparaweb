@@ -23,8 +23,12 @@ function getR2Client() {
   });
 }
 
+function r2Endpoint() {
+  return `https://${Deno.env.get("R2_ACCOUNT_ID")}.r2.cloudflarestorage.com`;
+}
+
 function r2Url(key: string) {
-  return `https://${Deno.env.get("R2_ACCOUNT_ID")}.r2.cloudflarestorage.com/${Deno.env.get("R2_BUCKET_NAME")}/${key}`;
+  return `${r2Endpoint()}/${Deno.env.get("R2_BUCKET_NAME")}/${key}`;
 }
 
 async function downloadFromR2(storagePath: string): Promise<Uint8Array> {

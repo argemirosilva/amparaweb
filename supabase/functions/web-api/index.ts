@@ -11,8 +11,12 @@ function getR2Client() {
   });
 }
 
+function r2Endpoint() {
+  return `https://${Deno.env.get("R2_ACCOUNT_ID")}.r2.cloudflarestorage.com`;
+}
+
 function r2Url(key: string) {
-  return `https://${Deno.env.get("R2_ACCOUNT_ID")}.r2.cloudflarestorage.com/${Deno.env.get("R2_BUCKET_NAME")}/${key}`;
+  return `${r2Endpoint()}/${Deno.env.get("R2_BUCKET_NAME")}/${key}`;
 }
 
 const R2_PUBLIC_URL = () => Deno.env.get("R2_PUBLIC_URL") || "";
@@ -468,6 +472,7 @@ serve(async (req) => {
         try {
           const r2 = getR2Client();
           const url = r2Url(storagePath);
+          console.log("R2 upload URL:", url, "Bucket:", Deno.env.get("R2_BUCKET_NAME"), "Account:", Deno.env.get("R2_ACCOUNT_ID"));
           const uploadResp = await r2.fetch(url, {
             method: "PUT",
             headers: { "Content-Type": mime },
