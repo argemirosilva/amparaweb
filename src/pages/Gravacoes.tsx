@@ -75,7 +75,13 @@ function getDateLabel(iso: string): string {
 
   if (diff === 0) return "Hoje";
   if (diff === 1) return "Ontem";
-  if (diff === 2) return "Anteontem";
+  if (diff >= 2 && diff <= 6) {
+    const weekday = d.toLocaleDateString("pt-BR", { weekday: "long" });
+    return weekday.charAt(0).toUpperCase() + weekday.slice(1);
+  }
+  if (d.getFullYear() === now.getFullYear()) {
+    return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "long" });
+  }
   return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
 }
 
