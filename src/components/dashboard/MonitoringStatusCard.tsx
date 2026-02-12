@@ -82,12 +82,14 @@ export default function MonitoringStatusCard() {
         fim: formatTime(sessionRes.data.window_end_at),
       });
     } else if (hasActiveSession) {
-      // Session active but no window — use schedule if currently within a period
+      // Session active but no window — use schedule period for today
       const scheduleState = resolveState(todayPeriods);
       if (scheduleState.type === "monitoring") {
         setState(scheduleState);
+      } else if (todayPeriods.length > 0) {
+        const lastPeriod = todayPeriods[todayPeriods.length - 1];
+        setState({ type: "monitoring", inicio: todayPeriods[0].inicio, fim: lastPeriod.fim });
       } else {
-        // Session exists but we're outside any scheduled period (or no periods today)
         setState({ type: "monitoring_no_window" });
       }
     } else {
