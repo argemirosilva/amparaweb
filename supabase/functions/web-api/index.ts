@@ -422,6 +422,58 @@ serve(async (req) => {
         return json({ success: true, segmentos: data || [] });
       }
 
+      // ========== UPLOAD DE ÁUDIO ==========
+      case "uploadGravacao": {
+        const { file_base64, file_name, content_type, duracao_segundos } = params;
+        if (!file_base64) return json({ error: "file_base64 obrigatório" }, 400);
+
+        // Decode base64
+        const binaryStr = atob(file_base64);
+        const bytes = new Uint8Array(binaryStr.length);
+        for (let i = 0; i < binaryStr.length; i++) {
+          bytes[i] = binaryStr.charCodeAt(i);
+        }
+
+        const ext = (file_name || "audio.webm").split(".").pop() || "webm";
+        const storagePath = `${userId}/${crypto.randomUUID()}.${ext}`;
+        const mime = content_type || "audio/webm";
+        const sizeMb = +(bytes.length / (1024 * 1024)).toFixed(3);
+
+        const { error: upErr } = await supabase.storage
+          .from("audio-recordings")
+          .upload(storagePath, bytes.buffer, { contentType: mime, upsert: false });
+
+        if (upErr) {
+          console.error("Storage upload error:", upErr);
+          return json({ error: "Erro ao enviar arquivo de áudio" }, 500);
+        }
+
+        const { data: rec, error: dbErr } = await supabase
+          .from("gravacoes")
+          .insert({
+            user_id: userId,
+            storage_path: storagePath,
+            status: "pendente",
+            tamanho_mb: sizeMb,
+            duracao_segundos: duracao_segundos || null,
+            device_id: "web",
+          })
+          .select("id")
+          .single();
+
+        if (dbErr) {
+          console.error("DB insert error:", dbErr);
+          return json({ error: "Erro ao registrar gravação" }, 500);
+        }
+
+        await supabase.from("audit_logs").insert({
+          user_id: userId, action_type: "gravacao_uploaded", success: true,
+          details: { gravacao_id: rec.id, size_mb: sizeMb },
+        });
+
+        return json({ success: true, gravacao_id: rec.id }, 201);
+      }
+
       default:
         return json({ error: `Action desconhecida: ${action}` }, 400);
     }
