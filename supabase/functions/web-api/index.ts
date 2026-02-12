@@ -727,6 +727,99 @@ serve(async (req) => {
         return json({ success: true, history: (data || []).reverse() });
       }
 
+      // ========== AGENDAMENTOS DE MONITORAMENTO ==========
+      case "getSchedules": {
+        const { data } = await supabase
+          .from("agendamentos_monitoramento")
+          .select("periodos_semana, updated_at")
+          .eq("user_id", userId)
+          .maybeSingle();
+        return json({ success: true, periodos_semana: data?.periodos_semana || null, updated_at: data?.updated_at || null });
+      }
+
+      case "updateSchedules": {
+        const { periodos_semana } = params;
+        if (!periodos_semana || typeof periodos_semana !== "object") {
+          return json({ error: "periodos_semana obrigatório" }, 400);
+        }
+
+        // Basic server-side validation
+        const dias = ["seg", "ter", "qua", "qui", "sex", "sab", "dom"];
+        let totalPeriodos = 0;
+        let totalMinutos = 0;
+        for (const dia of dias) {
+          const arr = periodos_semana[dia];
+          if (!Array.isArray(arr)) continue;
+          if (arr.length > 6) return json({ error: `Máximo de 6 períodos por dia (${dia})` }, 400);
+          for (const p of arr) {
+            if (!p.inicio || !p.fim) return json({ error: "Horários obrigatórios" }, 400);
+            const [hi, mi] = p.inicio.split(":").map(Number);
+            const [hf, mf] = p.fim.split(":").map(Number);
+            const startMin = hi * 60 + mi;
+            const endMin = hf * 60 + mf;
+            if (endMin <= startMin) return json({ error: "Horário final deve ser maior que o inicial" }, 400);
+            totalMinutos += endMin - startMin;
+            totalPeriodos++;
+          }
+        }
+
+        // Upsert
+        const { data: existing } = await supabase
+          .from("agendamentos_monitoramento")
+          .select("id")
+          .eq("user_id", userId)
+          .maybeSingle();
+
+        let dbError;
+        if (existing) {
+          const { error: e } = await supabase
+            .from("agendamentos_monitoramento")
+            .update({ periodos_semana, updated_at: new Date().toISOString() })
+            .eq("user_id", userId);
+          dbError = e;
+        } else {
+          const { error: e } = await supabase
+            .from("agendamentos_monitoramento")
+            .insert({ user_id: userId, periodos_semana });
+          dbError = e;
+        }
+
+        if (dbError) {
+          console.error("Schedule save error:", dbError);
+          await supabase.from("audit_logs").insert({
+            user_id: userId, action_type: "update_schedules", success: false,
+            details: { error: dbError.message },
+          });
+          return json({ error: "Erro ao salvar configurações" }, 500);
+        }
+
+        await supabase.from("audit_logs").insert({
+          user_id: userId, action_type: "update_schedules", success: true,
+          details: { total_periodos: totalPeriodos, total_horas_semana: +(totalMinutos / 60).toFixed(1) },
+        });
+
+        // Try to sync with mobile API (fire-and-forget)
+        try {
+          const mobileUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/mobile-api`;
+          const syncRes = await fetch(mobileUrl, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+            },
+            body: JSON.stringify({ action: "update_schedules", session_token: session_token, periodos_semana }),
+          });
+          const syncOk = syncRes.ok;
+          if (!syncOk) {
+            console.warn("Mobile API sync failed:", syncRes.status);
+          }
+        } catch (e) {
+          console.warn("Mobile API sync error:", e);
+        }
+
+        return json({ success: true });
+      }
+
       default:
         return json({ error: `Action desconhecida: ${action}` }, 400);
     }
