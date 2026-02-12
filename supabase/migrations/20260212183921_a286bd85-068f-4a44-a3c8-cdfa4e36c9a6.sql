@@ -1,0 +1,1 @@
+ALTER TABLE public.usuarios ADD COLUMN IF NOT EXISTS configuracao_alertas JSONB NOT NULL DEFAULT '{}'::jsonb;

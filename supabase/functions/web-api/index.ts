@@ -835,6 +835,64 @@ serve(async (req) => {
         return json({ success: true });
       }
 
+      // ========== ACIONAMENTOS AUTOMÁTICOS ==========
+      case "getAlertTriggers": {
+        const { data } = await supabase
+          .from("usuarios")
+          .select("configuracao_alertas")
+          .eq("id", userId)
+          .single();
+
+        const defaults = {
+          acionamentos: {
+            whatsapp_guardioes: { grave: true, critico: true },
+            autoridades_190_180: { critico: false },
+          },
+        };
+        const config = data?.configuracao_alertas && Object.keys(data.configuracao_alertas).length > 0
+          ? data.configuracao_alertas
+          : defaults;
+
+        return json({ success: true, configuracao: config });
+      }
+
+      case "updateAlertTriggers": {
+        const { acionamentos } = params;
+        if (!acionamentos || typeof acionamentos !== "object") {
+          return json({ error: "acionamentos obrigatório" }, 400);
+        }
+
+        // Validate structure
+        const wg = acionamentos.whatsapp_guardioes;
+        const au = acionamentos.autoridades_190_180;
+        if (!wg || typeof wg.grave !== "boolean" || typeof wg.critico !== "boolean") {
+          return json({ error: "whatsapp_guardioes inválido" }, 400);
+        }
+        if (!au || typeof au.critico !== "boolean") {
+          return json({ error: "autoridades_190_180 inválido" }, 400);
+        }
+
+        const configValue = { acionamentos: { whatsapp_guardioes: { grave: wg.grave, critico: wg.critico }, autoridades_190_180: { critico: au.critico } } };
+
+        const { error } = await supabase
+          .from("usuarios")
+          .update({ configuracao_alertas: configValue })
+          .eq("id", userId);
+        if (error) {
+          await supabase.from("audit_logs").insert({
+            user_id: userId, action_type: "update_alert_triggers", success: false,
+            details: { error: error.message },
+          });
+          return json({ error: "Erro ao salvar configurações" }, 500);
+        }
+
+        await supabase.from("audit_logs").insert({
+          user_id: userId, action_type: "update_alert_triggers", success: true,
+          details: configValue,
+        });
+        return json({ success: true });
+      }
+
       default:
         return json({ error: `Action desconhecida: ${action}` }, 400);
     }
@@ -1154,7 +1212,72 @@ Analise e retorne a avaliação de risco usando a função assess_risk.`;
       fatores_principais: ["Erro ao processar avaliação de risco"],
       resumo_tecnico: "Não foi possível calcular o risco neste momento.",
     };
+}
+
+// ========== ACIONAMENTOS AUTOMÁTICOS HELPERS ==========
+
+interface UserAlertSettings {
+  acionamentos?: {
+    whatsapp_guardioes?: { grave?: boolean; critico?: boolean };
+    autoridades_190_180?: { critico?: boolean };
+  };
+}
+
+/**
+ * Determines whether a given channel should be triggered for a risk level.
+ * Rules:
+ * - "grave": WhatsApp only if whatsapp_guardioes.grave=true. 190/180 NEVER.
+ * - "critico": WhatsApp if whatsapp_guardioes.critico=true. 190/180 if autoridades_190_180.critico=true.
+ */
+function shouldTrigger(channel: "whatsapp_guardioes" | "autoridades_190_180", level: "grave" | "critico", userSettings: UserAlertSettings): boolean {
+  const ac = userSettings?.acionamentos;
+  if (!ac) return false;
+
+  if (channel === "whatsapp_guardioes") {
+    const wg = ac.whatsapp_guardioes;
+    if (level === "grave") return wg?.grave === true;
+    if (level === "critico") return wg?.critico === true;
+    return false;
   }
+
+  if (channel === "autoridades_190_180") {
+    // 190/180 NUNCA dispara para "grave", mesmo se configurado
+    if (level === "grave") return false;
+    if (level === "critico") return ac.autoridades_190_180?.critico === true;
+    return false;
+  }
+
+  return false;
+}
+
+/**
+ * Placeholder: trigger WhatsApp notification to guardians.
+ * Integration point for actual WhatsApp API dispatch.
+ */
+async function triggerWhatsAppGuardians(
+  _supabase: any,
+  _usuario_id: string,
+  _alerta_id: string,
+  _level: string,
+  _payload: Record<string, any>
+): Promise<void> {
+  // TODO: integrate with WhatsApp Business API / template messaging
+  console.log(`[PLACEHOLDER] triggerWhatsAppGuardians called for user=${_usuario_id}, alerta=${_alerta_id}, level=${_level}`);
+}
+
+/**
+ * Placeholder: trigger authorities (190/180).
+ * Integration point for actual emergency channel dispatch.
+ */
+async function triggerAuthorities190180(
+  _supabase: any,
+  _usuario_id: string,
+  _alerta_id: string,
+  _payload: Record<string, any>
+): Promise<void> {
+  // TODO: integrate with 190/180 dispatch system
+  console.log(`[PLACEHOLDER] triggerAuthorities190180 called for user=${_usuario_id}, alerta=${_alerta_id}`);
+}
 
   const data = await response.json();
   try {
