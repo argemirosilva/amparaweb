@@ -238,7 +238,7 @@ export default function Mapa() {
   }, [data]);
 
   return (
-    <div className="relative w-full flex-1 -mx-4 -mb-20 md:-mx-6 md:-mb-6 -mt-0">
+    <div className="relative w-full flex-1 -mx-4 -mb-20 md:-mx-6 md:-mb-6 flex items-center justify-center">
       <div ref={mapContainerRef} className="absolute inset-0 z-0" />
 
       {loading && (
