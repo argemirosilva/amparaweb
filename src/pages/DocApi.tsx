@@ -464,6 +464,75 @@ export default function DocApiPage() {
           </CardContent>
         </Card>
 
+        {/* Arquitetura de Telemetria Mobile */}
+        <Card>
+          <CardContent className="px-4 py-4 space-y-3">
+            <p className="text-sm font-semibold text-foreground">📡 Arquitetura de Telemetria Mobile (Android)</p>
+            <p className="text-xs text-muted-foreground">
+              O envio de localização e status ocorre por múltiplos mecanismos com frequências distintas:
+            </p>
+
+            <div className="space-y-2">
+              <div>
+                <p className="text-xs font-semibold text-foreground">1. Heartbeat Nativo (KeepAliveService)</p>
+                <p className="text-xs text-muted-foreground">
+                  Serviço de segundo plano que usa <code className="text-primary">AlarmManager</code> para garantir envio mesmo em Doze Mode.
+                  Envia <code className="text-primary">pingMobile</code> com status do dispositivo + localização GPS.
+                </p>
+                <ul className="text-xs text-muted-foreground list-disc list-inside ml-2 mt-1">
+                  <li><strong>Normal:</strong> a cada 30 segundos</li>
+                  <li><strong>Pânico:</strong> a cada 10 segundos</li>
+                </ul>
+              </div>
+
+              <div>
+                <p className="text-xs font-semibold text-foreground">2. Upload de Áudio (NativeRecorder)</p>
+                <p className="text-xs text-muted-foreground">
+                  Durante gravação (manual ou automática), o áudio é dividido em segmentos de 30s.
+                  Cada segmento enviado via <code className="text-primary">receberAudioMobile</code> inclui a localização GPS atual no payload.
+                </p>
+                <ul className="text-xs text-muted-foreground list-disc list-inside ml-2 mt-1">
+                  <li><strong>Intervalo:</strong> a cada 30 segundos (1 segmento)</li>
+                </ul>
+              </div>
+
+              <div>
+                <p className="text-xs font-semibold text-foreground">3. Hook de Localização (JavaScript / useLocation)</p>
+                <p className="text-xs text-muted-foreground">
+                  Camada React Native/Capacitor que envia coordenadas via <code className="text-primary">enviarLocalizacaoGPS</code>.
+                </p>
+                <ul className="text-xs text-muted-foreground list-disc list-inside ml-2 mt-1">
+                  <li><strong>Normal:</strong> a cada 5 minutos</li>
+                  <li><strong>Pânico:</strong> a cada 30 segundos</li>
+                </ul>
+              </div>
+
+              <div>
+                <p className="text-xs font-semibold text-foreground">4. Eventos Imediatos</p>
+                <p className="text-xs text-muted-foreground">
+                  Localização enviada instantaneamente quando:
+                </p>
+                <ul className="text-xs text-muted-foreground list-disc list-inside ml-2 mt-1">
+                  <li>Modo de pânico é ativado</li>
+                  <li>Gravação é iniciada (manual ou por gatilho de áudio)</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="rounded-md bg-muted/50 border border-border p-3">
+              <p className="text-[10px] font-mono text-muted-foreground uppercase mb-1.5">Resumo de Frequências</p>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                <span className="text-muted-foreground">Ping de Status</span>
+                <span className="font-mono text-foreground">30s / 10s (pânico)</span>
+                <span className="text-muted-foreground">Upload de Áudio</span>
+                <span className="font-mono text-foreground">30s (com GPS)</span>
+                <span className="text-muted-foreground">Tracking JS</span>
+                <span className="font-mono text-foreground">5min / 30s (pânico)</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Anti-coerção */}
         <Card>
           <CardContent className="px-4 py-4 space-y-2">
