@@ -141,7 +141,7 @@ export default function GravacoesPage() {
           </p>
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           {gravacoes.map((g) => {
             const isExpanded = expanded === g.id;
             const statusInfo = STATUS_MAP[g.status] || { label: g.status, variant: "secondary" as const };
@@ -154,7 +154,7 @@ export default function GravacoesPage() {
               >
                 <button
                   onClick={() => setExpanded(isExpanded ? null : g.id)}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-accent/30 transition-colors"
+                  className="w-full flex items-center gap-2 px-2.5 py-1.5 text-left hover:bg-accent/30 transition-colors"
                 >
                   <GradientIcon icon={Play} size="sm" />
 
