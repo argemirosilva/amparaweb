@@ -89,7 +89,7 @@ export default function DeviceStatusCard() {
               : "bg-muted text-muted-foreground"
           }`}
         >
-          {online ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
+          {online ? <Wifi className="w-2 h-2" /> : <WifiOff className="w-2 h-2" />}
           {online ? "Online" : "Offline"}
         </span>
       </div>
