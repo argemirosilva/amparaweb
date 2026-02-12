@@ -1576,7 +1576,11 @@ async function handleReportarStatusGravacao(
 
       console.log(`Created monitoring session ${newSession?.id} for device ${deviceId}, origem: ${origemGravacao}`);
 
-      // Device status is controlled by the app via pingMobile — no override here
+      // Set is_recording on the user's current device (any device_id)
+      await supabase
+        .from("device_status")
+        .update({ is_recording: true })
+        .eq("user_id", userId);
 
       await supabase.from("audit_logs").insert({
         user_id: userId,
