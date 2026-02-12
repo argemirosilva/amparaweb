@@ -394,7 +394,28 @@ serve(async (req) => {
 
         const { data, count, error } = await query;
         if (error) return json({ error: "Erro ao buscar gravações" }, 500);
-        return json({ success: true, gravacoes: data || [], total: count || 0, page, per_page });
+
+        // Enrich with nivel_risco from analises
+        const gravIds = (data || []).map((g: any) => g.id);
+        let analiseMap: Record<string, string> = {};
+        if (gravIds.length > 0) {
+          const { data: analises } = await supabase
+            .from("gravacoes_analises")
+            .select("gravacao_id, nivel_risco")
+            .in("gravacao_id", gravIds);
+          if (analises) {
+            for (const a of analises) {
+              analiseMap[a.gravacao_id] = a.nivel_risco || "";
+            }
+          }
+        }
+
+        const enriched = (data || []).map((g: any) => ({
+          ...g,
+          nivel_risco: analiseMap[g.id] || null,
+        }));
+
+        return json({ success: true, gravacoes: enriched, total: count || 0, page, per_page });
       }
 
       case "getGravacaoSignedUrl": {
