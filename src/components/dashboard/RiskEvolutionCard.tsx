@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TrendingUp, TrendingDown, Minus, ShieldAlert, AlertTriangle, Shield, ShieldCheck } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, ShieldAlert, AlertTriangle, Shield, ShieldCheck, ChevronDown, ChevronUp } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { callWebApi } from "@/services/webApiService";
 import {
@@ -52,6 +52,7 @@ export default function RiskEvolutionCard() {
   const [history, setHistory] = useState<HistoryPoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState(false);
 
   const fetchData = useCallback(async (w: WindowDays) => {
     if (!sessionToken) return;
@@ -169,23 +170,47 @@ export default function RiskEvolutionCard() {
               </ChartContainer>
             )}
 
-            {/* Fatores */}
-            {assessment.fatores && assessment.fatores.length > 0 && (
-              <ul className="space-y-1">
-                {(assessment.fatores as string[]).slice(0, 3).map((f, i) => (
-                  <li key={i} className="text-xs text-muted-foreground flex items-start gap-1.5">
-                    <span className="mt-1 w-1 h-1 rounded-full shrink-0" style={{ backgroundColor: level.color }} />
-                    {f}
-                  </li>
-                ))}
-              </ul>
-            )}
+            {/* Detalhes expansíveis */}
+            <button
+              onClick={() => setExpanded(!expanded)}
+              className="w-full flex items-center justify-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors py-1"
+            >
+              {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+              {expanded ? "Ocultar detalhes" : "Ver detalhes da análise"}
+            </button>
 
-            {/* Resumo */}
-            {assessment.resumo_tecnico && (
-              <p className="text-[11px] text-muted-foreground/70 leading-relaxed">
-                {assessment.resumo_tecnico}
-              </p>
+            {expanded && (
+              <div className="space-y-3 pt-1 border-t border-border/50">
+                {/* Fatores */}
+                {assessment.fatores && assessment.fatores.length > 0 && (
+                  <div>
+                    <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Fatores identificados</span>
+                    <ul className="mt-1.5 space-y-1">
+                      {(assessment.fatores as string[]).map((f, i) => (
+                        <li key={i} className="text-xs text-foreground/80 flex items-start gap-1.5">
+                          <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: level.color }} />
+                          {f}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Resumo */}
+                {assessment.resumo_tecnico && (
+                  <div>
+                    <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Resumo técnico</span>
+                    <p className="mt-1 text-xs text-foreground/70 leading-relaxed">
+                      {assessment.resumo_tecnico}
+                    </p>
+                  </div>
+                )}
+
+                {/* Período */}
+                <p className="text-[10px] text-muted-foreground/60">
+                  Período: {assessment.period_start} a {assessment.period_end}
+                </p>
+              </div>
             )}
           </>
         ) : (
