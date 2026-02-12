@@ -7,8 +7,8 @@ import { Loader2, MapPin } from "lucide-react";
 function getMovementLabel(speed: number | null, isHome: boolean): { label: string; emoji: string } {
   if (isHome) return { label: "Em Casa", emoji: "🏠" };
   if (speed === null || speed === 0) return { label: "Parada", emoji: "📍" };
-  if (speed < 15) return { label: "Caminhando", emoji: "🚶‍♀️" };
-  return { label: "Veículo", emoji: "🚗" };
+  if (speed >= 1 && speed <= 15) return { label: "Caminhando", emoji: "🚶‍♀️" };
+  return { label: "Em Veículo", emoji: "🚗" };
 }
 
 function buildMarkerHtml(
