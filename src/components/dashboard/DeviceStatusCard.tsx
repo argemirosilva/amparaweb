@@ -206,7 +206,7 @@ export default function DeviceStatusCard() {
         {/* Meta row */}
         {device && (
           <div className="flex items-center gap-3 mt-1.5">
-            {device.last_ping_at && (
+            {device.last_ping_at && (Date.now() - new Date(device.last_ping_at).getTime() >= 600_000) && (
               <span className="text-xs text-muted-foreground inline-flex items-center gap-1">
                 <Clock className="w-3 h-3" />
                 {timeSince(device.last_ping_at)}
