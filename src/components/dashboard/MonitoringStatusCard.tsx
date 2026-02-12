@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
 import { Shield, Clock, Mic } from "lucide-react";
 import GradientIcon from "@/components/ui/gradient-icon";
 
@@ -28,49 +27,39 @@ export default function MonitoringStatusCard() {
 
   if (loading) {
     return (
-      <div className="ampara-card space-y-4">
-        <Skeleton className="h-6 w-48" />
-        <Skeleton className="h-10" />
-        <Skeleton className="h-10" />
+      <div className="ampara-card p-3">
+        <Skeleton className="h-12 w-full" />
       </div>
     );
   }
 
   return (
-    <div className="ampara-card p-4 space-y-4">
-      <div className="flex items-center gap-3">
+    <div className="ampara-card px-4 py-3">
+      <div className="flex items-center gap-2.5 mb-2">
         <GradientIcon icon={Shield} size="sm" />
-        <h3 className="font-display font-semibold text-foreground">Status do Monitoramento</h3>
+        <p className="text-sm font-semibold text-primary">Status do Monitoramento</p>
       </div>
 
-      <div className="space-y-4 text-sm">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Shield className="w-4 h-4" />
-            Sessão atual
-          </div>
+      <div className="flex items-center gap-4 text-xs">
+        <span className="inline-flex items-center gap-1 text-muted-foreground">
+          <Shield className="w-3 h-3" />
+          Sessão:
           {sessionActive ? (
-            <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 hover:bg-emerald-100">Ativa</Badge>
+            <span className="text-emerald-600 font-medium">Ativa</span>
           ) : (
-            <Badge variant="secondary">Não ativa</Badge>
+            <span className="text-muted-foreground font-medium">Inativa</span>
           )}
-        </div>
+        </span>
 
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Clock className="w-4 h-4" />
-            Dentro do horário
-          </div>
-          <span className="text-foreground">—</span>
-        </div>
+        <span className="inline-flex items-center gap-1 text-muted-foreground">
+          <Clock className="w-3 h-3" />
+          Horário: —
+        </span>
 
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Mic className="w-4 h-4" />
-            Última gravação
-          </div>
-          <span className="text-foreground">—</span>
-        </div>
+        <span className="inline-flex items-center gap-1 text-muted-foreground">
+          <Mic className="w-3 h-3" />
+          Gravação: —
+        </span>
       </div>
     </div>
   );
