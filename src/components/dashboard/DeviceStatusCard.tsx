@@ -102,14 +102,25 @@ export default function DeviceStatusCard() {
           </span>
 
           {/* GPS button - always visible */}
-          <button
-            onClick={() => setShowMap(true)}
-            className="inline-flex items-center gap-1 text-[10px] font-medium text-primary hover:text-primary/80 transition-colors"
-            title="Ver localização"
-          >
-            <MapPin className="w-3.5 h-3.5" />
-            GPS
-          </button>
+          {(() => {
+            const recentGps = location?.created_at
+              ? Date.now() - new Date(location.created_at).getTime() < 60_000
+              : false;
+            return (
+              <button
+                onClick={() => setShowMap(true)}
+                className={`inline-flex items-center gap-1 text-[10px] font-medium transition-colors ${
+                  recentGps
+                    ? "text-emerald-500"
+                    : "text-primary hover:text-primary/80"
+                }`}
+                title="Ver localização"
+              >
+                <MapPin className={`w-3.5 h-3.5 ${recentGps ? "animate-pulse" : ""}`} />
+                GPS
+              </button>
+            );
+          })()}
         </div>
 
         {/* Meta row */}
