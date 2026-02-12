@@ -859,17 +859,79 @@ async function computeRiskWithGemini(payload: any) {
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
   if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
-  const systemPrompt = `Você é um especialista em avaliação de risco de violência doméstica. Analise os dados estatísticos fornecidos (contagens diárias de alertas de pânico, gravações de áudio, categorias de violência detectadas, perfil do agressor) e avalie o nível de risco atual.
+  const systemPrompt = `Você é um Analista de Risco Dinâmico especializado em violência doméstica.
 
-REGRAS:
-- Baseie-se APENAS nos dados numéricos e flags fornecidos
-- Nunca invente dados ou assuma informações não fornecidas
-- risk_score: 0-100 (0=sem risco, 100=risco extremo)
-- risk_level: "Sem Risco", "Baixo", "Moderado", "Alto" ou "Crítico"
-- trend: "Subindo", "Estável" ou "Reduzindo"
-- trend_percentage: variação percentual estimada
-- fatores_principais: array de até 5 strings curtas descrevendo os principais fatores de risco
-- resumo_tecnico: texto curto (max 200 chars) com a avaliação geral`;
+Você receberá um JSON com histórico agregado (7/15/30 dias) de eventos e sinais.
+Seu trabalho é calcular um score de risco (0 a 100), classificar nível, identificar tendência e explicar fatores principais.
+Você deve analisar o contexto ao longo do tempo (evolução), não apenas um dia isolado.
+
+ENTRADA
+Você receberá um JSON com:
+- window_days, period_start, period_end
+- daily_summary[] com contagens por dia e flags
+- totals agregados
+- aggressor_profile_flags (arma, força de segurança, ameaça, medida protetiva etc.)
+- context_samples (opcional, já sanitizado)
+
+OBJETIVO
+Retornar JSON no formato exato usando a função assess_risk.
+
+REGRAS DE ANÁLISE (CONTEXTUAL E TEMPORAL)
+1) Avalie o padrão ao longo dos dias:
+   - frequência (quantas ocorrências)
+   - intensidade (pânico, coerção, ameaça)
+   - escalada (crescimento nos últimos 3-5 dias)
+   - persistência (eventos repetidos)
+2) Diferencie um pico isolado vs tendência contínua.
+3) Considere flags do agressor como multiplicadores de risco:
+   - arma em casa aumenta risco
+   - força de segurança aumenta risco
+   - medida protetiva e descumprimento aumentam risco fortemente
+4) Coerção (cancelamento sob coerção) é indicador crítico.
+5) Se não houver eventos por longo período, risco pode reduzir gradualmente, mas nunca zerar se houver flags graves (arma/ameaça/descumprimento).
+
+METODOLOGIA (HEURÍSTICA + CALIBRAÇÃO)
+Use um score base por evento e ajuste por tendência:
+- panic_activated: +20
+- panic_canceled_coercion: +25
+- threat_events: +15 cada (cap por dia: +30)
+- physical_events: +25 cada
+- psychological_events: +8 cada (cap por dia: +20)
+- patrimonial_events: +10 cada
+- moral_events: +6 cada
+- protective_order_breached_flag: +30 (se true em qualquer dia)
+- weapon_flag: +15 (se true)
+- security_force_flag: +10 (se true)
+
+TENDÊNCIA
+- Calcular média dos primeiros 30% do período vs últimos 30% do período.
+- trend_percentage = ((media_final - media_inicial) / max(media_inicial,1)) * 100
+- Classificação:
+  - Subindo se trend_percentage >= +10%
+  - Reduzindo se <= -10%
+  - Estável caso contrário
+
+LEVEL
+- 0-25: Baixo
+- 26-50: Moderado
+- 51-75: Alto
+- 76-100: Crítico
+
+Ajuste para "Crítico" automaticamente se:
+- houver coerção + ameaça + arma
+- ou descumprimento de medida protetiva
+- ou ameaça de morte (se vier sinalizado)
+
+FATORES PRINCIPAIS
+- Liste de 3 a 6 fatores com linguagem curta e técnica, por exemplo:
+  "Coerção detectada em cancelamento de pânico"
+  "Aumento de ameaças nos últimos 5 dias"
+  "Flag: presença de arma em casa"
+
+CONDUTA
+- Não inventar fatos que não estejam no JSON.
+- Não inserir dados pessoais.
+- Resposta sempre em JSON válido.`;
 
   const userPrompt = `Dados dos últimos ${payload.window_days} dias (${payload.period_start} a ${payload.period_end}):
 
@@ -901,13 +963,13 @@ Analise e retorne a avaliação de risco usando a função assess_risk.`;
               type: "object",
               properties: {
                 risk_score: { type: "integer", description: "Score de risco 0-100" },
-                risk_level: { type: "string", enum: ["Sem Risco", "Baixo", "Moderado", "Alto", "Crítico"] },
+                risk_level: { type: "string", enum: ["Baixo", "Moderado", "Alto", "Crítico"] },
                 trend: { type: "string", enum: ["Subindo", "Estável", "Reduzindo"] },
                 trend_percentage: { type: "number", description: "Variação percentual" },
                 fatores_principais: { type: "array", items: { type: "string" }, description: "Lista de fatores de risco" },
                 resumo_tecnico: { type: "string", description: "Resumo curto da avaliação" },
               },
-              required: ["risk_score", "risk_level", "trend", "fatores_principais", "resumo_tecnico"],
+              required: ["risk_score", "risk_level", "trend", "trend_percentage", "fatores_principais", "resumo_tecnico"],
               additionalProperties: false,
             },
           },
@@ -923,7 +985,7 @@ Analise e retorne a avaliação de risco usando a função assess_risk.`;
     // Return a safe default
     return {
       risk_score: 0,
-      risk_level: "Sem Risco",
+      risk_level: "Baixo",
       trend: "Estável",
       trend_percentage: 0,
       fatores_principais: ["Erro ao processar avaliação de risco"],
@@ -940,7 +1002,7 @@ Analise e retorne a avaliação de risco usando a função assess_risk.`;
     console.error("Failed to parse Gemini response:", e, JSON.stringify(data));
     return {
       risk_score: 0,
-      risk_level: "Sem Risco",
+      risk_level: "Baixo",
       trend: "Estável",
       trend_percentage: 0,
       fatores_principais: ["Erro ao interpretar resposta da IA"],
