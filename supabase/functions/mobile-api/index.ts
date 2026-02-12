@@ -1611,6 +1611,65 @@ async function handleReportarStatusGravacao(
     const { data: activeSession } = await sessionQuery.maybeSingle();
 
     if (activeSession) {
+      // Update device status first
+      if (deviceId) {
+        await supabase
+          .from("device_status")
+          .update({ is_recording: false, is_monitoring: false })
+          .eq("user_id", userId)
+          .eq("device_id", deviceId);
+      }
+
+      // If total_segments is 0, recording was too short (<15s) — discard entirely
+      if (totalSegmentos === 0) {
+        // Delete any orphan segments from R2 (safety)
+        const { data: orphanSegs } = await supabase
+          .from("gravacoes_segmentos")
+          .select("id, storage_path, file_url")
+          .eq("monitor_session_id", activeSession.id);
+
+        if (orphanSegs && orphanSegs.length > 0) {
+          const r2 = getR2Client();
+          for (const seg of orphanSegs) {
+            const segPath = seg.storage_path || seg.file_url;
+            if (segPath) {
+              try {
+                const delRes = await r2.fetch(r2Url(segPath), { method: "DELETE" });
+                await delRes.body?.cancel();
+              } catch { /* ignore */ }
+            }
+            await supabase.from("gravacoes_segmentos").delete().eq("id", seg.id);
+          }
+        }
+
+        // Delete the session record
+        await supabase
+          .from("monitoramento_sessoes")
+          .delete()
+          .eq("id", activeSession.id);
+
+        console.log(`Discarded short session ${activeSession.id} (0 segments)`);
+
+        await supabase.from("audit_logs").insert({
+          user_id: userId,
+          action_type: "session_discarded_short",
+          success: true,
+          ip_address: ip,
+          details: { session_id: activeSession.id, reason: "zero_segments", motivo_parada: motivoParada },
+        });
+
+        return jsonResponse({
+          success: true,
+          message: "Gravação muito curta, descartada",
+          sessao_id: activeSession.id,
+          status: "descartada",
+          total_segmentos: 0,
+          motivo_parada: motivoParada ?? null,
+          servidor_timestamp: new Date().toISOString(),
+        });
+      }
+
+      // Normal sealing flow (has segments)
       const now = new Date().toISOString();
       await supabase
         .from("monitoramento_sessoes")
@@ -1622,21 +1681,12 @@ async function handleReportarStatusGravacao(
         })
         .eq("id", activeSession.id);
 
-      // Update device status
-      if (deviceId) {
-        await supabase
-          .from("device_status")
-          .update({ is_recording: false, is_monitoring: false })
-          .eq("user_id", userId)
-          .eq("device_id", deviceId);
-      }
-
       await supabase.from("audit_logs").insert({
         user_id: userId,
         action_type: "session_sealed",
         success: true,
         ip_address: ip,
-        details: { session_id: activeSession.id, sealed_reason: motivoParada || "manual", origem: origemGravacao },
+        details: { session_id: activeSession.id, sealed_reason: motivoParada || "manual", origem: origemGravacao, total_segmentos: totalSegmentos },
       });
 
       return jsonResponse({

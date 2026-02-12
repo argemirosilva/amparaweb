@@ -225,13 +225,22 @@ serve(async (req) => {
             .order("segmento_idx", { ascending: true });
 
           if (!segments || segments.length === 0) {
-            // No segments — mark and skip
+            // No segments — recording was too short, discard session entirely
             await supabase
               .from("monitoramento_sessoes")
-              .update({ status: "sem_segmentos" })
+              .delete()
               .eq("id", session.id);
 
-            results.push({ action: "no_segments", session_id: session.id });
+            console.log(`Discarded empty session ${session.id} (0 segments)`);
+
+            await supabase.from("audit_logs").insert({
+              user_id: session.user_id,
+              action_type: "session_discarded_short",
+              success: true,
+              details: { session_id: session.id, reason: "zero_segments_maintenance" },
+            });
+
+            results.push({ action: "discarded_empty", session_id: session.id });
             continue;
           }
 
