@@ -165,7 +165,7 @@ export default function GravacoesPage() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h1 className="text-2xl font-display font-bold text-foreground">Gravações</h1>
         <div className="flex items-center gap-2 text-sm">
-          <span className="text-muted-foreground">{total} gravação(ões)</span>
+          <span className="text-muted-foreground">{total} {total === 1 ? "gravação" : "gravações"}</span>
         </div>
       </div>
 
