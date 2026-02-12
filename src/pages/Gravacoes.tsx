@@ -31,10 +31,10 @@ interface Gravacao {
 }
 
 const RISCO_COLORS: Record<string, string> = {
-  sem_risco: "hsl(var(--risco-sem-risco))",
-  moderado: "hsl(var(--risco-moderado))",
-  alto: "hsl(var(--risco-alto))",
-  critico: "hsl(var(--risco-critico))",
+  sem_risco: "#22c55e",
+  moderado: "#eab308",
+  alto: "#f97316",
+  critico: "#ef4444",
 };
 
 const RISCO_LABELS: Record<string, string> = {
