@@ -1653,7 +1653,8 @@ async function handleReportarStatusGravacao(
   }
 
   // ── Session sealing flow ──
-  if (statusGravacao === "finalizada" && origemGravacao && validOrigens.includes(origemGravacao)) {
+  // Seal active session on finalization, regardless of origem_gravacao
+  if (statusGravacao === "finalizada") {
     let sessionQuery = supabase
       .from("monitoramento_sessoes")
       .select("id")
