@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/contexts/AuthContext";
 import { callWebApi } from "@/services/webApiService";
 import { Badge } from "@/components/ui/badge";
@@ -53,8 +54,9 @@ function formatDuration(s: number | null): string {
   return `${m}:${sec.toString().padStart(2, "0")}`;
 }
 
-function formatDate(iso: string): string {
+function formatDate(iso: string, compact = false): string {
   const d = new Date(iso);
+  if (compact) return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
   return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" });
 }
 
@@ -72,6 +74,7 @@ const STATUS_MAP: Record<string, { label: string; variant: "default" | "secondar
 
 export default function GravacoesPage() {
   const { sessionToken } = useAuth();
+  const isMobile = useIsMobile();
   const [gravacoes, setGravacoes] = useState<Gravacao[]>([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
@@ -161,7 +164,7 @@ export default function GravacoesPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
                       <span className="text-xs font-medium text-foreground">
-                        {formatDate(g.created_at)}
+                        {formatDate(g.created_at, isMobile)}
                       </span>
                       <span className="text-[10px] text-muted-foreground">
                         {formatTime(g.created_at)}
