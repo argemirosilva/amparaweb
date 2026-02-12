@@ -150,21 +150,24 @@ export default function GravacaoExpandedContent({
 
       {/* Transcription with highlights */}
       {gravacao.transcricao && (
-        <div className="rounded-xl border border-border/50 overflow-hidden">
-          <div className="flex items-center justify-between px-3 py-2 bg-muted/30 border-b border-border/50">
+        <details className="rounded-lg border border-border/50 overflow-hidden group">
+          <summary className="flex items-center justify-between px-3 py-2 bg-muted/30 cursor-pointer select-none hover:bg-muted/50 transition-colors">
             <div className="flex items-center gap-1.5">
               <FileText className="w-3 h-3 text-muted-foreground" />
               <span className="text-[11px] font-medium text-muted-foreground">Transcrição</span>
             </div>
-            {gravacao.duracao_segundos && (
-              <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                <Clock className="w-2.5 h-2.5" />
-                {formatDur(gravacao.duracao_segundos)}
-              </div>
-            )}
-          </div>
-          <div className="px-3 py-3">
-            <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
+            <div className="flex items-center gap-2">
+              {gravacao.duracao_segundos && (
+                <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                  <Clock className="w-2.5 h-2.5" />
+                  {formatDur(gravacao.duracao_segundos)}
+                </span>
+              )}
+              <span className="text-[10px] text-muted-foreground group-open:rotate-90 transition-transform">▶</span>
+            </div>
+          </summary>
+          <div className="px-3 py-2.5 max-h-40 overflow-y-auto">
+            <p className="text-xs text-foreground/90 leading-relaxed whitespace-pre-wrap">
               {transcriptionParts
                 ? transcriptionParts.map((p) =>
                     p.isHighlight ? (
@@ -186,7 +189,7 @@ export default function GravacaoExpandedContent({
                 : gravacao.transcricao}
             </p>
           </div>
-        </div>
+        </details>
       )}
 
       {/* Actions row */}
