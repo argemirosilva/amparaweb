@@ -1,200 +1,128 @@
 
 
-# AMPARA Mobile API v2.0 - Fase 1
+# Risk Engine -- Plano de Implementacao
 
-## Resumo
+## Visao Geral
 
-Criar uma Edge Function unica `mobile-api` que atua como endpoint action-based (`POST /mobile-api`), roteando por campo `action` no body JSON. Fase 1 implementa completamente 4 actions e cria stubs 501 para as demais.
+Criar um motor de avaliacao de risco que consolida dados historicos do banco (alertas de panico, gravacoes, analises, audit logs, perfil do agressor), envia um payload resumido ao Gemini, salva o resultado e plota um grafico de evolucao no dashboard.
 
-## Novas Tabelas Necessarias (Migracao SQL)
+---
 
-O banco atual so possui `usuarios`, `user_sessions`, `audit_logs` e `rate_limit_attempts`. Para a API mobile sao necessarias tabelas adicionais:
+## 1. Nova Tabela: `risk_assessments`
 
-### Tabelas para Fase 1
-
-1. **refresh_tokens** - tokens de refresh com rotacao
-   - `id` uuid PK
-   - `user_id` uuid FK -> usuarios
-   - `token_hash` text NOT NULL UNIQUE
-   - `expires_at` timestamptz NOT NULL
-   - `revoked_at` timestamptz NULL
-   - `replaced_by` uuid NULL (FK self-ref para rotacao)
-   - `ip_address` text NULL
-   - `created_at` timestamptz DEFAULT now()
-
-2. **device_status** - estado de cada dispositivo (ping, bateria, versao)
-   - `id` uuid PK
-   - `user_id` uuid FK -> usuarios
-   - `device_id` text NOT NULL
-   - `last_ping_at` timestamptz
-   - `status` text DEFAULT 'offline' (online/offline/stale)
-   - `bateria_percentual` int NULL
-   - `is_charging` boolean NULL
-   - `dispositivo_info` text NULL
-   - `versao_app` text NULL
-   - `is_recording` boolean DEFAULT false
-   - `is_monitoring` boolean DEFAULT false
-   - `timezone` text NULL
-   - `timezone_offset_minutes` int NULL
-   - `created_at` timestamptz DEFAULT now()
-   - `updated_at` timestamptz DEFAULT now()
-   - UNIQUE(user_id, device_id)
-
-3. **monitoramento_sessoes** - sessoes de monitoramento agendado
-   - `id` uuid PK
-   - `user_id` uuid FK -> usuarios
-   - `device_id` text NULL
-   - `status` text DEFAULT 'ativa' (ativa/finalizada/cancelada)
-   - `iniciado_em` timestamptz DEFAULT now()
-   - `finalizado_em` timestamptz NULL
-   - `created_at` timestamptz DEFAULT now()
-
-4. **agendamentos_monitoramento** - periodos semanais de monitoramento
-   - `id` uuid PK
-   - `user_id` uuid FK -> usuarios UNIQUE
-   - `periodos_semana` jsonb NOT NULL DEFAULT '{}'
-   - `updated_at` timestamptz DEFAULT now()
-
-5. Adicionar coluna `tipo_interesse` (text, nullable) em `usuarios` (campo retornado pelo login mobile).
-
-### Tabelas para Fase 2 (stubs por enquanto)
-
-- `alertas_panico`, `localizacoes`, `gravacoes`, `gravacoes_segmentos` - serao criadas quando as actions forem implementadas.
-
-## Edge Function: `mobile-api`
-
-Um unico arquivo `supabase/functions/mobile-api/index.ts` com:
-
-### Estrutura do Roteador
+Criar via migration:
 
 ```text
-POST /mobile-api
-  -> parse JSON body
-  -> extrair "action"
-  -> switch(action)
-      loginCustomizado    -> handleLogin()
-      refresh_token       -> handleRefreshToken()
-      pingMobile          -> handlePing()
-      syncConfigMobile    -> handleSyncConfig()
-      logoutMobile        -> stub 501
-      validate_password   -> stub 501
-      change_password     -> stub 501
-      update_schedules    -> stub 501
-      enviarLocalizacaoGPS -> stub 501
-      acionarPanicoMobile -> stub 501
-      cancelarPanicoMobile -> stub 501
-      receberAudioMobile  -> stub 501
-      getAudioSignedUrl   -> stub 501
-      reprocessarGravacao -> stub 501
-      reprocess_recording -> stub 501
-      reportarStatusMonitoramento -> stub 501
-      reportarStatusGravacao      -> stub 501
-      default -> 400 "Action desconhecida"
+Campos:
+- id uuid PK default gen_random_uuid()
+- usuario_id uuid NOT NULL (FK -> usuarios.id)
+- window_days int NOT NULL (7, 15 ou 30)
+- period_start date NOT NULL
+- period_end date NOT NULL
+- risk_score int NOT NULL (0..100)
+- risk_level text NOT NULL
+- trend text NOT NULL
+- trend_percentage numeric
+- fatores jsonb
+- resumo_tecnico text
+- computed_at timestamptz default now()
+
+Indice: (usuario_id, window_days, period_end DESC)
+RLS: policy restritiva (false) igual as demais tabelas sensiveis -- acesso apenas via service_role na edge function.
 ```
 
-### Detalhes de Implementacao - Fase 1
+---
 
-#### loginCustomizado
-- Rate limit 5/15min por email+ip (tabela `rate_limit_attempts`)
-- Buscar usuario por email em `usuarios`
-- Comparar `senha` com `senha_hash` (bcrypt) e `senha_coacao_hash`
-- Se coacao: `loginTipo="coacao"`, registrar evento silencioso em `audit_logs`
-- Se `tipo_acao="desinstalacao"`: registrar em `audit_logs`
-- Gerar `access_token` (64 bytes hex, 24h) salvo como hash em `user_sessions`
-- Gerar `refresh_token` (128 chars hex, 30 dias) salvo como hash em `refresh_tokens`
-- Retornar usuario com campos: id, email, nome_completo, telefone, tipo_interesse
-- Response inclui `session.token` e `session.expires_at`
+## 2. Backend: Nova action `getRiskAssessment` na `web-api`
 
-#### refresh_token
-- Receber refresh_token (128 chars)
-- Buscar em `refresh_tokens` por hash, nao revogado, nao expirado
-- Revogar o token atual (`revoked_at = now()`)
-- Gerar novo par access_token + refresh_token
-- Salvar novo refresh com `replaced_by` apontando para o anterior
-- Criar nova sessao em `user_sessions`
-- Retornar `{ success, access_token, refresh_token, user }`
+Adicionar ao switch da `web-api/index.ts` uma action que:
 
-#### pingMobile
-- Validar session_token (buscar em user_sessions por hash)
-- Sessao expirada ou revogada: 401
-- Upsert em `device_status` com dados recebidos (bateria, charging, versao, etc.)
-- Atualizar `last_ping_at`, `status='online'`
-- Retornar `{ success: true, status: "online", servidor_timestamp }`
+1. Recebe `{ window_days: 7|15|30 }` do frontend
+2. Verifica cache: busca `risk_assessments` onde `usuario_id = userId`, `window_days` = pedido, `period_end` = hoje, e `computed_at` < 1h atras
+3. Se existe e e recente, retorna direto (sem chamar Gemini)
+4. Se nao existe ou esta velho:
+   a. Chama `buildRiskHistoryPayload(supabase, userId, windowDays)`
+   b. Chama `computeRiskWithGemini(payload)` via Lovable AI Gateway
+   c. Salva/upsert em `risk_assessments`
+   d. Retorna resultado
 
-#### syncConfigMobile
-- Buscar usuario por email
-- Buscar agendamentos em `agendamentos_monitoramento`
-- Se `device_id` fornecido e horario atual dentro de periodo agendado: criar sessao em `monitoramento_sessoes` com status='ativa'
-- Usar timezone/offset do cliente para calculo de horario
-- Retornar configuracoes do usuario
+### 2a. Funcao `buildRiskHistoryPayload`
 
-### Funcoes Utilitarias (dentro do mesmo arquivo)
+Consulta as tabelas existentes e monta o JSON:
 
-- `generateToken(length)` - gera token hex
-- `hashToken(token)` - SHA-256 do token
-- `checkRateLimit(supabase, identifier, action, limit, windowMinutes)` - consulta rate_limit_attempts
-- `validateSession(supabase, session_token)` - valida sessao e retorna user
-- `jsonResponse(data, status, corsHeaders)` - helper de resposta
+| Fonte | Tabela | Dados extraidos |
+|---|---|---|
+| Alertas de panico | `alertas_panico` | Contagens por dia: ativados, cancelados (manual, timeout, coercao), status |
+| Gravacoes | `gravacoes` | Contagens por dia: total de audios, status |
+| Segmentos | `gravacoes_segmentos` | Contagem de segmentos por dia |
+| Analises de audio | `gravacoes_analises` | Categorias detectadas (ameaca, violencia_fisica, psicologica, moral, patrimonial), nivel_risco por gravacao |
+| Perfil agressor | `vitimas_agressores` + `agressores` | Flags: arma, forca_seguranca |
+| Audit logs | `audit_logs` | Eventos de coercao (login_coercion etc.) |
 
-## Configuracao
+Resultado: array `daily_summary` com contagens por dia, `aggressor_profile_flags`, e `last_N_days_totals`. Sem textos sensiveis -- apenas contagens e labels.
 
-Adicionar em `supabase/config.toml`:
+### 2b. Funcao `computeRiskWithGemini`
 
-```toml
-[functions.mobile-api]
-verify_jwt = false
-```
+- Envia o payload ao Lovable AI Gateway (`google/gemini-3-flash-preview`) com tool calling para extrair JSON estruturado
+- Prompt de sistema instrui o modelo a retornar: `risk_score` (0-100), `risk_level`, `trend`, `trend_percentage`, `fatores_principais[]`, `resumo_tecnico`
+- Usa tool calling (structured output) para garantir JSON valido
 
-## Testes
+### 2c. Nova action `getRiskHistory`
 
-Criar `supabase/functions/mobile-api/index.test.ts` com testes de contrato usando `Deno.test()`:
+Para plotar o grafico, retorna os ultimos N registros de `risk_assessments` para o usuario em uma janela especifica, ordenados por `period_end`.
 
-1. **loginCustomizado** - sucesso com credenciais validas, erro com senha errada, rate limit apos 5 tentativas
-2. **refresh_token** - rotacao gera novo par, token invalido retorna 401
-3. **pingMobile** - sucesso com sessao valida, 401 com sessao expirada
-4. **syncConfigMobile** - retorno de config, criacao de sessao quando dentro da janela
+---
 
-## Exemplos curl para Teste Manual
+## 3. Frontend: Card "Evolucao do Risco" no Dashboard
+
+### Novo componente: `src/components/dashboard/RiskEvolutionCard.tsx`
+
+- Seletor de janela: 7 / 15 / 30 dias (tabs ou botoes)
+- Grafico de linha (`recharts`, ja instalado) mostrando `risk_score` ao longo do tempo
+- Badge com nivel atual e cor correspondente (usando o sistema de cores ja existente)
+- Indicador de tendencia (seta + percentual)
+- 3 bullets com fatores principais
+- Estado de loading enquanto computa
+- Chamada nao-bloqueante ao montar (useEffect)
+
+### Alteracao em `src/pages/Home.tsx`
+
+Adicionar `<RiskEvolutionCard />` apos o `DeviceStatusCard`.
+
+---
+
+## 4. Sequencia de Implementacao
 
 ```text
-# loginCustomizado
-curl -X POST https://uogenwcycqykfsuongrl.supabase.co/functions/v1/mobile-api \
-  -H "Content-Type: application/json" \
-  -H "apikey: <ANON_KEY>" \
-  -d '{"action":"loginCustomizado","email":"user@test.com","senha":"123456"}'
-
-# refresh_token
-curl -X POST .../mobile-api \
-  -d '{"action":"refresh_token","refresh_token":"<128_char_token>"}'
-
-# pingMobile
-curl -X POST .../mobile-api \
-  -d '{"action":"pingMobile","session_token":"<token>","device_id":"abc123"}'
-
-# syncConfigMobile
-curl -X POST .../mobile-api \
-  -d '{"action":"syncConfigMobile","email_usuario":"user@test.com","device_id":"abc123"}'
-
-# Stub (retorna 501)
-curl -X POST .../mobile-api \
-  -d '{"action":"logoutMobile"}'
+Passo 1: Migration -- criar tabela risk_assessments + indice + RLS
+Passo 2: Edge function -- adicionar buildRiskHistoryPayload, computeRiskWithGemini, actions getRiskAssessment e getRiskHistory na web-api
+Passo 3: Deploy web-api
+Passo 4: Criar RiskEvolutionCard.tsx com recharts
+Passo 5: Integrar no Home.tsx
 ```
 
-## Arquivos Criados/Alterados
+---
 
-| Arquivo | Acao |
-|---------|------|
-| `supabase/functions/mobile-api/index.ts` | Criar - endpoint principal com roteador e 4 actions implementadas + stubs |
-| `supabase/functions/mobile-api/index.test.ts` | Criar - testes de contrato |
-| `supabase/config.toml` | Alterar - adicionar `[functions.mobile-api] verify_jwt = false` |
-| Migracao SQL | Criar tabelas refresh_tokens, device_status, monitoramento_sessoes, agendamentos_monitoramento + coluna tipo_interesse |
+## Detalhes Tecnicos
 
-## Sequencia de Execucao
+**Prompt Gemini (resumo):**
+- System prompt define o modelo como especialista em avaliacao de risco de violencia domestica
+- Recebe apenas contagens e flags, nunca textos sensiveis
+- Retorna via tool calling: `{ risk_score, risk_level, trend, trend_percentage, fatores_principais, resumo_tecnico }`
 
-1. Executar migracao SQL (novas tabelas + coluna)
-2. Criar o arquivo da edge function `mobile-api/index.ts`
-3. Atualizar `config.toml`
-4. Deploy da function
-5. Criar e rodar testes
-6. Validar com curl
+**Cache:**
+- Chave: `(usuario_id, window_days, period_end = hoje)`
+- TTL: 1 hora (comparando `computed_at` com `now()`)
+- Se cache valido, zero chamadas ao Gemini
+
+**Grafico:**
+- `LineChart` do recharts com area preenchida
+- Cor da linha dinamica baseada no nivel de risco atual
+- Tooltip mostrando score e data
+- Responsivo para mobile
+
+**Seguranca:**
+- Tabela com RLS restritiva (acesso bloqueado via client direto)
+- Acesso somente via `web-api` com `service_role_key`
+- Nenhum texto sensivel exposto -- apenas scores, labels e contagens
 
