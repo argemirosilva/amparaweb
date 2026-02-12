@@ -1,5 +1,21 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { S3Client, PutObjectCommand, GetObjectCommand } from "https://esm.sh/@aws-sdk/client-s3@3.540.0";
+import { getSignedUrl } from "https://esm.sh/@aws-sdk/s3-request-presigner@3.540.0";
+
+function getR2Client() {
+  return new S3Client({
+    region: "auto",
+    endpoint: `https://${Deno.env.get("R2_ACCOUNT_ID")}.r2.cloudflarestorage.com`,
+    credentials: {
+      accessKeyId: Deno.env.get("R2_ACCESS_KEY_ID")!,
+      secretAccessKey: Deno.env.get("R2_SECRET_ACCESS_KEY")!,
+    },
+  });
+}
+
+const R2_BUCKET = () => Deno.env.get("R2_BUCKET_NAME")!;
+const R2_PUBLIC_URL = () => Deno.env.get("R2_PUBLIC_URL") || "";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -400,12 +416,22 @@ serve(async (req) => {
           if (!seg) return json({ error: "Gravação não encontrada" }, 404);
         }
 
-        const { data: signedData, error: signError } = await supabase.storage
-          .from("audio-recordings")
-          .createSignedUrl(storage_path, 3600); // 1h
+        // Check if public URL is configured
+        const publicUrl = R2_PUBLIC_URL();
+        if (publicUrl) {
+          return json({ success: true, url: `${publicUrl}/${storage_path}` });
+        }
 
-        if (signError) return json({ error: "Erro ao gerar URL" }, 500);
-        return json({ success: true, url: signedData.signedUrl });
+        // Generate presigned URL from R2
+        try {
+          const r2 = getR2Client();
+          const command = new GetObjectCommand({ Bucket: R2_BUCKET(), Key: storage_path });
+          const signedUrl = await getSignedUrl(r2, command, { expiresIn: 3600 });
+          return json({ success: true, url: signedUrl });
+        } catch (e) {
+          console.error("R2 signed URL error:", e);
+          return json({ error: "Erro ao gerar URL" }, 500);
+        }
       }
 
       case "getSegmentos": {
@@ -427,7 +453,6 @@ serve(async (req) => {
         const { file_base64, file_name, content_type, duracao_segundos } = params;
         if (!file_base64) return json({ error: "file_base64 obrigatório" }, 400);
 
-        // Decode base64
         const binaryStr = atob(file_base64);
         const bytes = new Uint8Array(binaryStr.length);
         for (let i = 0; i < binaryStr.length; i++) {
@@ -439,12 +464,16 @@ serve(async (req) => {
         const mime = content_type || "audio/webm";
         const sizeMb = +(bytes.length / (1024 * 1024)).toFixed(3);
 
-        const { error: upErr } = await supabase.storage
-          .from("audio-recordings")
-          .upload(storagePath, bytes.buffer, { contentType: mime, upsert: false });
-
-        if (upErr) {
-          console.error("Storage upload error:", upErr);
+        try {
+          const r2 = getR2Client();
+          await r2.send(new PutObjectCommand({
+            Bucket: R2_BUCKET(),
+            Key: storagePath,
+            Body: bytes,
+            ContentType: mime,
+          }));
+        } catch (e) {
+          console.error("R2 upload error:", e);
           return json({ error: "Erro ao enviar arquivo de áudio" }, 500);
         }
 
