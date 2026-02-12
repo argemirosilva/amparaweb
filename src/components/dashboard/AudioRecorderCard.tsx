@@ -3,6 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { callWebApi } from "@/services/webApiService";
 import { Progress } from "@/components/ui/progress";
 import { Mic, Square, Upload, Loader2 } from "lucide-react";
+import GradientIcon from "@/components/ui/gradient-icon";
 import { toast } from "sonner";
 import lamejs from "lamejs";
 
@@ -218,7 +219,10 @@ export default function AudioRecorderCard({ onUploaded }: AudioRecorderCardProps
 
   return (
     <div className="ampara-card p-4 space-y-4">
-      <h3 className="text-sm font-semibold text-foreground">Gravar</h3>
+      <div className="flex items-center gap-3">
+        <GradientIcon icon={Mic} size="sm" />
+        <h3 className="text-sm font-semibold text-foreground">Gravar</h3>
+      </div>
       {/* Recorder / Upload controls */}
       <div className="flex items-center gap-3 flex-wrap">
         {recording ? (
