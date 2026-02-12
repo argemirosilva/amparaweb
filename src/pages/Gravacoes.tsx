@@ -159,39 +159,77 @@ export default function GravacoesPage() {
                   onClick={() => setExpanded(isExpanded ? null : g.id)}
                   className="w-full flex items-center gap-2 px-2.5 py-1 md:py-1.5 text-left hover:bg-accent/30 transition-colors"
                 >
-                  <GradientIcon icon={Play} size="sm" />
+                  <GradientIcon icon={Play} size="sm" className="shrink-0" />
 
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-medium text-foreground">
-                        {formatDate(g.created_at, isMobile)}
-                      </span>
-                      <span className="text-[10px] text-muted-foreground">
-                        {formatTime(g.created_at)}
-                      </span>
-                      <span className="text-[10px] text-muted-foreground inline-flex items-center gap-0.5">
-                        <Clock className="w-2.5 h-2.5" />
-                        {formatDuration(g.duracao_segundos)}
-                      </span>
+                  {/* Desktop: single row */}
+                  {!isMobile ? (
+                    <>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-medium text-foreground">
+                            {formatDate(g.created_at, false)}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground">
+                            {formatTime(g.created_at)}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground inline-flex items-center gap-0.5">
+                            <Clock className="w-2.5 h-2.5" />
+                            {formatDuration(g.duracao_segundos)}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {g.nivel_risco && (
+                          <span
+                            className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full"
+                            style={{
+                              backgroundColor: `${RISCO_COLORS[g.nivel_risco]}20`,
+                              color: RISCO_COLORS[g.nivel_risco],
+                            }}
+                          >
+                            {RISCO_LABELS[g.nivel_risco] || g.nivel_risco}
+                          </span>
+                        )}
+                        <Badge variant={statusInfo.variant} className="text-[9px] px-1.5 py-0">
+                          {statusInfo.label}
+                        </Badge>
+                      </div>
+                    </>
+                  ) : (
+                    /* Mobile: two compact rows */
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-medium text-foreground">
+                            {formatDate(g.created_at, true)}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground">
+                            {formatTime(g.created_at)}
+                          </span>
+                        </div>
+                        <Badge variant={statusInfo.variant} className="text-[9px] px-1.5 py-0">
+                          {statusInfo.label}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center justify-between mt-0.5">
+                        <span className="text-[10px] text-muted-foreground inline-flex items-center gap-0.5">
+                          <Clock className="w-2.5 h-2.5" />
+                          {formatDuration(g.duracao_segundos)}
+                        </span>
+                        {g.nivel_risco && (
+                          <span
+                            className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full"
+                            style={{
+                              backgroundColor: `${RISCO_COLORS[g.nivel_risco]}20`,
+                              color: RISCO_COLORS[g.nivel_risco],
+                            }}
+                          >
+                            {RISCO_LABELS[g.nivel_risco] || g.nivel_risco}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  </div>
-
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    {g.nivel_risco && (
-                      <span
-                        className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full"
-                        style={{
-                          backgroundColor: `${RISCO_COLORS[g.nivel_risco]}20`,
-                          color: RISCO_COLORS[g.nivel_risco],
-                        }}
-                      >
-                        {RISCO_LABELS[g.nivel_risco] || g.nivel_risco}
-                      </span>
-                    )}
-                    <Badge variant={statusInfo.variant} className="text-[9px] px-1.5 py-0">
-                      {statusInfo.label}
-                    </Badge>
-                  </div>
+                  )}
                 </button>
 
                 {isExpanded && (
