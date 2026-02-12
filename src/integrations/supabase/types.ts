@@ -637,6 +637,59 @@ export type Database = {
           },
         ]
       }
+      risk_assessments: {
+        Row: {
+          computed_at: string
+          fatores: Json | null
+          id: string
+          period_end: string
+          period_start: string
+          resumo_tecnico: string | null
+          risk_level: string
+          risk_score: number
+          trend: string
+          trend_percentage: number | null
+          usuario_id: string
+          window_days: number
+        }
+        Insert: {
+          computed_at?: string
+          fatores?: Json | null
+          id?: string
+          period_end: string
+          period_start: string
+          resumo_tecnico?: string | null
+          risk_level: string
+          risk_score: number
+          trend: string
+          trend_percentage?: number | null
+          usuario_id: string
+          window_days: number
+        }
+        Update: {
+          computed_at?: string
+          fatores?: Json | null
+          id?: string
+          period_end?: string
+          period_start?: string
+          resumo_tecnico?: string | null
+          risk_level?: string
+          risk_score?: number
+          trend?: string
+          trend_percentage?: number | null
+          usuario_id?: string
+          window_days?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "risk_assessments_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_sessions: {
         Row: {
           created_at: string

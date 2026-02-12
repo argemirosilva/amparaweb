@@ -575,6 +575,103 @@ serve(async (req) => {
         });
       }
 
+      // ========== RISK ENGINE ==========
+      case "getRiskAssessment": {
+        const windowDays = params.window_days;
+        if (![7, 15, 30].includes(windowDays)) {
+          return json({ error: "window_days deve ser 7, 15 ou 30" }, 400);
+        }
+
+        const today = new Date().toISOString().slice(0, 10);
+
+        // Check cache (< 1h old)
+        const { data: cached } = await supabase
+          .from("risk_assessments")
+          .select("*")
+          .eq("usuario_id", userId)
+          .eq("window_days", windowDays)
+          .eq("period_end", today)
+          .order("computed_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (cached) {
+          const computedAt = new Date(cached.computed_at).getTime();
+          const oneHourAgo = Date.now() - 60 * 60 * 1000;
+          if (computedAt > oneHourAgo) {
+            return json({ success: true, assessment: cached, from_cache: true });
+          }
+        }
+
+        // Build payload and call Gemini
+        const payload = await buildRiskHistoryPayload(supabase, userId, windowDays);
+        const result = await computeRiskWithGemini(payload);
+
+        const periodStart = new Date();
+        periodStart.setDate(periodStart.getDate() - windowDays);
+
+        // Upsert
+        if (cached) {
+          await supabase
+            .from("risk_assessments")
+            .update({
+              risk_score: result.risk_score,
+              risk_level: result.risk_level,
+              trend: result.trend,
+              trend_percentage: result.trend_percentage || null,
+              fatores: result.fatores_principais,
+              resumo_tecnico: result.resumo_tecnico,
+              computed_at: new Date().toISOString(),
+              period_start: periodStart.toISOString().slice(0, 10),
+            })
+            .eq("id", cached.id);
+        } else {
+          await supabase.from("risk_assessments").insert({
+            usuario_id: userId,
+            window_days: windowDays,
+            period_start: periodStart.toISOString().slice(0, 10),
+            period_end: today,
+            risk_score: result.risk_score,
+            risk_level: result.risk_level,
+            trend: result.trend,
+            trend_percentage: result.trend_percentage || null,
+            fatores: result.fatores_principais,
+            resumo_tecnico: result.resumo_tecnico,
+          });
+        }
+
+        // Fetch the saved record
+        const { data: saved } = await supabase
+          .from("risk_assessments")
+          .select("*")
+          .eq("usuario_id", userId)
+          .eq("window_days", windowDays)
+          .eq("period_end", today)
+          .order("computed_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        return json({ success: true, assessment: saved, from_cache: false });
+      }
+
+      case "getRiskHistory": {
+        const windowDays = params.window_days;
+        if (![7, 15, 30].includes(windowDays)) {
+          return json({ error: "window_days deve ser 7, 15 ou 30" }, 400);
+        }
+        const limit = params.limit || 30;
+
+        const { data } = await supabase
+          .from("risk_assessments")
+          .select("id, period_end, risk_score, risk_level, trend, trend_percentage, computed_at")
+          .eq("usuario_id", userId)
+          .eq("window_days", windowDays)
+          .order("period_end", { ascending: false })
+          .limit(limit);
+
+        return json({ success: true, history: (data || []).reverse() });
+      }
+
       default:
         return json({ error: `Action desconhecida: ${action}` }, 400);
     }
@@ -583,3 +680,271 @@ serve(async (req) => {
     return json({ error: "Erro interno" }, 500);
   }
 });
+
+// ========== RISK ENGINE HELPERS ==========
+
+async function buildRiskHistoryPayload(supabase: any, userId: string, windowDays: number) {
+  const endDate = new Date();
+  const startDate = new Date();
+  startDate.setDate(endDate.getDate() - windowDays);
+  const startStr = startDate.toISOString();
+  const endStr = endDate.toISOString();
+  const startDateOnly = startDate.toISOString().slice(0, 10);
+  const endDateOnly = endDate.toISOString().slice(0, 10);
+
+  // 1. Alertas de pânico
+  const { data: alertas } = await supabase
+    .from("alertas_panico")
+    .select("criado_em, status, tipo_cancelamento")
+    .eq("user_id", userId)
+    .gte("criado_em", startStr)
+    .lte("criado_em", endStr);
+
+  // 2. Gravações
+  const { data: gravacoes } = await supabase
+    .from("gravacoes")
+    .select("created_at, status")
+    .eq("user_id", userId)
+    .gte("created_at", startStr)
+    .lte("created_at", endStr);
+
+  // 3. Segmentos
+  const { data: segmentos } = await supabase
+    .from("gravacoes_segmentos")
+    .select("created_at")
+    .eq("user_id", userId)
+    .gte("created_at", startStr)
+    .lte("created_at", endStr);
+
+  // 4. Análises (categorias e nível de risco)
+  const { data: analises } = await supabase
+    .from("gravacoes_analises")
+    .select("created_at, categorias, nivel_risco")
+    .eq("user_id", userId)
+    .gte("created_at", startStr)
+    .lte("created_at", endStr);
+
+  // 5. Audit logs (coerção)
+  const { data: auditLogs } = await supabase
+    .from("audit_logs")
+    .select("created_at, action_type")
+    .eq("user_id", userId)
+    .gte("created_at", startStr)
+    .lte("created_at", endStr)
+    .in("action_type", ["login_coercion", "coercion_detected", "panic_coercion"]);
+
+  // 6. Perfil do agressor
+  const { data: vinculos } = await supabase
+    .from("vitimas_agressores")
+    .select("agressor_id")
+    .eq("usuario_id", userId);
+
+  let aggressorFlags = {
+    weapon_flag: false,
+    security_force_flag: false,
+  };
+
+  if (vinculos && vinculos.length > 0) {
+    const agIds = vinculos.map((v: any) => v.agressor_id);
+    const { data: agressores } = await supabase
+      .from("agressores")
+      .select("tem_arma_em_casa, forca_seguranca")
+      .in("id", agIds);
+
+    if (agressores) {
+      for (const ag of agressores) {
+        if (ag.tem_arma_em_casa) aggressorFlags.weapon_flag = true;
+        if (ag.forca_seguranca) aggressorFlags.security_force_flag = true;
+      }
+    }
+  }
+
+  // Build daily summary
+  const dailyMap: Record<string, any> = {};
+  const initDay = (date: string) => {
+    if (!dailyMap[date]) {
+      dailyMap[date] = {
+        date,
+        counts: {
+          panic_activated: 0,
+          panic_canceled_manual: 0,
+          panic_canceled_timeout: 0,
+          panic_canceled_coercion: 0,
+          audio_records: 0,
+          audio_segments: 0,
+          threat_events: 0,
+          psychological_events: 0,
+          physical_events: 0,
+          moral_events: 0,
+          patrimonial_events: 0,
+          coercion_events: 0,
+        },
+      };
+    }
+  };
+
+  for (const a of alertas || []) {
+    const day = a.criado_em.slice(0, 10);
+    initDay(day);
+    dailyMap[day].counts.panic_activated++;
+    if (a.tipo_cancelamento === "manual") dailyMap[day].counts.panic_canceled_manual++;
+    if (a.tipo_cancelamento === "timeout") dailyMap[day].counts.panic_canceled_timeout++;
+    if (a.tipo_cancelamento === "coercao") dailyMap[day].counts.panic_canceled_coercion++;
+  }
+
+  for (const g of gravacoes || []) {
+    const day = g.created_at.slice(0, 10);
+    initDay(day);
+    dailyMap[day].counts.audio_records++;
+  }
+
+  for (const s of segmentos || []) {
+    const day = s.created_at.slice(0, 10);
+    initDay(day);
+    dailyMap[day].counts.audio_segments++;
+  }
+
+  const categoryMap: Record<string, string> = {
+    ameaca: "threat_events",
+    violencia_psicologica: "psychological_events",
+    violencia_fisica: "physical_events",
+    violencia_moral: "moral_events",
+    violencia_patrimonial: "patrimonial_events",
+  };
+
+  for (const an of analises || []) {
+    const day = an.created_at.slice(0, 10);
+    initDay(day);
+    if (an.categorias && Array.isArray(an.categorias)) {
+      for (const cat of an.categorias) {
+        const key = categoryMap[cat];
+        if (key) dailyMap[day].counts[key]++;
+      }
+    }
+  }
+
+  for (const log of auditLogs || []) {
+    const day = log.created_at.slice(0, 10);
+    initDay(day);
+    dailyMap[day].counts.coercion_events++;
+  }
+
+  const dailySummary = Object.values(dailyMap).sort((a: any, b: any) => a.date.localeCompare(b.date));
+
+  // Totals
+  const totals = {
+    panic_activated: 0, panic_canceled_manual: 0, panic_canceled_timeout: 0, panic_canceled_coercion: 0,
+    audio_records: 0, audio_segments: 0,
+    threat_events: 0, psychological_events: 0, physical_events: 0, moral_events: 0, patrimonial_events: 0,
+    coercion_events: 0,
+  };
+  for (const day of dailySummary as any[]) {
+    for (const [k, v] of Object.entries(day.counts)) {
+      (totals as any)[k] += v as number;
+    }
+  }
+
+  return {
+    usuario_id: userId,
+    window_days: windowDays,
+    period_start: startDateOnly,
+    period_end: endDateOnly,
+    daily_summary: dailySummary,
+    totals,
+    aggressor_profile_flags: aggressorFlags,
+  };
+}
+
+async function computeRiskWithGemini(payload: any) {
+  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+  if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
+
+  const systemPrompt = `Você é um especialista em avaliação de risco de violência doméstica. Analise os dados estatísticos fornecidos (contagens diárias de alertas de pânico, gravações de áudio, categorias de violência detectadas, perfil do agressor) e avalie o nível de risco atual.
+
+REGRAS:
+- Baseie-se APENAS nos dados numéricos e flags fornecidos
+- Nunca invente dados ou assuma informações não fornecidas
+- risk_score: 0-100 (0=sem risco, 100=risco extremo)
+- risk_level: "Sem Risco", "Baixo", "Moderado", "Alto" ou "Crítico"
+- trend: "Subindo", "Estável" ou "Reduzindo"
+- trend_percentage: variação percentual estimada
+- fatores_principais: array de até 5 strings curtas descrevendo os principais fatores de risco
+- resumo_tecnico: texto curto (max 200 chars) com a avaliação geral`;
+
+  const userPrompt = `Dados dos últimos ${payload.window_days} dias (${payload.period_start} a ${payload.period_end}):
+
+Totais: ${JSON.stringify(payload.totals)}
+Perfil do agressor: ${JSON.stringify(payload.aggressor_profile_flags)}
+Resumo diário: ${JSON.stringify(payload.daily_summary)}
+
+Analise e retorne a avaliação de risco usando a função assess_risk.`;
+
+  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${LOVABLE_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "google/gemini-3-flash-preview",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      tools: [
+        {
+          type: "function",
+          function: {
+            name: "assess_risk",
+            description: "Retorna a avaliação estruturada de risco de violência doméstica",
+            parameters: {
+              type: "object",
+              properties: {
+                risk_score: { type: "integer", description: "Score de risco 0-100" },
+                risk_level: { type: "string", enum: ["Sem Risco", "Baixo", "Moderado", "Alto", "Crítico"] },
+                trend: { type: "string", enum: ["Subindo", "Estável", "Reduzindo"] },
+                trend_percentage: { type: "number", description: "Variação percentual" },
+                fatores_principais: { type: "array", items: { type: "string" }, description: "Lista de fatores de risco" },
+                resumo_tecnico: { type: "string", description: "Resumo curto da avaliação" },
+              },
+              required: ["risk_score", "risk_level", "trend", "fatores_principais", "resumo_tecnico"],
+              additionalProperties: false,
+            },
+          },
+        },
+      ],
+      tool_choice: { type: "function", function: { name: "assess_risk" } },
+    }),
+  });
+
+  if (!response.ok) {
+    const errText = await response.text();
+    console.error("Gemini API error:", response.status, errText);
+    // Return a safe default
+    return {
+      risk_score: 0,
+      risk_level: "Sem Risco",
+      trend: "Estável",
+      trend_percentage: 0,
+      fatores_principais: ["Erro ao processar avaliação de risco"],
+      resumo_tecnico: "Não foi possível calcular o risco neste momento.",
+    };
+  }
+
+  const data = await response.json();
+  try {
+    const toolCall = data.choices[0].message.tool_calls[0];
+    const args = JSON.parse(toolCall.function.arguments);
+    return args;
+  } catch (e) {
+    console.error("Failed to parse Gemini response:", e, JSON.stringify(data));
+    return {
+      risk_score: 0,
+      risk_level: "Sem Risco",
+      trend: "Estável",
+      trend_percentage: 0,
+      fatores_principais: ["Erro ao interpretar resposta da IA"],
+      resumo_tecnico: "Não foi possível calcular o risco neste momento.",
+    };
+  }
+}
