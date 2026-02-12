@@ -12,7 +12,7 @@ export default function HomePage() {
         src={amparaCircle}
         alt=""
         aria-hidden="true"
-        className="pointer-events-none fixed bottom-[-15%] left-1/2 -translate-x-1/2 w-[140vw] max-w-none opacity-30 z-0 select-none"
+        className="pointer-events-none fixed bottom-[-15%] left-1/2 -translate-x-1/2 w-[280vw] max-w-none opacity-30 z-0 select-none"
       />
 
       <div className="relative z-10 space-y-6">
