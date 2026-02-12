@@ -439,8 +439,22 @@ serve(async (req) => {
 
       // ========== GRAVAÇÕES ==========
       case "getGravacoes": {
-        const { page = 1, per_page = 20, status: filterStatus } = params;
+        const { page = 1, per_page = 20, status: filterStatus, nivel_risco: filterNivelRisco } = params;
         const offset = (page - 1) * per_page;
+
+        // If filtering by nivel_risco, first get matching gravacao_ids from analises
+        let nivelRiscoIds: string[] | null = null;
+        if (filterNivelRisco) {
+          const { data: matchingAnalises } = await supabase
+            .from("gravacoes_analises")
+            .select("gravacao_id")
+            .eq("user_id", userId)
+            .eq("nivel_risco", filterNivelRisco);
+          nivelRiscoIds = (matchingAnalises || []).map((a: any) => a.gravacao_id);
+          if (nivelRiscoIds.length === 0) {
+            return json({ success: true, gravacoes: [], total: 0, page, per_page });
+          }
+        }
 
         let query = supabase
           .from("gravacoes")
@@ -450,6 +464,7 @@ serve(async (req) => {
           .range(offset, offset + per_page - 1);
 
         if (filterStatus) query = query.eq("status", filterStatus);
+        if (nivelRiscoIds) query = query.in("id", nivelRiscoIds);
 
         const { data, count, error } = await query;
         if (error) return json({ error: "Erro ao buscar gravações" }, 500);
