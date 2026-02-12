@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import PullToRefresh from "@/components/ui/pull-to-refresh";
 import { useAuth } from "@/contexts/AuthContext";
 import { callWebApi } from "@/services/webApiService";
 import { Badge } from "@/components/ui/badge";
@@ -98,6 +99,19 @@ export default function GravacoesPage() {
     setLoading(false);
   }, [sessionToken, page, filterStatus]);
 
+  const handleRefresh = useCallback(async () => {
+    if (!sessionToken) return;
+    const res = await callWebApi("getGravacoes", sessionToken, {
+      page,
+      per_page: perPage,
+      ...(filterStatus ? { status: filterStatus } : {}),
+    });
+    if (res.ok) {
+      setGravacoes(res.data.gravacoes);
+      setTotal(res.data.total);
+    }
+  }, [sessionToken, page, filterStatus]);
+
   useEffect(() => { loadData(); }, [loadData]);
 
   const totalPages = Math.max(1, Math.ceil(total / perPage));
@@ -131,6 +145,7 @@ export default function GravacoesPage() {
       </div>
 
       {/* Content */}
+      <PullToRefresh onRefresh={handleRefresh} disabled={!isMobile || loading}>
       {loading ? (
         <div className="flex items-center justify-center py-16">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -243,6 +258,7 @@ export default function GravacoesPage() {
           })}
         </div>
       )}
+      </PullToRefresh>
 
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-2 pt-2">
