@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useDeviceStatus } from "@/hooks/useDeviceStatus";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Smartphone, Clock, BatteryFull, BatteryMedium, BatteryLow, BatteryCharging, Wifi, WifiOff, MapPin, X } from "lucide-react";
+import { Smartphone, Clock, BatteryFull, BatteryMedium, BatteryLow, BatteryCharging, Wifi, WifiOff, MapPin, X, Mic } from "lucide-react";
 import GradientIcon from "@/components/ui/gradient-icon";
 
 function timeSince(date: string): string {
@@ -9,6 +9,12 @@ function timeSince(date: string): string {
   if (s < 60) return `Há ${s}s`;
   if (s < 3600) return `Há ${Math.floor(s / 60)} min`;
   return `Há ${Math.floor(s / 3600)}h`;
+}
+
+function formatElapsed(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
 }
 
 function isOnline(lastPing: string | null): boolean {
@@ -51,6 +57,25 @@ function formatDateTime(iso: string): string {
 export default function DeviceStatusCard() {
   const { device, location, geo, addressLoading, loading, error } = useDeviceStatus();
   const [showMap, setShowMap] = useState(false);
+  const [elapsed, setElapsed] = useState(0);
+  const recordingStartRef = useRef<number | null>(null);
+
+  // Recording timer
+  useEffect(() => {
+    if (device?.is_recording) {
+      if (!recordingStartRef.current) {
+        recordingStartRef.current = Date.now();
+      }
+      setElapsed(0);
+      const id = setInterval(() => {
+        setElapsed(Math.floor((Date.now() - recordingStartRef.current!) / 1000));
+      }, 1000);
+      return () => clearInterval(id);
+    } else {
+      recordingStartRef.current = null;
+      setElapsed(0);
+    }
+  }, [device?.is_recording]);
 
   if (loading) {
     return (
@@ -81,7 +106,8 @@ export default function DeviceStatusCard() {
                 device.is_recording ? "bg-destructive" : "bg-emerald-500"
               }`} />
             </span>
-            {device.is_recording ? "Gravando" : "Monitorando"}
+            <Mic className="w-2.5 h-2.5" />
+            {device.is_recording ? `Gravando ${formatElapsed(elapsed)}` : "Monitorando"}
           </div>
         )}
 
