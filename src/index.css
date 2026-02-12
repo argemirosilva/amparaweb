@@ -60,7 +60,7 @@
     --ampara-shadow: 0 4px 20px -4px hsl(316 72% 48% / 0.15);
 
     /* Níveis de risco — classificação contextual */
-    --risco-baixo: 152 69% 40%;
+    --risco-sem-risco: 152 69% 40%;
     --risco-moderado: 38 92% 50%;
     --risco-alto: 25 95% 53%;
     --risco-critico: 0 84% 50%;

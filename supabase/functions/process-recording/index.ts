@@ -136,7 +136,7 @@ Retorne APENAS um JSON válido (sem markdown, sem backticks) com a seguinte estr
   "analise_linguagem": ["Classificação de falas específicas identificadas (ex: humor vs. humilhação)"],
   "padroes_detectados": ["Listagem de comportamentos detectados (ex: controle, isolamento, desqualificação)"],
   "tipos_violencia": ["Tipos de violência identificados baseados na Lei Maria da Penha: fisica, psicologica, moral, patrimonial, sexual, nenhuma"],
-  "nivel_risco": "baixo|moderado|alto|critico",
+  "nivel_risco": "sem_risco|moderado|alto|critico",
   "justificativa_risco": "Justificativa técnica para o nível de risco atribuído",
   "classificacao_contexto": "saudavel|rispido_nao_abusivo|potencial_abuso_leve|padrao_consistente_abuso|ameaca_risco|risco_elevado_escalada",
   "sentimento": "positivo|negativo|neutro|misto",
@@ -169,7 +169,7 @@ Tom e Restrições:
     return {
       resumo: parsed.resumo_contexto || parsed.resumo || "",
       sentimento: parsed.sentimento || "neutro",
-      nivel_risco: parsed.nivel_risco || "baixo",
+      nivel_risco: parsed.nivel_risco || "sem_risco",
       categorias: parsed.categorias || [],
       palavras_chave: parsed.palavras_chave || [],
       analise_completa: parsed,
@@ -179,7 +179,7 @@ Tom e Restrições:
     return {
       resumo: raw.substring(0, 500),
       sentimento: "neutro",
-      nivel_risco: "baixo",
+      nivel_risco: "sem_risco",
       categorias: [],
       palavras_chave: [],
       analise_completa: { raw_response: raw },
