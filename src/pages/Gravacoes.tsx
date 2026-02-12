@@ -143,8 +143,8 @@ export default function GravacoesPage() {
                     ? { backgroundColor: "hsl(var(--primary))", color: "hsl(var(--primary-foreground))", borderColor: "hsl(var(--primary))" }
                     : { backgroundColor: "hsl(var(--background))", color: "hsl(var(--muted-foreground))", borderColor: "hsl(var(--border))" }
                   : isActive
-                    ? { backgroundColor: color, color: "#fff", borderColor: color }
-                    : { backgroundColor: `${color}15`, color, borderColor: `${color}40` }
+                    ? { backgroundColor: `${color}30`, color, borderColor: `${color}60` }
+                    : { backgroundColor: `${color}10`, color: `${color}cc`, borderColor: `${color}25` }
               }
             >
               {r === "" ? "Todas" : RISCO_LABELS[r] || r}
