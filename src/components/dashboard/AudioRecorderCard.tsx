@@ -221,7 +221,7 @@ export default function AudioRecorderCard({ onUploaded }: AudioRecorderCardProps
     <div className="ampara-card p-4 space-y-4">
       <div className="flex items-center gap-3">
         <GradientIcon icon={Mic} size="sm" />
-        <p className="text-sm font-semibold text-primary">Gravar</p>
+        
       </div>
       {/* Recorder / Upload controls */}
       <div className="flex items-center gap-3 flex-wrap">
@@ -271,7 +271,7 @@ export default function AudioRecorderCard({ onUploaded }: AudioRecorderCardProps
 
           <div>
               <p className="text-sm font-medium text-foreground">Gravar ou enviar áudio</p>
-              <p className="text-xs text-muted-foreground">Grave pelo microfone ou envie um arquivo</p>
+              
             </div>
           }
         </div>
