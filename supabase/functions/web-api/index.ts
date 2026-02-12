@@ -1,20 +1,20 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { S3Client, PutObjectCommand, GetObjectCommand } from "https://esm.sh/@aws-sdk/client-s3@3.540.0";
-import { getSignedUrl } from "https://esm.sh/@aws-sdk/s3-request-presigner@3.540.0";
+import { AwsClient } from "https://esm.sh/aws4fetch@1.0.4";
 
 function getR2Client() {
-  return new S3Client({
+  return new AwsClient({
+    accessKeyId: Deno.env.get("R2_ACCESS_KEY_ID")!,
+    secretAccessKey: Deno.env.get("R2_SECRET_ACCESS_KEY")!,
+    service: "s3",
     region: "auto",
-    endpoint: `https://${Deno.env.get("R2_ACCOUNT_ID")}.r2.cloudflarestorage.com`,
-    credentials: {
-      accessKeyId: Deno.env.get("R2_ACCESS_KEY_ID")!,
-      secretAccessKey: Deno.env.get("R2_SECRET_ACCESS_KEY")!,
-    },
   });
 }
 
-const R2_BUCKET = () => Deno.env.get("R2_BUCKET_NAME")!;
+function r2Url(key: string) {
+  return `https://${Deno.env.get("R2_ACCOUNT_ID")}.r2.cloudflarestorage.com/${Deno.env.get("R2_BUCKET_NAME")}/${key}`;
+}
+
 const R2_PUBLIC_URL = () => Deno.env.get("R2_PUBLIC_URL") || "";
 
 const corsHeaders = {
@@ -425,9 +425,9 @@ serve(async (req) => {
         // Generate presigned URL from R2
         try {
           const r2 = getR2Client();
-          const command = new GetObjectCommand({ Bucket: R2_BUCKET(), Key: storage_path });
-          const signedUrl = await getSignedUrl(r2, command, { expiresIn: 3600 });
-          return json({ success: true, url: signedUrl });
+          const url = r2Url(storage_path);
+          const signedUrl = await r2.sign(url, { method: "GET", aws: { signQuery: true } });
+          return json({ success: true, url: signedUrl.url });
         } catch (e) {
           console.error("R2 signed URL error:", e);
           return json({ error: "Erro ao gerar URL" }, 500);
@@ -467,12 +467,17 @@ serve(async (req) => {
 
         try {
           const r2 = getR2Client();
-          await r2.send(new PutObjectCommand({
-            Bucket: R2_BUCKET(),
-            Key: storagePath,
-            Body: bytes,
-            ContentType: mime,
-          }));
+          const url = r2Url(storagePath);
+          const uploadResp = await r2.fetch(url, {
+            method: "PUT",
+            headers: { "Content-Type": mime },
+            body: bytes,
+          });
+          if (!uploadResp.ok) {
+            const errText = await uploadResp.text();
+            console.error("R2 upload error:", uploadResp.status, errText);
+            return json({ error: "Erro ao enviar arquivo de áudio" }, 500);
+          }
         } catch (e) {
           console.error("R2 upload error:", e);
           return json({ error: "Erro ao enviar arquivo de áudio" }, 500);
