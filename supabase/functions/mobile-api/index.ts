@@ -365,6 +365,15 @@ async function handlePing(
         .update(deviceData)
         .eq("id", existing.id);
     } else {
+      // New device — remove all previous devices for this user
+      await supabase
+        .from("device_status")
+        .delete()
+        .eq("user_id", userId)
+        .neq("device_id", deviceId);
+
+      console.log(`Replaced old device(s) for user ${userId}, new device: ${deviceId}`);
+
       await supabase.from("device_status").insert({
         user_id: userId,
         device_id: deviceId,
