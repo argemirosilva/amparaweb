@@ -1,27 +1,19 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { callWebApi } from "@/services/webApiService";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import AudioRecorderCard from "@/components/dashboard/AudioRecorderCard";
-import AnaliseCard from "@/components/dashboard/AnaliseCard";
+import GravacaoExpandedContent from "@/components/gravacoes/GravacaoExpandedContent";
 import {
   Mic,
-  Play,
-  Pause,
-  Download,
   Clock,
-  HardDrive,
-  FileText,
   Loader2,
   ChevronLeft,
   ChevronRight,
-  X,
   Volume2,
 } from "lucide-react";
-import { toast } from "sonner";
 
-// ... keep existing code (Gravacao interface, formatDuration, formatSize, formatDate, formatTime, STATUS_MAP)
 interface Gravacao {
   id: string;
   created_at: string;
@@ -60,12 +52,6 @@ function formatDuration(s: number | null): string {
   return `${m}:${sec.toString().padStart(2, "0")}`;
 }
 
-function formatSize(mb: number | null): string {
-  if (!mb) return "—";
-  if (mb < 1) return `${Math.round(mb * 1024)} KB`;
-  return `${mb.toFixed(1)} MB`;
-}
-
 function formatDate(iso: string): string {
   const d = new Date(iso);
   return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" });
@@ -82,115 +68,6 @@ const STATUS_MAP: Record<string, { label: string; variant: "default" | "secondar
   transcrito: { label: "Transcrito", variant: "default" },
   erro: { label: "Erro", variant: "destructive" },
 };
-
-
-
-// ... keep existing code (AudioPlayer component)
-function AudioPlayer({ storagePath, sessionToken }: { storagePath: string; sessionToken: string }) {
-  const audioRef = useRef<HTMLAudioElement>(null);
-  const [playing, setPlaying] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [url, setUrl] = useState<string | null>(null);
-  const [progress, setProgress] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [error, setError] = useState(false);
-
-  const loadUrl = useCallback(async () => {
-    if (url) return;
-    setLoading(true);
-    setError(false);
-    const res = await callWebApi("getGravacaoSignedUrl", sessionToken, { storage_path: storagePath });
-    if (res.ok && res.data.url) {
-      setUrl(res.data.url);
-    } else {
-      setError(true);
-    }
-    setLoading(false);
-  }, [storagePath, sessionToken, url]);
-
-  const toggle = async () => {
-    if (!url) {
-      await loadUrl();
-      return;
-    }
-    if (!audioRef.current) return;
-    if (playing) {
-      audioRef.current.pause();
-    } else {
-      audioRef.current.play();
-    }
-  };
-
-  useEffect(() => {
-    if (url && audioRef.current && !playing) {
-      audioRef.current.play().catch(() => {});
-    }
-  }, [url]);
-
-  const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!audioRef.current || !duration) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-    audioRef.current.currentTime = pct * duration;
-  };
-
-  return (
-    <div className="flex items-center gap-2 w-full">
-      <button
-        onClick={toggle}
-        disabled={loading}
-        className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 hover:bg-primary/20 transition-colors disabled:opacity-50"
-      >
-        {loading ? (
-          <Loader2 className="w-4 h-4 text-primary animate-spin" />
-        ) : playing ? (
-          <Pause className="w-4 h-4 text-primary" />
-        ) : error ? (
-          <X className="w-4 h-4 text-destructive" />
-        ) : (
-          <Play className="w-4 h-4 text-primary ml-0.5" />
-        )}
-      </button>
-
-      <div
-        className="flex-1 h-1.5 bg-muted rounded-full cursor-pointer relative group"
-        onClick={handleSeek}
-      >
-        <div
-          className="absolute inset-y-0 left-0 bg-primary rounded-full transition-all"
-          style={{ width: `${progress}%` }}
-        />
-        <div
-          className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-primary rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
-          style={{ left: `calc(${progress}% - 6px)` }}
-        />
-      </div>
-
-      <span className="text-[10px] text-muted-foreground w-10 text-right tabular-nums shrink-0">
-        {duration ? formatDuration(duration) : "—"}
-      </span>
-
-      {url && (
-        <audio
-          ref={audioRef}
-          src={url}
-          onPlay={() => setPlaying(true)}
-          onPause={() => setPlaying(false)}
-          onEnded={() => { setPlaying(false); setProgress(0); }}
-          onLoadedMetadata={() => {
-            if (audioRef.current) setDuration(audioRef.current.duration);
-          }}
-          onTimeUpdate={() => {
-            if (audioRef.current && audioRef.current.duration) {
-              setProgress((audioRef.current.currentTime / audioRef.current.duration) * 100);
-            }
-          }}
-          onError={() => setError(true)}
-        />
-      )}
-    </div>
-  );
-}
 
 export default function GravacoesPage() {
   const { sessionToken } = useAuth();
@@ -221,17 +98,6 @@ export default function GravacoesPage() {
 
   const totalPages = Math.max(1, Math.ceil(total / perPage));
 
-  const downloadAudio = async (storagePath: string, fileName: string) => {
-    const res = await callWebApi("getGravacaoSignedUrl", sessionToken!, { storage_path: storagePath });
-    if (res.ok && res.data.url) {
-      const a = document.createElement("a");
-      a.href = res.data.url;
-      a.download = fileName;
-      a.target = "_blank";
-      a.click();
-    }
-  };
-
   return (
     <div className="space-y-5 animate-fade-in">
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -241,7 +107,6 @@ export default function GravacoesPage() {
         </div>
       </div>
 
-      {/* Record / Upload */}
       <AudioRecorderCard onUploaded={() => { setPage(1); loadData(); }} />
 
       {/* Filters */}
@@ -330,49 +195,10 @@ export default function GravacoesPage() {
                 </button>
 
                 {isExpanded && (
-                  <div className="border-t border-border px-4 pb-4 pt-3 space-y-3">
-                    {g.storage_path ? (
-                      <AudioPlayer storagePath={g.storage_path} sessionToken={sessionToken!} />
-                    ) : (
-                      <p className="text-xs text-muted-foreground italic">Áudio não disponível</p>
-                    )}
-
-                    {g.transcricao && (
-                      <div className="bg-muted/50 rounded-lg p-3 space-y-1">
-                        <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                          <FileText className="w-3 h-3" />
-                          Transcrição
-                        </div>
-                        <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
-                          {g.transcricao}
-                        </p>
-                      </div>
-                    )}
-
-                    <div className="flex items-center gap-2 pt-1 flex-wrap">
-                      {g.storage_path && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => downloadAudio(g.storage_path!, `gravacao-${formatDate(g.created_at)}.m4a`)}
-                          className="text-xs"
-                        >
-                          <Download className="w-3 h-3 mr-1" />
-                          Baixar
-                        </Button>
-                      )}
-                      <span className="text-[10px] text-muted-foreground ml-auto">
-                        ID: {g.id.slice(0, 8)}
-                      </span>
-                    </div>
-
-                    {/* Análise de IA */}
-                    <AnaliseCard
-                      gravacaoId={g.id}
-                      status={g.status}
-                      sessionToken={sessionToken!}
-                    />
-                  </div>
+                  <GravacaoExpandedContent
+                    gravacao={g}
+                    sessionToken={sessionToken!}
+                  />
                 )}
               </div>
             );

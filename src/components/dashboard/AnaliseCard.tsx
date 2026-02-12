@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -74,15 +74,25 @@ export default function AnaliseCard({
   gravacaoId,
   status,
   sessionToken,
+  preloadedData,
 }: {
   gravacaoId: string;
   status: string;
   sessionToken: string;
+  preloadedData?: AnaliseData | null;
 }) {
   const [analise, setAnalise] = useState<AnaliseData | null>(null);
   const [loading, setLoading] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
+
+  // Accept preloaded data from parent
+  useEffect(() => {
+    if (preloadedData !== undefined) {
+      setAnalise(preloadedData);
+      setLoaded(true);
+    }
+  }, [preloadedData]);
 
   const canShow = status === "processado";
 
