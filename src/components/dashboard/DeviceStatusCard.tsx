@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useDeviceStatus } from "@/hooks/useDeviceStatus";
 import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -63,24 +63,26 @@ export default function DeviceStatusCard() {
   const avatarUrl = usuario?.avatar_url || null;
   const [showMap, setShowMap] = useState(false);
   const [elapsed, setElapsed] = useState(0);
-  const recordingStartRef = useRef<number | null>(null);
 
-  // Recording timer
+  // Determine the active timestamp for the counter
+  const activeTimestamp = device?.is_recording
+    ? device.recordingStartedAt
+    : device?.is_monitoring
+      ? device.monitoringStartedAt
+      : null;
+
+  // Timer based on real server timestamp
   useEffect(() => {
-    if (device?.is_recording) {
-      if (!recordingStartRef.current) {
-        recordingStartRef.current = Date.now();
-      }
+    if (!activeTimestamp) {
       setElapsed(0);
-      const id = setInterval(() => {
-        setElapsed(Math.floor((Date.now() - recordingStartRef.current!) / 1000));
-      }, 1000);
-      return () => clearInterval(id);
-    } else {
-      recordingStartRef.current = null;
-      setElapsed(0);
+      return;
     }
-  }, [device?.is_recording]);
+    const startMs = new Date(activeTimestamp).getTime();
+    const tick = () => setElapsed(Math.max(0, Math.floor((Date.now() - startMs) / 1000)));
+    tick(); // immediate correct value
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [activeTimestamp]);
 
   if (loading) {
     return (
