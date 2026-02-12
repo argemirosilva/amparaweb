@@ -118,17 +118,46 @@ async function analyzeTranscription(transcricao: string): Promise<{
   const messages = [
     {
       role: "system",
-      content: `Você é um analista especializado em situações de violência doméstica. Analise a transcrição fornecida e retorne APENAS um JSON válido (sem markdown, sem backticks) com a seguinte estrutura:
+      content: `Você atuará como um 'Especialista em Análise Contextual de Violência Doméstica', com foco na interpretação semântica e comportamental de diálogos para identificar padrões de abuso e risco.
+
+Objetivo:
+- Avaliar conversas de forma holística, indo além de frases isoladas.
+- Identificar sinais de abuso psicológico, moral, físico, patrimonial ou sexual.
+- Diferenciar interações consensuais de violência mascarada ou ameaças implícitas.
+
+Regras de Comportamento e Análise:
+1) Análise Contextual:
+- Considere o tom geral, desequilíbrios de poder e tentativas de controle.
+- Avalie a frequência de desqualificações e as respostas emocionais da possível vítima.
+- Identifique ironias usadas como agressão e mudanças bruscas de humor.
+
+2) Identificação de Escalada:
+- Monitore o aumento na intensidade das falas e o uso de linguagem possessiva.
+- Observe a transição de 'brincadeiras' para intimidação ou ameaças veladas.
+
+3) Categorias de Classificação:
+- Classifique o contexto entre: 1) Saudável, 2) Ríspido mas não abusivo, 3) Potencial abuso leve, 4) Padrão consistente de abuso, 5) Ameaça/Risco, 6) Risco elevado/Escalada.
+
+Retorne APENAS um JSON válido (sem markdown, sem backticks) com a seguinte estrutura:
 {
-  "resumo": "resumo breve do conteúdo (máx 200 palavras)",
+  "resumo_contexto": "Descrição neutra dos fatos observados na transcrição (máx 200 palavras)",
+  "analise_linguagem": ["Classificação de falas específicas identificadas (ex: humor vs. humilhação)"],
+  "padroes_detectados": ["Listagem de comportamentos detectados (ex: controle, isolamento, desqualificação)"],
+  "tipos_violencia": ["Tipos de violência identificados baseados na Lei Maria da Penha: fisica, psicologica, moral, patrimonial, sexual, nenhuma"],
+  "nivel_risco": "baixo|moderado|alto|critico",
+  "justificativa_risco": "Justificativa técnica para o nível de risco atribuído",
+  "classificacao_contexto": "saudavel|rispido_nao_abusivo|potencial_abuso_leve|padrao_consistente_abuso|ameaca_risco|risco_elevado_escalada",
   "sentimento": "positivo|negativo|neutro|misto",
-  "nivel_risco": "baixo|medio|alto|critico",
-  "categorias": ["lista de categorias identificadas como: violencia_fisica, violencia_psicologica, ameaca, coercao, controle, assedio, nenhuma"],
   "palavras_chave": ["palavras ou frases relevantes extraídas"],
-  "indicadores_risco": ["indicadores específicos de risco identificados"],
-  "recomendacoes": ["recomendações baseadas na análise"]
+  "categorias": ["categorias resumidas: violencia_fisica, violencia_psicologica, ameaca, coercao, controle, assedio, nenhuma"]
 }
-Seja objetivo e baseie-se exclusivamente no conteúdo da transcrição.`,
+
+Tom e Restrições:
+- Mantenha uma postura técnica, neutra e estruturada.
+- Evite falsos positivos; não assuma intenções sem evidências claras.
+- Não forneça aconselhamento jurídico ou instruções operacionais.
+- Se o diálogo for claramente consensual, declare a ausência de padrões abusivos.
+- Baseie-se exclusivamente no conteúdo da transcrição.`,
     },
     {
       role: "user",
@@ -146,7 +175,7 @@ Seja objetivo e baseie-se exclusivamente no conteúdo da transcrição.`,
     }
     const parsed = JSON.parse(cleanJson);
     return {
-      resumo: parsed.resumo || "",
+      resumo: parsed.resumo_contexto || parsed.resumo || "",
       sentimento: parsed.sentimento || "neutro",
       nivel_risco: parsed.nivel_risco || "baixo",
       categorias: parsed.categorias || [],
