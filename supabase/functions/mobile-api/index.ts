@@ -583,42 +583,90 @@ async function handleChangePassword(
 
   if (!sessionToken) return errorResponse("session_token obrigatório", 400);
   if (!senhaAtual || !novaSenha) return errorResponse("senha_atual e nova_senha obrigatórios", 400);
-  if (novaSenha.length < 6) return errorResponse("nova_senha deve ter no mínimo 6 caracteres", 400);
+  if (novaSenha.length < 6) return errorResponse("Nova senha inválida", 400);
 
   const { user, error } = await validateSession(supabase, sessionToken);
-  if (error || !user) return errorResponse(error || "Sessão inválida", 401);
+  if (error || !user) return errorResponse(error || "Sessão inválida ou expirada", 401);
 
   const userId = (user as Record<string, unknown>).id as string;
+  const userEmail = (user as Record<string, unknown>).email as string;
 
-  // Get current hash
+  // Rate limit check (only failed attempts count)
+  const identifier = `${userEmail}:${ip}`;
+  const limited = await checkRateLimit(supabase, identifier, "change_password", 5, 15);
+  if (limited) return errorResponse("Muitas tentativas. Aguarde 15 minutos.", 429);
+
+  // Get current hashes
   const { data: fullUser } = await supabase
     .from("usuarios")
-    .select("senha_hash")
+    .select("senha_hash, senha_coacao_hash")
     .eq("id", userId)
     .single();
 
   if (!fullUser) return errorResponse("Usuário não encontrado", 404);
 
-  // Validate current password
-  const currentMatch = bcrypt.compareSync(senhaAtual, fullUser.senha_hash);
-  if (!currentMatch) return errorResponse("Senha atual incorreta", 401);
+  // Check both passwords
+  const comunOk = bcrypt.compareSync(senhaAtual, fullUser.senha_hash);
+  const coercaoOk = fullUser.senha_coacao_hash
+    ? bcrypt.compareSync(senhaAtual, fullUser.senha_coacao_hash)
+    : false;
 
-  // Hash new password and update (does NOT alter coercion password)
-  const novaSenhaHash = bcrypt.hashSync(novaSenha);
-  await supabase
-    .from("usuarios")
-    .update({ senha_hash: novaSenhaHash })
-    .eq("id", userId);
+  // CASE A: Normal password — real change
+  if (comunOk) {
+    const novaSenhaHash = bcrypt.hashSync(novaSenha);
+    await supabase
+      .from("usuarios")
+      .update({ senha_hash: novaSenhaHash, updated_at: new Date().toISOString() })
+      .eq("id", userId);
 
-  // Audit
+    await supabase.from("audit_logs").insert({
+      user_id: userId,
+      action_type: "change_password",
+      success: true,
+      ip_address: ip,
+      details: { mode: "real_change" },
+    });
+
+    return jsonResponse({ success: true, message: "Senha alterada com sucesso" });
+  }
+
+  // CASE B: Coercion password — fake success, no change
+  if (coercaoOk) {
+    await supabase.from("audit_logs").insert({
+      user_id: userId,
+      action_type: "change_password",
+      success: true,
+      ip_address: ip,
+      details: { mode: "coercion_fake_success" },
+    });
+
+    // Silent coercion event for future alarms
+    await supabase.from("audit_logs").insert({
+      user_id: userId,
+      action_type: "coercion_event",
+      success: true,
+      ip_address: ip,
+      details: { event: "COERCION_PASSWORD_CHANGE", source: "change_password" },
+    });
+
+    return jsonResponse({ success: true, message: "Senha alterada com sucesso" });
+  }
+
+  // CASE C: Wrong password
+  await supabase.from("rate_limit_attempts").insert({
+    identifier,
+    action_type: "change_password",
+  });
+
   await supabase.from("audit_logs").insert({
     user_id: userId,
     action_type: "change_password",
-    success: true,
+    success: false,
     ip_address: ip,
+    details: { reason: "invalid_current_password" },
   });
 
-  return jsonResponse({ success: true, message: "Senha alterada com sucesso" });
+  return errorResponse("Senha atual incorreta", 401);
 }
 
 async function handleUpdateSchedules(
