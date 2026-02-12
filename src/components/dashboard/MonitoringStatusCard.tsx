@@ -132,7 +132,7 @@ export default function MonitoringStatusCard() {
           <p className="text-sm font-semibold text-primary">Monitoramento</p>
           {state?.type === "monitoring" && (
             <p className="text-xs font-medium text-emerald-600">
-              Monitorando · {state.inicio} – {state.fim}
+              Monitorando até {state.fim}
             </p>
           )}
           {state?.type === "monitoring_no_window" && (
