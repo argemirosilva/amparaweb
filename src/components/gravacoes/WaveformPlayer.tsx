@@ -13,6 +13,19 @@ interface Props {
   sessionToken: string;
   markers?: WaveformMarker[];
   accentCssVar?: string; // e.g. "--risco-sem-risco"
+  durationHint?: number; // seconds, used to avoid fetching audio for waveform
+}
+
+/** Generate random but deterministic-looking peaks for waveform visualization */
+function generateFakePeaks(count = 100): Float32Array {
+  const peaks = new Float32Array(count);
+  for (let i = 0; i < count; i++) {
+    // Create a natural-looking waveform pattern
+    const base = 0.3 + Math.sin(i * 0.15) * 0.1;
+    const noise = Math.sin(i * 2.7 + 1.3) * 0.2 + Math.sin(i * 5.1 + 0.7) * 0.15;
+    peaks[i] = Math.min(1, Math.max(0.05, base + noise));
+  }
+  return peaks;
 }
 
 function resolveColor(cssVar?: string): string {
@@ -25,7 +38,7 @@ function resolveColor(cssVar?: string): string {
   return `hsl(${primary})`;
 }
 
-export default function WaveformPlayer({ storagePath, sessionToken, markers = [], accentCssVar }: Props) {
+export default function WaveformPlayer({ storagePath, sessionToken, markers = [], accentCssVar, durationHint }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const wsRef = useRef<any>(null);
   const [playing, setPlaying] = useState(false);
@@ -51,9 +64,13 @@ export default function WaveformPlayer({ storagePath, sessionToken, markers = []
 
       const accent = resolveColor(accentCssVar);
 
-      // Use an audio element to avoid CORS issues with R2 URLs
+      // Use an audio element for playback (no CORS needed for media playback)
       const audio = new Audio();
       audio.src = res.data.url;
+
+      // Provide fake peaks so WaveSurfer doesn't try to fetch() the URL (which fails due to R2 CORS)
+      const fakePeaks = generateFakePeaks(200);
+      const estimatedDuration = durationHint || 60;
 
       ws = WaveSurfer.create({
         container: containerRef.current,
@@ -66,6 +83,8 @@ export default function WaveformPlayer({ storagePath, sessionToken, markers = []
         barRadius: 3,
         height: 56,
         media: audio,
+        peaks: [fakePeaks],
+        duration: estimatedDuration,
         normalize: true,
       });
 
