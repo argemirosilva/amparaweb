@@ -65,6 +65,31 @@ function formatTime(iso: string): string {
   return new Date(iso).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
 }
 
+function getDateLabel(iso: string): string {
+  const d = new Date(iso);
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const target = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const diff = Math.floor((today.getTime() - target.getTime()) / 86400000);
+
+  if (diff === 0) return "Hoje";
+  if (diff === 1) return "Ontem";
+  if (diff === 2) return "Anteontem";
+  return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
+}
+
+function groupByDate(items: Gravacao[]): { label: string; items: Gravacao[] }[] {
+  const groups: Map<string, { label: string; items: Gravacao[] }> = new Map();
+  for (const g of items) {
+    const key = new Date(g.created_at).toLocaleDateString("pt-BR");
+    if (!groups.has(key)) {
+      groups.set(key, { label: getDateLabel(g.created_at), items: [] });
+    }
+    groups.get(key)!.items.push(g);
+  }
+  return Array.from(groups.values());
+}
+
 const STATUS_MAP: Record<string, { label: string; variant: "default" | "secondary" | "destructive" }> = {
   pendente: { label: "Pendente", variant: "secondary" },
   processando: { label: "Processando", variant: "default" },
@@ -168,108 +193,109 @@ export default function GravacoesPage() {
           </p>
         </div>
       ) : (
-        <div className="space-y-1.5">
-          {gravacoes.map((g) => {
-            const isExpanded = expanded === g.id;
-            const statusInfo = STATUS_MAP[g.status] || { label: g.status, variant: "secondary" as const };
+        <div className="space-y-4">
+          {groupByDate(gravacoes).map((group) => (
+            <div key={group.label} className="space-y-1.5">
+              <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1 pt-1">
+                {group.label}
+              </h2>
+              {group.items.map((g) => {
+                const isExpanded = expanded === g.id;
+                const statusInfo = STATUS_MAP[g.status] || { label: g.status, variant: "secondary" as const };
 
-            return (
-              <div
-                key={g.id}
-                ref={isExpanded ? (el) => { if (el) setTimeout(() => el.scrollIntoView({ behavior: "smooth", block: "start" }), 100); } : undefined}
-                className="ampara-card overflow-hidden relative"
-                style={g.nivel_risco ? { borderLeftWidth: "3px", borderLeftStyle: "solid", borderLeftColor: `${RISCO_COLORS[g.nivel_risco] || "transparent"}90` } : undefined}
-              >
-                <button
-                  onClick={() => setExpanded(isExpanded ? null : g.id)}
-                  className="w-full flex items-center gap-2 px-2.5 py-1 md:py-1.5 text-left hover:bg-accent/30 transition-colors"
-                >
-                  <GradientIcon icon={Play} size="xs" className="shrink-0" />
+                return (
+                  <div
+                    key={g.id}
+                    ref={isExpanded ? (el) => { if (el) setTimeout(() => el.scrollIntoView({ behavior: "smooth", block: "start" }), 100); } : undefined}
+                    className="ampara-card overflow-hidden relative"
+                    style={g.nivel_risco ? { borderLeftWidth: "3px", borderLeftStyle: "solid", borderLeftColor: `${RISCO_COLORS[g.nivel_risco] || "transparent"}90` } : undefined}
+                  >
+                    <button
+                      onClick={() => setExpanded(isExpanded ? null : g.id)}
+                      className="w-full flex items-center gap-2 px-2.5 py-1 md:py-1.5 text-left hover:bg-accent/30 transition-colors"
+                    >
+                      <GradientIcon icon={Play} size="xs" className="shrink-0" />
 
-                  {/* Desktop: single row */}
-                  {!isMobile ? (
-                    <>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-xs font-medium text-foreground">
-                            {formatDate(g.created_at, false)}
-                          </span>
-                          <span className="text-[10px] text-muted-foreground">
-                            {formatTime(g.created_at)}
-                          </span>
-                          <span className="text-[10px] text-muted-foreground inline-flex items-center gap-0.5">
-                            <Clock className="w-2.5 h-2.5" />
-                            {formatDuration(g.duracao_segundos)}
-                          </span>
+                      {/* Desktop: single row */}
+                      {!isMobile ? (
+                        <>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[10px] text-muted-foreground">
+                                {formatTime(g.created_at)}
+                              </span>
+                              <span className="text-[10px] text-muted-foreground inline-flex items-center gap-0.5">
+                                <Clock className="w-2.5 h-2.5" />
+                                {formatDuration(g.duracao_segundos)}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            {g.nivel_risco && (
+                              <span
+                                className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full"
+                                style={{
+                                  backgroundColor: `${RISCO_COLORS[g.nivel_risco]}20`,
+                                  color: RISCO_COLORS[g.nivel_risco],
+                                }}
+                              >
+                                {RISCO_LABELS[g.nivel_risco] || g.nivel_risco}
+                              </span>
+                            )}
+                            {statusInfo.variant === "destructive" && (
+                              <Badge variant={statusInfo.variant} className="text-[9px] px-1.5 py-0">
+                                {statusInfo.label}
+                              </Badge>
+                            )}
+                          </div>
+                        </>
+                      ) : (
+                        /* Mobile: two compact rows */
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[10px] text-muted-foreground">
+                                {formatTime(g.created_at)}
+                              </span>
+                            </div>
+                            {statusInfo.variant === "destructive" && (
+                              <Badge variant={statusInfo.variant} className="text-[9px] px-1.5 py-0">
+                                {statusInfo.label}
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="flex items-center justify-between mt-0.5">
+                            <span className="text-[10px] text-muted-foreground inline-flex items-center gap-0.5">
+                              <Clock className="w-2.5 h-2.5" />
+                              {formatDuration(g.duracao_segundos)}
+                            </span>
+                            {g.nivel_risco && (
+                              <span
+                                className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full"
+                                style={{
+                                  backgroundColor: `${RISCO_COLORS[g.nivel_risco]}20`,
+                                  color: RISCO_COLORS[g.nivel_risco],
+                                }}
+                              >
+                                {RISCO_LABELS[g.nivel_risco] || g.nivel_risco}
+                              </span>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        {g.nivel_risco && (
-                          <span
-                            className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full"
-                            style={{
-                              backgroundColor: `${RISCO_COLORS[g.nivel_risco]}20`,
-                              color: RISCO_COLORS[g.nivel_risco],
-                            }}
-                          >
-                            {RISCO_LABELS[g.nivel_risco] || g.nivel_risco}
-                          </span>
-                        )}
-                        {statusInfo.variant === "destructive" && (
-                          <Badge variant={statusInfo.variant} className="text-[9px] px-1.5 py-0">
-                            {statusInfo.label}
-                          </Badge>
-                        )}
-                      </div>
-                    </>
-                  ) : (
-                    /* Mobile: two compact rows */
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-xs font-medium text-foreground">
-                            {formatDate(g.created_at, true)}
-                          </span>
-                          <span className="text-[10px] text-muted-foreground">
-                            {formatTime(g.created_at)}
-                          </span>
-                        </div>
-                        {statusInfo.variant === "destructive" && (
-                          <Badge variant={statusInfo.variant} className="text-[9px] px-1.5 py-0">
-                            {statusInfo.label}
-                          </Badge>
-                        )}
-                      </div>
-                      <div className="flex items-center justify-between mt-0.5">
-                        <span className="text-[10px] text-muted-foreground inline-flex items-center gap-0.5">
-                          <Clock className="w-2.5 h-2.5" />
-                          {formatDuration(g.duracao_segundos)}
-                        </span>
-                        {g.nivel_risco && (
-                          <span
-                            className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full"
-                            style={{
-                              backgroundColor: `${RISCO_COLORS[g.nivel_risco]}20`,
-                              color: RISCO_COLORS[g.nivel_risco],
-                            }}
-                          >
-                            {RISCO_LABELS[g.nivel_risco] || g.nivel_risco}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </button>
+                      )}
+                    </button>
 
-                {isExpanded && (
-                  <GravacaoExpandedContent
-                    gravacao={g}
-                    sessionToken={sessionToken!}
-                  />
-                )}
-              </div>
-            );
-          })}
+                    {isExpanded && (
+                      <GravacaoExpandedContent
+                        gravacao={g}
+                        sessionToken={sessionToken!}
+                      />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ))}
         </div>
       )}
       </PullToRefresh>
