@@ -75,8 +75,15 @@ async function callAI(messages: any[], model = "google/gemini-3-flash-preview"):
 }
 
 async function transcribeAudio(audioBytes: Uint8Array, ext: string): Promise<string> {
-  const contentType = ext === "mp3" ? "mp3" : ext === "wav" ? "wav" : "webm";
-  const mimeType = ext === "mp3" ? "audio/mpeg" : ext === "wav" ? "audio/wav" : "audio/webm";
+  const contentTypeMap: Record<string, string> = {
+    mp3: "mp3", wav: "wav", webm: "webm", ogg: "ogg", alaw: "alaw", ulaw: "ulaw", m4a: "m4a",
+  };
+  const mimeTypeMap: Record<string, string> = {
+    mp3: "audio/mpeg", wav: "audio/wav", webm: "audio/webm", ogg: "audio/ogg",
+    alaw: "audio/x-alaw-basic", ulaw: "audio/basic", m4a: "audio/mp4",
+  };
+  const contentType = contentTypeMap[ext] || "wav";
+  const mimeType = mimeTypeMap[ext] || "audio/wav";
   const fileName = `audio.${ext}`;
 
   const formData = new FormData();
