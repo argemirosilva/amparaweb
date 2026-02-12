@@ -17,9 +17,8 @@ function json(data: unknown, status = 200) {
 
 function formatPhone(phone: string): string {
   const digits = phone.replace(/\D/g, "");
-  if (digits.length === 11) return `55${digits}`;
-  if (digits.length === 13 && digits.startsWith("55")) return digits;
-  return digits;
+  if (digits.startsWith("55")) return digits;
+  return `55${digits}`;
 }
 
 // ── Haversine distance (meters) ──
