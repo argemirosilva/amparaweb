@@ -266,6 +266,7 @@ async function notifyGuardiansAlert(
         shareLink || "Indisponível",
         endereco,
       ];
+      console.log("WhatsApp params:", JSON.stringify(params), "phone:", g.telefone_whatsapp);
       const result = await sendWhatsAppTemplate(g.telefone_whatsapp, "ampara2", params);
 
       // Log
