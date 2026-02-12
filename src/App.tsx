@@ -14,6 +14,7 @@ import Gravacoes from "./pages/Gravacoes";
 import Perfil from "./pages/Perfil";
 import Configuracoes from "./pages/Configuracoes";
 import NotFound from "./pages/NotFound";
+import DocApi from "./pages/DocApi";
 
 const queryClient = new QueryClient();
 
@@ -36,6 +37,7 @@ const App = () => (
               <Route path="/perfil" element={<Perfil />} />
               <Route path="/configuracoes" element={<Configuracoes />} />
             </Route>
+            <Route path="/doc-api" element={<DocApi />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
