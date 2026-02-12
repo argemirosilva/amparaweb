@@ -7,32 +7,46 @@ import GradientIcon from "@/components/ui/gradient-icon";
 
 const DAY_KEYS = ["dom", "seg", "ter", "qua", "qui", "sex", "sab"] as const;
 
+// Active session statuses (not just "ativa")
+const ACTIVE_STATUSES = ["ativa", "aguardando_finalizacao", "inserida_no_fluxo"];
+
+interface Period { inicio: string; fim: string }
+
 interface ScheduleInfo {
   label: string;
-  isActive: boolean; // currently within the period
+  isActive: boolean;
 }
 
-function getTodayScheduleInfo(periodos: Record<string, { ativo: boolean; inicio: string; fim: string }>): ScheduleInfo {
+function getTodayScheduleInfo(periodos: Record<string, Period[]>): ScheduleInfo {
   const todayKey = DAY_KEYS[new Date().getDay()];
-  const p = periodos?.[todayKey];
-  if (!p?.ativo) return { label: "Sem horário", isActive: false };
+  const periods = periodos?.[todayKey];
+  if (!periods || periods.length === 0) return { label: "Sem horário", isActive: false };
 
   const now = new Date();
-  const [hI, mI] = p.inicio.split(":").map(Number);
-  const [hF, mF] = p.fim.split(":").map(Number);
   const nowMin = now.getHours() * 60 + now.getMinutes();
-  const inicioMin = hI * 60 + mI;
-  const fimMin = hF * 60 + mF;
 
-  if (nowMin >= inicioMin && nowMin < fimMin) {
-    // Currently within period
-    return { label: `${p.inicio} – ${p.fim}`, isActive: true };
+  // Check if currently within any period
+  for (const p of periods) {
+    const [hI, mI] = p.inicio.split(":").map(Number);
+    const [hF, mF] = p.fim.split(":").map(Number);
+    const inicioMin = hI * 60 + mI;
+    const fimMin = hF * 60 + mF;
+
+    if (nowMin >= inicioMin && nowMin < fimMin) {
+      return { label: `${p.inicio} – ${p.fim}`, isActive: true };
+    }
   }
-  if (nowMin < inicioMin) {
-    // Period hasn't started yet
-    return { label: `Próximo: ${p.inicio} – ${p.fim}`, isActive: false };
+
+  // Find next upcoming period today
+  const upcoming = periods
+    .map(p => ({ ...p, min: parseInt(p.inicio.split(":")[0]) * 60 + parseInt(p.inicio.split(":")[1]) }))
+    .filter(p => p.min > nowMin)
+    .sort((a, b) => a.min - b.min);
+
+  if (upcoming.length > 0) {
+    return { label: `Próximo: ${upcoming[0].inicio} – ${upcoming[0].fim}`, isActive: false };
   }
-  // Period already ended
+
   return { label: "Sem mais hoje", isActive: false };
 }
 
@@ -49,7 +63,7 @@ export default function MonitoringStatusCard() {
         .from("monitoramento_sessoes")
         .select("id, status")
         .eq("user_id", usuario.id)
-        .eq("status", "ativa")
+        .in("status", ACTIVE_STATUSES)
         .limit(1)
         .maybeSingle(),
       supabase
@@ -60,7 +74,8 @@ export default function MonitoringStatusCard() {
     ]).then(([sessionRes, scheduleRes]) => {
       setSessionActive(!!sessionRes.data);
       if (scheduleRes.data?.periodos_semana) {
-        setSchedule(getTodayScheduleInfo(scheduleRes.data.periodos_semana as any).label);
+        const info = getTodayScheduleInfo(scheduleRes.data.periodos_semana as unknown as Record<string, Period[]>);
+        setSchedule(info.label);
       }
       setLoading(false);
     });
