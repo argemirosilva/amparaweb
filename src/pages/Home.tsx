@@ -15,7 +15,6 @@ export default function HomePage() {
       />
 
       <div className="relative z-10 space-y-4">
-        <h1 className="text-lg font-display font-bold text-foreground">Dashboard</h1>
         <RiskEvolutionCard />
         <DeviceStatusCard />
         <AudioRecorderCard />
