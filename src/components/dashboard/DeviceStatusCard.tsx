@@ -70,7 +70,7 @@ export default function DeviceStatusCard() {
       )}
 
       {/* Icon */}
-      <GradientIcon icon={Smartphone} />
+      <GradientIcon icon={Smartphone} size="sm" />
 
       {/* Title + device name */}
       <p className="text-sm font-semibold text-primary mb-0.5 truncate">
