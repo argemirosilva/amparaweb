@@ -788,6 +788,7 @@ export type Database = {
           endereco_numero: string | null
           endereco_referencia: string | null
           endereco_uf: string | null
+          gps_duracao_minutos: number
           id: string
           mora_com_agressor: boolean | null
           nome_completo: string
@@ -822,6 +823,7 @@ export type Database = {
           endereco_numero?: string | null
           endereco_referencia?: string | null
           endereco_uf?: string | null
+          gps_duracao_minutos?: number
           id?: string
           mora_com_agressor?: boolean | null
           nome_completo: string
@@ -856,6 +858,7 @@ export type Database = {
           endereco_numero?: string | null
           endereco_referencia?: string | null
           endereco_uf?: string | null
+          gps_duracao_minutos?: number
           id?: string
           mora_com_agressor?: boolean | null
           nome_completo?: string
