@@ -12,7 +12,7 @@ import {
   Loader2,
   ChevronLeft,
   ChevronRight,
-  Volume2,
+  Play,
 } from "lucide-react";
 
 interface Gravacao {
@@ -156,7 +156,7 @@ export default function GravacoesPage() {
                   onClick={() => setExpanded(isExpanded ? null : g.id)}
                   className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-accent/30 transition-colors"
                 >
-                  <GradientIcon icon={Volume2} size="sm" />
+                  <GradientIcon icon={Play} size="sm" />
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
