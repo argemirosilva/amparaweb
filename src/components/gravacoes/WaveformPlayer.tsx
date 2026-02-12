@@ -1,6 +1,8 @@
 import { useRef, useState, useEffect } from "react";
 import { Play, Pause, Loader2 } from "lucide-react";
-import { callWebApi } from "@/services/webApiService";
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 export interface WaveformMarker {
   position: number; // 0–1
@@ -52,23 +54,19 @@ export default function WaveformPlayer({ storagePath, sessionToken, markers = []
     let cancelled = false;
 
     (async () => {
-      const res = await callWebApi("getGravacaoSignedUrl", sessionToken, { storage_path: storagePath });
-      if (!res.ok || !res.data.url || cancelled) {
-        setError(true);
-        setLoading(false);
-        return;
-      }
+      // Build proxy URL that streams audio through our edge function (avoids R2 CORS/ORB)
+      const proxyUrl = `${SUPABASE_URL}/functions/v1/web-api?action=proxyAudio&session_token=${encodeURIComponent(sessionToken)}&storage_path=${encodeURIComponent(storagePath)}`;
 
       const { default: WaveSurfer } = await import("wavesurfer.js");
       if (cancelled || !containerRef.current) return;
 
       const accent = resolveColor(accentCssVar);
 
-      // Use an audio element for playback (no CORS needed for media playback)
+      // Use the proxy URL directly - our edge function returns audio with proper CORS headers
       const audio = new Audio();
-      audio.src = res.data.url;
+      audio.src = proxyUrl;
 
-      // Provide fake peaks so WaveSurfer doesn't try to fetch() the URL (which fails due to R2 CORS)
+      // Provide fake peaks so WaveSurfer doesn't try to fetch() the URL for waveform decoding
       const fakePeaks = generateFakePeaks(200);
       const estimatedDuration = durationHint || 60;
 
