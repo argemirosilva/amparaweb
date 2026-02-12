@@ -182,13 +182,21 @@ export default function DeviceStatusCard() {
               <button
                 onClick={() => setShowMap(true)}
                 className={`inline-flex items-center gap-1 text-[10px] font-medium transition-colors ${
-                  recentGps
-                    ? "text-emerald-500"
-                    : "text-primary hover:text-primary/80"
+                  panicActive
+                    ? "text-destructive"
+                    : recentGps
+                      ? "text-blue-500"
+                      : "text-primary hover:text-primary/80"
                 }`}
                 title="Ver localização"
               >
-                <MapPin className={`w-3.5 h-3.5 ${recentGps ? "animate-pulse" : ""}`} />
+                <MapPin className={`w-3.5 h-3.5 ${
+                  panicActive
+                    ? "animate-pulse"
+                    : recentGps
+                      ? "animate-pulse"
+                      : ""
+                }`} />
                 GPS
               </button>
             );
