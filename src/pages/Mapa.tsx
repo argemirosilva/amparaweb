@@ -237,8 +237,9 @@ export default function Mapa() {
   }, [data]);
 
   return (
-    <div className="relative w-full flex-1 -mx-4 -mb-20 md:-mx-6 md:-mb-6 flex items-center justify-center">
-      <div ref={mapContainerRef} className="absolute inset-0 z-0" />
+    <div className="relative w-full flex-1 flex items-center justify-center">
+      <div className="relative w-full h-full rounded-2xl overflow-hidden border border-border">
+        <div ref={mapContainerRef} className="absolute inset-0 z-0" />
 
       {loading && (
         <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/80">
@@ -252,6 +253,7 @@ export default function Mapa() {
           <p className="text-sm text-muted-foreground">{error}</p>
         </div>
       )}
+      </div>
     </div>
   );
 }
