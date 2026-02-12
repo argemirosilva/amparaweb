@@ -323,9 +323,10 @@ async function notifyGuardiansResolved(
   await Promise.allSettled(
     guardioes.map(async (g) => {
       const params: NamedParam[] = [
-        { name: "GUARDIAO", value: g.nome },
-        { name: "VITIMA", value: usuario.nome_completo },
+        { name: "guardiao", value: g.nome },
+        { name: "vitima", value: usuario.nome_completo },
       ];
+      console.log("WhatsApp resolved params:", JSON.stringify(params), "phone:", g.telefone_whatsapp);
       const result = await sendWhatsAppTemplate(g.telefone_whatsapp, "amparasafe", params);
 
       await supabase.from("audit_logs").insert({
