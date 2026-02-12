@@ -4,11 +4,59 @@ import { callWebApi } from "@/services/webApiService";
 import { Progress } from "@/components/ui/progress";
 import { Mic, Square, Upload, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import lamejs from "lamejs";
 
 function formatDuration(s: number): string {
   const m = Math.floor(s / 60);
   const sec = Math.floor(s % 60);
   return `${m}:${sec.toString().padStart(2, "0")}`;
+}
+
+async function audioBufferToMp3(audioBuffer: AudioBuffer): Promise<Blob> {
+  const channels = Math.min(audioBuffer.numberOfChannels, 2);
+  const sampleRate = audioBuffer.sampleRate;
+  const kbps = 128;
+  const encoder = new lamejs.Mp3Encoder(channels, sampleRate, kbps);
+  const mp3Data: ArrayBuffer[] = [];
+  const blockSize = 1152;
+
+  // Get channel data as Int16
+  const channelData: Int16Array[] = [];
+  for (let ch = 0; ch < channels; ch++) {
+    const floatData = audioBuffer.getChannelData(ch);
+    const int16 = new Int16Array(floatData.length);
+    for (let i = 0; i < floatData.length; i++) {
+      int16[i] = Math.max(-32768, Math.min(32767, Math.round(floatData[i] * 32767)));
+    }
+    channelData.push(int16);
+  }
+
+  const totalSamples = channelData[0].length;
+  for (let i = 0; i < totalSamples; i += blockSize) {
+    const left = channelData[0].subarray(i, i + blockSize);
+    let mp3buf: Int8Array;
+    if (channels === 2) {
+      const right = channelData[1].subarray(i, i + blockSize);
+      mp3buf = encoder.encodeBuffer(left, right);
+    } else {
+      mp3buf = encoder.encodeBuffer(left);
+    }
+    if (mp3buf.length > 0) mp3Data.push(new Uint8Array(mp3buf).buffer);
+  }
+
+  const end = encoder.flush();
+  if (end.length > 0) mp3Data.push(new Uint8Array(end).buffer);
+
+  return new Blob(mp3Data, { type: "audio/mpeg" });
+}
+
+async function blobToMp3(blob: Blob): Promise<Blob> {
+  const arrayBuffer = await blob.arrayBuffer();
+  const audioCtx = new AudioContext();
+  const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+  const mp3Blob = await audioBufferToMp3(audioBuffer);
+  await audioCtx.close();
+  return mp3Blob;
 }
 
 interface AudioRecorderCardProps {
@@ -20,6 +68,7 @@ export default function AudioRecorderCard({ onUploaded }: AudioRecorderCardProps
   const [recording, setRecording] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [uploading, setUploading] = useState(false);
+  const [converting, setConverting] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<number | null>(null);
@@ -73,8 +122,20 @@ export default function AudioRecorderCard({ onUploaded }: AudioRecorderCardProps
 
       mediaRecorder.onstop = async () => {
         stream.getTracks().forEach((t) => t.stop());
-        const blob = new Blob(chunksRef.current, { type: "audio/webm" });
-        await uploadBlob(blob, "gravacao.webm", "audio/webm", elapsed);
+        const webmBlob = new Blob(chunksRef.current, { type: "audio/webm" });
+        const duration = elapsed;
+
+        // Convert webm to mp3
+        setConverting(true);
+        try {
+          const mp3Blob = await blobToMp3(webmBlob);
+          setConverting(false);
+          await uploadBlob(mp3Blob, "gravacao.mp3", "audio/mpeg", duration);
+        } catch (err) {
+          console.error("MP3 conversion error:", err);
+          setConverting(false);
+          toast.error("Erro ao converter áudio para MP3");
+        }
       };
 
       mediaRecorder.start(1000);
@@ -123,7 +184,24 @@ export default function AudioRecorderCard({ onUploaded }: AudioRecorderCardProps
       });
     } catch { /* ignore */ }
 
-    await uploadBlob(file, file.name, file.type, duration);
+    // Convert WAV to MP3
+    const isWav = file.type === "audio/wav" || file.type === "audio/x-wav" || file.name.toLowerCase().endsWith(".wav");
+    if (isWav) {
+      setConverting(true);
+      try {
+        const mp3Blob = await blobToMp3(file);
+        setConverting(false);
+        const mp3Name = file.name.replace(/\.wav$/i, ".mp3");
+        await uploadBlob(mp3Blob, mp3Name, "audio/mpeg", duration);
+      } catch (err) {
+        console.error("WAV to MP3 conversion error:", err);
+        setConverting(false);
+        toast.error("Erro ao converter WAV para MP3");
+      }
+    } else {
+      await uploadBlob(file, file.name, file.type, duration);
+    }
+
     e.target.value = "";
   };
 
@@ -142,7 +220,7 @@ export default function AudioRecorderCard({ onUploaded }: AudioRecorderCardProps
         ) : (
           <button
             onClick={startRecording}
-            disabled={uploading}
+            disabled={uploading || converting}
             className="w-12 h-12 rounded-full bg-primary flex items-center justify-center shrink-0 hover:bg-primary/90 transition-colors shadow-lg disabled:opacity-50"
           >
             <Mic className="w-5 h-5 text-primary-foreground" />
@@ -162,6 +240,13 @@ export default function AudioRecorderCard({ onUploaded }: AudioRecorderCardProps
               </div>
               <p className="text-xs text-muted-foreground">Toque no botão para parar e enviar</p>
             </div>
+          ) : converting ? (
+            <div className="space-y-1.5">
+              <span className="text-sm font-medium text-foreground flex items-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                Convertendo para MP3...
+              </span>
+            </div>
           ) : uploading ? (
             <div className="space-y-1.5">
               <span className="text-sm font-medium text-foreground flex items-center gap-2">
@@ -178,7 +263,7 @@ export default function AudioRecorderCard({ onUploaded }: AudioRecorderCardProps
           )}
         </div>
 
-        {!recording && !uploading && (
+        {!recording && !uploading && !converting && (
           <label className="cursor-pointer">
             <input type="file" accept="audio/*" className="hidden" onChange={handleFileUpload} />
             <div className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border text-sm text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-colors">
