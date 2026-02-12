@@ -51,6 +51,11 @@ export default function WaveformPlayer({ storagePath, sessionToken, markers = []
 
       const accent = resolveColor(accentCssVar);
 
+      // Use an audio element to avoid CORS issues with R2 URLs
+      const audio = new Audio();
+      audio.crossOrigin = "anonymous";
+      audio.src = res.data.url;
+
       ws = WaveSurfer.create({
         container: containerRef.current,
         waveColor: "rgba(255,255,255,0.2)",
@@ -61,7 +66,7 @@ export default function WaveformPlayer({ storagePath, sessionToken, markers = []
         barGap: 2,
         barRadius: 3,
         height: 56,
-        url: res.data.url,
+        media: audio,
         normalize: true,
       });
 
