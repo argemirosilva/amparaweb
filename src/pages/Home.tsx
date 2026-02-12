@@ -14,15 +14,11 @@ export default function HomePage() {
         className="pointer-events-none fixed bottom-[-15%] left-1/2 -translate-x-1/2 w-[280vw] max-w-none opacity-30 z-0 select-none"
       />
 
-      <div className="relative z-10 space-y-6">
+      <div className="relative z-10 space-y-4">
         <h1 className="text-2xl font-display font-bold text-foreground">Dashboard</h1>
         <RiskEvolutionCard />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-4">
-            <DeviceStatusCard />
-          </div>
-          <AudioRecorderCard />
-        </div>
+        <DeviceStatusCard />
+        <AudioRecorderCard />
       </div>
     </div>
   );
