@@ -11,6 +11,7 @@ interface Period { inicio: string; fim: string }
 
 type MonitoringState =
   | { type: "monitoring"; inicio: string; fim: string }
+  | { type: "monitoring_no_window" }
   | { type: "next"; inicio: string }
   | { type: "outside" };
 
@@ -68,6 +69,11 @@ export default function MonitoringStatusCard() {
         .maybeSingle(),
     ]);
 
+    const hasActiveSession = !!sessionRes.data;
+    const periodos = scheduleRes.data?.periodos_semana as unknown as Record<string, Period[]> | null;
+    const todayKey = DAY_KEYS[new Date().getDay()];
+    const todayPeriods = periodos?.[todayKey] ?? [];
+
     // If active session with window times, use those
     if (sessionRes.data?.window_start_at && sessionRes.data?.window_end_at) {
       setState({
@@ -75,10 +81,15 @@ export default function MonitoringStatusCard() {
         inicio: formatTime(sessionRes.data.window_start_at),
         fim: formatTime(sessionRes.data.window_end_at),
       });
+    } else if (hasActiveSession) {
+      // Session active but no window — find matching schedule period or show generic
+      const scheduleState = resolveState(todayPeriods);
+      if (scheduleState.type === "monitoring") {
+        setState(scheduleState);
+      } else {
+        setState({ type: "monitoring_no_window" });
+      }
     } else {
-      const periodos = scheduleRes.data?.periodos_semana as unknown as Record<string, Period[]> | null;
-      const todayKey = DAY_KEYS[new Date().getDay()];
-      const todayPeriods = periodos?.[todayKey] ?? [];
       setState(resolveState(todayPeriods));
     }
 
@@ -122,6 +133,11 @@ export default function MonitoringStatusCard() {
           {state?.type === "monitoring" && (
             <p className="text-xs font-medium text-emerald-600">
               Monitorando · {state.inicio} – {state.fim}
+            </p>
+          )}
+          {state?.type === "monitoring_no_window" && (
+            <p className="text-xs font-medium text-emerald-600">
+              Monitorando
             </p>
           )}
           {state?.type === "next" && (
