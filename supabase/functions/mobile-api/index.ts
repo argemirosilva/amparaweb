@@ -77,6 +77,23 @@ async function validateSession(
   return { user, error: null };
 }
 
+async function findUserByEmail(
+  supabase: ReturnType<typeof createClient>,
+  email: string
+): Promise<Record<string, unknown> | null> {
+  const { data } = await supabase
+    .from("usuarios")
+    .select("id, email, nome_completo, telefone, tipo_interesse")
+    .eq("email", email.trim().toLowerCase())
+    .maybeSingle();
+  return data;
+}
+
+// ── Short day keys used throughout the API (doc standard) ──
+const VALID_DAYS = ["seg", "ter", "qua", "qui", "sex", "sab", "dom"];
+// JS getDay() -> short key mapping (0=Sunday)
+const DAY_INDEX_TO_KEY = ["dom", "seg", "ter", "qua", "qui", "sex", "sab"];
+
 // ── Action Handlers ──
 
 async function handleLogin(
@@ -353,7 +370,7 @@ async function handleSyncConfig(
 
   const { data: user } = await supabase
     .from("usuarios")
-    .select("id, email, nome_completo, telefone, tipo_interesse, status")
+    .select("id, email, nome_completo, telefone, tipo_interesse, status, configuracao_alertas")
     .eq("email", emailUsuario)
     .maybeSingle();
 
@@ -368,36 +385,68 @@ async function handleSyncConfig(
     .eq("user_id", user.id)
     .maybeSingle();
 
-  const periodosSemana = agendamento?.periodos_semana || {};
+  const periodosSemana = (agendamento?.periodos_semana || {}) as Record<string, Array<{ inicio: string; fim: string }>>;
+
+  // Get guardians (contatos_rede_apoio)
+  const { data: guardioes } = await supabase
+    .from("guardioes")
+    .select("id, nome, telefone_whatsapp, vinculo")
+    .eq("usuario_id", user.id)
+    .order("created_at", { ascending: true });
+
+  const contatosRedeApoio = (guardioes || []).map((g: any, idx: number) => ({
+    id: g.id,
+    nome: g.nome,
+    telefone_whatsapp: g.telefone_whatsapp,
+    relacao: g.vinculo,
+    is_primary: idx === 0,
+  }));
 
   // Check if within scheduled window
   const deviceId = body.device_id as string | undefined;
   const timezone = body.timezone as string | undefined;
   const tzOffset = body.timezone_offset_minutes as number | undefined;
-  let monitoramentoAtivo = false;
+
+  let gravacaoAtiva = false;
+  let dentroHorario = false;
+  let periodoAtualIndex: number | null = null;
+  let gravacaoInicio: string | null = null;
+  let gravacaoFim: string | null = null;
   let sessaoId: string | null = null;
 
-  if (deviceId && agendamento) {
-    // Calculate client time
-    let clientNow: Date;
-    if (tzOffset !== undefined) {
-      const utcNow = new Date();
-      clientNow = new Date(utcNow.getTime() - tzOffset * 60 * 1000);
-    } else {
-      clientNow = new Date();
-    }
+  // Calculate client time
+  let clientNow: Date;
+  if (tzOffset !== undefined) {
+    const utcNow = new Date();
+    clientNow = new Date(utcNow.getTime() - tzOffset * 60 * 1000);
+  } else {
+    // Default to America/Sao_Paulo (UTC-3)
+    const utcNow = new Date();
+    clientNow = new Date(utcNow.getTime() + 3 * 60 * 60 * 1000 * -1);
+  }
 
-    const dayNames = ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"];
-    const dayName = dayNames[clientNow.getUTCDay()];
-    const currentTime = `${String(clientNow.getUTCHours()).padStart(2, "0")}:${String(clientNow.getUTCMinutes()).padStart(2, "0")}`;
+  const dayKey = DAY_INDEX_TO_KEY[clientNow.getUTCDay()];
+  const currentTime = `${String(clientNow.getUTCHours()).padStart(2, "0")}:${String(clientNow.getUTCMinutes()).padStart(2, "0")}`;
 
-    const dayPeriods = (periodosSemana as Record<string, Array<{ inicio: string; fim: string }>>)[dayName];
+  // Get today's periods
+  const periodosHoje = periodosSemana[dayKey] || [];
 
-    if (dayPeriods && Array.isArray(dayPeriods)) {
-      for (const periodo of dayPeriods) {
-        if (currentTime >= periodo.inicio && currentTime <= periodo.fim) {
-          monitoramentoAtivo = true;
+  // Check all configured days for gravacao_ativa_config
+  const gravacaoAtivaConfig = Object.values(periodosSemana).some(
+    (periods) => Array.isArray(periods) && periods.length > 0
+  );
 
+  if (periodosHoje.length > 0) {
+    for (let i = 0; i < periodosHoje.length; i++) {
+      const periodo = periodosHoje[i];
+      if (currentTime >= periodo.inicio && currentTime <= periodo.fim) {
+        dentroHorario = true;
+        gravacaoAtiva = true;
+        periodoAtualIndex = i;
+        gravacaoInicio = periodo.inicio;
+        gravacaoFim = periodo.fim;
+
+        if (deviceId && agendamento) {
           // Check existing active session for this user+device
           const { data: existingSession } = await supabase
             .from("monitoramento_sessoes")
@@ -409,25 +458,22 @@ async function handleSyncConfig(
 
           if (!existingSession) {
             // Calculate window_start_at and window_end_at in UTC
-            // periodo.inicio and periodo.fim are in client local time (HH:MM)
             const [hi, mi] = periodo.inicio.split(":").map(Number);
             const [hf, mf] = periodo.fim.split(":").map(Number);
 
-            // Build window start/end in client local, then convert to UTC
             const windowStartLocal = new Date(clientNow);
             windowStartLocal.setUTCHours(hi, mi, 0, 0);
             const windowEndLocal = new Date(clientNow);
             windowEndLocal.setUTCHours(hf, mf, 0, 0);
 
-            // Convert back to real UTC by adding tzOffset
             let windowStartUtc: Date;
             let windowEndUtc: Date;
             if (tzOffset !== undefined) {
               windowStartUtc = new Date(windowStartLocal.getTime() + tzOffset * 60 * 1000);
               windowEndUtc = new Date(windowEndLocal.getTime() + tzOffset * 60 * 1000);
             } else {
-              windowStartUtc = windowStartLocal;
-              windowEndUtc = windowEndLocal;
+              windowStartUtc = new Date(windowStartLocal.getTime() + 3 * 60 * 60 * 1000);
+              windowEndUtc = new Date(windowEndLocal.getTime() + 3 * 60 * 60 * 1000);
             }
 
             const { data: newSession } = await supabase
@@ -446,27 +492,59 @@ async function handleSyncConfig(
           } else {
             sessaoId = existingSession.id;
           }
-          break;
         }
+        break;
       }
-    }
-
-    // Update device timezone
-    if (timezone || tzOffset !== undefined) {
-      const tzUpdate: Record<string, unknown> = {};
-      if (timezone) tzUpdate.timezone = timezone;
-      if (tzOffset !== undefined) tzUpdate.timezone_offset_minutes = tzOffset;
-
-      await supabase
-        .from("device_status")
-        .update(tzUpdate)
-        .eq("user_id", user.id)
-        .eq("device_id", deviceId);
     }
   }
 
+  // Update device timezone
+  if (deviceId && (timezone || tzOffset !== undefined)) {
+    const tzUpdate: Record<string, unknown> = {};
+    if (timezone) tzUpdate.timezone = timezone;
+    if (tzOffset !== undefined) tzUpdate.timezone_offset_minutes = tzOffset;
+
+    await supabase
+      .from("device_status")
+      .update(tzUpdate)
+      .eq("user_id", user.id)
+      .eq("device_id", deviceId);
+  }
+
+  // Build dias_gravacao from configured schedule
+  const diasGravacao: string[] = [];
+  const dayLabels: Record<string, string> = {
+    seg: "Segunda", ter: "Terça", qua: "Quarta", qui: "Quinta",
+    sex: "Sexta", sab: "Sábado", dom: "Domingo",
+  };
+  for (const d of VALID_DAYS) {
+    if (periodosSemana[d] && periodosSemana[d].length > 0) {
+      diasGravacao.push(dayLabels[d]);
+    }
+  }
+
+  // Voice command keywords (static defaults — can be expanded to DB later)
+  const palavrasIniciarGravacao = ["Ampara", "Preciso de água"];
+  const palavrasPararGravacao = ["Obrigada", "Descansar"];
+  const palavrasBotaoPanico = ["Me ajuda", "Socorro"];
+  const palavrasCancelarPanico = ["Falso alarme", "Cancelar"];
+
   return jsonResponse({
     success: true,
+    gravacao_ativa: gravacaoAtiva,
+    gravacao_ativa_config: gravacaoAtivaConfig,
+    dentro_horario: dentroHorario,
+    periodo_atual_index: periodoAtualIndex,
+    gravacao_inicio: gravacaoInicio,
+    gravacao_fim: gravacaoFim,
+    periodos_hoje: periodosHoje,
+    sessao_id: sessaoId,
+    dias_gravacao: diasGravacao,
+    palavras_iniciar_gravacao: palavrasIniciarGravacao,
+    palavras_parar_gravacao: palavrasPararGravacao,
+    palavras_botao_panico: palavrasBotaoPanico,
+    palavras_cancelar_panico: palavrasCancelarPanico,
+    contatos_rede_apoio: contatosRedeApoio,
     usuario: {
       id: user.id,
       email: user.email,
@@ -476,7 +554,7 @@ async function handleSyncConfig(
       status: user.status,
     },
     monitoramento: {
-      ativo: monitoramentoAtivo,
+      ativo: gravacaoAtiva,
       sessao_id: sessaoId,
       periodos_semana: periodosSemana,
     },
@@ -696,11 +774,10 @@ async function handleUpdateSchedules(
 
   const userId = (user as Record<string, unknown>).id as string;
 
-  const validDays = ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"];
   const timeRegex = /^([01]\d|2[0-3]):[0-5]\d$/;
 
   for (const [day, periods] of Object.entries(periodosSemana)) {
-    if (!validDays.includes(day)) {
+    if (!VALID_DAYS.includes(day)) {
       return errorResponse(`Dia inválido: ${day}`, 400);
     }
     if (!Array.isArray(periods)) {
@@ -1062,7 +1139,6 @@ async function handleReceberAudio(
   const storagePath = `${user.id}/${timestamp}.audio`;
 
   // Check active monitoring session (bifurcated flow)
-  // If device_id provided, filter by device_id too
   let sessionQuery = supabase
     .from("monitoramento_sessoes")
     .select("id")
@@ -1078,7 +1154,7 @@ async function handleReceberAudio(
   if (activeSession) {
     // ── SEGMENT PATH: monitoring session active ──
 
-    // Idempotency check: if (monitor_session_id, segmento_idx) already exists, return existing
+    // Idempotency check
     if (segmentoIdx !== undefined && segmentoIdx !== null) {
       const { data: existingSegment } = await supabase
         .from("gravacoes_segmentos")
@@ -1170,38 +1246,124 @@ async function handleGetAudioSignedUrl(
   body: Record<string, unknown>,
   supabase: ReturnType<typeof createClient>
 ): Promise<Response> {
-  const sessionToken = body.session_token as string;
-  const { user, error } = await validateSession(supabase, sessionToken);
-  if (error || !user) return errorResponse(error || "Sessão inválida", 401);
+  // Doc: accepts file_path + (session_token OR email_usuario)
+  const filePath = body.file_path as string;
+  const sessionToken = body.session_token as string | undefined;
+  const emailUsuario = (body.email_usuario as string)?.trim().toLowerCase();
+  // Also support legacy gravacao_id
+  const gravacaoId = body.gravacao_id as string | undefined;
 
-  const gravacaoId = body.gravacao_id as string;
-  if (!gravacaoId) return errorResponse("gravacao_id obrigatório", 400);
+  // Resolve user
+  let userId: string | null = null;
 
-  const userId = (user as Record<string, unknown>).id as string;
+  if (sessionToken) {
+    const { user, error } = await validateSession(supabase, sessionToken);
+    if (error || !user) return errorResponse(error || "Sessão inválida", 401);
+    userId = (user as Record<string, unknown>).id as string;
+  } else if (emailUsuario) {
+    const user = await findUserByEmail(supabase, emailUsuario);
+    if (!user) return errorResponse("Usuário não encontrado", 404);
+    userId = user.id as string;
+  } else {
+    return errorResponse("session_token ou email_usuario obrigatório", 400);
+  }
 
-  const { data: gravacao } = await supabase
-    .from("gravacoes")
-    .select("id, storage_path")
-    .eq("id", gravacaoId)
-    .eq("user_id", userId)
-    .maybeSingle();
+  let storagePath: string | null = null;
+  let responseGravacaoId: string | null = null;
 
-  if (!gravacao) return errorResponse("Gravação não encontrada", 404);
-  if (!gravacao.storage_path) return errorResponse("Arquivo de áudio não disponível", 404);
+  if (filePath) {
+    // Doc standard: file_path (storage path)
+    storagePath = filePath;
 
+    // Verify ownership via gravacoes or gravacoes_segmentos
+    const { data: rec } = await supabase
+      .from("gravacoes")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("storage_path", filePath)
+      .maybeSingle();
+
+    if (!rec) {
+      const { data: seg } = await supabase
+        .from("gravacoes_segmentos")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("storage_path", filePath)
+        .maybeSingle();
+      if (!seg) return errorResponse("Arquivo não encontrado ou sem permissão", 404);
+    } else {
+      responseGravacaoId = rec.id;
+    }
+  } else if (gravacaoId) {
+    // Legacy: gravacao_id
+    const { data: gravacao } = await supabase
+      .from("gravacoes")
+      .select("id, storage_path")
+      .eq("id", gravacaoId)
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (!gravacao) return errorResponse("Gravação não encontrada", 404);
+    if (!gravacao.storage_path) return errorResponse("Arquivo de áudio não disponível", 404);
+    storagePath = gravacao.storage_path;
+    responseGravacaoId = gravacao.id;
+  } else {
+    return errorResponse("file_path ou gravacao_id obrigatório", 400);
+  }
+
+  // URL expires in 15 minutes (900s) per doc
   const { data: signedUrl } = await supabase.storage
     .from("audio-recordings")
-    .createSignedUrl(gravacao.storage_path, 3600);
+    .createSignedUrl(storagePath!, 900);
 
   return jsonResponse({
     success: true,
-    gravacao_id: gravacao.id,
     signed_url: signedUrl?.signedUrl || null,
-    expires_in_seconds: 3600,
+    gravacao_id: responseGravacaoId,
+    expires_in_seconds: 900,
   });
 }
 
 async function handleReprocessarGravacao(
+  body: Record<string, unknown>,
+  supabase: ReturnType<typeof createClient>,
+  ip: string
+): Promise<Response> {
+  // Doc: no auth required, just gravacao_id
+  const gravacaoId = body.gravacao_id as string;
+  if (!gravacaoId) return errorResponse("gravacao_id obrigatório", 400);
+
+  const { data: gravacao } = await supabase
+    .from("gravacoes")
+    .select("id, user_id, status")
+    .eq("id", gravacaoId)
+    .maybeSingle();
+
+  if (!gravacao) return errorResponse("Gravação não encontrada", 404);
+
+  await supabase
+    .from("gravacoes")
+    .update({ status: "pendente", processado_em: null, erro_processamento: null, transcricao: null })
+    .eq("id", gravacao.id);
+
+  await supabase.from("audit_logs").insert({
+    user_id: gravacao.user_id,
+    action_type: "reprocessar_gravacao",
+    success: true,
+    ip_address: ip,
+    details: { gravacao_id: gravacao.id },
+  });
+
+  return jsonResponse({
+    success: true,
+    gravacao_id: gravacao.id,
+    message: "Gravação enviada para reprocessamento",
+    status: "pendente",
+  });
+}
+
+// reprocess_recording: authenticated version
+async function handleReprocessRecording(
   body: Record<string, unknown>,
   supabase: ReturnType<typeof createClient>,
   ip: string
@@ -1245,52 +1407,66 @@ async function handleReprocessarGravacao(
   });
 }
 
-const handleReprocessRecording = handleReprocessarGravacao;
-
 async function handleReportarStatusMonitoramento(
   body: Record<string, unknown>,
   supabase: ReturnType<typeof createClient>,
   ip: string
 ): Promise<Response> {
-  const sessionToken = body.session_token as string;
-  const { user, error } = await validateSession(supabase, sessionToken);
-  if (error || !user) return errorResponse(error || "Sessão inválida", 401);
+  // Doc: uses email_usuario, device_id, status_monitoramento, motivo, app_state, next_check_at
+  const emailUsuario = (body.email_usuario as string)?.trim().toLowerCase();
+  if (!emailUsuario) return errorResponse("email_usuario obrigatório", 400);
 
-  const userId = (user as Record<string, unknown>).id as string;
-  const sessaoId = body.sessao_id as string;
-  const status = body.status as string;
-  const deviceId = body.device_id as string || null;
+  const deviceId = body.device_id as string;
+  if (!deviceId) return errorResponse("device_id obrigatório", 400);
 
-  if (!sessaoId) return errorResponse("sessao_id obrigatório", 400);
-  if (!status) return errorResponse("status obrigatório", 400);
+  const statusMonitoramento = body.status_monitoramento as string;
+  if (!statusMonitoramento) return errorResponse("status_monitoramento obrigatório", 400);
 
-  const validStatuses = ["ativa", "finalizada", "cancelada"];
-  if (!validStatuses.includes(status)) {
-    return errorResponse(`status inválido. Valores aceitos: ${validStatuses.join(", ")}`, 400);
+  const validStatuses = ["janela_iniciada", "janela_finalizada", "ativado", "desativado", "erro", "retomado"];
+  if (!validStatuses.includes(statusMonitoramento)) {
+    return errorResponse(`status_monitoramento inválido. Valores aceitos: ${validStatuses.join(", ")}`, 400);
   }
 
-  const { data: sessao } = await supabase
-    .from("monitoramento_sessoes")
-    .select("id, status")
-    .eq("id", sessaoId)
+  const user = await findUserByEmail(supabase, emailUsuario);
+  if (!user) return errorResponse("Usuário não encontrado", 404);
+  const userId = user.id as string;
+
+  const motivo = body.motivo as string | undefined;
+  const appState = body.app_state as string | undefined;
+
+  // Map status to monitoring session updates
+  const isActive = ["janela_iniciada", "ativado", "retomado"].includes(statusMonitoramento);
+  const isFinalizing = ["janela_finalizada", "desativado", "erro"].includes(statusMonitoramento);
+
+  // Update device_status
+  await supabase
+    .from("device_status")
+    .update({ is_monitoring: isActive })
     .eq("user_id", userId)
-    .maybeSingle();
+    .eq("device_id", deviceId);
 
-  if (!sessao) return errorResponse("Sessão de monitoramento não encontrada", 404);
-
-  const updateData: Record<string, unknown> = { status };
-  if (status === "finalizada" || status === "cancelada") {
-    updateData.finalizado_em = new Date().toISOString();
-  }
-
-  await supabase.from("monitoramento_sessoes").update(updateData).eq("id", sessaoId);
-
-  if (deviceId) {
-    await supabase
-      .from("device_status")
-      .update({ is_monitoring: status === "ativa" })
+  // If finalizing, seal active session
+  if (isFinalizing) {
+    const { data: activeSession } = await supabase
+      .from("monitoramento_sessoes")
+      .select("id")
       .eq("user_id", userId)
-      .eq("device_id", deviceId);
+      .eq("device_id", deviceId)
+      .eq("status", "ativa")
+      .maybeSingle();
+
+    if (activeSession) {
+      const now = new Date().toISOString();
+      await supabase
+        .from("monitoramento_sessoes")
+        .update({
+          status: "aguardando_finalizacao",
+          closed_at: now,
+          finalizado_em: now,
+          sealed_reason: motivo || statusMonitoramento,
+        })
+        .eq("id", activeSession.id);
+    }
   }
 
   await supabase.from("audit_logs").insert({
@@ -1298,14 +1474,13 @@ async function handleReportarStatusMonitoramento(
     action_type: "reportar_status_monitoramento",
     success: true,
     ip_address: ip,
-    details: { sessao_id: sessaoId, status },
+    details: { status_monitoramento: statusMonitoramento, motivo, app_state: appState, device_id: deviceId },
   });
 
   return jsonResponse({
     success: true,
-    sessao_id: sessaoId,
-    status,
-    message: `Status do monitoramento atualizado para '${status}'`,
+    message: "Status de monitoramento atualizado",
+    servidor_timestamp: new Date().toISOString(),
   });
 }
 
@@ -1314,21 +1489,29 @@ async function handleReportarStatusGravacao(
   supabase: ReturnType<typeof createClient>,
   ip: string
 ): Promise<Response> {
-  const sessionToken = body.session_token as string;
-  const { user, error } = await validateSession(supabase, sessionToken);
-  if (error || !user) return errorResponse(error || "Sessão inválida", 401);
+  // Doc: uses email_usuario for auth
+  const emailUsuario = (body.email_usuario as string)?.trim().toLowerCase();
+  if (!emailUsuario) return errorResponse("email_usuario obrigatório", 400);
 
-  const userId = (user as Record<string, unknown>).id as string;
+  const user = await findUserByEmail(supabase, emailUsuario);
+  if (!user) return errorResponse("Usuário não encontrado", 404);
+  const userId = user.id as string;
+
   const deviceId = body.device_id as string || null;
-
-  // ── New v2.0 fields (backward compatible) ──
-  const statusGravacao = body.status_gravacao as string | undefined;
+  const statusGravacao = body.status_gravacao as string;
   const origemGravacao = body.origem_gravacao as string | undefined;
   const motivoParada = body.motivo_parada as string | undefined;
+  const totalSegmentos = body.total_segmentos as number | undefined;
 
-  // ── V2.0 flow: session sealing ──
-  if (statusGravacao === "finalizada" && origemGravacao && ["automatico", "botao_panico", "agendado"].includes(origemGravacao)) {
-    // Find active session for user (and device if provided)
+  if (!statusGravacao) return errorResponse("status_gravacao obrigatório", 400);
+
+  const validStatuses = ["iniciada", "pausada", "retomada", "finalizada", "enviando", "erro"];
+  if (!validStatuses.includes(statusGravacao)) {
+    return errorResponse(`status_gravacao inválido. Valores aceitos: ${validStatuses.join(", ")}`, 400);
+  }
+
+  // ── Session sealing flow ──
+  if (statusGravacao === "finalizada" && origemGravacao && ["automatico", "botao_panico", "agendado", "comando_voz", "botao_manual"].includes(origemGravacao)) {
     let sessionQuery = supabase
       .from("monitoramento_sessoes")
       .select("id")
@@ -1372,51 +1555,31 @@ async function handleReportarStatusGravacao(
 
       return jsonResponse({
         success: true,
+        message: "Status da gravação atualizado",
         sessao_id: activeSession.id,
         status: "aguardando_finalizacao",
-        message: "Sessão de monitoramento encerrada. Aguardando concatenação.",
+        total_segmentos: totalSegmentos ?? null,
+        motivo_parada: motivoParada ?? null,
+        servidor_timestamp: new Date().toISOString(),
       });
     }
 
-    // No active session found but v2.0 fields present — just acknowledge
+    // No active session found but fields present — just acknowledge
     return jsonResponse({
       success: true,
-      message: "Status reportado. Nenhuma sessão ativa encontrada.",
+      message: "Status da gravação atualizado",
+      total_segmentos: totalSegmentos ?? null,
+      motivo_parada: motivoParada ?? null,
+      servidor_timestamp: new Date().toISOString(),
     });
   }
 
-  // ── Legacy flow: direct gravacao status update ──
-  const gravacaoId = body.gravacao_id as string;
-  const status = (body.status as string) || statusGravacao;
-
-  if (!gravacaoId) return errorResponse("gravacao_id obrigatório", 400);
-  if (!status) return errorResponse("status obrigatório", 400);
-
-  const validStatuses = ["pendente", "processando", "concluido", "erro"];
-  if (!validStatuses.includes(status)) {
-    return errorResponse(`status inválido. Valores aceitos: ${validStatuses.join(", ")}`, 400);
-  }
-
-  const { data: gravacao } = await supabase
-    .from("gravacoes")
-    .select("id")
-    .eq("id", gravacaoId)
-    .eq("user_id", userId)
-    .maybeSingle();
-
-  if (!gravacao) return errorResponse("Gravação não encontrada", 404);
-
-  const updateData: Record<string, unknown> = { status };
-  if (status === "concluido") updateData.processado_em = new Date().toISOString();
-  if (status === "erro" && body.erro_processamento) updateData.erro_processamento = body.erro_processamento as string;
-  if (body.transcricao) updateData.transcricao = body.transcricao as string;
-
-  await supabase.from("gravacoes").update(updateData).eq("id", gravacaoId);
-
+  // ── Status update for device ──
   if (deviceId) {
+    const isRecording = ["iniciada", "retomada", "enviando"].includes(statusGravacao);
     await supabase
       .from("device_status")
-      .update({ is_recording: status === "processando" })
+      .update({ is_recording: isRecording })
       .eq("user_id", userId)
       .eq("device_id", deviceId);
   }
@@ -1426,14 +1589,15 @@ async function handleReportarStatusGravacao(
     action_type: "reportar_status_gravacao",
     success: true,
     ip_address: ip,
-    details: { gravacao_id: gravacaoId, status },
+    details: { status_gravacao: statusGravacao, origem_gravacao: origemGravacao, motivo_parada: motivoParada, device_id: deviceId },
   });
 
   return jsonResponse({
     success: true,
-    gravacao_id: gravacaoId,
-    status,
-    message: `Status da gravação atualizado para '${status}'`,
+    message: "Status da gravação atualizado",
+    total_segmentos: totalSegmentos ?? null,
+    motivo_parada: motivoParada ?? null,
+    servidor_timestamp: new Date().toISOString(),
   });
 }
 
@@ -1463,7 +1627,7 @@ serve(async (req) => {
     }
 
     switch (action) {
-      // ── Fase 1: Implemented ──
+      // ── Fase 1 ──
       case "loginCustomizado":
         return await handleLogin(body, supabase, ip);
       case "refresh_token":
@@ -1473,7 +1637,7 @@ serve(async (req) => {
       case "syncConfigMobile":
         return await handleSyncConfig(body, supabase);
 
-      // ── Fase 2: Implemented ──
+      // ── Fase 2 ──
       case "logoutMobile":
         return await handleLogout(body, supabase, ip);
       case "validate_password":
@@ -1483,7 +1647,7 @@ serve(async (req) => {
       case "update_schedules":
         return await handleUpdateSchedules(body, supabase, ip);
 
-      // ── Fase 3: Implemented ──
+      // ── Fase 3 ──
       case "enviarLocalizacaoGPS":
         return await handleEnviarLocalizacaoGPS(body, supabase);
       case "acionarPanicoMobile":
@@ -1491,7 +1655,7 @@ serve(async (req) => {
       case "cancelarPanicoMobile":
         return await handleCancelarPanico(body, supabase, ip);
 
-      // ── Fase 4: Implemented ──
+      // ── Fase 4 ──
       case "receberAudioMobile":
         return await handleReceberAudio(body, supabase, ip);
       case "getAudioSignedUrl":
