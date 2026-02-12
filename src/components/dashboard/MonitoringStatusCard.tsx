@@ -37,7 +37,7 @@ export default function MonitoringStatusCard() {
   }
 
   return (
-    <div className="ampara-card space-y-5">
+    <div className="ampara-card p-4 space-y-4">
       <div className="flex items-center gap-3">
         <GradientIcon icon={Shield} size="sm" />
         <h3 className="font-display font-semibold text-foreground">Status do Monitoramento</h3>
