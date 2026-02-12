@@ -216,10 +216,6 @@ export default function AudioRecorderCard({ onUploaded }: AudioRecorderCardProps
 
   return (
     <div className="ampara-card p-4 space-y-4">
-      <div className="flex items-center gap-3">
-        <GradientIcon icon={Mic} size="sm" />
-        
-      </div>
       {/* Recorder / Upload controls */}
       <div className="flex items-center gap-3 flex-wrap">
         {recording ?
