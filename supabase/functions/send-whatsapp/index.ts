@@ -186,13 +186,15 @@ async function notifyGuardiansAlert(
   // 4. Fetch aggressor
   const { data: vinculo } = await supabase
     .from("vitimas_agressores")
-    .select("agressor_id, agressores(nome)")
+    .select("agressor_id, tipo_vinculo, agressores(nome)")
     .eq("usuario_id", userId)
     .eq("status_relacao", "ativo")
     .limit(1)
     .maybeSingle();
 
   const nomeAgressor = (vinculo as any)?.agressores?.nome || "Não informado";
+  const tipoVinculo = (vinculo as any)?.tipo_vinculo || "";
+  const agressorParam = tipoVinculo ? `${tipoVinculo} ${nomeAgressor}` : nomeAgressor;
 
   // 5. Resolve location
   let endereco = "Localização não disponível";
@@ -259,7 +261,7 @@ async function notifyGuardiansAlert(
     guardioes.map(async (g) => {
       const params = [
         usuario.nome_completo,
-        nomeAgressor,
+        agressorParam,
         minutos,
         shareLink || "Indisponível",
         endereco,
