@@ -34,6 +34,11 @@ function injectStyles() {
       justify-content: center;
       flex-shrink: 0;
       overflow: hidden;
+      animation: mini-pulse-blue 2s ease-in-out infinite;
+    }
+    @keyframes mini-pulse-blue {
+      0%, 100% { box-shadow: 0 0 0 0 hsla(220, 80%, 55%, 0.5); }
+      50% { box-shadow: 0 0 0 8px hsla(220, 80%, 55%, 0); }
     }
     .mini-marker-panic .mini-marker-ring {
       background: hsl(0 80% 50%);

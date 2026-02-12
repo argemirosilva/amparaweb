@@ -66,6 +66,11 @@ function injectStyles() {
       justify-content: center;
       flex-shrink: 0;
       overflow: hidden;
+      animation: ampara-pulse-blue 2s ease-in-out infinite;
+    }
+    @keyframes ampara-pulse-blue {
+      0%, 100% { box-shadow: 0 0 0 0 hsla(220, 80%, 55%, 0.5); }
+      50% { box-shadow: 0 0 0 10px hsla(220, 80%, 55%, 0); }
     }
     .ampara-panic-badge {
       position: absolute;
