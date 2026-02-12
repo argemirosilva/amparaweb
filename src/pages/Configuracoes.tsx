@@ -12,8 +12,8 @@ export default function ConfiguracoesPage() {
       <div className="max-w-lg space-y-6">
         <ChangePasswordCard />
         <MonitoringScheduleEditor />
-        <AcionamentosCard />
         <NiveisAlertaLegenda />
+        <AcionamentosCard />
         <GpsSharingCard />
         <RetentionSettingCard />
       </div>
