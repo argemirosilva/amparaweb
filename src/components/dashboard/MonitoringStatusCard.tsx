@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Shield } from "lucide-react";
+import { Ear } from "lucide-react";
 import GradientIcon from "@/components/ui/gradient-icon";
 
 const DAY_KEYS = ["dom", "seg", "ter", "qua", "qui", "sex", "sab"] as const;
@@ -130,7 +130,7 @@ export default function MonitoringStatusCard() {
   return (
     <div className="ampara-card px-4 py-3">
       <div className="flex items-center gap-2.5">
-        <GradientIcon icon={Shield} size="sm" />
+        <GradientIcon icon={Ear} size="sm" />
         <div className="min-w-0">
           <p className="text-sm font-semibold text-primary">
             {state?.type === "monitoring" || state?.type === "monitoring_no_window" ? "Monitorando" : "Monitoramento"}
