@@ -176,7 +176,7 @@ export default function DeviceStatusCard() {
           {/* GPS button - always visible */}
           {(() => {
             const recentGps = location?.created_at
-              ? Date.now() - new Date(location.created_at).getTime() < 60_000
+              ? Date.now() - new Date(location.created_at).getTime() < 330_000
               : false;
             return (
               <button
