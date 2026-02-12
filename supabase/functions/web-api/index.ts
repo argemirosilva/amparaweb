@@ -64,6 +64,65 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
+    // Handle audio proxy via query params (GET request for streaming audio)
+    const url = new URL(req.url);
+    if (url.searchParams.get("action") === "proxyAudio") {
+      const sessionToken = url.searchParams.get("session_token") || "";
+      const storagePath = url.searchParams.get("storage_path") || "";
+      
+      const proxyUserId = await authenticateSession(supabase, sessionToken);
+      if (!proxyUserId) {
+        return json({ error: "Sessão inválida" }, 401);
+      }
+      if (!storagePath) {
+        return json({ error: "storage_path obrigatório" }, 400);
+      }
+
+      // Verify ownership
+      const { data: rec } = await supabase
+        .from("gravacoes")
+        .select("id")
+        .eq("user_id", proxyUserId)
+        .eq("storage_path", storagePath)
+        .maybeSingle();
+      if (!rec) {
+        const { data: seg } = await supabase
+          .from("gravacoes_segmentos")
+          .select("id")
+          .eq("user_id", proxyUserId)
+          .eq("storage_path", storagePath)
+          .maybeSingle();
+        if (!seg) return json({ error: "Não encontrado" }, 404);
+      }
+
+      // Fetch from R2 and stream back with CORS headers
+      try {
+        const r2 = getR2Client();
+        const r2FullUrl = r2Url(storagePath);
+        const signed = await r2.sign(r2FullUrl, { method: "GET" });
+        const r2Resp = await fetch(signed.url, { headers: signed.headers });
+        if (!r2Resp.ok) {
+          return json({ error: "Erro ao buscar áudio do storage" }, 502);
+        }
+        
+        const contentType = storagePath.endsWith(".wav") ? "audio/wav" 
+          : storagePath.endsWith(".ogg") ? "audio/ogg" 
+          : "audio/mpeg";
+        
+        return new Response(r2Resp.body, {
+          status: 200,
+          headers: {
+            ...corsHeaders,
+            "Content-Type": contentType,
+            "Cache-Control": "private, max-age=3600",
+          },
+        });
+      } catch (e) {
+        console.error("Audio proxy error:", e);
+        return json({ error: "Erro ao proxy áudio" }, 500);
+      }
+    }
+
     const body = await req.json();
     const { action, session_token, ...params } = body;
 
