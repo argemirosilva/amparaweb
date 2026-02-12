@@ -940,10 +940,10 @@ serve(async (req) => {
           .eq("user_id", userId)
           .eq("ativo", true);
 
-        // Generate short code (6 chars alphanumeric)
-        const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+        // Generate 5-char alphanumeric code
+        const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
         let codigo = "";
-        const arr = new Uint8Array(6);
+        const arr = new Uint8Array(5);
         crypto.getRandomValues(arr);
         for (const b of arr) codigo += chars[b % chars.length];
 

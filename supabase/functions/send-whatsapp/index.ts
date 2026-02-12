@@ -242,7 +242,13 @@ async function notifyGuardiansAlert(
       (tipo === "alto") ? usuario.compartilhar_gps_risco_alto : true;
 
     if (shouldShare) {
-      const codigo = crypto.randomUUID().replace(/-/g, "").substring(0, 12);
+      // Generate 5-char alphanumeric code
+      const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+      let codigo = "";
+      const rnd = new Uint8Array(5);
+      crypto.getRandomValues(rnd);
+      for (let i = 0; i < 5; i++) codigo += chars[rnd[i] % chars.length];
+
       const duracaoMin = usuario.gps_duracao_minutos || 30;
       const expiraEm = new Date(Date.now() + duracaoMin * 60 * 1000).toISOString();
 
@@ -255,7 +261,7 @@ async function notifyGuardiansAlert(
         ativo: true,
       });
 
-      shareLink = `https://ampamamulher.lovable.app/r/${codigo}`;
+      shareLink = `https://amparamulher.com.br/r/${codigo}`;
     }
   }
 
