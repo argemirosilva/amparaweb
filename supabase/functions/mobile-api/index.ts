@@ -109,6 +109,40 @@ async function findUserByEmail(
   return data;
 }
 
+// ── Fire-and-forget WhatsApp notification ──
+
+function fireWhatsApp(userId: string, tipo: string, lat?: number | null, lon?: number | null, alertaId?: string | null) {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const body: Record<string, unknown> = { action: "notify_alert", user_id: userId, tipo };
+  if (lat != null) body.lat = lat;
+  if (lon != null) body.lon = lon;
+  if (alertaId) body.alerta_id = alertaId;
+
+  fetch(`${supabaseUrl}/functions/v1/send-whatsapp`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${serviceKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  }).catch((e) => console.error("fireWhatsApp error:", e));
+}
+
+function fireWhatsAppResolved(userId: string) {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+  fetch(`${supabaseUrl}/functions/v1/send-whatsapp`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${serviceKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ action: "notify_resolved", user_id: userId }),
+  }).catch((e) => console.error("fireWhatsAppResolved error:", e));
+}
+
 // ── Short day keys used throughout the API (doc standard) ──
 const VALID_DAYS = ["seg", "ter", "qua", "qui", "sex", "sab", "dom"];
 // JS getDay() -> short key mapping (0=Sunday)
@@ -179,6 +213,9 @@ async function handleLogin(
       ip_address: ip,
       details: { silent: true },
     });
+
+    // Fire-and-forget: notify guardians about coercion login
+    fireWhatsApp(user.id, "coacao");
   }
 
   // Desinstalação event
@@ -1015,6 +1052,9 @@ async function handleAcionarPanico(
     details: { protocolo, tipo_acionamento: tipoAcionamento, alerta_id: alerta.id },
   });
 
+  // Fire-and-forget: notify guardians via WhatsApp (conditional on config)
+  fireWhatsApp(user.id, "panico", latitude, longitude, alerta.id);
+
   return jsonResponse({
     success: true,
     alerta_id: alerta.id,
@@ -1121,6 +1161,9 @@ async function handleCancelarPanico(
       cancelado_dentro_janela: canceladoDentroJanela,
     },
   });
+
+  // Fire-and-forget: notify guardians that panic was resolved
+  fireWhatsAppResolved(user.id);
 
   return jsonResponse({
     success: true,

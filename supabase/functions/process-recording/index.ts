@@ -317,6 +317,24 @@ serve(async (req) => {
       },
     });
 
+    // 9. Fire-and-forget: notify guardians if risk is alto or critico
+    if (analysis.nivel_risco === "alto" || analysis.nivel_risco === "critico") {
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      fetch(`${supabaseUrl}/functions/v1/send-whatsapp`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${serviceKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          action: "notify_alert",
+          user_id: gravacao.user_id,
+          tipo: analysis.nivel_risco,
+        }),
+      }).catch((e) => console.error("WhatsApp notify error from process-recording:", e));
+    }
+
     console.log(`Recording ${gravacao_id} fully processed.`);
     return json({
       success: true,
