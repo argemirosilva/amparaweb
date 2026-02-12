@@ -135,7 +135,7 @@ function injectStyles() {
       backdrop-filter: blur(4px);
       border-radius: 8px;
       padding: 3px 8px;
-      max-width: 180px;
+      max-width: 200px;
     }
     .ampara-marker-name {
       color: white;
@@ -151,12 +151,11 @@ function injectStyles() {
     .ampara-marker-address {
       color: hsl(0 0% 65%);
       font-size: 9px;
-      line-height: 1.2;
+      line-height: 1.3;
       text-align: center;
-      max-width: 170px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+      max-width: 190px;
+      word-wrap: break-word;
+      white-space: normal;
     }
     /* Hide Leaflet attribution & logo */
     .leaflet-control-attribution,
@@ -224,8 +223,8 @@ export default function Mapa() {
     const icon = L.divIcon({
       html,
       className: "",
-      iconSize: [180, 120],
-      iconAnchor: [90, 60],
+      iconSize: [200, 160],
+      iconAnchor: [100, 80],
     });
 
     if (markerRef.current) {
