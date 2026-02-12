@@ -107,9 +107,13 @@ export default function MonitoringScheduleEditor() {
       const updated = { ...prev };
       updated[dia] = [...prev[dia]];
       updated[dia][idx] = { ...updated[dia][idx], [field]: value };
+      // Auto-fill fim when inicio is set and fim is empty
+      if (field === "inicio" && !updated[dia][idx].fim) {
+        const nextHour = Math.min(23, parseInt(value.split(":")[0]) + 1);
+        updated[dia][idx].fim = `${String(nextHour).padStart(2, "0")}:00`;
+      }
       return updated;
     });
-    // Clear error for this day
     setErrors((prev) => ({ ...prev, [dia]: undefined }));
   };
 
@@ -240,7 +244,6 @@ export default function MonitoringScheduleEditor() {
                     <TimeSelect
                       value={p.fim}
                       onChange={(v) => updatePeriodo(dia.key, idx, "fim", v)}
-                      scrollTo={p.inicio ? String(Math.min(23, parseInt(p.inicio.split(":")[0]) + 1)).padStart(2, "0") : undefined}
                     />
                     <Button
                       variant="ghost"
