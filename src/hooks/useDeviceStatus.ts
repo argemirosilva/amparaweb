@@ -11,6 +11,7 @@ interface DeviceData {
   is_recording: boolean;
   is_monitoring: boolean;
   last_ping_at: string | null;
+  panicActive: boolean;
 }
 
 interface LocationData {
@@ -46,7 +47,7 @@ export function useDeviceStatus(): DeviceStatusResult {
   const fetchData = useCallback(async () => {
     if (!usuario) return;
     try {
-      const [deviceRes, locationRes] = await Promise.all([
+      const [deviceRes, locationRes, panicRes] = await Promise.all([
         supabase
           .from("device_status")
           .select("status, bateria_percentual, is_charging, dispositivo_info, is_recording, is_monitoring, last_ping_at")
@@ -61,12 +62,22 @@ export function useDeviceStatus(): DeviceStatusResult {
           .order("created_at", { ascending: false })
           .limit(1)
           .maybeSingle(),
+        supabase
+          .from("alertas_panico")
+          .select("id")
+          .eq("user_id", usuario.id)
+          .eq("status", "ativo")
+          .limit(1)
+          .maybeSingle(),
       ]);
 
       if (deviceRes.error) throw deviceRes.error;
       if (locationRes.error) throw locationRes.error;
 
-      setDevice(deviceRes.data);
+      const deviceData = deviceRes.data
+        ? { ...deviceRes.data, panicActive: !!panicRes.data }
+        : null;
+      setDevice(deviceData);
       setLocation(locationRes.data);
       setError(null);
       setLastFetch(new Date());
