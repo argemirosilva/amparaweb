@@ -83,13 +83,13 @@ export default function DeviceStatusCard() {
       <div className="flex items-center justify-between gap-2">
         {/* Status badge */}
         <span
-          className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full shrink-0 ${
+          className={`inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full shrink-0 ${
             online
               ? "bg-emerald-500/10 text-emerald-600"
               : "bg-muted text-muted-foreground"
           }`}
         >
-          {online ? <Wifi className="w-3.5 h-3.5" /> : <WifiOff className="w-3.5 h-3.5" />}
+          {online ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
           {online ? "Online" : "Offline"}
         </span>
       </div>
