@@ -1,7 +1,6 @@
 import DeviceStatusCard from "@/components/dashboard/DeviceStatusCard";
 import MonitoringStatusCard from "@/components/dashboard/MonitoringStatusCard";
 import AudioRecorderCard from "@/components/dashboard/AudioRecorderCard";
-import RecentRecordingsCard from "@/components/dashboard/RecentRecordingsCard";
 
 export default function HomePage() {
   return (
@@ -9,7 +8,6 @@ export default function HomePage() {
       <h1 className="text-2xl font-display font-bold text-foreground">Dashboard</h1>
       <DeviceStatusCard />
       <AudioRecorderCard />
-      <RecentRecordingsCard />
       <MonitoringStatusCard />
     </div>
   );
