@@ -129,7 +129,7 @@ serve(async (req) => {
     // Get onboarding status
     const { data: fullUser } = await supabase
       .from("usuarios")
-      .select("onboarding_completo")
+      .select("onboarding_completo, avatar_url")
       .eq("id", user.id)
       .single();
 
@@ -141,6 +141,7 @@ serve(async (req) => {
         email: user.email,
         nome_completo: user.nome_completo,
         onboarding_completo: fullUser?.onboarding_completo || false,
+        avatar_url: fullUser?.avatar_url || null,
       },
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
