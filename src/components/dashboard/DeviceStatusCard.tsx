@@ -127,7 +127,7 @@ export default function DeviceStatusCard() {
         )}
         {/* Recording / Monitoring indicator */}
         {(device?.is_recording || device?.is_monitoring) && (
-          <div className={`absolute right-0 flex items-center gap-1 text-[10px] font-medium pl-2 pr-2.5 py-0.5 rounded-bl-lg ${
+          <div className={`absolute left-0 right-0 flex items-center justify-center gap-1 text-[10px] font-medium py-0.5 ${
             panicActive ? "top-[24px]" : "top-0"
           } ${
             device.is_recording
@@ -148,7 +148,7 @@ export default function DeviceStatusCard() {
         )}
 
         {/* Icon */}
-        <div className={panicActive ? "mt-4" : ""}>
+        <div className={panicActive && (device?.is_recording || device?.is_monitoring) ? "mt-10" : panicActive ? "mt-4" : (device?.is_recording || device?.is_monitoring) ? "mt-4" : ""}>
         <GradientIcon icon={Smartphone} size="sm" />
         </div>
 
