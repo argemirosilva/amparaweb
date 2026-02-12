@@ -315,6 +315,63 @@ export type Database = {
           },
         ]
       }
+      gravacoes_analises: {
+        Row: {
+          analise_completa: Json | null
+          categorias: string[] | null
+          created_at: string
+          gravacao_id: string
+          id: string
+          modelo_usado: string | null
+          nivel_risco: string | null
+          palavras_chave: string[] | null
+          resumo: string | null
+          sentimento: string | null
+          user_id: string
+        }
+        Insert: {
+          analise_completa?: Json | null
+          categorias?: string[] | null
+          created_at?: string
+          gravacao_id: string
+          id?: string
+          modelo_usado?: string | null
+          nivel_risco?: string | null
+          palavras_chave?: string[] | null
+          resumo?: string | null
+          sentimento?: string | null
+          user_id: string
+        }
+        Update: {
+          analise_completa?: Json | null
+          categorias?: string[] | null
+          created_at?: string
+          gravacao_id?: string
+          id?: string
+          modelo_usado?: string | null
+          nivel_risco?: string | null
+          palavras_chave?: string[] | null
+          resumo?: string | null
+          sentimento?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gravacoes_analises_gravacao_id_fkey"
+            columns: ["gravacao_id"]
+            isOneToOne: false
+            referencedRelation: "gravacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gravacoes_analises_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gravacoes_segmentos: {
         Row: {
           created_at: string

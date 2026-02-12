@@ -501,7 +501,47 @@ serve(async (req) => {
           details: { gravacao_id: rec.id, size_mb: sizeMb },
         });
 
+        // Trigger async processing (transcription + AI analysis)
+        const processUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/process-recording`;
+        fetch(processUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+          },
+          body: JSON.stringify({ gravacao_id: rec.id }),
+        }).catch((e) => console.error("Failed to trigger processing:", e));
+
         return json({ success: true, gravacao_id: rec.id }, 201);
+      }
+
+      // ========== ANÁLISE ==========
+      case "getAnalise": {
+        const { gravacao_id } = params;
+        if (!gravacao_id) return json({ error: "gravacao_id obrigatório" }, 400);
+
+        // Verify ownership
+        const { data: grav } = await supabase
+          .from("gravacoes")
+          .select("id, status, transcricao")
+          .eq("id", gravacao_id)
+          .eq("user_id", userId)
+          .maybeSingle();
+        if (!grav) return json({ error: "Gravação não encontrada" }, 404);
+
+        const { data: analise } = await supabase
+          .from("gravacoes_analises")
+          .select("id, resumo, sentimento, nivel_risco, categorias, palavras_chave, analise_completa, modelo_usado, created_at")
+          .eq("gravacao_id", gravacao_id)
+          .eq("user_id", userId)
+          .maybeSingle();
+
+        return json({
+          success: true,
+          status: grav.status,
+          transcricao: grav.transcricao,
+          analise: analise || null,
+        });
       }
 
       default:

@@ -23,3 +23,6 @@ verify_jwt = false
 
 [functions.web-api]
 verify_jwt = false
+
+[functions.process-recording]
+verify_jwt = false
