@@ -3,6 +3,7 @@ import { Play, Pause, Loader2 } from "lucide-react";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+const WAVEFORM_PLAY_EVENT = "waveform-player-play";
 
 export interface WaveformMarker {
   position: number; // 0–1
@@ -53,8 +54,16 @@ export default function WaveformPlayer({ storagePath, sessionToken, markers = []
     let ws: any;
     let cancelled = false;
 
+    // Handler to pause this player when another starts
+    const handleOtherPlay = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail !== storagePath) {
+        wsRef.current?.pause();
+      }
+    };
+    window.addEventListener(WAVEFORM_PLAY_EVENT, handleOtherPlay);
+
     (async () => {
-      // Build proxy URL that streams audio through our edge function (avoids R2 CORS/ORB)
       const proxyUrl = `${SUPABASE_URL}/functions/v1/web-api?action=proxyAudio&session_token=${encodeURIComponent(sessionToken)}&storage_path=${encodeURIComponent(storagePath)}`;
 
       const { default: WaveSurfer } = await import("wavesurfer.js");
@@ -62,11 +71,9 @@ export default function WaveformPlayer({ storagePath, sessionToken, markers = []
 
       const accent = resolveColor(accentCssVar);
 
-      // Use the proxy URL directly - our edge function returns audio with proper CORS headers
       const audio = new Audio();
       audio.src = proxyUrl;
 
-      // Provide fake peaks so WaveSurfer doesn't try to fetch() the URL for waveform decoding
       const fakePeaks = generateFakePeaks(200);
       const estimatedDuration = durationHint || 60;
 
@@ -94,7 +101,12 @@ export default function WaveformPlayer({ storagePath, sessionToken, markers = []
           setDuration(ws.getDuration());
         }
       });
-      ws.on("play", () => !cancelled && setPlaying(true));
+      ws.on("play", () => {
+        if (!cancelled) {
+          setPlaying(true);
+          window.dispatchEvent(new CustomEvent(WAVEFORM_PLAY_EVENT, { detail: storagePath }));
+        }
+      });
       ws.on("pause", () => !cancelled && setPlaying(false));
       ws.on("timeupdate", (t: number) => !cancelled && setCurrentTime(t));
       ws.on("finish", () => !cancelled && setPlaying(false));
@@ -105,6 +117,7 @@ export default function WaveformPlayer({ storagePath, sessionToken, markers = []
 
     return () => {
       cancelled = true;
+      window.removeEventListener(WAVEFORM_PLAY_EVENT, handleOtherPlay);
       ws?.destroy();
     };
   }, [storagePath, sessionToken, accentCssVar]);
