@@ -72,17 +72,15 @@ export default function DeviceStatusCard() {
       {/* Icon */}
       <GradientIcon icon={Smartphone} />
 
-      {/* Title */}
-      <p className="text-sm font-semibold text-primary mb-0.5">Dispositivo</p>
+      {/* Title + device name */}
+      <p className="text-sm font-semibold text-primary mb-0.5 truncate">
+        {noDevice
+          ? (error || "Nenhum dispositivo")
+          : (device.dispositivo_info || "App móvel Ampara")}
+      </p>
 
-      {/* Info row */}
+      {/* Status badge row */}
       <div className="flex items-center justify-between gap-2">
-        <p className="text-sm text-foreground truncate">
-          {noDevice
-            ? (error || "Nenhum dado recebido")
-            : (device.dispositivo_info || "App móvel Ampara")}
-        </p>
-
         {/* Status badge */}
         <span
           className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full shrink-0 ${
