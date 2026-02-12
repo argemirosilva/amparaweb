@@ -18,7 +18,7 @@ import {
   SidebarMenuItem,
   SidebarFooter,
 } from "@/components/ui/sidebar";
-import amparaLogo from "@/assets/ampara-logo.png";
+import amparaLogo from "@/assets/ampara-icon-transparent.png";
 
 const menuItems = [
   { title: "Dashboard", url: "/home", icon: LayoutDashboard },
