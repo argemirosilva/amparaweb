@@ -902,6 +902,82 @@ serve(async (req) => {
         return json({ success: true });
       }
 
+      // ========== COMPARTILHAMENTO GPS ==========
+      case "getShareLink": {
+        // Check if there's already an active share link for the user
+        const { data: existingShare } = await supabase
+          .from("compartilhamento_gps")
+          .select("id, codigo, tipo, expira_em, criado_em")
+          .eq("user_id", userId)
+          .eq("ativo", true)
+          .gt("expira_em", new Date().toISOString())
+          .maybeSingle();
+
+        if (existingShare) {
+          return json({ success: true, compartilhamento: existingShare });
+        }
+        return json({ success: true, compartilhamento: null });
+      }
+
+      case "createShareLink": {
+        const tipo = (params.tipo as string) || "panico";
+        const alertaId = params.alerta_id as string | undefined;
+
+        // Get user's GPS duration setting
+        const { data: usr } = await supabase
+          .from("usuarios")
+          .select("gps_duracao_minutos")
+          .eq("id", userId)
+          .single();
+
+        const duracaoMin = usr?.gps_duracao_minutos || 30;
+        const expiraEm = new Date(Date.now() + duracaoMin * 60 * 1000).toISOString();
+
+        // Deactivate previous links
+        await supabase
+          .from("compartilhamento_gps")
+          .update({ ativo: false })
+          .eq("user_id", userId)
+          .eq("ativo", true);
+
+        // Generate short code (6 chars alphanumeric)
+        const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+        let codigo = "";
+        const arr = new Uint8Array(6);
+        crypto.getRandomValues(arr);
+        for (const b of arr) codigo += chars[b % chars.length];
+
+        const insertData: Record<string, unknown> = {
+          user_id: userId,
+          codigo,
+          tipo,
+          expira_em: expiraEm,
+        };
+        if (alertaId) insertData.alerta_id = alertaId;
+
+        const { data: share, error: sErr } = await supabase
+          .from("compartilhamento_gps")
+          .insert(insertData)
+          .select("id, codigo, tipo, expira_em, criado_em")
+          .single();
+
+        if (sErr) {
+          console.error("createShareLink error:", sErr);
+          return json({ error: "Erro ao criar link de compartilhamento" }, 500);
+        }
+
+        return json({ success: true, compartilhamento: share }, 201);
+      }
+
+      case "deactivateShareLink": {
+        await supabase
+          .from("compartilhamento_gps")
+          .update({ ativo: false })
+          .eq("user_id", userId)
+          .eq("ativo", true);
+        return json({ success: true });
+      }
+
       default:
         return json({ error: `Action desconhecida: ${action}` }, 400);
     }
