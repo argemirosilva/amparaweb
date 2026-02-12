@@ -8,6 +8,7 @@ interface MiniLeafletMapProps {
   avatarUrl?: string | null;
   firstName?: string;
   panicActive?: boolean;
+  locationTimestamp?: string | null;
 }
 
 const STYLE_ID = "mini-leaflet-marker-styles";
@@ -34,6 +35,8 @@ function injectStyles() {
       justify-content: center;
       flex-shrink: 0;
       overflow: hidden;
+    }
+    .mini-marker-active .mini-marker-ring {
       animation: mini-pulse-blue 2s ease-in-out infinite;
     }
     @keyframes mini-pulse-blue {
@@ -86,7 +89,7 @@ function injectStyles() {
   document.head.appendChild(style);
 }
 
-export default function MiniLeafletMap({ latitude, longitude, avatarUrl, firstName = "", panicActive = false }: MiniLeafletMapProps) {
+export default function MiniLeafletMap({ latitude, longitude, avatarUrl, firstName = "", panicActive = false, locationTimestamp }: MiniLeafletMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
 
@@ -111,7 +114,15 @@ export default function MiniLeafletMap({ latitude, longitude, avatarUrl, firstNa
       ? `<img src="${avatarUrl}" class="mini-marker-img" alt="${firstName}" />`
       : `<div class="mini-marker-placeholder">${firstName.charAt(0).toUpperCase()}</div>`;
 
-    const pulseClass = panicActive ? "mini-marker-panic" : "";
+    const recentLocation = locationTimestamp
+      ? Date.now() - new Date(locationTimestamp).getTime() < 60_000
+      : false;
+
+    const pulseClass = panicActive
+      ? "mini-marker-panic"
+      : recentLocation
+        ? "mini-marker-active"
+        : "";
 
     const html = `
       <div class="mini-marker ${pulseClass}">

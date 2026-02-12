@@ -11,6 +11,7 @@ function buildMarkerHtml(
   movementLabel: string,
   movementEmoji: string,
   panicActive: boolean,
+  recentLocation: boolean,
   address: string,
 ): string {
   const imgSrc = avatarUrl || "";
@@ -18,7 +19,11 @@ function buildMarkerHtml(
     ? `<img src="${imgSrc}" class="ampara-marker-img" alt="${firstName}" />`
     : `<div class="ampara-marker-img ampara-marker-placeholder">${firstName.charAt(0).toUpperCase()}</div>`;
 
-  const pulseClass = panicActive ? "ampara-marker-panic" : "";
+  const pulseClass = panicActive
+    ? "ampara-marker-panic"
+    : recentLocation
+      ? "ampara-marker-active"
+      : "";
   const panicBadge = panicActive
     ? `<div class="ampara-panic-badge">!</div>`
     : "";
@@ -66,6 +71,8 @@ function injectStyles() {
       justify-content: center;
       flex-shrink: 0;
       overflow: hidden;
+    }
+    .ampara-marker-active .ampara-marker-ring {
       animation: ampara-pulse-blue 2s ease-in-out infinite;
     }
     @keyframes ampara-pulse-blue {
@@ -202,12 +209,15 @@ export default function Mapa() {
       ? "🏠 Em Casa"
       : data.geo?.display_address || "Localizando...";
 
+    const recentLocation = Date.now() - new Date(data.created_at).getTime() < 60_000;
+
     const html = buildMarkerHtml(
       data.avatarUrl,
       data.firstName,
       movementLabel,
       movementEmoji,
       data.panicActive,
+      recentLocation,
       address,
     );
 
