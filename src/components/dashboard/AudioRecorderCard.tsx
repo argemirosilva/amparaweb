@@ -121,7 +121,11 @@ export default function AudioRecorderCard({ onUploaded }: AudioRecorderCardProps
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream, { mimeType: "audio/webm;codecs=opus" });
+      // Prefer OGG/Opus (no conversion needed), fallback to webm
+      const mimeType = MediaRecorder.isTypeSupported("audio/ogg;codecs=opus")
+        ? "audio/ogg;codecs=opus"
+        : "audio/webm;codecs=opus";
+      const mediaRecorder = new MediaRecorder(stream, { mimeType });
       mediaRecorderRef.current = mediaRecorder;
       chunksRef.current = [];
 
@@ -131,18 +135,25 @@ export default function AudioRecorderCard({ onUploaded }: AudioRecorderCardProps
 
       mediaRecorder.onstop = async () => {
         stream.getTracks().forEach((t) => t.stop());
-        const webmBlob = new Blob(chunksRef.current, { type: "audio/webm" });
+        const isOgg = mimeType.startsWith("audio/ogg");
+        const blob = new Blob(chunksRef.current, { type: mimeType });
         const duration = elapsed;
 
-        setConverting(true);
-        try {
-          const mp3Blob = await blobToMp3(webmBlob);
-          setConverting(false);
-          await uploadBlob(mp3Blob, "gravacao.mp3", "audio/mpeg", duration);
-        } catch (err) {
-          console.error("MP3 conversion error:", err);
-          setConverting(false);
-          toast.error("Erro ao converter áudio para MP3");
+        if (isOgg) {
+          // Send OGG directly — no conversion needed
+          await uploadBlob(blob, "gravacao.ogg", "audio/ogg", duration);
+        } else {
+          // Fallback: convert webm to MP3
+          setConverting(true);
+          try {
+            const mp3Blob = await blobToMp3(blob);
+            setConverting(false);
+            await uploadBlob(mp3Blob, "gravacao.mp3", "audio/mpeg", duration);
+          } catch (err) {
+            console.error("MP3 conversion error:", err);
+            setConverting(false);
+            toast.error("Erro ao converter áudio para MP3");
+          }
         }
       };
 
