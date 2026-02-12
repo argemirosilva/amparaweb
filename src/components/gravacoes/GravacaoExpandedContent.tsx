@@ -158,13 +158,8 @@ export default function GravacaoExpandedContent({
               <span className="text-[11px] font-medium text-muted-foreground">Transcrição</span>
             </div>
             <div className="flex items-center gap-2">
-              {gravacao.duracao_segundos && (
-                <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                  <Clock className="w-2.5 h-2.5" />
-                  {formatDur(gravacao.duracao_segundos)}
-                </span>
-              )}
-              <span className="text-[10px] text-muted-foreground group-open:rotate-90 transition-transform">▶</span>
+              <span className="text-[10px] text-muted-foreground group-open:hidden">+</span>
+              <span className="text-[10px] text-muted-foreground hidden group-open:inline">−</span>
             </div>
           </summary>
           <div className="px-3 py-2.5 max-h-40 overflow-y-auto">
