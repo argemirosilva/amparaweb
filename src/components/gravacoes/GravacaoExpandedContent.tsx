@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { callWebApi } from "@/services/webApiService";
 import { Button } from "@/components/ui/button";
-import { Download, FileText } from "lucide-react";
+import { Download, FileText, Clock } from "lucide-react";
 import WaveformPlayer, { type WaveformMarker } from "./WaveformPlayer";
 import AnaliseCard from "@/components/dashboard/AnaliseCard";
 
@@ -28,6 +28,12 @@ interface Gravacao {
 }
 
 /** Maps nivel_risco value to CSS variable name */
+function formatDur(s: number): string {
+  const m = Math.floor(s / 60);
+  const sec = Math.floor(s % 60);
+  return `${m}:${sec.toString().padStart(2, "0")}`;
+}
+
 function riscoCssVar(nivel: string | null): string | undefined {
   if (!nivel) return undefined;
   return `--risco-${nivel.replace(/_/g, "-")}`;
@@ -145,9 +151,17 @@ export default function GravacaoExpandedContent({
       {/* Transcription with highlights */}
       {gravacao.transcricao && (
         <div className="rounded-xl border border-border/50 overflow-hidden">
-          <div className="flex items-center gap-1.5 px-3 py-2 bg-muted/30 border-b border-border/50">
-            <FileText className="w-3 h-3 text-muted-foreground" />
-            <span className="text-[11px] font-medium text-muted-foreground">Transcrição</span>
+          <div className="flex items-center justify-between px-3 py-2 bg-muted/30 border-b border-border/50">
+            <div className="flex items-center gap-1.5">
+              <FileText className="w-3 h-3 text-muted-foreground" />
+              <span className="text-[11px] font-medium text-muted-foreground">Transcrição</span>
+            </div>
+            {gravacao.duracao_segundos && (
+              <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                <Clock className="w-2.5 h-2.5" />
+                {formatDur(gravacao.duracao_segundos)}
+              </div>
+            )}
           </div>
           <div className="px-3 py-3">
             <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
