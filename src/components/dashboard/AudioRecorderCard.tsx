@@ -228,9 +228,8 @@ export default function AudioRecorderCard({ onUploaded }: AudioRecorderCardProps
         {recording ?
         <button
           onClick={stopRecording}
-          className="w-12 h-12 rounded-full bg-destructive flex items-center justify-center shrink-0 hover:bg-destructive/90 transition-colors shadow-lg animate-pulse">
-
-            <Square className="w-5 h-5 text-destructive-foreground" />
+          className="animate-pulse transition-opacity">
+            <GradientIcon icon={Square} size="sm" />
           </button> :
 
         <button
