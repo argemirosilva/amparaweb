@@ -58,6 +58,18 @@
     --ampara-gradient-icon: linear-gradient(160deg, hsl(316, 72%, 50%), hsl(270, 60%, 42%));
     --ampara-panel-bg: linear-gradient(160deg, hsl(265, 55%, 35%), hsl(225, 65%, 28%));
     --ampara-shadow: 0 4px 20px -4px hsl(316 72% 48% / 0.15);
+
+    /* Níveis de risco — classificação contextual */
+    --risco-baixo: 152 69% 40%;
+    --risco-moderado: 38 92% 50%;
+    --risco-alto: 25 95% 53%;
+    --risco-critico: 0 84% 50%;
+    --risco-saudavel: 152 69% 40%;
+    --risco-rispido: 45 93% 47%;
+    --risco-abuso-leve: 38 92% 50%;
+    --risco-abuso-consistente: 25 95% 53%;
+    --risco-ameaca: 10 90% 50%;
+    --risco-escalada: 0 84% 50%;
     --ampara-shadow-lg: 0 8px 36px -6px hsl(316 72% 48% / 0.25);
   }
 

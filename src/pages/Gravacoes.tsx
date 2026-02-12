@@ -32,7 +32,22 @@ interface Gravacao {
   transcricao: string | null;
   device_id: string | null;
   timezone: string | null;
+  nivel_risco: string | null;
 }
+
+const RISCO_COLORS: Record<string, string> = {
+  baixo: "hsl(var(--risco-baixo))",
+  moderado: "hsl(var(--risco-moderado))",
+  alto: "hsl(var(--risco-alto))",
+  critico: "hsl(var(--risco-critico))",
+};
+
+const RISCO_LABELS: Record<string, string> = {
+  baixo: "Baixo",
+  moderado: "Moderado",
+  alto: "Alto",
+  critico: "Crítico",
+};
 
 function formatDuration(s: number | null): string {
   if (!s) return "—";
@@ -268,12 +283,17 @@ export default function GravacoesPage() {
             const statusInfo = STATUS_MAP[g.status] || { label: g.status, variant: "secondary" as const };
 
             return (
-              <div key={g.id} className="ampara-card overflow-hidden">
+              <div
+                key={g.id}
+                className="ampara-card overflow-hidden relative"
+                style={g.nivel_risco ? { borderLeftWidth: "4px", borderLeftColor: RISCO_COLORS[g.nivel_risco] || "transparent" } : undefined}
+              >
                 <button
                   onClick={() => setExpanded(isExpanded ? null : g.id)}
                   className="w-full flex items-center gap-3 p-4 text-left hover:bg-accent/30 transition-colors"
                 >
                   <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+
                     <Volume2 className="w-5 h-5 text-primary" />
                   </div>
 
@@ -298,9 +318,22 @@ export default function GravacoesPage() {
                     </div>
                   </div>
 
-                  <Badge variant={statusInfo.variant} className="shrink-0 text-[10px]">
-                    {statusInfo.label}
-                  </Badge>
+                  <div className="flex flex-col items-end gap-1 shrink-0">
+                    <Badge variant={statusInfo.variant} className="text-[10px]">
+                      {statusInfo.label}
+                    </Badge>
+                    {g.nivel_risco && (
+                      <span
+                        className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
+                        style={{
+                          backgroundColor: `${RISCO_COLORS[g.nivel_risco]}20`,
+                          color: RISCO_COLORS[g.nivel_risco],
+                        }}
+                      >
+                        {RISCO_LABELS[g.nivel_risco] || g.nivel_risco}
+                      </span>
+                    )}
+                  </div>
                 </button>
 
                 {isExpanded && (
