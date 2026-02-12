@@ -1,28 +1,34 @@
 
 
-# Contador preciso com timestamps do servidor
+## Adicionar nome e foto da usuaria no header da pagina de rastreamento
 
-## Objetivo
-Substituir o `Date.now()` usado como referencia do contador por timestamps reais do banco de dados, para que o contador mostre o tempo correto desde o primeiro render.
+### O que muda
 
-## Mudancas
+A pagina `/r/:codigo` (`Rastreamento.tsx`) ja busca `nome_completo` e `avatar_url` da tabela `usuarios`. Porem o header (barra superior) nao exibe essas informacoes — mostra apenas o tipo de alerta e o codigo.
 
-### 1. `src/hooks/useDeviceStatus.ts`
-- Alterar a query de `alertas_panico` para trazer `id, criado_em` (atualmente so traz `id`)
-- Adicionar query paralela para `monitoramento_sessoes` buscando `iniciado_em` da sessao ativa
-- Adicionar query paralela para `gravacoes` buscando `created_at` da gravacao com status `pendente`
-- Exportar tres novos campos: `recordingStartedAt`, `monitoringStartedAt`, `panicStartedAt`
+### Alteracao
 
-### 2. `src/components/dashboard/DeviceStatusCard.tsx`
-- Remover `recordingStartRef` e a logica que usa `Date.now()` como marco zero
-- Usar os timestamps do hook (`recordingStartedAt`, `monitoringStartedAt`, `panicStartedAt`) para calcular o elapsed real
-- O timer recalcula a cada segundo: `Math.floor((Date.now() - timestamp) / 1000)`
+**Arquivo: `src/pages/Rastreamento.tsx`**
 
-## Resultado esperado
+No bloco do top bar (div com `bg-zinc-900/80` ou `bg-red-900/80`), adicionar entre o icone Ampara e o timer:
 
-Antes: dispositivo comeca a gravar, polling detecta apos alguns segundos, contador mostra 00:00.
+- A foto da usuaria (ou iniciais como fallback) em um avatar circular de 36px com borda gradiente, usando o mesmo estilo visual do marcador do mapa.
+- O primeiro nome da usuaria em texto branco, abaixo do label de status existente.
 
-Depois: polling detecta gravacao, recebe timestamp real do inicio, contador ja mostra o tempo correto (ex: 00:12).
+A estrutura do header ficara:
 
-Nenhuma migracao de banco necessaria - todos os campos ja existem nas tabelas.
+```text
+[Logo Ampara] [Avatar + Nome] .................. [Timer]
+               Alerta de Panico / Ao vivo         restante
+               Codigo: X4K9NP
+```
+
+Nenhuma consulta adicional ao banco e necessaria — os dados `userInfo.nome_completo` e `userInfo.avatar_url` ja estao disponiveis no state.
+
+### Detalhes tecnicos
+
+1. Extrair `firstName` de `userInfo.nome_completo` (ja feito no bloco do marcador, reutilizar).
+2. Renderizar um `img` com `rounded-full` e borda gradiente se `avatar_url` existir, ou um div com a inicial em fallback.
+3. Colocar o nome ao lado do avatar, substituindo o layout atual do bloco esquerdo do header.
+4. Manter responsividade — o avatar e nome devem truncar em telas pequenas sem quebrar o layout.
 
