@@ -135,7 +135,6 @@ async function handleLogin(
 
   if (coercaoMatch && !normalMatch) {
     loginTipo = "coacao";
-    // Silent alert for guardians
     await supabase.from("audit_logs").insert({
       user_id: user.id,
       action_type: "coacao_login",
@@ -168,7 +167,7 @@ async function handleLogin(
   });
 
   // Generate refresh_token
-  const refreshToken = generateToken(64); // 64 bytes = 128 hex chars
+  const refreshToken = generateToken(64);
   const refreshTokenHash = await hashToken(refreshToken);
   const refreshExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
 
@@ -221,7 +220,6 @@ async function handleRefreshToken(
 
   const tokenHash = await hashToken(refreshTokenRaw);
 
-  // Find valid refresh token
   const { data: existing } = await supabase
     .from("refresh_tokens")
     .select("id, user_id, expires_at, revoked_at")
@@ -267,7 +265,6 @@ async function handleRefreshToken(
     .select("id")
     .single();
 
-  // Link replaced_by
   if (newRefresh) {
     await supabase
       .from("refresh_tokens")
@@ -275,7 +272,6 @@ async function handleRefreshToken(
       .eq("id", existing.id);
   }
 
-  // Get user
   const { data: user } = await supabase
     .from("usuarios")
     .select("id, email, nome_completo, telefone, tipo_interesse")
@@ -304,7 +300,6 @@ async function handlePing(
   const userId = (user as Record<string, unknown>).id as string;
 
   if (deviceId) {
-    // Upsert device_status
     const { data: existing } = await supabase
       .from("device_status")
       .select("id")
@@ -403,7 +398,7 @@ async function handleSyncConfig(
         if (currentTime >= periodo.inicio && currentTime <= periodo.fim) {
           monitoramentoAtivo = true;
 
-          // Check existing active session
+          // Check existing active session for this user+device
           const { data: existingSession } = await supabase
             .from("monitoramento_sessoes")
             .select("id")
@@ -413,12 +408,37 @@ async function handleSyncConfig(
             .maybeSingle();
 
           if (!existingSession) {
+            // Calculate window_start_at and window_end_at in UTC
+            // periodo.inicio and periodo.fim are in client local time (HH:MM)
+            const [hi, mi] = periodo.inicio.split(":").map(Number);
+            const [hf, mf] = periodo.fim.split(":").map(Number);
+
+            // Build window start/end in client local, then convert to UTC
+            const windowStartLocal = new Date(clientNow);
+            windowStartLocal.setUTCHours(hi, mi, 0, 0);
+            const windowEndLocal = new Date(clientNow);
+            windowEndLocal.setUTCHours(hf, mf, 0, 0);
+
+            // Convert back to real UTC by adding tzOffset
+            let windowStartUtc: Date;
+            let windowEndUtc: Date;
+            if (tzOffset !== undefined) {
+              windowStartUtc = new Date(windowStartLocal.getTime() + tzOffset * 60 * 1000);
+              windowEndUtc = new Date(windowEndLocal.getTime() + tzOffset * 60 * 1000);
+            } else {
+              windowStartUtc = windowStartLocal;
+              windowEndUtc = windowEndLocal;
+            }
+
             const { data: newSession } = await supabase
               .from("monitoramento_sessoes")
               .insert({
                 user_id: user.id,
                 device_id: deviceId,
                 status: "ativa",
+                window_start_at: windowStartUtc.toISOString(),
+                window_end_at: windowEndUtc.toISOString(),
+                origem: "automatico",
               })
               .select("id")
               .single();
@@ -529,7 +549,6 @@ async function handleValidatePassword(
   const { user: sessionUser, error } = await validateSession(supabase, sessionToken);
   if (error || !sessionUser) return errorResponse(error || "Sessão inválida", 401);
 
-  // Rate limit
   const identifier = `${emailUsuario}:${ip}`;
   const limited = await checkRateLimit(supabase, identifier, "validate_password", 5, 15);
   if (limited) return errorResponse("Muitas tentativas. Aguarde 15 minutos", 429);
@@ -559,7 +578,6 @@ async function handleValidatePassword(
   let loginTipo = "normal";
   if (coercaoMatch && !normalMatch) {
     loginTipo = "coacao";
-    // Silent audit for coercion - response visually indistinguishable
     await supabase.from("audit_logs").insert({
       user_id: user.id,
       action_type: "coacao_validate_password",
@@ -591,12 +609,10 @@ async function handleChangePassword(
   const userId = (user as Record<string, unknown>).id as string;
   const userEmail = (user as Record<string, unknown>).email as string;
 
-  // Rate limit check (only failed attempts count)
   const identifier = `${userEmail}:${ip}`;
   const limited = await checkRateLimit(supabase, identifier, "change_password", 5, 15);
   if (limited) return errorResponse("Muitas tentativas. Aguarde 15 minutos.", 429);
 
-  // Get current hashes
   const { data: fullUser } = await supabase
     .from("usuarios")
     .select("senha_hash, senha_coacao_hash")
@@ -605,13 +621,11 @@ async function handleChangePassword(
 
   if (!fullUser) return errorResponse("Usuário não encontrado", 404);
 
-  // Check both passwords
   const comunOk = bcrypt.compareSync(senhaAtual, fullUser.senha_hash);
   const coercaoOk = fullUser.senha_coacao_hash
     ? bcrypt.compareSync(senhaAtual, fullUser.senha_coacao_hash)
     : false;
 
-  // CASE A: Normal password — real change
   if (comunOk) {
     const novaSenhaHash = bcrypt.hashSync(novaSenha);
     await supabase
@@ -630,7 +644,6 @@ async function handleChangePassword(
     return jsonResponse({ success: true, message: "Senha alterada com sucesso" });
   }
 
-  // CASE B: Coercion password — fake success, no change
   if (coercaoOk) {
     await supabase.from("audit_logs").insert({
       user_id: userId,
@@ -640,7 +653,6 @@ async function handleChangePassword(
       details: { mode: "coercion_fake_success" },
     });
 
-    // Silent coercion event for future alarms
     await supabase.from("audit_logs").insert({
       user_id: userId,
       action_type: "coercion_event",
@@ -652,7 +664,6 @@ async function handleChangePassword(
     return jsonResponse({ success: true, message: "Senha alterada com sucesso" });
   }
 
-  // CASE C: Wrong password
   await supabase.from("rate_limit_attempts").insert({
     identifier,
     action_type: "change_password",
@@ -685,7 +696,6 @@ async function handleUpdateSchedules(
 
   const userId = (user as Record<string, unknown>).id as string;
 
-  // Validate schedule: HH:MM format, max 8h/day, array empty disables day
   const validDays = ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"];
   const timeRegex = /^([01]\d|2[0-3]):[0-5]\d$/;
 
@@ -713,7 +723,6 @@ async function handleUpdateSchedules(
     }
   }
 
-  // Upsert agendamentos_monitoramento (replaces all periods)
   const { data: existing } = await supabase
     .from("agendamentos_monitoramento")
     .select("id")
@@ -732,7 +741,6 @@ async function handleUpdateSchedules(
     });
   }
 
-  // Audit
   await supabase.from("audit_logs").insert({
     user_id: userId,
     action_type: "update_schedules",
@@ -780,12 +788,10 @@ async function handleEnviarLocalizacaoGPS(
   const deviceId = body.device_id as string | undefined;
   const alertaId = body.alerta_id as string | undefined;
 
-  // Check if device_id is required (panic/monitoring active or alerta_id present)
   if (alertaId && !deviceId) {
     return jsonResponse({ success: false, error: "DEVICE_ID_REQUIRED" }, 400);
   }
 
-  // Check active panic or monitoring
   const { data: activePanic } = await supabase
     .from("alertas_panico")
     .select("id, device_id")
@@ -804,7 +810,6 @@ async function handleEnviarLocalizacaoGPS(
     return jsonResponse({ success: false, error: "DEVICE_ID_REQUIRED" }, 400);
   }
 
-  // Validate device if provided and panic/monitor active
   if (deviceId) {
     const { data: device } = await supabase
       .from("device_status")
@@ -822,13 +827,11 @@ async function handleEnviarLocalizacaoGPS(
     }
   }
 
-  // Determine alerta_id to associate
   let finalAlertaId: string | null = alertaId || null;
   if (!finalAlertaId && activePanic) {
     finalAlertaId = activePanic.id;
   }
 
-  // Insert location
   await supabase.from("localizacoes").insert({
     user_id: user.id,
     device_id: deviceId || null,
@@ -871,7 +874,6 @@ async function handleAcionarPanico(
   const latitude = body.latitude as number | undefined;
   const longitude = body.longitude as number | undefined;
 
-  // Create panic alert
   const { data: alerta } = await supabase
     .from("alertas_panico")
     .insert({
@@ -888,7 +890,6 @@ async function handleAcionarPanico(
 
   if (!alerta) return errorResponse("Erro ao criar alerta", 500);
 
-  // Register initial location if provided
   if (latitude !== undefined && longitude !== undefined) {
     await supabase.from("localizacoes").insert({
       user_id: user.id,
@@ -899,7 +900,6 @@ async function handleAcionarPanico(
     });
   }
 
-  // Audit: silent guardian notification event
   await supabase.from("audit_logs").insert({
     user_id: user.id,
     action_type: "panico_acionado",
@@ -950,13 +950,11 @@ async function handleCancelarPanico(
   const now = new Date();
   const criadoEm = new Date(alerta.criado_em);
   const tempoAte = Math.round((now.getTime() - criadoEm.getTime()) / 1000);
-  const canceladoDentroJanela = tempoAte <= 60; // 60s window before authorities
+  const canceladoDentroJanela = tempoAte <= 60;
 
-  // Determine notifications based on cancellation type
   const guardioeNotificados = tipoCancelamento === "manual";
   const autoridadesAcionadas = !canceladoDentroJanela;
 
-  // AUTO-SEAL window
   const windowId = alerta.window_id || null;
   const windowSelada = true;
 
@@ -975,6 +973,34 @@ async function handleCancelarPanico(
       window_selada: windowSelada,
     })
     .eq("id", alerta.id);
+
+  // AUTO-SEAL any active monitoring session for this user
+  const { data: activeSession } = await supabase
+    .from("monitoramento_sessoes")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("status", "ativa")
+    .maybeSingle();
+
+  if (activeSession) {
+    await supabase
+      .from("monitoramento_sessoes")
+      .update({
+        status: "aguardando_finalizacao",
+        closed_at: now.toISOString(),
+        sealed_reason: "panico_cancelado",
+        origem: "botao_panico",
+      })
+      .eq("id", activeSession.id);
+
+    await supabase.from("audit_logs").insert({
+      user_id: user.id,
+      action_type: "session_sealed",
+      success: true,
+      ip_address: ip,
+      details: { session_id: activeSession.id, sealed_reason: "panico_cancelado" },
+    });
+  }
 
   // Audit
   await supabase.from("audit_logs").insert({
@@ -1036,15 +1062,42 @@ async function handleReceberAudio(
   const storagePath = `${user.id}/${timestamp}.audio`;
 
   // Check active monitoring session (bifurcated flow)
-  const { data: activeSession } = await supabase
+  // If device_id provided, filter by device_id too
+  let sessionQuery = supabase
     .from("monitoramento_sessoes")
     .select("id")
     .eq("user_id", user.id)
-    .eq("status", "ativa")
-    .maybeSingle();
+    .eq("status", "ativa");
+
+  if (deviceId) {
+    sessionQuery = sessionQuery.eq("device_id", deviceId);
+  }
+
+  const { data: activeSession } = await sessionQuery.maybeSingle();
 
   if (activeSession) {
-    // Monitoring segment: gravacoes_segmentos, no individual transcription
+    // ── SEGMENT PATH: monitoring session active ──
+
+    // Idempotency check: if (monitor_session_id, segmento_idx) already exists, return existing
+    if (segmentoIdx !== undefined && segmentoIdx !== null) {
+      const { data: existingSegment } = await supabase
+        .from("gravacoes_segmentos")
+        .select("id")
+        .eq("monitor_session_id", activeSession.id)
+        .eq("segmento_idx", segmentoIdx)
+        .maybeSingle();
+
+      if (existingSegment) {
+        return jsonResponse({
+          success: true,
+          segmento_id: existingSegment.id,
+          monitor_session_id: activeSession.id,
+          storage_path: storagePath,
+          message: "Segmento de monitoramento salvo. Será processado na concatenação final.",
+        });
+      }
+    }
+
     const { data: segmento } = await supabase
       .from("gravacoes_segmentos")
       .insert({
@@ -1058,20 +1111,30 @@ async function handleReceberAudio(
         tamanho_mb: tamanhoMb,
         timezone,
         timezone_offset_minutes: tzOffset ?? null,
+        received_at: new Date().toISOString(),
       })
       .select("id")
       .single();
+
+    // Audit
+    await supabase.from("audit_logs").insert({
+      user_id: user.id,
+      action_type: "segment_received",
+      success: true,
+      ip_address: ip,
+      details: { session_id: activeSession.id, segmento_idx: segmentoIdx ?? null },
+    });
 
     return jsonResponse({
       success: true,
       segmento_id: segmento?.id,
       monitor_session_id: activeSession.id,
       storage_path: storagePath,
-      message: `Segmento ${segmentoIdx ?? 0} salvo com sucesso`,
+      message: "Segmento de monitoramento salvo. Será processado na concatenação final.",
     });
   }
 
-  // Normal recording or panic: gravacoes + pipeline
+  // ── NORMAL PATH: no active session → gravacoes + pipeline ──
   const { data: gravacao } = await supabase
     .from("gravacoes")
     .insert({
@@ -1256,9 +1319,75 @@ async function handleReportarStatusGravacao(
   if (error || !user) return errorResponse(error || "Sessão inválida", 401);
 
   const userId = (user as Record<string, unknown>).id as string;
-  const gravacaoId = body.gravacao_id as string;
-  const status = body.status as string;
   const deviceId = body.device_id as string || null;
+
+  // ── New v2.0 fields (backward compatible) ──
+  const statusGravacao = body.status_gravacao as string | undefined;
+  const origemGravacao = body.origem_gravacao as string | undefined;
+  const motivoParada = body.motivo_parada as string | undefined;
+
+  // ── V2.0 flow: session sealing ──
+  if (statusGravacao === "finalizada" && origemGravacao && ["automatico", "botao_panico", "agendado"].includes(origemGravacao)) {
+    // Find active session for user (and device if provided)
+    let sessionQuery = supabase
+      .from("monitoramento_sessoes")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("status", "ativa");
+
+    if (deviceId) {
+      sessionQuery = sessionQuery.eq("device_id", deviceId);
+    }
+
+    const { data: activeSession } = await sessionQuery.maybeSingle();
+
+    if (activeSession) {
+      const now = new Date().toISOString();
+      await supabase
+        .from("monitoramento_sessoes")
+        .update({
+          status: "aguardando_finalizacao",
+          closed_at: now,
+          sealed_reason: motivoParada || "manual",
+          finalizado_em: now,
+        })
+        .eq("id", activeSession.id);
+
+      // Update device status
+      if (deviceId) {
+        await supabase
+          .from("device_status")
+          .update({ is_recording: false, is_monitoring: false })
+          .eq("user_id", userId)
+          .eq("device_id", deviceId);
+      }
+
+      await supabase.from("audit_logs").insert({
+        user_id: userId,
+        action_type: "session_sealed",
+        success: true,
+        ip_address: ip,
+        details: { session_id: activeSession.id, sealed_reason: motivoParada || "manual", origem: origemGravacao },
+      });
+
+      return jsonResponse({
+        success: true,
+        sessao_id: activeSession.id,
+        status: "aguardando_finalizacao",
+        message: "Sessão de monitoramento encerrada. Aguardando concatenação.",
+      });
+    }
+
+    // No active session found but v2.0 fields present — just acknowledge
+    return jsonResponse({
+      success: true,
+      message: "Status reportado. Nenhuma sessão ativa encontrada.",
+    });
+  }
+
+  // ── Legacy flow: direct gravacao status update ──
+  const gravacaoId = body.gravacao_id as string;
+  const status = (body.status as string) || statusGravacao;
 
   if (!gravacaoId) return errorResponse("gravacao_id obrigatório", 400);
   if (!status) return errorResponse("status obrigatório", 400);

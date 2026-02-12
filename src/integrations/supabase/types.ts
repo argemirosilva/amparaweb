@@ -261,6 +261,7 @@ export type Database = {
           erro_processamento: string | null
           file_url: string | null
           id: string
+          monitor_session_id: string | null
           processado_em: string | null
           status: string
           storage_path: string | null
@@ -278,6 +279,7 @@ export type Database = {
           erro_processamento?: string | null
           file_url?: string | null
           id?: string
+          monitor_session_id?: string | null
           processado_em?: string | null
           status?: string
           storage_path?: string | null
@@ -295,6 +297,7 @@ export type Database = {
           erro_processamento?: string | null
           file_url?: string | null
           id?: string
+          monitor_session_id?: string | null
           processado_em?: string | null
           status?: string
           storage_path?: string | null
@@ -306,6 +309,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "gravacoes_monitor_session_id_fkey"
+            columns: ["monitor_session_id"]
+            isOneToOne: false
+            referencedRelation: "monitoramento_sessoes"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "gravacoes_user_id_fkey"
             columns: ["user_id"]
@@ -380,6 +390,7 @@ export type Database = {
           file_url: string | null
           id: string
           monitor_session_id: string | null
+          received_at: string
           segmento_idx: number | null
           storage_path: string | null
           tamanho_mb: number | null
@@ -394,6 +405,7 @@ export type Database = {
           file_url?: string | null
           id?: string
           monitor_session_id?: string | null
+          received_at?: string
           segmento_idx?: number | null
           storage_path?: string | null
           tamanho_mb?: number | null
@@ -408,6 +420,7 @@ export type Database = {
           file_url?: string | null
           id?: string
           monitor_session_id?: string | null
+          received_at?: string
           segmento_idx?: number | null
           storage_path?: string | null
           tamanho_mb?: number | null
@@ -532,31 +545,55 @@ export type Database = {
       }
       monitoramento_sessoes: {
         Row: {
+          closed_at: string | null
           created_at: string
           device_id: string | null
+          final_gravacao_id: string | null
           finalizado_em: string | null
           id: string
           iniciado_em: string
+          origem: string | null
+          sealed_reason: string | null
           status: string
+          total_duration_seconds: number
+          total_segments: number
           user_id: string
+          window_end_at: string | null
+          window_start_at: string | null
         }
         Insert: {
+          closed_at?: string | null
           created_at?: string
           device_id?: string | null
+          final_gravacao_id?: string | null
           finalizado_em?: string | null
           id?: string
           iniciado_em?: string
+          origem?: string | null
+          sealed_reason?: string | null
           status?: string
+          total_duration_seconds?: number
+          total_segments?: number
           user_id: string
+          window_end_at?: string | null
+          window_start_at?: string | null
         }
         Update: {
+          closed_at?: string | null
           created_at?: string
           device_id?: string | null
+          final_gravacao_id?: string | null
           finalizado_em?: string | null
           id?: string
           iniciado_em?: string
+          origem?: string | null
+          sealed_reason?: string | null
           status?: string
+          total_duration_seconds?: number
+          total_segments?: number
           user_id?: string
+          window_end_at?: string | null
+          window_start_at?: string | null
         }
         Relationships: [
           {
