@@ -154,7 +154,7 @@ export default function GravacoesPage() {
               >
                 <button
                   onClick={() => setExpanded(isExpanded ? null : g.id)}
-                  className="w-full flex items-center gap-2 px-2.5 py-1.5 text-left hover:bg-accent/30 transition-colors"
+                  className="w-full flex items-center gap-2 px-2.5 py-1 md:py-1.5 text-left hover:bg-accent/30 transition-colors"
                 >
                   <GradientIcon icon={Play} size="sm" />
 
