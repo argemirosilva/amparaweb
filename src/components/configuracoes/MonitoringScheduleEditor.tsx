@@ -3,10 +3,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { callWebApi } from "@/services/webApiService";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, Trash2, Save, Loader2, Clock } from "lucide-react";
 import { toast } from "sonner";
+import TimeSelect from "./TimeSelect";
 
 const DIAS = [
   { key: "seg", label: "Seg" },
@@ -232,18 +232,14 @@ export default function MonitoringScheduleEditor() {
 
                 {dayPeriodos.map((p, idx) => (
                   <div key={idx} className="flex items-center gap-2">
-                    <Input
-                      type="time"
+                    <TimeSelect
                       value={p.inicio}
-                      onChange={(e) => updatePeriodo(dia.key, idx, "inicio", e.target.value)}
-                      className="w-28 h-8 text-sm"
+                      onChange={(v) => updatePeriodo(dia.key, idx, "inicio", v)}
                     />
                     <span className="text-muted-foreground text-xs">até</span>
-                    <Input
-                      type="time"
+                    <TimeSelect
                       value={p.fim}
-                      onChange={(e) => updatePeriodo(dia.key, idx, "fim", e.target.value)}
-                      className="w-28 h-8 text-sm"
+                      onChange={(v) => updatePeriodo(dia.key, idx, "fim", v)}
                     />
                     <Button
                       variant="ghost"
