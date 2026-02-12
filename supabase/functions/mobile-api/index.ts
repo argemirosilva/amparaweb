@@ -1667,8 +1667,6 @@ serve(async (req) => {
       case "reportarStatusMonitoramento":
         return await handleReportarStatusMonitoramento(body, supabase, ip);
       case "reportarStatusGravacao":
-      case "iniciarGravacao":
-      case "pararGravacao":
         return await handleReportarStatusGravacao(body, supabase, ip);
 
       default:
