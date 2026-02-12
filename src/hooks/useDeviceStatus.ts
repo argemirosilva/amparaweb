@@ -34,9 +34,6 @@ export interface DeviceStatusResult {
   lastFetch: Date | null;
 }
 
-const POLL_ONLINE = 1_000;
-const POLL_OFFLINE = 10_000;
-
 export function useDeviceStatus(): DeviceStatusResult {
   const { usuario } = useAuth();
   const [device, setDevice] = useState<DeviceData | null>(null);
@@ -114,11 +111,10 @@ export function useDeviceStatus(): DeviceStatusResult {
     }
   }, [usuario]);
 
-  // Reverse geocoding via service (dedup + cache + rate-limit built in)
+  // Reverse geocoding
   useEffect(() => {
     if (!location) return;
     const { latitude, longitude } = location;
-    // Only re-geocode if lat/lon actually changed (rounded key)
     const coordKey = `${Math.round(latitude * 1e4)},${Math.round(longitude * 1e4)}`;
     if (coordKey === lastGeocodedRef.current) return;
 
@@ -136,14 +132,54 @@ export function useDeviceStatus(): DeviceStatusResult {
     return () => { cancelled = true; };
   }, [location]);
 
-  // Adaptive polling: 1s when online, 10s when offline
+  // Initial fetch
   useEffect(() => {
     fetchData();
-    const online = device ? Date.now() - new Date(device.last_ping_at || 0).getTime() < 45_000 : false;
-    const interval = online ? POLL_ONLINE : POLL_OFFLINE;
-    const id = setInterval(fetchData, interval);
+  }, [fetchData]);
+
+  // Realtime subscriptions — re-fetch on any relevant change
+  useEffect(() => {
+    if (!usuario) return;
+
+    const channel = supabase
+      .channel(`device-status-${usuario.id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "device_status", filter: `user_id=eq.${usuario.id}` },
+        () => fetchData()
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "alertas_panico", filter: `user_id=eq.${usuario.id}` },
+        () => fetchData()
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "monitoramento_sessoes", filter: `user_id=eq.${usuario.id}` },
+        () => fetchData()
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "localizacoes", filter: `user_id=eq.${usuario.id}` },
+        () => fetchData()
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "gravacoes", filter: `user_id=eq.${usuario.id}` },
+        () => fetchData()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [usuario, fetchData]);
+
+  // Fallback polling every 30s (in case realtime connection drops)
+  useEffect(() => {
+    const id = setInterval(fetchData, 30_000);
     return () => clearInterval(id);
-  }, [fetchData, device?.last_ping_at]);
+  }, [fetchData]);
 
   return { device, location, geo, addressLoading, loading, error, lastFetch };
 }
