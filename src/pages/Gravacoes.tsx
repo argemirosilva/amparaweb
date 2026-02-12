@@ -177,7 +177,7 @@ export default function GravacoesPage() {
               <div
                 key={g.id}
                 className="ampara-card overflow-hidden relative"
-                style={g.nivel_risco ? { borderLeftWidth: "4px", borderLeftStyle: "solid", borderLeftColor: RISCO_COLORS[g.nivel_risco] || "transparent" } : undefined}
+                style={g.nivel_risco ? { borderLeftWidth: "3px", borderLeftStyle: "solid", borderLeftColor: `${RISCO_COLORS[g.nivel_risco] || "transparent"}90` } : undefined}
               >
                 <button
                   onClick={() => setExpanded(isExpanded ? null : g.id)}
