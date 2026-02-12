@@ -63,15 +63,15 @@ export default function ChangePasswordCard() {
   if (!sessionToken) return null;
 
   return (
-    <div className="ampara-card p-4 space-y-4">
-      <div className="flex items-center gap-3">
-        <GradientIcon icon={Lock} size="sm" />
-        <h3 className="font-display font-semibold text-foreground">Trocar senha</h3>
+    <div className="space-y-3">
+      <div className="flex items-center gap-2">
+        <Lock className="w-5 h-5 text-primary" />
+        <h2 className="text-lg font-semibold text-foreground">Trocar senha</h2>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="senha-atual">Senha atual</Label>
+      <form onSubmit={handleSubmit} className="space-y-2.5">
+        <div className="space-y-1">
+          <Label htmlFor="senha-atual" className="text-xs">Senha atual</Label>
           <Input
             id="senha-atual"
             type="password"
@@ -79,11 +79,12 @@ export default function ChangePasswordCard() {
             value={senhaAtual}
             onChange={(e) => setSenhaAtual(e.target.value)}
             disabled={loading}
+            className="h-8 text-sm"
           />
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="nova-senha">Nova senha</Label>
+        <div className="space-y-1">
+          <Label htmlFor="nova-senha" className="text-xs">Nova senha</Label>
           <Input
             id="nova-senha"
             type="password"
@@ -91,14 +92,15 @@ export default function ChangePasswordCard() {
             value={novaSenha}
             onChange={(e) => setNovaSenha(e.target.value)}
             disabled={loading}
+            className="h-8 text-sm"
           />
           {novaSenha.length > 0 && !novaSenhaValida && (
-            <p className="text-xs text-destructive">Mínimo de 6 caracteres</p>
+            <p className="text-[10px] text-destructive">Mínimo de 6 caracteres</p>
           )}
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="confirmar-senha">Confirmar nova senha</Label>
+        <div className="space-y-1">
+          <Label htmlFor="confirmar-senha" className="text-xs">Confirmar nova senha</Label>
           <Input
             id="confirmar-senha"
             type="password"
@@ -106,14 +108,15 @@ export default function ChangePasswordCard() {
             value={confirmarSenha}
             onChange={(e) => setConfirmarSenha(e.target.value)}
             disabled={loading}
+            className="h-8 text-sm"
           />
           {confirmarSenha.length > 0 && !senhasConferem && (
-            <p className="text-xs text-destructive">As senhas não conferem</p>
+            <p className="text-[10px] text-destructive">As senhas não conferem</p>
           )}
         </div>
 
-        <Button type="submit" disabled={!formValido || loading} className="w-full">
-          {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+        <Button type="submit" disabled={!formValido || loading} size="sm" className="w-full">
+          {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : null}
           Alterar senha
         </Button>
       </form>
