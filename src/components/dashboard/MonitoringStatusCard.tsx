@@ -1,42 +1,43 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Shield, Clock, CalendarClock } from "lucide-react";
+import { Shield } from "lucide-react";
 import GradientIcon from "@/components/ui/gradient-icon";
 
 const DAY_KEYS = ["dom", "seg", "ter", "qua", "qui", "sex", "sab"] as const;
 
 interface Period { inicio: string; fim: string }
 
-interface ActiveSession {
-  window_start_at: string | null;
-  window_end_at: string | null;
+type MonitoringState =
+  | { type: "monitoring"; inicio: string; fim: string }
+  | { type: "next"; inicio: string }
+  | { type: "outside" };
+
+function toMinutes(time: string): number {
+  const [h, m] = time.split(":").map(Number);
+  return h * 60 + m;
 }
 
-function getTodayScheduleLabel(periodos: Record<string, Period[]>): string {
-  const todayKey = DAY_KEYS[new Date().getDay()];
-  const periods = periodos?.[todayKey];
-  if (!periods || periods.length === 0) return "Sem horário";
+function resolveState(periods: Period[]): MonitoringState {
+  if (!periods || periods.length === 0) return { type: "outside" };
 
   const now = new Date();
   const nowMin = now.getHours() * 60 + now.getMinutes();
 
   for (const p of periods) {
-    const [hI, mI] = p.inicio.split(":").map(Number);
-    const [hF, mF] = p.fim.split(":").map(Number);
-    if (nowMin >= hI * 60 + mI && nowMin < hF * 60 + mF) {
-      return `${p.inicio} – ${p.fim}`;
+    if (nowMin >= toMinutes(p.inicio) && nowMin < toMinutes(p.fim)) {
+      return { type: "monitoring", inicio: p.inicio, fim: p.fim };
     }
   }
 
   const upcoming = periods
-    .map(p => ({ ...p, min: parseInt(p.inicio.split(":")[0]) * 60 + parseInt(p.inicio.split(":")[1]) }))
-    .filter(p => p.min > nowMin)
-    .sort((a, b) => a.min - b.min);
+    .filter(p => toMinutes(p.inicio) > nowMin)
+    .sort((a, b) => toMinutes(a.inicio) - toMinutes(b.inicio));
 
-  if (upcoming.length > 0) return `Próximo: ${upcoming[0].inicio}`;
-  return "Sem mais hoje";
+  if (upcoming.length > 0) return { type: "next", inicio: upcoming[0].inicio };
+
+  return { type: "outside" };
 }
 
 function formatTime(iso: string): string {
@@ -45,24 +46,13 @@ function formatTime(iso: string): string {
 
 export default function MonitoringStatusCard() {
   const { usuario } = useAuth();
-  const [isMonitoring, setIsMonitoring] = useState(false);
-  const [activeSession, setActiveSession] = useState<ActiveSession | null>(null);
-  const [scheduleLabel, setScheduleLabel] = useState<string | null>(null);
+  const [state, setState] = useState<MonitoringState | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const fetchData = useCallback(async () => {
     if (!usuario) return;
 
-    Promise.all([
-      // 1. Check device_status.is_monitoring
-      supabase
-        .from("device_status")
-        .select("is_monitoring")
-        .eq("user_id", usuario.id)
-        .order("updated_at", { ascending: false })
-        .limit(1)
-        .maybeSingle(),
-      // 2. Check active session with window times
+    const [sessionRes, scheduleRes] = await Promise.all([
       supabase
         .from("monitoramento_sessoes")
         .select("window_start_at, window_end_at, status")
@@ -71,25 +61,49 @@ export default function MonitoringStatusCard() {
         .order("iniciado_em", { ascending: false })
         .limit(1)
         .maybeSingle(),
-      // 3. Schedule fallback
       supabase
         .from("agendamentos_monitoramento")
         .select("periodos_semana")
         .eq("user_id", usuario.id)
         .maybeSingle(),
-    ]).then(([deviceRes, sessionRes, scheduleRes]) => {
-      const deviceMonitoring = deviceRes.data?.is_monitoring ?? false;
-      const hasSession = !!sessionRes.data;
+    ]);
 
-      setIsMonitoring(deviceMonitoring || hasSession);
-      setActiveSession(sessionRes.data as ActiveSession | null);
+    // If active session with window times, use those
+    if (sessionRes.data?.window_start_at && sessionRes.data?.window_end_at) {
+      setState({
+        type: "monitoring",
+        inicio: formatTime(sessionRes.data.window_start_at),
+        fim: formatTime(sessionRes.data.window_end_at),
+      });
+    } else {
+      const periodos = scheduleRes.data?.periodos_semana as unknown as Record<string, Period[]> | null;
+      const todayKey = DAY_KEYS[new Date().getDay()];
+      const todayPeriods = periodos?.[todayKey] ?? [];
+      setState(resolveState(todayPeriods));
+    }
 
-      if (scheduleRes.data?.periodos_semana) {
-        setScheduleLabel(getTodayScheduleLabel(scheduleRes.data.periodos_semana as unknown as Record<string, Period[]>));
-      }
-      setLoading(false);
-    });
+    setLoading(false);
   }, [usuario]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  // Realtime subscription
+  useEffect(() => {
+    if (!usuario) return;
+
+    const channel = supabase
+      .channel("monitoring-status")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "monitoramento_sessoes", filter: `user_id=eq.${usuario.id}` },
+        () => fetchData()
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [usuario, fetchData]);
 
   if (loading) {
     return (
@@ -99,33 +113,28 @@ export default function MonitoringStatusCard() {
     );
   }
 
-  // Determine the period label
-  const periodLabel = activeSession?.window_start_at && activeSession?.window_end_at
-    ? `${formatTime(activeSession.window_start_at)} – ${formatTime(activeSession.window_end_at)}`
-    : scheduleLabel || "Sem horário";
-
   return (
     <div className="ampara-card px-4 py-3">
-      <div className="flex items-center gap-2.5 mb-2">
+      <div className="flex items-center gap-2.5">
         <GradientIcon icon={Shield} size="sm" />
-        <p className="text-sm font-semibold text-primary">Monitoramento</p>
-      </div>
-
-      <div className="flex items-center gap-4 text-xs">
-        <span className="inline-flex items-center gap-1 text-muted-foreground">
-          <Shield className="w-3 h-3" />
-          Sessão:
-          {isMonitoring ? (
-            <span className="text-emerald-600 font-medium">Ativa</span>
-          ) : (
-            <span className="text-muted-foreground font-medium">Inativa</span>
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-primary">Monitoramento</p>
+          {state?.type === "monitoring" && (
+            <p className="text-xs font-medium text-emerald-600">
+              Monitorando · {state.inicio} – {state.fim}
+            </p>
           )}
-        </span>
-
-        <span className="inline-flex items-center gap-1 text-muted-foreground">
-          {activeSession ? <CalendarClock className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
-          {activeSession ? "Período:" : "Hoje:"} {periodLabel}
-        </span>
+          {state?.type === "next" && (
+            <p className="text-xs font-medium text-amber-600">
+              Inicia o monitoramento às {state.inicio}
+            </p>
+          )}
+          {state?.type === "outside" && (
+            <p className="text-xs font-medium text-muted-foreground">
+              Fora do período de monitoramento
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );
