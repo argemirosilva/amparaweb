@@ -122,8 +122,7 @@ export default function WaveformPlayer({ storagePath, sessionToken, markers = []
 
   return (
     <div
-      className="rounded-2xl p-4 shadow-lg"
-      style={{ background: "var(--ampara-panel-bg)" }}
+      className="rounded-2xl p-4 shadow-lg bg-muted/80 border border-border/50"
     >
       <div className="flex items-center gap-3">
         {/* Play button */}
