@@ -50,13 +50,6 @@ async function downloadFromR2(storagePath: string): Promise<Uint8Array> {
   return result;
 }
 
-function uint8ToBase64(bytes: Uint8Array): string {
-  let binary = "";
-  for (let i = 0; i < bytes.length; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  return btoa(binary);
-}
 
 async function callAI(messages: any[], model = "google/gemini-3-flash-preview"): Promise<string> {
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
@@ -81,25 +74,30 @@ async function callAI(messages: any[], model = "google/gemini-3-flash-preview"):
   return data.choices?.[0]?.message?.content || "";
 }
 
-async function transcribeAudio(audioBase64: string, mimeType: string): Promise<string> {
-  const messages = [
-    {
-      role: "system",
-      content: "Você é um transcritor de áudio profissional. Transcreva o áudio fornecido de forma precisa e literal, mantendo todas as palavras como foram ditas. Retorne APENAS a transcrição, sem comentários ou formatação adicional. Se o áudio estiver inaudível ou vazio, responda apenas: [ÁUDIO INAUDÍVEL]",
-    },
-    {
-      role: "user",
-      content: [
-        { type: "text", text: "Transcreva este áudio:" },
-        {
-          type: "image_url",
-          image_url: { url: `data:${mimeType};base64,${audioBase64}` },
-        },
-      ],
-    },
-  ];
+async function transcribeAudio(audioBytes: Uint8Array, ext: string): Promise<string> {
+  const contentType = ext === "mp3" ? "mp3" : ext === "wav" ? "wav" : "webm";
+  const mimeType = ext === "mp3" ? "audio/mpeg" : ext === "wav" ? "audio/wav" : "audio/webm";
+  const fileName = `audio.${ext}`;
 
-  return await callAI(messages);
+  const formData = new FormData();
+  const blob = new Blob([audioBytes], { type: mimeType });
+  formData.append("arquivo", blob, fileName);
+
+  const url = `https://data.aggregar.com.br/transcription/Transcription/Transcribe?contenttype=${contentType}`;
+
+  const response = await fetch(url, {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const errText = await response.text();
+    console.error(`Agreggar transcription error [${response.status}]:`, errText);
+    throw new Error(`Agreggar API error: ${response.status}`);
+  }
+
+  const result = await response.text();
+  return result.trim();
 }
 
 async function analyzeTranscription(transcricao: string): Promise<{
@@ -210,15 +208,13 @@ serve(async (req) => {
       return json({ error: "Erro ao baixar áudio" }, 500);
     }
 
-    const audioBase64 = uint8ToBase64(audioBytes);
     const ext = gravacao.storage_path.split(".").pop() || "mp3";
-    const mimeType = ext === "mp3" ? "audio/mpeg" : ext === "wav" ? "audio/wav" : "audio/webm";
 
-    // 4. Transcribe
-    console.log("Starting transcription...");
+    // 4. Transcribe via Agreggar API
+    console.log("Starting transcription via Agreggar...");
     let transcricao: string;
     try {
-      transcricao = await transcribeAudio(audioBase64, mimeType);
+      transcricao = await transcribeAudio(audioBytes, ext);
     } catch (e) {
       console.error("Transcription error:", e);
       await supabase
