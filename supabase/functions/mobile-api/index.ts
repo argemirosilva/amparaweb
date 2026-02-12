@@ -1207,7 +1207,27 @@ async function handleReceberAudio(
     sessionQuery = sessionQuery.eq("device_id", deviceId);
   }
 
-  const { data: activeSession } = await sessionQuery.maybeSingle();
+  let { data: activeSession } = await sessionQuery.maybeSingle();
+
+  // If no active session exists but we have a device_id, auto-create one
+  // so segments are always saved in gravacoes_segmentos
+  if (!activeSession && deviceId) {
+    const { data: newSession } = await supabase
+      .from("monitoramento_sessoes")
+      .insert({
+        user_id: user.id,
+        device_id: deviceId,
+        status: "ativa",
+        origem: "auto_segmento",
+      })
+      .select("id")
+      .single();
+
+    if (newSession) {
+      activeSession = newSession;
+      console.log(`Auto-created monitoring session ${newSession.id} for device ${deviceId}`);
+    }
+  }
 
   if (activeSession) {
     // ── SEGMENT PATH: monitoring session active ──
