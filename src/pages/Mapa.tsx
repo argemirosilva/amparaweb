@@ -19,10 +19,15 @@ function buildMarkerHtml(
     : `<div class="ampara-marker-img ampara-marker-placeholder">${firstName.charAt(0).toUpperCase()}</div>`;
 
   const pulseClass = panicActive ? "ampara-marker-panic" : "";
-
+  const panicBadge = panicActive
+    ? `<div class="ampara-panic-badge">!</div>`
+    : "";
   return `
     <div class="ampara-marker ${pulseClass}">
-      <div class="ampara-marker-ring">${imgHtml}</div>
+      <div class="ampara-marker-ring-wrapper">
+        <div class="ampara-marker-ring">${imgHtml}</div>
+        ${panicBadge}
+      </div>
       <div class="ampara-marker-info">
         <span class="ampara-marker-name">${firstName}</span>
         <span class="ampara-marker-status">${movementEmoji} ${movementLabel}</span>
@@ -46,6 +51,10 @@ function injectStyles() {
       gap: 2px;
       filter: drop-shadow(0 2px 6px rgba(0,0,0,0.3));
     }
+    .ampara-marker-ring-wrapper {
+      position: relative;
+      display: inline-flex;
+    }
     .ampara-marker-ring {
       width: 52px;
       height: 52px;
@@ -57,6 +66,28 @@ function injectStyles() {
       justify-content: center;
       flex-shrink: 0;
       overflow: hidden;
+    }
+    .ampara-panic-badge {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: hsl(0 80% 50%);
+      color: white;
+      font-size: 13px;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid white;
+      animation: ampara-badge-pulse 1s ease-in-out infinite;
+      z-index: 10;
+    }
+    @keyframes ampara-badge-pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.2); }
     }
     .ampara-marker-panic .ampara-marker-ring {
       background: hsl(0 80% 50%);
