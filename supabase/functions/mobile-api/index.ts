@@ -1207,120 +1207,68 @@ async function handleReceberAudio(
     sessionQuery = sessionQuery.eq("device_id", deviceId);
   }
 
-  let { data: activeSession } = await sessionQuery.maybeSingle();
+  const { data: activeSession } = await sessionQuery.maybeSingle();
 
-  // If no active session exists but we have a device_id, auto-create one
-  // so segments are always saved in gravacoes_segmentos
-  const origemGravacao = body.origem_gravacao as string || "auto_segmento";
-  if (!activeSession && deviceId) {
-    const validOrigens = ["automatico", "botao_panico", "agendado", "comando_voz", "botao_manual"];
-    const sessionOrigem = validOrigens.includes(origemGravacao) ? origemGravacao : "auto_segmento";
-
-    const { data: newSession } = await supabase
-      .from("monitoramento_sessoes")
-      .insert({
-        user_id: user.id,
-        device_id: deviceId,
-        status: "ativa",
-        origem: sessionOrigem,
-      })
-      .select("id")
-      .single();
-
-    if (newSession) {
-      activeSession = newSession;
-      console.log(`Auto-created monitoring session ${newSession.id} for device ${deviceId}, origem: ${sessionOrigem}`);
-    }
+  if (!activeSession) {
+    // No active session — app must send iniciarGravacao first
+    return errorResponse("Nenhuma sessão de monitoramento ativa. Envie iniciarGravacao antes dos segmentos.", 400);
   }
 
-  if (activeSession) {
-    // ── SEGMENT PATH: monitoring session active ──
+  // ── SEGMENT PATH: monitoring session active ──
 
-    // Idempotency check
-    if (segmentoIdx !== undefined && segmentoIdx !== null) {
-      const { data: existingSegment } = await supabase
-        .from("gravacoes_segmentos")
-        .select("id")
-        .eq("monitor_session_id", activeSession.id)
-        .eq("segmento_idx", segmentoIdx)
-        .maybeSingle();
-
-      if (existingSegment) {
-        return jsonResponse({
-          success: true,
-          segmento_id: existingSegment.id,
-          monitor_session_id: activeSession.id,
-          storage_path: storagePath,
-          message: "Segmento de monitoramento salvo. Será processado na concatenação final.",
-        });
-      }
-    }
-
-    const { data: segmento } = await supabase
+  // Idempotency check
+  if (segmentoIdx !== undefined && segmentoIdx !== null) {
+    const { data: existingSegment } = await supabase
       .from("gravacoes_segmentos")
-      .insert({
-        user_id: user.id,
-        monitor_session_id: activeSession.id,
-        device_id: deviceId,
-        file_url: fileUrl,
-        storage_path: storagePath,
-        segmento_idx: segmentoIdx ?? null,
-        duracao_segundos: duracaoSegundos,
-        tamanho_mb: tamanhoMb,
-        timezone,
-        timezone_offset_minutes: tzOffset ?? null,
-        received_at: new Date().toISOString(),
-      })
       .select("id")
-      .single();
+      .eq("monitor_session_id", activeSession.id)
+      .eq("segmento_idx", segmentoIdx)
+      .maybeSingle();
 
-    // Audit
-    await supabase.from("audit_logs").insert({
-      user_id: user.id,
-      action_type: "segment_received",
-      success: true,
-      ip_address: ip,
-      details: { session_id: activeSession.id, segmento_idx: segmentoIdx ?? null },
-    });
-
-    return jsonResponse({
-      success: true,
-      segmento_id: segmento?.id,
-      monitor_session_id: activeSession.id,
-      storage_path: storagePath,
-      message: "Segmento de monitoramento salvo. Será processado na concatenação final.",
-    });
+    if (existingSegment) {
+      return jsonResponse({
+        success: true,
+        segmento_id: existingSegment.id,
+        monitor_session_id: activeSession.id,
+        storage_path: storagePath,
+        message: "Segmento de monitoramento salvo. Será processado na concatenação final.",
+      });
+    }
   }
 
-  // ── NORMAL PATH: no active session → gravacoes + pipeline ──
-  const { data: gravacao } = await supabase
-    .from("gravacoes")
+  const { data: segmento } = await supabase
+    .from("gravacoes_segmentos")
     .insert({
       user_id: user.id,
+      monitor_session_id: activeSession.id,
       device_id: deviceId,
       file_url: fileUrl,
       storage_path: storagePath,
+      segmento_idx: segmentoIdx ?? null,
       duracao_segundos: duracaoSegundos,
       tamanho_mb: tamanhoMb,
-      status: "pendente",
       timezone,
       timezone_offset_minutes: tzOffset ?? null,
+      received_at: new Date().toISOString(),
     })
     .select("id")
     .single();
 
+  // Audit
   await supabase.from("audit_logs").insert({
     user_id: user.id,
-    action_type: "audio_recebido",
+    action_type: "segment_received",
     success: true,
     ip_address: ip,
-    details: { gravacao_id: gravacao?.id },
+    details: { session_id: activeSession.id, segmento_idx: segmentoIdx ?? null },
   });
 
   return jsonResponse({
     success: true,
-    gravacao_id: gravacao?.id,
-    message: "Áudio salvo. Processamento iniciado.",
+    segmento_id: segmento?.id,
+    monitor_session_id: activeSession.id,
+    storage_path: storagePath,
+    message: "Segmento de monitoramento salvo. Será processado na concatenação final.",
   });
 }
 
