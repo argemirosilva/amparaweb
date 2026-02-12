@@ -12,18 +12,6 @@ export default function NiveisAlertaLegenda() {
         O AMPARA classifica situações de risco com base na Lei Maria da Penha, considerando o tipo de violência e o grau de perigo envolvido.
       </p>
 
-      <Card>
-        <CardContent className="px-4 py-3 space-y-3">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Tipos de Violência</p>
-          <ul className="space-y-1.5 text-sm text-foreground">
-            <li><span className="font-medium">Psicológica</span> <span className="text-muted-foreground">— Humilhações, ameaças, controle excessivo, manipulação, isolamento.</span></li>
-            <li><span className="font-medium">Física</span> <span className="text-muted-foreground">— Qualquer agressão contra o corpo.</span></li>
-            <li><span className="font-medium">Moral</span> <span className="text-muted-foreground">— Ofensas, difamação ou exposição para prejudicar a reputação.</span></li>
-            <li><span className="font-medium">Patrimonial</span> <span className="text-muted-foreground">— Destruição ou controle de bens, documentos ou dinheiro.</span></li>
-            <li><span className="font-medium">Sexual</span> <span className="text-muted-foreground">— Forçar ou constranger relações ou práticas íntimas.</span></li>
-          </ul>
-        </CardContent>
-      </Card>
 
       <Card>
         <CardContent className="px-4 py-3 space-y-3">
