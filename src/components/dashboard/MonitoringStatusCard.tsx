@@ -23,7 +23,7 @@ function toMinutes(time: string): number {
 function resolveState(periods: Period[]): MonitoringState {
   if (!periods || periods.length === 0) return { type: "outside" };
 
-  const now = new Date();
+  const now = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
   const nowMin = now.getHours() * 60 + now.getMinutes();
 
   for (const p of periods) {
@@ -71,7 +71,7 @@ export default function MonitoringStatusCard() {
 
     const hasActiveSession = !!sessionRes.data;
     const periodos = scheduleRes.data?.periodos_semana as unknown as Record<string, Period[]> | null;
-    const todayKey = DAY_KEYS[new Date().getDay()];
+    const todayKey = DAY_KEYS[new Date(new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" })).getDay()];
     const todayPeriods = periodos?.[todayKey] ?? [];
 
     // If active session with window times, use those
