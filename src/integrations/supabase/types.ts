@@ -790,6 +790,7 @@ export type Database = {
           mora_com_agressor: boolean | null
           nome_completo: string
           onboarding_completo: boolean | null
+          retencao_dias_sem_risco: number
           senha_coacao_hash: string | null
           senha_hash: string
           status: Database["public"]["Enums"]["user_status"]
@@ -821,6 +822,7 @@ export type Database = {
           mora_com_agressor?: boolean | null
           nome_completo: string
           onboarding_completo?: boolean | null
+          retencao_dias_sem_risco?: number
           senha_coacao_hash?: string | null
           senha_hash: string
           status?: Database["public"]["Enums"]["user_status"]
@@ -852,6 +854,7 @@ export type Database = {
           mora_com_agressor?: boolean | null
           nome_completo?: string
           onboarding_completo?: boolean | null
+          retencao_dias_sem_risco?: number
           senha_coacao_hash?: string | null
           senha_hash?: string
           status?: Database["public"]["Enums"]["user_status"]
