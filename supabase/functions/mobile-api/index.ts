@@ -1620,10 +1620,11 @@ serve(async (req) => {
     );
 
     let body: Record<string, unknown>;
+    const reqClone = req.clone();
     try {
       body = await req.json();
-    } catch (parseErr) {
-      const rawBody = await req.clone().text().catch(() => "<unreadable>");
+    } catch (_parseErr) {
+      const rawBody = await reqClone.text().catch(() => "<unreadable>");
       console.error("JSON parse error. Raw body (first 200 chars):", rawBody.substring(0, 200));
       return errorResponse("JSON inválido no body da requisição", 400);
     }
