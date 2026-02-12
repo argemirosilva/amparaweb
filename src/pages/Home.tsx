@@ -5,7 +5,7 @@ import amparaCircle from "@/assets/ampara-circle-logo.png";
 
 export default function HomePage() {
   return (
-    <div className="relative animate-fade-in overflow-hidden space-y-6">
+    <div className="relative animate-fade-in overflow-hidden space-y-6 min-h-full">
       {/* Background watermark */}
       <img
         src={amparaCircle}
