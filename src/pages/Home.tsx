@@ -1,3 +1,4 @@
+import MonitoringStatusCard from "@/components/dashboard/MonitoringStatusCard";
 import DeviceStatusCard from "@/components/dashboard/DeviceStatusCard";
 import AudioRecorderCard from "@/components/dashboard/AudioRecorderCard";
 import RiskEvolutionCard from "@/components/dashboard/RiskEvolutionCard";
@@ -16,6 +17,7 @@ export default function HomePage() {
 
       <div className="relative z-10 space-y-4">
         <RiskEvolutionCard />
+        <MonitoringStatusCard />
         <DeviceStatusCard />
         <AudioRecorderCard />
       </div>
