@@ -234,6 +234,7 @@ export default function DeviceStatusCard() {
                     avatarUrl={avatarUrl}
                     firstName={firstName}
                     panicActive={panicActive}
+                    locationTimestamp={location.created_at}
                   />
 
                   {/* Address */}
