@@ -17,9 +17,9 @@ export default function HomePage() {
 
       <div className="relative z-10 space-y-4">
         <RiskEvolutionCard />
-        <MonitoringStatusCard />
         <DeviceStatusCard />
         <AudioRecorderCard />
+        <MonitoringStatusCard />
       </div>
     </div>
   );
