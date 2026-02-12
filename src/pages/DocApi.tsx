@@ -276,17 +276,17 @@ const ENDPOINTS: Endpoint[] = [
   {
     action: "reportarStatusGravacao",
     fase: 4,
-    description: "Reporta mudança de estado da gravação. Quando 'finalizada', sela a sessão de monitoramento.",
+    description: "Reporta mudança de estado da gravação. Finalização condicional: se motivo_parada for 'botao_manual' ou 'parada_panico', a sessão é selada imediatamente (status 'aguardando_finalizacao'). Para outros motivos (timeout, window_expired, etc.), a sessão permanece 'ativa' e será selada pelo cron de manutenção. O flag is_monitoring persiste até o fim real do período agendado.",
     auth: "email_usuario",
     params: [
       { name: "email_usuario", type: "string", required: true, description: "Email do usuário" },
       { name: "device_id", type: "string", required: false, description: "ID do dispositivo" },
       { name: "status_gravacao", type: "string", required: true, description: "iniciada | pausada | retomada | finalizada | enviando | erro" },
       { name: "origem_gravacao", type: "string", required: false, description: "automatico | botao_panico | agendado | comando_voz | botao_manual" },
-      { name: "motivo_parada", type: "string", required: false, description: "Motivo da parada" },
+      { name: "motivo_parada", type: "string", required: false, description: "Motivo da parada. Valores que selam imediatamente: 'botao_manual', 'parada_panico'. Outros valores mantêm a sessão ativa para processamento pelo cron." },
       { name: "total_segmentos", type: "number", required: false, description: "Total de segmentos enviados" },
     ],
-    response: { success: true, message: "Status da gravação atualizado", servidor_timestamp: "ISO8601" },
+    response: { success: true, message: "Status da gravação atualizado", status: "aguardando_finalizacao | ativa", servidor_timestamp: "ISO8601" },
   },
 ];
 
