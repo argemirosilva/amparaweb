@@ -441,11 +441,7 @@ serve(async (req) => {
           if (!seg) return json({ error: "Gravação não encontrada" }, 404);
         }
 
-        // Check if public URL is configured
-        const publicUrl = R2_PUBLIC_URL();
-        if (publicUrl) {
-          return json({ success: true, url: `${publicUrl}/${storage_path}` });
-        }
+        // Always use presigned URLs to avoid CORS issues with R2 public URLs
 
         // Generate presigned URL from R2
         try {
