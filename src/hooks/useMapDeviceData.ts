@@ -142,5 +142,28 @@ export function useMapDeviceData(): MapDeviceResult {
     return () => clearInterval(id);
   }, [fetchData]);
 
+  // Realtime: re-fetch on panic or location changes
+  useEffect(() => {
+    if (!usuario) return;
+
+    const channel = supabase
+      .channel(`map-data-${usuario.id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "alertas_panico", filter: `user_id=eq.${usuario.id}` },
+        () => fetchData()
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "localizacoes", filter: `user_id=eq.${usuario.id}` },
+        () => fetchData()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [usuario, fetchData]);
+
   return { data, loading, error };
 }
