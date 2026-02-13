@@ -81,7 +81,7 @@ export default function GravacaoExpandedContent({
       if (!isPlayingRef.current && !isInteractingRef.current) {
         onCollapse?.();
       }
-    }, 5000);
+    }, 10000);
   }, [onCollapse]);
 
   // Start timer on mount
