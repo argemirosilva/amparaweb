@@ -1,5 +1,5 @@
 /// <reference types="google.maps" />
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMapDeviceData } from "@/hooks/useMapDeviceData";
 import { useMovementStatus } from "@/hooks/useMovementStatus";
 import { useGoogleMaps } from "@/hooks/useGoogleMaps";
@@ -88,6 +88,13 @@ export default function Mapa() {
   const { data, loading, error } = useMapDeviceData();
   const { update: updateMovement } = useMovementStatus();
   const { maps, loading: mapsLoading, error: mapsError } = useGoogleMaps();
+  const [tick, setTick] = useState(0);
+
+  // Refresh relative times every 15s
+  useEffect(() => {
+    const id = setInterval(() => setTick(t => t + 1), 15_000);
+    return () => clearInterval(id);
+  }, []);
 
   // Init map
   useEffect(() => {
@@ -146,7 +153,7 @@ export default function Mapa() {
       mapRef.current.setCenter(position);
       mapRef.current.setZoom(16);
     }
-  }, [data, maps]);
+  }, [data, maps, tick]);
 
   const isLoading = loading || mapsLoading;
   const displayError = error || mapsError;
