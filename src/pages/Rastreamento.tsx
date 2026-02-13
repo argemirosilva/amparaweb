@@ -154,7 +154,7 @@ export default function Rastreamento() {
           }
           .ampara-marker-ring-wrapper { position: relative; display: inline-flex; }
           .ampara-marker-ring {
-            width: 52px; height: 52px; border-radius: 50%; padding: 3px;
+            width: 72px; height: 72px; border-radius: 50%; padding: 3px;
             background: linear-gradient(135deg, hsl(280 70% 50%), hsl(320 80% 55%));
             display: flex; align-items: center; justify-content: center;
             flex-shrink: 0; overflow: hidden;
@@ -168,9 +168,9 @@ export default function Rastreamento() {
           }
           .ampara-panic-badge {
             position: absolute; top: -4px; right: -4px;
-            width: 20px; height: 20px; border-radius: 50%;
+            width: 22px; height: 22px; border-radius: 50%;
             background: hsl(0 80% 50%); color: white;
-            font-size: 13px; font-weight: 900;
+            font-size: 14px; font-weight: 900;
             display: flex; align-items: center; justify-content: center;
             border: 2px solid white;
             animation: ampara-badge-pulse 1s ease-in-out infinite; z-index: 10;
@@ -188,20 +188,24 @@ export default function Rastreamento() {
             50% { box-shadow: 0 0 0 14px hsla(0, 80%, 50%, 0); }
           }
           .ampara-marker-img {
-            width: 44px; height: 44px; min-width: 44px; min-height: 44px;
+            width: 64px; height: 64px; min-width: 64px; min-height: 64px;
             border-radius: 50%; object-fit: cover; aspect-ratio: 1;
           }
           .ampara-marker-placeholder {
             display: flex; align-items: center; justify-content: center;
-            background: hsl(240 5% 26%); color: white; font-weight: 700; font-size: 18px;
+            background: hsl(240 5% 26%); color: white; font-weight: 700; font-size: 22px;
           }
           .ampara-marker-info {
             display: flex; flex-direction: column; align-items: center;
-            background: hsl(0 0% 10% / 0.85); backdrop-filter: blur(4px);
-            border-radius: 8px; padding: 3px 8px; max-width: 180px;
+            background: hsl(0 0% 10% / 0.88); backdrop-filter: blur(6px);
+            border-radius: 10px; padding: 5px 12px; max-width: 220px;
           }
-          .ampara-marker-name { color: white; font-size: 11px; font-weight: 700; line-height: 1.2; }
-          .ampara-marker-status { color: hsl(0 0% 80%); font-size: 10px; line-height: 1.2; }
+          .ampara-marker-name { color: white; font-size: 13px; font-weight: 700; line-height: 1.2; }
+          .ampara-marker-status { color: hsl(0 0% 80%); font-size: 11px; line-height: 1.2; }
+          .ampara-marker-address {
+            color: hsl(0 0% 65%); font-size: 10px; line-height: 1.3;
+            text-align: center; max-width: 210px; word-wrap: break-word; white-space: normal;
+          }
           .leaflet-control-attribution, .leaflet-control-attribution a { display: none !important; }
         `;
         document.head.appendChild(style);
@@ -235,8 +239,8 @@ export default function Rastreamento() {
       const icon = L.divIcon({
         html,
         className: "",
-        iconSize: [180, 120],
-        iconAnchor: [90, 60],
+        iconSize: [220, 180],
+        iconAnchor: [110, 90],
       });
 
       if (markerRef.current) {
