@@ -23,6 +23,8 @@ interface MapDeviceData {
     cidade: string | null;
     uf: string | null;
   } | null;
+  /** ISO timestamp of when the user arrived at the current location */
+  stationarySince: string | null;
 }
 
 export interface MapDeviceResult {
@@ -54,7 +56,7 @@ export function useMapDeviceData(): MapDeviceResult {
   const fetchData = useCallback(async () => {
     if (!usuario) return;
     try {
-      const [locRes, panicRes, profileRes] = await Promise.all([
+      const [locRes, locHistoryRes, panicRes, profileRes] = await Promise.all([
         supabase
           .from("localizacoes")
           .select("latitude, longitude, speed, precisao_metros, created_at")
@@ -62,6 +64,12 @@ export function useMapDeviceData(): MapDeviceResult {
           .order("created_at", { ascending: false })
           .limit(1)
           .maybeSingle(),
+        supabase
+          .from("localizacoes")
+          .select("latitude, longitude, created_at")
+          .eq("user_id", usuario.id)
+          .order("created_at", { ascending: false })
+          .limit(50),
         supabase
           .from("alertas_panico")
           .select("id")
@@ -114,6 +122,18 @@ export function useMapDeviceData(): MapDeviceResult {
         }
       }
 
+      // Calculate stationarySince: walk back through history to find when user arrived at current spot (within 100m)
+      let stationarySince: string | null = loc.created_at;
+      const history = locHistoryRes.data || [];
+      for (const h of history) {
+        const dist = haversineMeters(loc.latitude, loc.longitude, h.latitude, h.longitude);
+        if (dist <= 100) {
+          stationarySince = h.created_at;
+        } else {
+          break;
+        }
+      }
+
       setData({
         latitude: loc.latitude,
         longitude: loc.longitude,
@@ -127,6 +147,7 @@ export function useMapDeviceData(): MapDeviceResult {
         addressLoading: false,
         isHome,
         homeAddress,
+        stationarySince,
       });
       setError(null);
     } catch {
