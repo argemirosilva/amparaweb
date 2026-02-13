@@ -1,7 +1,18 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { callWebApi } from "@/services/webApiService";
 import { Button } from "@/components/ui/button";
-import { Download, FileText, Clock } from "lucide-react";
+import { Download, FileText, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import WaveformPlayer, { type WaveformMarker } from "./WaveformPlayer";
 import AnaliseCard from "@/components/dashboard/AnaliseCard";
 
@@ -51,10 +62,12 @@ export default function GravacaoExpandedContent({
   gravacao,
   sessionToken,
   onCollapse,
+  onDeleted,
 }: {
   gravacao: Gravacao;
   sessionToken: string;
   onCollapse?: () => void;
+  onDeleted?: () => void;
 }) {
   const [analise, setAnalise] = useState<AnaliseData | null>(null);
   const [loadedAnalise, setLoadedAnalise] = useState(false);
@@ -241,6 +254,35 @@ export default function GravacaoExpandedContent({
             <Download className="w-3 h-3 mr-1" />
             Baixar
           </Button>
+        )}
+        {(!gravacao.nivel_risco || gravacao.nivel_risco === "sem_risco") && (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="ghost" size="sm" className="text-xs text-muted-foreground hover:text-destructive">
+                <Trash2 className="w-3 h-3" />
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Excluir gravação?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Esta ação não pode ser desfeita. A gravação e sua análise serão removidas permanentemente.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  onClick={async () => {
+                    await callWebApi("deleteGravacao", sessionToken, { gravacao_id: gravacao.id });
+                    onDeleted?.();
+                  }}
+                >
+                  Excluir
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         )}
         <span className="text-[10px] text-muted-foreground ml-auto">
           ID: {gravacao.id.slice(0, 8)}

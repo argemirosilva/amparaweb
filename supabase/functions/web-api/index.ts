@@ -492,6 +492,43 @@ serve(async (req) => {
         return json({ success: true, gravacoes: enriched, total: count || 0, page, per_page });
       }
 
+      case "deleteGravacao": {
+        const { gravacao_id } = params;
+        if (!gravacao_id) return json({ error: "gravacao_id obrigatório" }, 400);
+
+        // Verify ownership and check nivel_risco
+        const { data: grav } = await supabase
+          .from("gravacoes")
+          .select("id, storage_path")
+          .eq("id", gravacao_id)
+          .eq("user_id", userId)
+          .maybeSingle();
+        if (!grav) return json({ error: "Gravação não encontrada" }, 404);
+
+        // Check analysis - only allow delete for sem_risco or no analysis
+        const { data: analise } = await supabase
+          .from("gravacoes_analises")
+          .select("nivel_risco")
+          .eq("gravacao_id", gravacao_id)
+          .maybeSingle();
+        if (analise && analise.nivel_risco && analise.nivel_risco !== "sem_risco") {
+          return json({ error: "Só é possível excluir gravações sem risco" }, 403);
+        }
+
+        // Delete analysis
+        await supabase.from("gravacoes_analises").delete().eq("gravacao_id", gravacao_id);
+
+        // Delete storage file if exists
+        if (grav.storage_path) {
+          await supabase.storage.from("gravacoes").remove([grav.storage_path]);
+        }
+
+        // Delete recording
+        await supabase.from("gravacoes").delete().eq("id", gravacao_id).eq("user_id", userId);
+
+        return json({ success: true });
+      }
+
       case "getGravacaoSignedUrl": {
         const { storage_path } = params;
         if (!storage_path) return json({ error: "storage_path obrigatório" }, 400);

@@ -315,6 +315,7 @@ export default function GravacoesPage() {
                         gravacao={g}
                         sessionToken={sessionToken!}
                         onCollapse={() => setExpanded(null)}
+                        onDeleted={() => { setExpanded(null); loadData(); }}
                       />
                     )}
                   </div>
