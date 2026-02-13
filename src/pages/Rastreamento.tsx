@@ -274,8 +274,8 @@ export default function Rastreamento() {
 
   if (status === "expired") {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-background p-6">
-        <div className="rounded-2xl bg-card border border-border shadow-sm p-8 flex flex-col items-center gap-4 max-w-sm w-full">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background p-6 animate-fade-in">
+        <div className="rounded-2xl bg-card border border-border shadow-sm p-8 flex flex-col items-center gap-4 max-w-sm w-full animate-scale-in">
           <img src={amparaIcon} alt="Ampara" className="w-14 h-14 opacity-50" />
           <h1 className="text-lg font-bold text-foreground">Rastreamento encerrado</h1>
           <p className="text-sm text-muted-foreground text-center">O compartilhamento de localização expirou ou foi desativado.</p>
