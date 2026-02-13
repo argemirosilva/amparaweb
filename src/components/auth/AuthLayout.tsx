@@ -20,14 +20,18 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
             />
           </div>
 
-          <div className="mb-4 sm:mb-8">
-            <h2 className="text-xl sm:text-2xl font-display font-bold text-foreground">
-              {title}
-            </h2>
-            {subtitle && (
-              <p className="mt-1 text-muted-foreground text-xs sm:text-sm">{subtitle}</p>
-            )}
-          </div>
+          {(title || subtitle) && (
+            <div className="mb-4 sm:mb-8">
+              {title && (
+                <h2 className="text-xl sm:text-2xl font-display font-bold text-foreground">
+                  {title}
+                </h2>
+              )}
+              {subtitle && (
+                <p className="mt-1 text-muted-foreground text-xs sm:text-sm">{subtitle}</p>
+              )}
+            </div>
+          )}
 
           {children}
         </div>
