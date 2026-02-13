@@ -110,7 +110,14 @@ export default function Rastreamento() {
         { event: "UPDATE", schema: "public", table: "compartilhamento_gps", filter: `id=eq.${share.id}` },
         (payload) => {
           const updated = payload.new as any;
-          if (!updated.ativo) setStatus("expired");
+          if (!updated.ativo) {
+            // Remove marker from map
+            if (markerRef.current && mapRef.current) {
+              mapRef.current.removeLayer(markerRef.current);
+              markerRef.current = null;
+            }
+            setStatus("expired");
+          }
         }
       );
 
@@ -121,7 +128,13 @@ export default function Rastreamento() {
         { event: "UPDATE", schema: "public", table: "alertas_panico", filter: `id=eq.${share.alerta_id}` },
         (payload) => {
           const updated = payload.new as any;
-          if (updated.status !== "ativo") setStatus("expired");
+          if (updated.status !== "ativo") {
+            if (markerRef.current && mapRef.current) {
+              mapRef.current.removeLayer(markerRef.current);
+              markerRef.current = null;
+            }
+            setStatus("expired");
+          }
         }
       );
     }
@@ -271,8 +284,8 @@ export default function Rastreamento() {
       const icon = L.divIcon({
         html,
         className: "",
-        iconSize: [220, 180],
-        iconAnchor: [110, 90],
+        iconSize: [220, 200],
+        iconAnchor: [110, 100],
       });
 
       if (markerRef.current) {
@@ -328,9 +341,8 @@ export default function Rastreamento() {
 
       {/* Top bar */}
       <div className="absolute top-0 left-0 right-0 z-10 p-4">
-        <div className={`flex items-center justify-between rounded-2xl px-4 py-3 backdrop-blur-md border border-border/50 shadow-sm ${isPanic ? "bg-destructive/80" : "bg-card/85"}`}>
+        <div className={`flex items-center justify-between rounded-2xl px-4 py-3 backdrop-blur-md shadow-lg ${isPanic ? "bg-red-950/90 border border-red-800/50" : "bg-zinc-950/90 border border-zinc-800/50"}`}>
           <div className="flex items-center gap-3 min-w-0">
-            <img src={amparaIcon} alt="Ampara" className="w-8 h-8 shrink-0 opacity-70" />
             {userInfo && (
               <div className="shrink-0 h-9 w-9 rounded-full p-[2px]" style={{ background: "linear-gradient(135deg, hsl(280 70% 50%), hsl(320 80% 55%))" }}>
                 {userInfo.avatar_url ? (
@@ -343,15 +355,15 @@ export default function Rastreamento() {
               </div>
             )}
             <div className="min-w-0">
-              <p className="text-xs font-medium text-foreground/70 truncate">
+              <p className="text-xs font-medium text-zinc-200 truncate">
                 {userInfo ? `${userInfo.nome_completo.split(" ")[0]} · ` : ""}{isPanic ? "🚨 Pânico" : "📍 Ao vivo"}
               </p>
-              <p className="text-[10px] text-muted-foreground">Código: {share?.codigo}</p>
+              <p className="text-[10px] text-zinc-500">Código: {share?.codigo}</p>
             </div>
           </div>
           <div className="text-right">
-            <p className="text-lg font-mono font-bold text-foreground">{timeLeft}</p>
-            <p className="text-[10px] text-muted-foreground">restante</p>
+            <p className="text-lg font-mono font-bold text-white">{timeLeft}</p>
+            <p className="text-[10px] text-zinc-500">restante</p>
           </div>
         </div>
       </div>
