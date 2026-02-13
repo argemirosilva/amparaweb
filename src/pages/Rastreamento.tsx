@@ -186,9 +186,17 @@ export default function Rastreamento() {
     return () => clearInterval(id);
   }, [share]);
 
+  // Clean up map when expired
+  useEffect(() => {
+    if (status === "expired") {
+      if (markerRef.current) { markerRef.current.map = null; markerRef.current = null; }
+      mapRef.current = null;
+    }
+  }, [status]);
+
   // Google Map
   useEffect(() => {
-    if (!location || !containerRef.current || !maps) return;
+    if (status !== "active" || !location || !containerRef.current || !maps) return;
     injectStyles();
 
     if (!mapRef.current) {
