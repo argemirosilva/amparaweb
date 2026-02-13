@@ -41,18 +41,18 @@ export default function LoginPage() {
     <AuthLayout title="Entrar" subtitle="Acesse sua conta AMPARA">
       <form onSubmit={handleSubmit} className="space-y-4">
         {verified && (
-          <div className="rounded-xl bg-accent border border-border p-3 text-sm text-accent-foreground">
+          <div className="rounded-xl bg-accent border border-border p-3 text-sm text-accent-foreground opacity-0 animate-fade-in">
             Email verificado com sucesso! Faça login para continuar.
           </div>
         )}
 
         {error && (
-          <div className="rounded-xl bg-destructive/10 border border-destructive/20 p-3 text-sm text-destructive">
+          <div className="rounded-xl bg-destructive/10 border border-destructive/20 p-3 text-sm text-destructive opacity-0 animate-fade-in">
             {error}
           </div>
         )}
 
-        <div>
+        <div className="opacity-0 animate-fade-in" style={{ animationDelay: "100ms" }}>
           <label className="block text-sm font-medium text-foreground mb-1.5">Email</label>
           <input
             type="email"
@@ -64,7 +64,7 @@ export default function LoginPage() {
           />
         </div>
 
-        <div>
+        <div className="opacity-0 animate-fade-in" style={{ animationDelay: "200ms" }}>
           <label className="block text-sm font-medium text-foreground mb-1.5">Senha</label>
           <div className="relative">
             <input
@@ -84,11 +84,11 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <button type="submit" disabled={loading} className="ampara-btn-primary mt-2">
+        <button type="submit" disabled={loading} className="ampara-btn-primary mt-2 opacity-0 animate-fade-in" style={{ animationDelay: "300ms" }}>
           {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : "Entrar"}
         </button>
 
-        <p className="text-center text-sm text-muted-foreground pt-2">
+        <p className="text-center text-sm text-muted-foreground pt-2 opacity-0 animate-fade-in" style={{ animationDelay: "400ms" }}>
           Não tem uma conta?{" "}
           <Link to="/cadastro" className="text-primary font-medium hover:underline">
             Criar conta
