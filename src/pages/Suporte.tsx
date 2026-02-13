@@ -113,11 +113,11 @@ export default function SuportePage() {
               Envie sua dúvida ou entre em contato diretamente pelo e-mail:
             </p>
             <a
-              href="mailto:suporte@ampara.app"
+              href="mailto:suporte@amparamulher.com.br"
               className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
             >
               <Mail className="w-4 h-4" />
-              suporte@ampara.app
+              suporte@amparamulher.com.br
             </a>
 
             <div className="border-t border-border pt-4 space-y-3">
