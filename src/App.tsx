@@ -17,6 +17,7 @@ import Mapa from "./pages/Mapa";
 import NotFound from "./pages/NotFound";
 import DocApi from "./pages/DocApi";
 import Rastreamento from "./pages/Rastreamento";
+import Suporte from "./pages/Suporte";
 
 const queryClient = new QueryClient();
 
@@ -39,6 +40,7 @@ const App = () => (
               <Route path="/gravacoes" element={<Gravacoes />} />
               <Route path="/perfil" element={<Perfil />} />
               <Route path="/configuracoes" element={<Configuracoes />} />
+              <Route path="/suporte" element={<Suporte />} />
             </Route>
             <Route path="/doc-api" element={<DocApi />} />
             <Route path="/r/:codigo" element={<Rastreamento />} />
