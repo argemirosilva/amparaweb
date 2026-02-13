@@ -164,9 +164,9 @@ export default function CadastroPage() {
               termos de uso
             </span>{" "}
             e{" "}
-            <span className="text-primary font-medium cursor-pointer hover:underline">
+            <Link to="/privacidade" className="text-primary font-medium hover:underline">
               política de privacidade
-            </span>
+            </Link>
           </span>
         </label>
 
