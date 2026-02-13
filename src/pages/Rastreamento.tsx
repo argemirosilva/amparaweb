@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveAddress } from "@/services/reverseGeocodeService";
+import { classifyMovement } from "@/hooks/useMovementStatus";
 import amparaIcon from "@/assets/ampara-icon-transparent.png";
 
 interface ShareData {
@@ -18,6 +19,7 @@ interface LocationData {
   latitude: number;
   longitude: number;
   precisao_metros: number | null;
+  speed: number | null;
   created_at: string;
 }
 
@@ -74,7 +76,7 @@ export default function Rastreamento() {
     const fetchLocation = async () => {
       const { data } = await supabase
         .from("localizacoes")
-        .select("latitude, longitude, precisao_metros, created_at")
+        .select("latitude, longitude, precisao_metros, speed, created_at")
         .eq("user_id", share.user_id)
         .order("created_at", { ascending: false })
         .limit(1)
@@ -96,7 +98,7 @@ export default function Rastreamento() {
         { event: "INSERT", schema: "public", table: "localizacoes", filter: `user_id=eq.${share.user_id}` },
         (payload) => {
           const d = payload.new as any;
-          const loc = { latitude: d.latitude, longitude: d.longitude, precisao_metros: d.precisao_metros, created_at: d.created_at };
+          const loc = { latitude: d.latitude, longitude: d.longitude, precisao_metros: d.precisao_metros, speed: d.speed, created_at: d.created_at };
           setLocation(loc);
           resolveAddress(loc.latitude, loc.longitude).then(geo => {
             setAddress(geo?.display_address || "Localizando...");
@@ -247,6 +249,10 @@ export default function Rastreamento() {
       const pulseClass = isPanic ? "ampara-marker-panic" : recentLocation ? "ampara-marker-active" : "";
       const panicBadge = isPanic ? `<div class="ampara-panic-badge">!</div>` : "";
 
+      // Movement status
+      const movement = classifyMovement(location.speed);
+      const movementLine = !isPanic ? `<span class="ampara-marker-status">${movement.emoji} ${movement.label}</span>` : "";
+
       const html = `
         <div class="ampara-marker ${pulseClass}">
           <div class="ampara-marker-ring-wrapper">
@@ -256,6 +262,7 @@ export default function Rastreamento() {
           <div class="ampara-marker-info">
             <span class="ampara-marker-name">${firstName}</span>
             <span class="ampara-marker-status">${isPanic ? "🚨 Pânico" : "📍 Ao vivo"}</span>
+            ${movementLine}
             ${address ? `<span class="ampara-marker-address">${address}</span>` : ""}
           </div>
         </div>
