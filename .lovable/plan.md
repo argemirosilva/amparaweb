@@ -1,58 +1,50 @@
 
 
-## Guia: Criar API Key do Google Maps
+## Atualização em tempo real fluida para os mapas
 
-### Passo a passo no Google Cloud Console
+### Problema atual
 
-1. Acesse [console.cloud.google.com](https://console.cloud.google.com)
-2. Crie um projeto novo (ou use um existente)
-3. No menu lateral, va em **APIs e Servicos** > **Biblioteca**
-4. Busque por **Maps JavaScript API** e clique em **Ativar**
-5. No menu lateral, va em **APIs e Servicos** > **Credenciais**
-6. Clique em **Criar credenciais** > **Chave de API**
-7. Copie a chave gerada
-8. (Recomendado) Clique em **Restringir chave** e adicione restricao por **Referenciadores HTTP** com os dominios:
-   - `https://ampamamulher.lovable.app/*`
-   - `https://*.lovable.app/*`
-   - `localhost:*` (para desenvolvimento)
+Hoje, quando uma nova localização chega via Realtime, o hook `useMapDeviceData` (usado na pagina Mapa) **descarta o payload** e faz 4 queries ao banco + geocodificação reversa. Isso cria um atraso perceptível de 1-3 segundos entre a chegada do dado e a atualização visual. Na pagina Rastreamento, o payload ja e usado diretamente, mas a geocodificação reversa ainda bloqueia a atualização visual.
 
-**Importante**: O Google Maps tem um tier gratuito de US$200/mes (~28.000 carregamentos de mapa). Para uso pessoal/pequeno, provavelmente nao havera custo. Voce precisara cadastrar um cartao de credito no Google Cloud, mas so sera cobrado se ultrapassar o limite gratuito.
+### Solução
 
----
+Separar a atualização de coordenadas (instantanea) da atualização de endereço (assíncrona), e usar o payload do Realtime diretamente em vez de re-consultar o banco.
 
-## Plano de Integracao no Sistema
+### Mudanças planejadas
 
-Depois que voce tiver a API Key, farei as seguintes alteracoes:
+**1. Refatorar `useMapDeviceData.ts`**
+- Usar o payload do Realtime diretamente para atualizar latitude, longitude, speed, precisao_metros e created_at -- sem re-fetch
+- Mover dados estáticos (perfil, avatar, endereco_fixo) para um fetch separado que roda apenas uma vez e ao montar o componente
+- Atualizar o endereço de forma assíncrona (sem bloquear a posição do marcador)
+- Manter o polling de 30s como fallback, mas o Realtime passa a ser o canal primário
 
-### 1. Armazenar a chave de forma segura
-- Salvar a API Key como secret no backend (acessivel via variavel de ambiente)
-- Criar uma edge function `google-maps-key` que retorna a chave de forma segura para o frontend
+**2. Ajustar `Mapa.tsx`**
+- Reduzir o intervalo do tick de 5s para 3s para textos relativos mais responsivos
+- Garantir que a animação suave do marcador inicie imediatamente ao receber dados do Realtime
 
-### 2. Substituir Leaflet por Google Maps em 3 arquivos
+**3. Ajustar `Rastreamento.tsx`**
+- Atualizar endereço de forma assíncrona (primeiro move o marcador, depois atualiza o texto do endereço)
+- Reduzir o tick de 15s para 3s para consistencia com a pagina Mapa
+- Recalcular stationarySince de forma incremental usando o histórico local em vez de re-consultar
 
-**src/pages/Mapa.tsx** (mapa principal)
-- Remover imports do Leaflet
-- Carregar Google Maps JS API dinamicamente
-- Recriar os marcadores customizados (avatar, status de movimento, endereco) usando `google.maps.marker.AdvancedMarkerElement` com HTML overlay
-- Manter toda a logica de dados existente (useMapDeviceData, useMovementStatus)
+### Detalhes técnicos
 
-**src/pages/Rastreamento.tsx** (rastreamento temporario)
-- Mesma substituicao de Leaflet para Google Maps
-- Marcador identico ao do Mapa.tsx
-- Manter logica de compartilhamento, realtime e estados
+```text
+Fluxo atual (Mapa):
+  Realtime INSERT → fetchData() → 4 queries SQL + geocode → setData → render
+  Latencia: ~1-3 segundos
 
-**src/components/dashboard/MiniLeafletMap.tsx** (mini mapa no dashboard)
-- Substituir por mini Google Map estatico/interativo
-- Manter o marcador com avatar e nome
+Fluxo novo (Mapa):
+  Realtime INSERT → payload direto → setData (coords) → render imediato
+                  → geocode async → setData (endereço) → re-render suave
+  Latencia: ~50-100ms para posição, endereço atualiza em background
+```
 
-### 3. Remover dependencia do Leaflet
-- Remover pacotes `leaflet` e `@types/leaflet` do projeto
-- Remover CSS do Leaflet
+A mudança principal no hook sera:
 
-### Secao Tecnica
+- Na subscription Realtime de `localizacoes`, em vez de chamar `fetchData()`, extrair os campos do payload e fazer um `setData(prev => ({...prev, latitude, longitude, speed, ...}))` instantaneo
+- Disparar `resolveAddress()` em paralelo e atualizar o campo `geo` quando resolver
+- Buscar dados do perfil (avatar, nome, endereco_fixo) apenas no mount e cachear
 
-- A API Key sera carregada via edge function para nao ficar exposta no codigo fonte
-- O Google Maps JS API sera carregado dinamicamente via script tag com callback
-- Os marcadores customizados usarao `AdvancedMarkerElement` com conteudo HTML, mantendo o mesmo visual atual (anel gradiente, avatar, info de movimento)
-- Nenhuma alteracao na logica de dados ou banco de dados sera necessaria
+Isso elimina as 4 queries redundantes a cada nova localização e deixa a experiencia muito mais fluida, como um navegador GPS real.
 
