@@ -96,9 +96,11 @@ export default function MonitoringStatusCard() {
           setState(scheduleState);
         }
       } else {
-        // Session active but no window — use schedule period
+        // Session active but no window — use schedule to determine state
         const scheduleState = resolveState(todayPeriods);
         if (scheduleState.type === "monitoring") {
+          setState(scheduleState);
+        } else if (scheduleState.type === "done_today" || scheduleState.type === "next" || scheduleState.type === "outside") {
           setState(scheduleState);
         } else {
           setState({ type: "monitoring_no_window" });
