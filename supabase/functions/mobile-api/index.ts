@@ -982,10 +982,10 @@ async function handleEnviarLocalizacaoGPS(
     alerta_id: finalAlertaId,
     latitude,
     longitude,
-    precisao_metros: body.precisao_metros as number || null,
-    bateria_percentual: body.bateria_percentual as number || null,
-    speed: body.speed as number || null,
-    heading: body.heading as number || null,
+    precisao_metros: body.precisao_metros != null ? Number(body.precisao_metros) : null,
+    bateria_percentual: body.bateria_percentual != null ? Number(body.bateria_percentual) : null,
+    speed: body.speed != null ? Number(body.speed) : null,
+    heading: body.heading != null ? Number(body.heading) : null,
     timestamp_gps: body.timestamp_gps as string || null,
   });
 
