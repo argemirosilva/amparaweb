@@ -1,8 +1,10 @@
+/// <reference types="google.maps" />
 import { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveAddress } from "@/services/reverseGeocodeService";
 import { classifyMovement } from "@/hooks/useMovementStatus";
+import { useGoogleMapsPublic } from "@/hooks/useGoogleMaps";
 import amparaIcon from "@/assets/ampara-icon-transparent.png";
 
 function formatRelativeTime(isoDate: string): string {
@@ -23,6 +25,33 @@ function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
   const dLon = toRad(lon2 - lon1);
   const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+// Inject styles once
+const STYLE_ID = "ampara-gmap-marker-styles";
+function injectStyles() {
+  if (document.getElementById(STYLE_ID)) return;
+  const style = document.createElement("style");
+  style.id = STYLE_ID;
+  style.textContent = `
+    .ampara-marker { display:flex; flex-direction:column; align-items:center; gap:2px; filter:drop-shadow(0 2px 6px rgba(0,0,0,0.3)); }
+    .ampara-marker-ring-wrapper { position:relative; display:inline-flex; }
+    .ampara-marker-ring { width:52px; height:52px; border-radius:50%; padding:3px; background:linear-gradient(135deg,hsl(280 70% 50%),hsl(320 80% 55%)); display:flex; align-items:center; justify-content:center; flex-shrink:0; overflow:hidden; }
+    .ampara-marker-active .ampara-marker-ring { animation:ampara-pulse-blue 2s ease-in-out infinite; }
+    @keyframes ampara-pulse-blue { 0%,100%{box-shadow:0 0 0 0 hsla(220,80%,55%,0.5);} 50%{box-shadow:0 0 0 10px hsla(220,80%,55%,0);} }
+    .ampara-panic-badge { position:absolute; top:-4px; right:-4px; width:20px; height:20px; border-radius:50%; background:hsl(0 80% 50%); color:white; font-size:13px; font-weight:900; display:flex; align-items:center; justify-content:center; border:2px solid white; animation:ampara-badge-pulse 1s ease-in-out infinite; z-index:10; }
+    @keyframes ampara-badge-pulse { 0%,100%{transform:scale(1);} 50%{transform:scale(1.2);} }
+    .ampara-marker-panic .ampara-marker-ring { background:hsl(0 80% 50%); animation:ampara-pulse 1.2s ease-in-out infinite; }
+    @keyframes ampara-pulse { 0%,100%{box-shadow:0 0 0 0 hsla(0,80%,50%,0.6);} 50%{box-shadow:0 0 0 14px hsla(0,80%,50%,0);} }
+    .ampara-marker-img { width:44px; height:44px; min-width:44px; min-height:44px; border-radius:50%; object-fit:cover; aspect-ratio:1; }
+    .ampara-marker-placeholder { display:flex; align-items:center; justify-content:center; background:hsl(240 5% 26%); color:white; font-weight:700; font-size:18px; }
+    .ampara-marker-info { display:flex; flex-direction:column; align-items:center; background:hsl(0 0% 10%/0.85); backdrop-filter:blur(4px); border-radius:8px; padding:3px 8px; max-width:200px; }
+    .ampara-marker-name { color:white; font-size:11px; font-weight:700; line-height:1.2; }
+    .ampara-marker-status { color:hsl(0 0% 80%); font-size:10px; line-height:1.2; }
+    .ampara-marker-address { color:hsl(0 0% 65%); font-size:9px; line-height:1.3; text-align:center; max-width:190px; word-wrap:break-word; white-space:normal; }
+    .ampara-marker-time { color:hsl(0 0% 55%); font-size:9px; line-height:1.2; text-align:center; }
+  `;
+  document.head.appendChild(style);
 }
 
 interface ShareData {
@@ -57,29 +86,24 @@ export default function Rastreamento() {
   const [address, setAddress] = useState<string>("");
   const [timeLeft, setTimeLeft] = useState("");
   const [stationarySince, setStationarySince] = useState<string | null>(null);
-  const mapRef = useRef<any>(null);
-  const markerRef = useRef<any>(null);
+  const mapRef = useRef<google.maps.Map | null>(null);
+  const markerRef = useRef<google.maps.marker.AdvancedMarkerElement | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const { maps } = useGoogleMapsPublic();
 
   // Fetch share data
   useEffect(() => {
     if (!codigo) { setStatus("not_found"); return; }
-
     const fetchShare = async () => {
       const { data, error } = await supabase
         .from("compartilhamento_gps")
         .select("*")
         .eq("codigo", codigo)
         .maybeSingle();
-
       if (error || !data) { setStatus("not_found"); return; }
-      if (!data.ativo || new Date(data.expira_em) < new Date()) {
-        setStatus("expired"); return;
-      }
+      if (!data.ativo || new Date(data.expira_em) < new Date()) { setStatus("expired"); return; }
       setShare(data as ShareData);
       setStatus("active");
-
-      // Fetch user info (name + avatar)
       const { data: userData } = await supabase
         .from("usuarios")
         .select("nome_completo, avatar_url")
@@ -90,28 +114,23 @@ export default function Rastreamento() {
     fetchShare();
   }, [codigo]);
 
-  // Fetch latest location & subscribe to updates
+  // Fetch latest location & subscribe
   useEffect(() => {
     if (!share) return;
-
     const fetchLocation = async () => {
-      // Fetch last 50 locations to calculate stationarySince
       const { data: locs } = await supabase
         .from("localizacoes")
         .select("latitude, longitude, precisao_metros, speed, created_at")
         .eq("user_id", share.user_id)
         .order("created_at", { ascending: false })
         .limit(50);
-
       if (locs && locs.length > 0) {
         const latest = locs[0];
         setLocation(latest);
         resolveAddress(latest.latitude, latest.longitude).then(geo => {
           setAddress(geo?.display_address || "Localizando...");
         });
-
-        // Calculate stationarySince
-        const THRESHOLD = 100; // meters
+        const THRESHOLD = 100;
         let since = latest.created_at;
         for (let i = 1; i < locs.length; i++) {
           const dist = haversineDistance(latest.latitude, latest.longitude, locs[i].latitude, locs[i].longitude);
@@ -123,57 +142,32 @@ export default function Rastreamento() {
     };
     fetchLocation();
 
-    // Realtime subscription
     const channel = supabase
       .channel(`track-${share.id}`)
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "localizacoes", filter: `user_id=eq.${share.user_id}` },
-        (payload) => {
-          const d = payload.new as any;
-          const loc = { latitude: d.latitude, longitude: d.longitude, precisao_metros: d.precisao_metros, speed: d.speed, created_at: d.created_at };
-          setLocation(loc);
-          resolveAddress(loc.latitude, loc.longitude).then(geo => {
-            setAddress(geo?.display_address || "Localizando...");
-          });
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "localizacoes", filter: `user_id=eq.${share.user_id}` }, (payload) => {
+        const d = payload.new as any;
+        const loc = { latitude: d.latitude, longitude: d.longitude, precisao_metros: d.precisao_metros, speed: d.speed, created_at: d.created_at };
+        setLocation(loc);
+        resolveAddress(loc.latitude, loc.longitude).then(geo => { setAddress(geo?.display_address || "Localizando..."); });
+      })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "compartilhamento_gps", filter: `id=eq.${share.id}` }, (payload) => {
+        const updated = payload.new as any;
+        if (!updated.ativo) {
+          if (markerRef.current) { markerRef.current.map = null; markerRef.current = null; }
+          setStatus("expired");
         }
-      )
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "compartilhamento_gps", filter: `id=eq.${share.id}` },
-        (payload) => {
-          const updated = payload.new as any;
-          if (!updated.ativo) {
-            // Remove marker from map
-            if (markerRef.current && mapRef.current) {
-              mapRef.current.removeLayer(markerRef.current);
-              markerRef.current = null;
-            }
-            setStatus("expired");
-          }
-        }
-      );
+      });
 
-    // If linked to a panic alert, also listen for alert status changes
     if (share.alerta_id) {
-      channel.on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "alertas_panico", filter: `id=eq.${share.alerta_id}` },
-        (payload) => {
-          const updated = payload.new as any;
-          if (updated.status !== "ativo") {
-            if (markerRef.current && mapRef.current) {
-              mapRef.current.removeLayer(markerRef.current);
-              markerRef.current = null;
-            }
-            setStatus("expired");
-          }
+      channel.on("postgres_changes", { event: "UPDATE", schema: "public", table: "alertas_panico", filter: `id=eq.${share.alerta_id}` }, (payload) => {
+        const updated = payload.new as any;
+        if (updated.status !== "ativo") {
+          if (markerRef.current) { markerRef.current.map = null; markerRef.current = null; }
+          setStatus("expired");
         }
-      );
+      });
     }
-
     channel.subscribe();
-
     return () => { supabase.removeChannel(channel); };
   }, [share]);
 
@@ -192,156 +186,63 @@ export default function Rastreamento() {
     return () => clearInterval(id);
   }, [share]);
 
-  // Leaflet map
+  // Google Map
   useEffect(() => {
-    if (!location || !containerRef.current) return;
+    if (!location || !containerRef.current || !maps) return;
+    injectStyles();
 
-    const initMap = async () => {
-      const L = await import("leaflet");
-      if (!document.querySelector('link[href*="leaflet.css"]')) {
-        const link = document.createElement("link");
-        link.rel = "stylesheet";
-        link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
-        document.head.appendChild(link);
-      }
-
-      if (!mapRef.current) {
-        mapRef.current = L.map(containerRef.current!, {
-          center: [location.latitude, location.longitude],
-          zoom: 16,
-          zoomControl: false,
-          attributionControl: false,
-        });
-        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(mapRef.current);
-      }
-
-      // Inject ampara-marker styles (same as Mapa.tsx) once
-      if (!document.getElementById("ampara-marker-styles")) {
-        const style = document.createElement("style");
-        style.id = "ampara-marker-styles";
-        style.textContent = `
-          .ampara-marker {
-            display: flex; flex-direction: column; align-items: center; gap: 2px;
-            filter: drop-shadow(0 2px 6px rgba(0,0,0,0.3));
-          }
-          .ampara-marker-ring-wrapper { position: relative; display: inline-flex; }
-          .ampara-marker-ring {
-            width: 52px; height: 52px; border-radius: 50%; padding: 3px;
-            background: linear-gradient(135deg, hsl(280 70% 50%), hsl(320 80% 55%));
-            display: flex; align-items: center; justify-content: center;
-            flex-shrink: 0; overflow: hidden;
-          }
-          .ampara-marker-active .ampara-marker-ring {
-            animation: ampara-pulse-blue 2s ease-in-out infinite;
-          }
-          @keyframes ampara-pulse-blue {
-            0%, 100% { box-shadow: 0 0 0 0 hsla(220, 80%, 55%, 0.5); }
-            50% { box-shadow: 0 0 0 10px hsla(220, 80%, 55%, 0); }
-          }
-          .ampara-panic-badge {
-            position: absolute; top: -4px; right: -4px;
-            width: 20px; height: 20px; border-radius: 50%;
-            background: hsl(0 80% 50%); color: white;
-            font-size: 13px; font-weight: 900;
-            display: flex; align-items: center; justify-content: center;
-            border: 2px solid white;
-            animation: ampara-badge-pulse 1s ease-in-out infinite; z-index: 10;
-          }
-          @keyframes ampara-badge-pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.2); }
-          }
-          .ampara-marker-panic .ampara-marker-ring {
-            background: hsl(0 80% 50%);
-            animation: ampara-pulse 1.2s ease-in-out infinite;
-          }
-          @keyframes ampara-pulse {
-            0%, 100% { box-shadow: 0 0 0 0 hsla(0, 80%, 50%, 0.6); }
-            50% { box-shadow: 0 0 0 14px hsla(0, 80%, 50%, 0); }
-          }
-          .ampara-marker-img {
-            width: 44px; height: 44px; min-width: 44px; min-height: 44px;
-            border-radius: 50%; object-fit: cover; aspect-ratio: 1;
-          }
-          .ampara-marker-placeholder {
-            display: flex; align-items: center; justify-content: center;
-            background: hsl(240 5% 26%); color: white; font-weight: 700; font-size: 18px;
-          }
-          .ampara-marker-info {
-            display: flex; flex-direction: column; align-items: center;
-            background: hsl(0 0% 10% / 0.85); backdrop-filter: blur(4px);
-            border-radius: 8px; padding: 3px 8px; max-width: 200px;
-          }
-          .ampara-marker-name { color: white; font-size: 11px; font-weight: 700; line-height: 1.2; }
-          .ampara-marker-status { color: hsl(0 0% 80%); font-size: 10px; line-height: 1.2; }
-          .ampara-marker-address {
-            color: hsl(0 0% 65%); font-size: 9px; line-height: 1.3;
-            text-align: center; max-width: 190px; word-wrap: break-word; white-space: normal;
-          }
-          .ampara-marker-time {
-            color: hsl(0 0% 55%); font-size: 9px; line-height: 1.2; text-align: center;
-          }
-          .leaflet-control-attribution, .leaflet-control-attribution a { display: none !important; }
-        `;
-        document.head.appendChild(style);
-      }
-
-      const isPanic = share?.tipo === "panico";
-      const firstName = userInfo?.nome_completo?.split(" ")[0] || "";
-      const avatarUrl = userInfo?.avatar_url || "";
-      const recentLocation = Date.now() - new Date(location.created_at).getTime() < 60_000;
-
-      const imgHtml = avatarUrl
-        ? `<img src="${avatarUrl}" class="ampara-marker-img" alt="${firstName}" />`
-        : `<div class="ampara-marker-img ampara-marker-placeholder">${firstName.charAt(0).toUpperCase() || "?"}</div>`;
-
-      const pulseClass = isPanic ? "ampara-marker-panic" : recentLocation ? "ampara-marker-active" : "";
-      const panicBadge = isPanic ? `<div class="ampara-panic-badge">!</div>` : "";
-
-      // Movement status
-      const movement = classifyMovement(location.speed);
-      const movementEmoji = movement.emoji;
-      const movementLabel = movement.label;
-
-      const stationaryText = stationarySince
-        ? `📍 Neste local há ${formatRelativeTime(stationarySince)}`
-        : "";
-      const updateText = `🕐 Atualizado há ${formatRelativeTime(location.created_at)}`;
-
-      const html = `
-        <div class="ampara-marker ${pulseClass}">
-          <div class="ampara-marker-ring-wrapper">
-            <div class="ampara-marker-ring">${imgHtml}</div>
-            ${panicBadge}
-          </div>
-          <div class="ampara-marker-info">
-            <span class="ampara-marker-name">${firstName}</span>
-            <span class="ampara-marker-status">${isPanic ? "🚨 Pânico" : `${movementEmoji} ${movementLabel}`}</span>
-            ${address ? `<span class="ampara-marker-address">${address}</span>` : ""}
-            ${stationaryText ? `<span class="ampara-marker-time">${stationaryText}</span>` : ""}
-            <span class="ampara-marker-time">${updateText}</span>
-          </div>
-        </div>
-      `;
-
-      const icon = L.divIcon({
-        html,
-        className: "",
-        iconSize: [200, 160],
-        iconAnchor: [100, 80],
+    if (!mapRef.current) {
+      mapRef.current = new maps.Map(containerRef.current, {
+        center: { lat: location.latitude, lng: location.longitude },
+        zoom: 16,
+        mapId: "ampara-tracking-map",
+        disableDefaultUI: true,
       });
+    }
 
-      if (markerRef.current) {
-        markerRef.current.setLatLng([location.latitude, location.longitude]);
-        markerRef.current.setIcon(icon);
-      } else {
-        markerRef.current = L.marker([location.latitude, location.longitude], { icon }).addTo(mapRef.current);
-      }
-      mapRef.current.setView([location.latitude, location.longitude], mapRef.current.getZoom());
-    };
+    const isPanic = share?.tipo === "panico";
+    const firstName = userInfo?.nome_completo?.split(" ")[0] || "";
+    const avatarUrl = userInfo?.avatar_url || "";
+    const recentLocation = Date.now() - new Date(location.created_at).getTime() < 60_000;
+    const imgHtml = avatarUrl
+      ? `<img src="${avatarUrl}" class="ampara-marker-img" alt="${firstName}" />`
+      : `<div class="ampara-marker-img ampara-marker-placeholder">${firstName.charAt(0).toUpperCase() || "?"}</div>`;
+    const pulseClass = isPanic ? "ampara-marker-panic" : recentLocation ? "ampara-marker-active" : "";
+    const panicBadge = isPanic ? `<div class="ampara-panic-badge">!</div>` : "";
+    const movement = classifyMovement(location.speed);
+    const stationaryText = stationarySince ? `📍 Neste local há ${formatRelativeTime(stationarySince)}` : "";
+    const updateText = `🕐 Atualizado há ${formatRelativeTime(location.created_at)}`;
 
-    initMap();
-  }, [location, share, userInfo, address, stationarySince]);
+    const content = document.createElement("div");
+    content.innerHTML = `
+      <div class="ampara-marker ${pulseClass}">
+        <div class="ampara-marker-ring-wrapper">
+          <div class="ampara-marker-ring">${imgHtml}</div>
+          ${panicBadge}
+        </div>
+        <div class="ampara-marker-info">
+          <span class="ampara-marker-name">${firstName}</span>
+          <span class="ampara-marker-status">${isPanic ? "🚨 Pânico" : `${movement.emoji} ${movement.label}`}</span>
+          ${address ? `<span class="ampara-marker-address">${address}</span>` : ""}
+          ${stationaryText ? `<span class="ampara-marker-time">${stationaryText}</span>` : ""}
+          <span class="ampara-marker-time">${updateText}</span>
+        </div>
+      </div>
+    `;
+
+    const position = { lat: location.latitude, lng: location.longitude };
+    if (markerRef.current) {
+      markerRef.current.position = position;
+      markerRef.current.content = content;
+    } else {
+      markerRef.current = new maps.marker.AdvancedMarkerElement({
+        map: mapRef.current,
+        position,
+        content,
+      });
+    }
+    mapRef.current.setCenter(position);
+  }, [location, share, userInfo, address, stationarySince, maps]);
 
   if (status === "loading") {
     return (
@@ -379,10 +280,7 @@ export default function Rastreamento() {
 
   return (
     <div className="relative min-h-screen bg-background text-foreground">
-      {/* Map */}
       <div ref={containerRef} className="absolute inset-0 z-0" />
-
-      {/* Top bar */}
       <div className="absolute top-0 left-0 right-0 z-10 p-4">
         <div className={`flex items-center justify-between rounded-2xl px-4 py-3 backdrop-blur-md shadow-lg ${isPanic ? "bg-red-950/90 border border-red-800/50" : "bg-zinc-950/90 border border-zinc-800/50"}`}>
           <div className="flex items-center gap-3 min-w-0">
@@ -410,19 +308,13 @@ export default function Rastreamento() {
           </div>
         </div>
       </div>
-
-      {/* Bottom info */}
       {location && (
         <div className="absolute bottom-6 left-4 right-4 z-10">
           <div className="rounded-2xl bg-card/85 backdrop-blur-md border border-border/50 shadow-sm px-4 py-3">
             <p className="text-xs text-muted-foreground">Última atualização</p>
-            <p className="text-sm font-medium text-foreground">
-              {new Date(location.created_at).toLocaleTimeString("pt-BR")}
-            </p>
+            <p className="text-sm font-medium text-foreground">{new Date(location.created_at).toLocaleTimeString("pt-BR")}</p>
             {location.precisao_metros && (
-              <p className="text-[10px] text-muted-foreground mt-0.5">
-                Precisão: ~{Math.round(location.precisao_metros)}m
-              </p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">Precisão: ~{Math.round(location.precisao_metros)}m</p>
             )}
           </div>
         </div>
