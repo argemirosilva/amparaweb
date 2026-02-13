@@ -38,7 +38,7 @@ export default function LoginPage() {
   };
 
   return (
-    <AuthLayout title="Entrar" subtitle="Acesse sua conta AMPARA">
+    <AuthLayout title="" subtitle="">
       <form onSubmit={handleSubmit} className="space-y-4">
         {verified && (
           <div className="rounded-xl bg-accent border border-border p-3 text-sm text-accent-foreground opacity-0 animate-fade-in">
