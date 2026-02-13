@@ -13,7 +13,8 @@ type MonitoringState =
   | { type: "monitoring"; inicio: string; fim: string }
   | { type: "monitoring_no_window" }
   | { type: "next"; inicio: string }
-  | { type: "outside" };
+  | { type: "outside" }
+  | { type: "done_today" };
 
 function toMinutes(time: string): number {
   const [h, m] = time.split(":").map(Number);
@@ -38,7 +39,8 @@ function resolveState(periods: Period[]): MonitoringState {
 
   if (upcoming.length > 0) return { type: "next", inicio: upcoming[0].inicio };
 
-  return { type: "outside" };
+  // All periods for today have passed
+  return { type: "done_today" };
 }
 
 function formatTime(iso: string): string {
@@ -74,23 +76,33 @@ export default function MonitoringStatusCard() {
     const todayKey = DAY_KEYS[new Date(new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" })).getDay()];
     const todayPeriods = periodos?.[todayKey] ?? [];
 
-    // If active session with window times, use those
-    if (sessionRes.data?.window_start_at && sessionRes.data?.window_end_at) {
-      setState({
-        type: "monitoring",
-        inicio: formatTime(sessionRes.data.window_start_at),
-        fim: formatTime(sessionRes.data.window_end_at),
-      });
-    } else if (hasActiveSession) {
-      // Session active but no window — use schedule period for today
-      const scheduleState = resolveState(todayPeriods);
-      if (scheduleState.type === "monitoring") {
-        setState(scheduleState);
-      } else if (todayPeriods.length > 0) {
-        const lastPeriod = todayPeriods[todayPeriods.length - 1];
-        setState({ type: "monitoring", inicio: todayPeriods[0].inicio, fim: lastPeriod.fim });
+    const now = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
+    const nowMin = now.getHours() * 60 + now.getMinutes();
+
+    if (hasActiveSession) {
+      // Check if session has window times and they're still valid
+      if (sessionRes.data?.window_end_at) {
+        const endTime = new Date(new Date(sessionRes.data.window_end_at).toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
+        const endMin = endTime.getHours() * 60 + endTime.getMinutes();
+        if (nowMin < endMin) {
+          setState({
+            type: "monitoring",
+            inicio: formatTime(sessionRes.data.window_start_at!),
+            fim: formatTime(sessionRes.data.window_end_at),
+          });
+        } else {
+          // Period ended — check if there are more periods today
+          const scheduleState = resolveState(todayPeriods);
+          setState(scheduleState);
+        }
       } else {
-        setState({ type: "monitoring_no_window" });
+        // Session active but no window — use schedule period
+        const scheduleState = resolveState(todayPeriods);
+        if (scheduleState.type === "monitoring") {
+          setState(scheduleState);
+        } else {
+          setState({ type: "monitoring_no_window" });
+        }
       }
     } else {
       setState(resolveState(todayPeriods));
@@ -143,6 +155,11 @@ export default function MonitoringStatusCard() {
           {state?.type === "next" && (
             <p className="text-xs font-medium text-amber-600">
               Inicia o monitoramento às {state.inicio}
+            </p>
+          )}
+          {state?.type === "done_today" && (
+            <p className="text-xs font-medium text-muted-foreground">
+              Sem mais períodos para hoje
             </p>
           )}
           {state?.type === "outside" && (
