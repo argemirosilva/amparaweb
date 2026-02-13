@@ -55,60 +55,18 @@ export default function MonitoringStatusCard() {
   const fetchData = useCallback(async () => {
     if (!usuario) return;
 
-    const [sessionRes, scheduleRes] = await Promise.all([
-      supabase
-        .from("monitoramento_sessoes")
-        .select("window_start_at, window_end_at, status")
-        .eq("user_id", usuario.id)
-        .in("status", ["ativa", "aguardando_finalizacao", "inserida_no_fluxo"])
-        .order("iniciado_em", { ascending: false })
-        .limit(1)
-        .maybeSingle(),
-      supabase
-        .from("agendamentos_monitoramento")
-        .select("periodos_semana")
-        .eq("user_id", usuario.id)
-        .maybeSingle(),
-    ]);
+    const scheduleRes = await supabase
+      .from("agendamentos_monitoramento")
+      .select("periodos_semana")
+      .eq("user_id", usuario.id)
+      .maybeSingle();
 
-    const hasActiveSession = !!sessionRes.data;
     const periodos = scheduleRes.data?.periodos_semana as unknown as Record<string, Period[]> | null;
     const todayKey = DAY_KEYS[new Date(new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" })).getDay()];
     const todayPeriods = periodos?.[todayKey] ?? [];
 
-    const now = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
-    const nowMin = now.getHours() * 60 + now.getMinutes();
-
-    if (hasActiveSession) {
-      // Check if session has window times and they're still valid
-      if (sessionRes.data?.window_end_at) {
-        const endTime = new Date(new Date(sessionRes.data.window_end_at).toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
-        const endMin = endTime.getHours() * 60 + endTime.getMinutes();
-        if (nowMin < endMin) {
-          setState({
-            type: "monitoring",
-            inicio: formatTime(sessionRes.data.window_start_at!),
-            fim: formatTime(sessionRes.data.window_end_at),
-          });
-        } else {
-          // Period ended — check if there are more periods today
-          const scheduleState = resolveState(todayPeriods);
-          setState(scheduleState);
-        }
-      } else {
-        // Session active but no window — use schedule to determine state
-        const scheduleState = resolveState(todayPeriods);
-        if (scheduleState.type === "monitoring") {
-          setState(scheduleState);
-        } else if (scheduleState.type === "done_today" || scheduleState.type === "next" || scheduleState.type === "outside") {
-          setState(scheduleState);
-        } else {
-          setState({ type: "monitoring_no_window" });
-        }
-      }
-    } else {
-      setState(resolveState(todayPeriods));
-    }
+    // Always resolve state from the schedule, not from active sessions
+    setState(resolveState(todayPeriods));
 
     setLoading(false);
   }, [usuario]);
