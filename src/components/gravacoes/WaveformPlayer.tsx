@@ -17,6 +17,7 @@ interface Props {
   markers?: WaveformMarker[];
   accentCssVar?: string; // e.g. "--risco-sem-risco"
   durationHint?: number; // seconds, used to avoid fetching audio for waveform
+  onPlayingChange?: (isPlaying: boolean) => void;
 }
 
 /** Generate random but deterministic-looking peaks for waveform visualization */
@@ -41,10 +42,15 @@ function resolveColor(cssVar?: string): string {
   return `hsl(${primary})`;
 }
 
-export default function WaveformPlayer({ storagePath, sessionToken, markers = [], accentCssVar, durationHint }: Props) {
+export default function WaveformPlayer({ storagePath, sessionToken, markers = [], accentCssVar, durationHint, onPlayingChange }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const wsRef = useRef<any>(null);
-  const [playing, setPlaying] = useState(false);
+  const [playing, setPlayingState] = useState(false);
+
+  const setPlaying = (v: boolean) => {
+    setPlayingState(v);
+    onPlayingChange?.(v);
+  };
   const [loading, setLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
