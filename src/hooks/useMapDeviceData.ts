@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { resolveAddress, type GeoResult } from "@/services/reverseGeocodeService";
@@ -47,16 +47,104 @@ function haversineMeters(lat1: number, lon1: number, lat2: number, lon2: number)
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
+/** Check if coords are within 50m of home */
+function checkIsHome(lat: number, lon: number, endereco_fixo: string | null): boolean {
+  if (!endereco_fixo) return false;
+  const parts = endereco_fixo.split(",").map((s: string) => parseFloat(s.trim()));
+  if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+    return haversineMeters(lat, lon, parts[0], parts[1]) <= 50;
+  }
+  return false;
+}
+
+interface ProfileCache {
+  avatarUrl: string | null;
+  firstName: string;
+  homeAddress: MapDeviceData["homeAddress"];
+  endereco_fixo: string | null;
+}
+
 export function useMapDeviceData(): MapDeviceResult {
   const { usuario } = useAuth();
   const [data, setData] = useState<MapDeviceData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const profileRef = useRef<ProfileCache | null>(null);
+  const locationHistoryRef = useRef<Array<{ latitude: number; longitude: number; created_at: string }>>([]);
 
+  // Fetch profile once on mount
+  useEffect(() => {
+    if (!usuario) return;
+    (async () => {
+      const { data: profile } = await supabase
+        .from("usuarios")
+        .select("avatar_url, nome_completo, endereco_logradouro, endereco_bairro, endereco_cidade, endereco_uf, endereco_fixo")
+        .eq("id", usuario.id)
+        .single();
+      if (profile) {
+        profileRef.current = {
+          avatarUrl: profile.avatar_url || usuario.avatar_url || null,
+          firstName: (profile.nome_completo || usuario.nome_completo || "").split(" ")[0],
+          homeAddress: {
+            logradouro: profile.endereco_logradouro,
+            bairro: profile.endereco_bairro,
+            cidade: profile.endereco_cidade,
+            uf: profile.endereco_uf,
+          },
+          endereco_fixo: profile.endereco_fixo,
+        };
+      }
+    })();
+  }, [usuario]);
+
+  // Calculate stationarySince from local history
+  const calcStationarySince = useCallback((lat: number, lon: number, created_at: string): string | null => {
+    const history = locationHistoryRef.current;
+    let since = created_at;
+    for (const h of history) {
+      if (haversineMeters(lat, lon, h.latitude, h.longitude) <= 100) {
+        since = h.created_at;
+      } else {
+        break;
+      }
+    }
+    return since !== created_at ? since : null;
+  }, []);
+
+  // Apply a location update (from initial fetch or realtime payload)
+  const applyLocation = useCallback((loc: { latitude: number; longitude: number; speed: number | null; precisao_metros: number | null; created_at: string }, isPanic: boolean) => {
+    const profile = profileRef.current;
+    const isHome = checkIsHome(loc.latitude, loc.longitude, profile?.endereco_fixo ?? null);
+    const stationarySince = calcStationarySince(loc.latitude, loc.longitude, loc.created_at);
+
+    // Instantly update coords (geo will follow async)
+    setData(prev => ({
+      latitude: loc.latitude,
+      longitude: loc.longitude,
+      speed: loc.speed,
+      precisao_metros: loc.precisao_metros,
+      created_at: loc.created_at,
+      avatarUrl: profile?.avatarUrl ?? prev?.avatarUrl ?? null,
+      firstName: profile?.firstName ?? prev?.firstName ?? "",
+      panicActive: isPanic,
+      geo: prev?.geo ?? null,
+      addressLoading: true,
+      isHome,
+      homeAddress: profile?.homeAddress ?? prev?.homeAddress ?? null,
+      stationarySince,
+    }));
+
+    // Resolve address asynchronously
+    resolveAddress(loc.latitude, loc.longitude).then(geo => {
+      setData(prev => prev ? { ...prev, geo, addressLoading: false } : prev);
+    });
+  }, [calcStationarySince]);
+
+  // Initial fetch + polling fallback
   const fetchData = useCallback(async () => {
     if (!usuario) return;
     try {
-      const [locRes, locHistoryRes, panicRes, profileRes] = await Promise.all([
+      const [locRes, locHistoryRes, panicRes] = await Promise.all([
         supabase
           .from("localizacoes")
           .select("latitude, longitude, speed, precisao_metros, created_at")
@@ -77,11 +165,6 @@ export function useMapDeviceData(): MapDeviceResult {
           .eq("status", "ativo")
           .limit(1)
           .maybeSingle(),
-        supabase
-          .from("usuarios")
-          .select("avatar_url, nome_completo, endereco_logradouro, endereco_bairro, endereco_cidade, endereco_uf, endereco_fixo")
-          .eq("id", usuario.id)
-          .single(),
       ]);
 
       if (locRes.error) throw locRes.error;
@@ -92,70 +175,17 @@ export function useMapDeviceData(): MapDeviceResult {
         return;
       }
 
-      const loc = locRes.data;
-      const profile = profileRes.data;
-      const firstName = (profile?.nome_completo || usuario.nome_completo || "").split(" ")[0];
-      const avatarUrl = profile?.avatar_url || usuario.avatar_url || null;
-      const panicActive = !!panicRes.data;
+      // Cache location history for incremental stationarySince
+      locationHistoryRef.current = locHistoryRes.data || [];
 
-      // Home address coordinates — we geocode the registered fixed address
-      // For "Em Casa" we compare current coords against endereco_fixo
-      // endereco_fixo stores "lat,lon" or a text address. We'll use a simpler approach:
-      // Check if user has a registered address and reverse-geocode current position
-      const homeAddress = profile ? {
-        logradouro: profile.endereco_logradouro,
-        bairro: profile.endereco_bairro,
-        cidade: profile.endereco_cidade,
-        uf: profile.endereco_uf,
-      } : null;
-
-      // Resolve current address
-      const geo = await resolveAddress(loc.latitude, loc.longitude);
-
-      // Check "Em Casa": if endereco_fixo contains coords "lat,lon" we can compare
-      let isHome = false;
-      if (profile?.endereco_fixo) {
-        const parts = profile.endereco_fixo.split(",").map((s: string) => parseFloat(s.trim()));
-        if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
-          const dist = haversineMeters(loc.latitude, loc.longitude, parts[0], parts[1]);
-          isHome = dist <= 50;
-        }
-      }
-
-      // Calculate stationarySince: walk back through history to find when user arrived at current spot (within 100m)
-      let stationarySince: string | null = loc.created_at;
-      const history = locHistoryRes.data || [];
-      for (const h of history) {
-        const dist = haversineMeters(loc.latitude, loc.longitude, h.latitude, h.longitude);
-        if (dist <= 100) {
-          stationarySince = h.created_at;
-        } else {
-          break;
-        }
-      }
-
-      setData({
-        latitude: loc.latitude,
-        longitude: loc.longitude,
-        speed: loc.speed,
-        precisao_metros: loc.precisao_metros,
-        created_at: loc.created_at,
-        avatarUrl,
-        firstName,
-        panicActive,
-        geo,
-        addressLoading: false,
-        isHome,
-        homeAddress,
-        stationarySince,
-      });
+      applyLocation(locRes.data, !!panicRes.data);
       setError(null);
     } catch {
       setError("Falha ao carregar dados do mapa.");
     } finally {
       setLoading(false);
     }
-  }, [usuario]);
+  }, [usuario, applyLocation]);
 
   useEffect(() => {
     fetchData();
@@ -163,7 +193,7 @@ export function useMapDeviceData(): MapDeviceResult {
     return () => clearInterval(id);
   }, [fetchData]);
 
-  // Realtime: re-fetch on panic or location changes
+  // Realtime: use payload directly for locations, re-fetch for panic changes
   useEffect(() => {
     if (!usuario) return;
 
@@ -177,14 +207,33 @@ export function useMapDeviceData(): MapDeviceResult {
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "localizacoes", filter: `user_id=eq.${usuario.id}` },
-        () => fetchData()
+        (payload) => {
+          const d = payload.new as any;
+          const loc = {
+            latitude: d.latitude as number,
+            longitude: d.longitude as number,
+            speed: d.speed as number | null,
+            precisao_metros: d.precisao_metros as number | null,
+            created_at: d.created_at as string,
+          };
+
+          // Prepend to local history for stationarySince calculation
+          locationHistoryRef.current = [
+            { latitude: loc.latitude, longitude: loc.longitude, created_at: loc.created_at },
+            ...locationHistoryRef.current,
+          ].slice(0, 50);
+
+          // Use current panic state from existing data
+          const isPanic = data?.panicActive ?? false;
+          applyLocation(loc, isPanic);
+        }
       )
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [usuario, fetchData]);
+  }, [usuario, fetchData, applyLocation, data?.panicActive]);
 
   return { data, loading, error };
 }
