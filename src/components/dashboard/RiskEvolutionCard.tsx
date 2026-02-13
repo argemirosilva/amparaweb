@@ -136,12 +136,6 @@ export default function RiskEvolutionCard() {
               <div className="flex items-center gap-1 text-sm text-muted-foreground ml-auto">
                 <TrendIcon className="w-4 h-4" />
                 <span>{assessment.trend}</span>
-                {assessment.trend_percentage != null && (
-                  <span className="font-medium">
-                    {assessment.trend_percentage > 0 ? "+" : ""}
-                    {assessment.trend_percentage.toFixed(0)}%
-                  </span>
-                )}
               </div>
             </div>
 
