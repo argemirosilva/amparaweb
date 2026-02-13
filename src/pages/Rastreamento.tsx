@@ -97,6 +97,7 @@ export default function Rastreamento() {
   const [address, setAddress] = useState<string>("");
   const [timeLeft, setTimeLeft] = useState("");
   const [stationarySince, setStationarySince] = useState<string | null>(null);
+  const [tick, setTick] = useState(0);
   const mapRef = useRef<google.maps.Map | null>(null);
   const markerRef = useRef<google.maps.marker.AdvancedMarkerElement | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -184,6 +185,12 @@ export default function Rastreamento() {
     return () => { supabase.removeChannel(channel); };
   }, [share]);
 
+  // Refresh relative times every 15s
+  useEffect(() => {
+    const id = setInterval(() => setTick(t => t + 1), 15_000);
+    return () => clearInterval(id);
+  }, []);
+
   // Countdown timer
   useEffect(() => {
     if (!share) return;
@@ -268,7 +275,7 @@ export default function Rastreamento() {
       });
     }
     mapRef.current.setCenter(position);
-  }, [location, share, userInfo, address, stationarySince, maps, recentLocs]);
+  }, [location, share, userInfo, address, stationarySince, maps, recentLocs, tick]);
 
   if (status === "loading") {
     return (
