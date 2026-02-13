@@ -6,12 +6,6 @@ import { TrendingUp, TrendingDown, Minus, ShieldAlert, AlertTriangle, Shield, Sh
 import GradientIcon from "@/components/ui/gradient-icon";
 import { useAuth } from "@/contexts/AuthContext";
 import { callWebApi } from "@/services/webApiService";
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart";
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid } from "recharts";
 
 type WindowDays = 7 | 15 | 30;
 
@@ -24,11 +18,6 @@ interface Assessment {
   resumo_tecnico: string | null;
   period_start: string;
   period_end: string;
-}
-
-interface HistoryPoint {
-  period_end: string;
-  risk_score: number;
 }
 
 const levelConfig: Record<string, { color: string; icon: typeof Shield; className: string }> = {
@@ -49,7 +38,6 @@ export default function RiskEvolutionCard() {
   const { sessionToken } = useAuth();
   const [window, setWindow] = useState<WindowDays>(7);
   const [assessment, setAssessment] = useState<Assessment | null>(null);
-  const [history, setHistory] = useState<HistoryPoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
@@ -59,15 +47,9 @@ export default function RiskEvolutionCard() {
     setLoading(true);
     setError(null);
     try {
-      const [assessRes, histRes] = await Promise.all([
-        callWebApi("getRiskAssessment", sessionToken, { window_days: w }),
-        callWebApi("getRiskHistory", sessionToken, { window_days: w, limit: 30 }),
-      ]);
+      const assessRes = await callWebApi("getRiskAssessment", sessionToken, { window_days: w });
       if (assessRes.ok && assessRes.data.assessment) {
         setAssessment(assessRes.data.assessment);
-      }
-      if (histRes.ok && histRes.data.history) {
-        setHistory(histRes.data.history);
       }
     } catch {
       setError("Erro ao carregar avaliação de risco");
@@ -88,14 +70,15 @@ export default function RiskEvolutionCard() {
   const TrendIcon = assessment ? (trendIcons[assessment.trend as keyof typeof trendIcons] || Minus) : Minus;
   const LevelIcon = level.icon;
 
-  const chartConfig = {
-    risk_score: { label: "Risco", color: level.color },
-  };
+  const trendColor = assessment?.trend === "Subindo"
+    ? "text-orange-500"
+    : assessment?.trend === "Reduzindo"
+      ? "text-green-500"
+      : "text-muted-foreground";
 
-  const chartData = history.map((h) => ({
-    date: h.period_end.slice(5), // MM-DD
-    risk_score: h.risk_score,
-  }));
+  const trendPulse = assessment?.trend === "Subindo" || assessment?.trend === "Reduzindo"
+    ? "animate-pulse"
+    : "";
 
   return (
     <div className="ampara-card">
@@ -133,36 +116,11 @@ export default function RiskEvolutionCard() {
               <Badge className={level.className}>
                 {assessment.risk_level}
               </Badge>
-              <div className="flex items-center gap-1 text-sm text-muted-foreground ml-auto">
+              <div className={`flex items-center gap-1 text-sm ml-auto ${trendColor} ${trendPulse}`}>
                 <TrendIcon className="w-4 h-4" />
-                <span>{assessment.trend}</span>
+                <span className="font-medium">{assessment.trend}</span>
               </div>
             </div>
-
-            {/* Chart */}
-            {chartData.length > 1 && (
-              <ChartContainer config={chartConfig} className="aspect-[6/1] w-full">
-                <AreaChart data={chartData}>
-                  <defs>
-                    <linearGradient id="riskGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={level.color} stopOpacity={0.3} />
-                      <stop offset="95%" stopColor={level.color} stopOpacity={0.05} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="date" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
-                  <YAxis domain={[0, 100]} tick={{ fontSize: 10 }} tickLine={false} axisLine={false} width={28} />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Area
-                    type="monotone"
-                    dataKey="risk_score"
-                    stroke={level.color}
-                    strokeWidth={2}
-                    fill="url(#riskGrad)"
-                  />
-                </AreaChart>
-              </ChartContainer>
-            )}
 
             {/* Detalhes expansíveis */}
             <button
