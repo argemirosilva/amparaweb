@@ -429,7 +429,7 @@ export default function Rastreamento() {
               </div>
 
               {/* Info column */}
-              <div className="flex-1 px-4 py-2.5 flex flex-col justify-center gap-1">
+              <div className="flex-1 min-w-0 px-4 py-2.5 flex flex-col justify-center gap-1">
                 {/* Movement status */}
                 <div className="flex items-center gap-2">
                   <span className="text-sm">{isPanic ? "🚨" : movement.emoji}</span>
@@ -440,11 +440,11 @@ export default function Rastreamento() {
 
                 {/* Address */}
                 {address && (
-                  <p className="text-[11px] text-zinc-400 truncate leading-tight">{address}</p>
+                  <p className="text-[11px] text-zinc-400 leading-snug break-words">{address}</p>
                 )}
 
                 {/* Meta row */}
-                <div className="flex items-center gap-3 mt-0.5">
+                <div className="flex items-center gap-3 flex-wrap">
                   {location.precisao_metros != null && (
                     <span className="flex items-center gap-1 text-[10px] text-zinc-500">
                       <Signal className="w-3 h-3" />

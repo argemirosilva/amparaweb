@@ -222,15 +222,15 @@ export default function Mapa() {
                 </div>
 
                 {/* Info */}
-                <div className="flex-1 px-3 py-2 flex flex-col justify-center gap-0.5">
+                <div className="flex-1 min-w-0 px-3 py-2.5 flex flex-col justify-center gap-1">
                   <div className="flex items-center gap-2">
-                    <span className={`inline-block w-1.5 h-1.5 rounded-full ${isRecent ? "bg-green-400 animate-pulse" : "bg-zinc-500"}`} />
+                    <span className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${isRecent ? "bg-green-400 animate-pulse" : "bg-zinc-500"}`} />
                     <span className="text-xs font-semibold text-white">
                       {movementEmoji} {movementLabel}
                     </span>
                   </div>
-                  <p className="text-[10px] text-zinc-400 truncate leading-tight">{address}</p>
-                  <div className="flex items-center gap-2.5 mt-0.5">
+                  <p className="text-[10px] text-zinc-400 leading-snug break-words">{address}</p>
+                  <div className="flex items-center gap-2.5 flex-wrap">
                     {data.precisao_metros != null && (
                       <span className="flex items-center gap-0.5 text-[9px] text-zinc-500">
                         <Signal className="w-2.5 h-2.5" />
