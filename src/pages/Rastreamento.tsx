@@ -191,6 +191,10 @@ export default function Rastreamento() {
     if (status === "expired") {
       if (markerRef.current) { markerRef.current.map = null; markerRef.current = null; }
       mapRef.current = null;
+      // Force clear the map container DOM to remove Google Maps tiles
+      if (containerRef.current) {
+        containerRef.current.innerHTML = "";
+      }
     }
   }, [status]);
 
