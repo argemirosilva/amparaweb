@@ -45,7 +45,7 @@ const App = () => (
             <Route path="/suporte" element={<Suporte />} />
             <Route path="/privacidade" element={<Privacidade />} />
             <Route path="/doc-api" element={<DocApi />} />
-            <Route path="/r/:codigo" element={<Rastreamento />} />
+            <Route path="/:codigo" element={<Rastreamento />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
