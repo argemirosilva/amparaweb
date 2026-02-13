@@ -5,7 +5,6 @@ import {
   Mic,
   UserCircle,
   Settings,
-  LifeBuoy,
 } from "lucide-react";
 
 const items = [
@@ -14,7 +13,6 @@ const items = [
   { title: "Gravações", url: "/gravacoes", icon: Mic },
   { title: "Perfil", url: "/perfil", icon: UserCircle },
   { title: "Config", url: "/configuracoes", icon: Settings },
-  { title: "Suporte", url: "/suporte", icon: LifeBuoy },
 ];
 
 export default function BottomNav() {

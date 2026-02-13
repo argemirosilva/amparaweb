@@ -8,7 +8,6 @@ import {
   UserCircle,
   Settings,
   LogOut,
-  LifeBuoy,
 } from "lucide-react";
 import {
   Sidebar,
@@ -28,7 +27,6 @@ const menuItems = [
   { title: "Gravações", url: "/gravacoes", icon: Mic },
   { title: "Perfil", url: "/perfil", icon: UserCircle },
   { title: "Configurações", url: "/configuracoes", icon: Settings },
-  { title: "Suporte", url: "/suporte", icon: LifeBuoy },
 ];
 
 export default function AppSidebar() {
