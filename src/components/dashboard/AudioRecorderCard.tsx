@@ -137,16 +137,9 @@ export default function AudioRecorderCard({ onUploaded }: AudioRecorderCardProps
         stream.getTracks().forEach((t) => t.stop());
         const blob = new Blob(chunksRef.current, { type: mimeType });
         const duration = elapsed;
-        setConverting(true);
-        try {
-          const mp3Blob = await blobToMp3(blob);
-          setConverting(false);
-          await uploadBlob(mp3Blob, "gravacao.mp3", "audio/mpeg", duration);
-        } catch (err) {
-          console.error("Audio to MP3 conversion error:", err);
-          setConverting(false);
-          toast.error("Erro ao converter áudio para MP3");
-        }
+        // Upload original OGG/WebM directly — backend handles these formats
+        const ext = mimeType.includes("ogg") ? "ogg" : "webm";
+        await uploadBlob(blob, `gravacao.${ext}`, mimeType.split(";")[0], duration);
       };
 
       mediaRecorder.start(1000);
