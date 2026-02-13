@@ -5,6 +5,17 @@ import { useMapDeviceData } from "@/hooks/useMapDeviceData";
 import { useMovementStatus } from "@/hooks/useMovementStatus";
 import { Loader2, MapPin } from "lucide-react";
 
+function formatRelativeTime(isoDate: string): string {
+  const diff = Date.now() - new Date(isoDate).getTime();
+  const mins = Math.floor(diff / 60_000);
+  if (mins < 1) return "agora";
+  if (mins < 60) return `${mins}min`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h${mins % 60 > 0 ? `${mins % 60}min` : ""}`;
+  const days = Math.floor(hours / 24);
+  return `${days}d`;
+}
+
 function buildMarkerHtml(
   avatarUrl: string | null,
   firstName: string,
@@ -13,6 +24,8 @@ function buildMarkerHtml(
   panicActive: boolean,
   recentLocation: boolean,
   address: string,
+  stationarySince: string | null,
+  lastUpdate: string,
 ): string {
   const imgSrc = avatarUrl || "";
   const imgHtml = imgSrc
@@ -27,6 +40,12 @@ function buildMarkerHtml(
   const panicBadge = panicActive
     ? `<div class="ampara-panic-badge">!</div>`
     : "";
+
+  const stationaryText = stationarySince
+    ? `📍 Neste local há ${formatRelativeTime(stationarySince)}`
+    : "";
+  const updateText = `🕐 Atualizado há ${formatRelativeTime(lastUpdate)}`;
+
   return `
     <div class="ampara-marker ${pulseClass}">
       <div class="ampara-marker-ring-wrapper">
@@ -37,6 +56,8 @@ function buildMarkerHtml(
         <span class="ampara-marker-name">${firstName}</span>
         <span class="ampara-marker-status">${movementEmoji} ${movementLabel}</span>
         <span class="ampara-marker-address">${address}</span>
+        ${stationaryText ? `<span class="ampara-marker-time">${stationaryText}</span>` : ""}
+        <span class="ampara-marker-time">${updateText}</span>
       </div>
     </div>
   `;
@@ -157,6 +178,12 @@ function injectStyles() {
       word-wrap: break-word;
       white-space: normal;
     }
+    .ampara-marker-time {
+      color: hsl(0 0% 55%);
+      font-size: 9px;
+      line-height: 1.2;
+      text-align: center;
+    }
     /* Hide Leaflet attribution & logo */
     .leaflet-control-attribution,
     .leaflet-control-attribution a {
@@ -218,6 +245,8 @@ export default function Mapa() {
       data.panicActive,
       recentLocation,
       address,
+      data.stationarySince,
+      data.created_at,
     );
 
     const icon = L.divIcon({
