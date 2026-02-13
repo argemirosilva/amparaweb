@@ -113,17 +113,17 @@ export default function MonitoringStatusCard() {
             </p>
           )}
           {state?.type === "next" && (
-            <p className="text-xs font-medium text-amber-600">
+            <p className="text-xs font-medium text-blue-600">
               Inicia o monitoramento às {state.inicio}
             </p>
           )}
           {state?.type === "done_today" && (
-            <p className="text-xs font-medium text-muted-foreground">
+            <p className="text-xs font-medium text-blue-600">
               Sem mais períodos para hoje
             </p>
           )}
           {state?.type === "outside" && (
-            <p className="text-xs font-medium text-muted-foreground">
+            <p className="text-xs font-medium text-blue-600">
               Fora do período de monitoramento
             </p>
           )}
