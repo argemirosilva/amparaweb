@@ -27,6 +27,16 @@ function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
+/** Estimate speed (m/s) from two location points when GPS speed is null */
+function estimateSpeed(locs: LocationData[]): number | null {
+  if (locs.length < 2) return null;
+  const a = locs[0], b = locs[1];
+  const dist = haversineDistance(a.latitude, a.longitude, b.latitude, b.longitude);
+  const timeDiffSec = (new Date(a.created_at).getTime() - new Date(b.created_at).getTime()) / 1000;
+  if (timeDiffSec <= 0) return null;
+  return dist / timeDiffSec; // m/s
+}
+
 // Inject styles once
 const STYLE_ID = "ampara-gmap-marker-styles";
 function injectStyles() {
@@ -81,6 +91,7 @@ export default function Rastreamento() {
   const { codigo } = useParams<{ codigo: string }>();
   const [share, setShare] = useState<ShareData | null>(null);
   const [location, setLocation] = useState<LocationData | null>(null);
+  const [recentLocs, setRecentLocs] = useState<LocationData[]>([]);
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
   const [status, setStatus] = useState<"loading" | "active" | "expired" | "not_found">("loading");
   const [address, setAddress] = useState<string>("");
@@ -127,6 +138,7 @@ export default function Rastreamento() {
       if (locs && locs.length > 0) {
         const latest = locs[0];
         setLocation(latest);
+        setRecentLocs(locs.slice(0, 5));
         resolveAddress(latest.latitude, latest.longitude).then(geo => {
           setAddress(geo?.display_address || "Localizando...");
         });
@@ -148,6 +160,7 @@ export default function Rastreamento() {
         const d = payload.new as any;
         const loc = { latitude: d.latitude, longitude: d.longitude, precisao_metros: d.precisao_metros, speed: d.speed, created_at: d.created_at };
         setLocation(loc);
+        setRecentLocs(prev => [loc, ...prev].slice(0, 5));
         resolveAddress(loc.latitude, loc.longitude).then(geo => { setAddress(geo?.display_address || "Localizando..."); });
       })
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "compartilhamento_gps", filter: `id=eq.${share.id}` }, (payload) => {
@@ -221,7 +234,8 @@ export default function Rastreamento() {
       : `<div class="ampara-marker-img ampara-marker-placeholder">${firstName.charAt(0).toUpperCase() || "?"}</div>`;
     const pulseClass = isPanic ? "ampara-marker-panic" : recentLocation ? "ampara-marker-active" : "";
     const panicBadge = isPanic ? `<div class="ampara-panic-badge">!</div>` : "";
-    const movement = classifyMovement(location.speed);
+    const effectiveSpeed = location.speed ?? estimateSpeed(recentLocs);
+    const movement = classifyMovement(effectiveSpeed);
     const stationaryText = stationarySince ? `📍 Neste local há ${formatRelativeTime(stationarySince)}` : "";
     const updateText = `🕐 Atualizado há ${formatRelativeTime(location.created_at)}`;
 
@@ -254,7 +268,7 @@ export default function Rastreamento() {
       });
     }
     mapRef.current.setCenter(position);
-  }, [location, share, userInfo, address, stationarySince, maps]);
+  }, [location, share, userInfo, address, stationarySince, maps, recentLocs]);
 
   if (status === "loading") {
     return (
@@ -330,7 +344,8 @@ export default function Rastreamento() {
               </div>
               <div className="text-right">
                 {(() => {
-                  const movement = classifyMovement(location.speed);
+                  const effectiveSpeed = location.speed ?? estimateSpeed(recentLocs);
+                  const movement = classifyMovement(effectiveSpeed);
                   return (
                     <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
                       {movement.emoji} {movement.label}
