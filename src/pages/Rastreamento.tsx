@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { resolveAddress } from "@/services/reverseGeocodeService";
 import amparaIcon from "@/assets/ampara-icon-transparent.png";
 
 interface ShareData {
@@ -31,6 +32,7 @@ export default function Rastreamento() {
   const [location, setLocation] = useState<LocationData | null>(null);
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
   const [status, setStatus] = useState<"loading" | "active" | "expired" | "not_found">("loading");
+  const [address, setAddress] = useState<string>("");
   const [timeLeft, setTimeLeft] = useState("");
   const mapRef = useRef<any>(null);
   const markerRef = useRef<any>(null);
@@ -77,7 +79,12 @@ export default function Rastreamento() {
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
-      if (data) setLocation(data);
+      if (data) {
+        setLocation(data);
+        resolveAddress(data.latitude, data.longitude).then(geo => {
+          setAddress(geo?.display_address || "Localizando...");
+        });
+      }
     };
     fetchLocation();
 
@@ -89,7 +96,11 @@ export default function Rastreamento() {
         { event: "INSERT", schema: "public", table: "localizacoes", filter: `user_id=eq.${share.user_id}` },
         (payload) => {
           const d = payload.new as any;
-          setLocation({ latitude: d.latitude, longitude: d.longitude, precisao_metros: d.precisao_metros, created_at: d.created_at });
+          const loc = { latitude: d.latitude, longitude: d.longitude, precisao_metros: d.precisao_metros, created_at: d.created_at };
+          setLocation(loc);
+          resolveAddress(loc.latitude, loc.longitude).then(geo => {
+            setAddress(geo?.display_address || "Localizando...");
+          });
         }
       )
       .on(
@@ -232,6 +243,7 @@ export default function Rastreamento() {
           <div class="ampara-marker-info">
             <span class="ampara-marker-name">${firstName}</span>
             <span class="ampara-marker-status">${isPanic ? "🚨 Pânico" : "📍 Ao vivo"}</span>
+            ${address ? `<span class="ampara-marker-address">${address}</span>` : ""}
           </div>
         </div>
       `;
@@ -253,7 +265,7 @@ export default function Rastreamento() {
     };
 
     initMap();
-  }, [location, share, userInfo]);
+  }, [location, share, userInfo, address]);
 
   if (status === "loading") {
     return (
