@@ -176,8 +176,21 @@ export default function Rastreamento() {
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "localizacoes", filter: `user_id=eq.${share.user_id}` }, (payload) => {
         const d = payload.new as any;
         const loc: LocationData = { latitude: d.latitude, longitude: d.longitude, precisao_metros: d.precisao_metros, speed: d.speed, heading: d.heading, created_at: d.created_at };
+        // Update position instantly
         setLocation(loc);
-        setRecentLocs(prev => [loc, ...prev].slice(0, 5));
+        setRecentLocs(prev => {
+          const updated = [loc, ...prev].slice(0, 5);
+          // Recalculate stationarySince incrementally
+          let since = loc.created_at;
+          for (let i = 1; i < updated.length; i++) {
+            if (haversineDistance(loc.latitude, loc.longitude, updated[i].latitude, updated[i].longitude) <= 100) {
+              since = updated[i].created_at;
+            } else break;
+          }
+          setStationarySince(since !== loc.created_at ? since : null);
+          return updated;
+        });
+        // Resolve address asynchronously (doesn't block marker movement)
         resolveAddress(loc.latitude, loc.longitude).then(geo => { setAddress(geo?.display_address || "Localizando..."); });
       })
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "compartilhamento_gps", filter: `id=eq.${share.id}` }, (payload) => {
@@ -201,9 +214,9 @@ export default function Rastreamento() {
     return () => { supabase.removeChannel(channel); };
   }, [share]);
 
-  // Refresh relative times every 5s (faster for GPS feel)
+  // Refresh relative times every 3s for GPS feel
   useEffect(() => {
-    const id = setInterval(() => setTick(t => t + 1), 5_000);
+    const id = setInterval(() => setTick(t => t + 1), 3_000);
     return () => clearInterval(id);
   }, []);
 

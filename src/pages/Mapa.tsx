@@ -66,9 +66,9 @@ export default function Mapa() {
   const [tick, setTick] = useState(0);
   const [following, setFollowing] = useState(true);
 
-  // Refresh every 5s for GPS feel
+  // Refresh every 3s for GPS feel
   useEffect(() => {
-    const id = setInterval(() => setTick(t => t + 1), 5_000);
+    const id = setInterval(() => setTick(t => t + 1), 3_000);
     return () => clearInterval(id);
   }, []);
 
