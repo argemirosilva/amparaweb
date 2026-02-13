@@ -282,28 +282,32 @@ export default function Rastreamento() {
 
   if (status === "loading") {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-zinc-950 text-white">
-        <div className="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   if (status === "not_found") {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-zinc-950 text-white gap-4 p-6">
-        <img src={amparaIcon} alt="Ampara" className="w-16 h-16 opacity-60" />
-        <h1 className="text-xl font-bold">Link não encontrado</h1>
-        <p className="text-sm text-zinc-400 text-center">Este código de rastreamento não existe ou foi removido.</p>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background p-6">
+        <div className="rounded-2xl bg-card border border-border shadow-sm p-8 flex flex-col items-center gap-4 max-w-sm w-full">
+          <img src={amparaIcon} alt="Ampara" className="w-14 h-14 opacity-50" />
+          <h1 className="text-lg font-bold text-foreground">Link não encontrado</h1>
+          <p className="text-sm text-muted-foreground text-center">Este código de rastreamento não existe ou foi removido.</p>
+        </div>
       </div>
     );
   }
 
   if (status === "expired") {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-zinc-950 text-white gap-4 p-6">
-        <img src={amparaIcon} alt="Ampara" className="w-16 h-16 opacity-60" />
-        <h1 className="text-xl font-bold">Rastreamento encerrado</h1>
-        <p className="text-sm text-zinc-400 text-center">O compartilhamento de localização expirou ou foi desativado.</p>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background p-6">
+        <div className="rounded-2xl bg-card border border-border shadow-sm p-8 flex flex-col items-center gap-4 max-w-sm w-full">
+          <img src={amparaIcon} alt="Ampara" className="w-14 h-14 opacity-50" />
+          <h1 className="text-lg font-bold text-foreground">Rastreamento encerrado</h1>
+          <p className="text-sm text-muted-foreground text-center">O compartilhamento de localização expirou ou foi desativado.</p>
+        </div>
       </div>
     );
   }
@@ -311,15 +315,15 @@ export default function Rastreamento() {
   const isPanic = share?.tipo === "panico";
 
   return (
-    <div className="relative min-h-screen bg-zinc-950 text-white">
+    <div className="relative min-h-screen bg-background text-foreground">
       {/* Map */}
       <div ref={containerRef} className="absolute inset-0 z-0" />
 
       {/* Top bar */}
       <div className="absolute top-0 left-0 right-0 z-10 p-4">
-        <div className={`flex items-center justify-between rounded-xl px-4 py-3 backdrop-blur-md ${isPanic ? "bg-red-900/80" : "bg-zinc-900/80"}`}>
+        <div className={`flex items-center justify-between rounded-2xl px-4 py-3 backdrop-blur-md border border-border/50 shadow-sm ${isPanic ? "bg-destructive/80" : "bg-card/85"}`}>
           <div className="flex items-center gap-3 min-w-0">
-            <img src={amparaIcon} alt="Ampara" className="w-8 h-8 shrink-0" />
+            <img src={amparaIcon} alt="Ampara" className="w-8 h-8 shrink-0 opacity-70" />
             {userInfo && (
               <div className="shrink-0 h-9 w-9 rounded-full p-[2px]" style={{ background: "linear-gradient(135deg, hsl(280 70% 50%), hsl(320 80% 55%))" }}>
                 {userInfo.avatar_url ? (
@@ -332,15 +336,15 @@ export default function Rastreamento() {
               </div>
             )}
             <div className="min-w-0">
-              <p className="text-xs font-medium opacity-70 truncate">
+              <p className="text-xs font-medium text-foreground/70 truncate">
                 {userInfo ? `${userInfo.nome_completo.split(" ")[0]} · ` : ""}{isPanic ? "🚨 Pânico" : "📍 Ao vivo"}
               </p>
-              <p className="text-[10px] opacity-50">Código: {share?.codigo}</p>
+              <p className="text-[10px] text-muted-foreground">Código: {share?.codigo}</p>
             </div>
           </div>
           <div className="text-right">
-            <p className="text-lg font-mono font-bold">{timeLeft}</p>
-            <p className="text-[10px] opacity-50">restante</p>
+            <p className="text-lg font-mono font-bold text-foreground">{timeLeft}</p>
+            <p className="text-[10px] text-muted-foreground">restante</p>
           </div>
         </div>
       </div>
@@ -348,13 +352,13 @@ export default function Rastreamento() {
       {/* Bottom info */}
       {location && (
         <div className="absolute bottom-6 left-4 right-4 z-10">
-          <div className="rounded-xl bg-zinc-900/80 backdrop-blur-md px-4 py-3">
-            <p className="text-xs text-zinc-400">Última atualização</p>
-            <p className="text-sm font-medium">
+          <div className="rounded-2xl bg-card/85 backdrop-blur-md border border-border/50 shadow-sm px-4 py-3">
+            <p className="text-xs text-muted-foreground">Última atualização</p>
+            <p className="text-sm font-medium text-foreground">
               {new Date(location.created_at).toLocaleTimeString("pt-BR")}
             </p>
             {location.precisao_metros && (
-              <p className="text-[10px] text-zinc-500 mt-0.5">
+              <p className="text-[10px] text-muted-foreground mt-0.5">
                 Precisão: ~{Math.round(location.precisao_metros)}m
               </p>
             )}
