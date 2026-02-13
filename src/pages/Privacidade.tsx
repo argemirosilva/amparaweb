@@ -25,8 +25,8 @@ export default function Privacidade() {
           <section className="space-y-2">
             <h2 className="text-lg font-semibold text-foreground">1. Introdução</h2>
             <p>
-              O <strong>AMPARA</strong> ("nós", "nosso") é um aplicativo voltado à proteção de mulheres em situação de vulnerabilidade.
-              Esta Política de Privacidade descreve como coletamos, utilizamos, armazenamos e protegemos as informações pessoais dos nossos usuários ("você").
+              O <strong>AMPARA</strong> é um aplicativo voltado à proteção de mulheres em situação de vulnerabilidade.
+              Esta Política de Privacidade descreve como coletamos, utilizamos, armazenamos e protegemos as informações pessoais dos nossos usuários.
             </p>
           </section>
 
