@@ -61,8 +61,8 @@ function injectStyles() {
       display: inline-flex;
     }
     .ampara-marker-ring {
-      width: 52px;
-      height: 52px;
+      width: 72px;
+      height: 72px;
       border-radius: 50%;
       padding: 3px;
       background: linear-gradient(135deg, hsl(280 70% 50%), hsl(320 80% 55%));
@@ -110,10 +110,10 @@ function injectStyles() {
       50% { box-shadow: 0 0 0 14px hsla(0, 80%, 50%, 0); }
     }
     .ampara-marker-img {
-      width: 44px;
-      height: 44px;
-      min-width: 44px;
-      min-height: 44px;
+      width: 64px;
+      height: 64px;
+      min-width: 64px;
+      min-height: 64px;
       border-radius: 50%;
       object-fit: cover;
       aspect-ratio: 1;
@@ -131,29 +131,29 @@ function injectStyles() {
       display: flex;
       flex-direction: column;
       align-items: center;
-      background: hsl(0 0% 10% / 0.85);
-      backdrop-filter: blur(4px);
-      border-radius: 8px;
-      padding: 3px 8px;
-      max-width: 200px;
+      background: hsl(0 0% 10% / 0.88);
+      backdrop-filter: blur(6px);
+      border-radius: 10px;
+      padding: 5px 12px;
+      max-width: 220px;
     }
     .ampara-marker-name {
       color: white;
-      font-size: 11px;
+      font-size: 13px;
       font-weight: 700;
       line-height: 1.2;
     }
     .ampara-marker-status {
       color: hsl(0 0% 80%);
-      font-size: 10px;
+      font-size: 11px;
       line-height: 1.2;
     }
     .ampara-marker-address {
       color: hsl(0 0% 65%);
-      font-size: 9px;
+      font-size: 10px;
       line-height: 1.3;
       text-align: center;
-      max-width: 190px;
+      max-width: 210px;
       word-wrap: break-word;
       white-space: normal;
     }
@@ -223,8 +223,8 @@ export default function Mapa() {
     const icon = L.divIcon({
       html,
       className: "",
-      iconSize: [200, 160],
-      iconAnchor: [100, 80],
+      iconSize: [220, 180],
+      iconAnchor: [110, 90],
     });
 
     if (markerRef.current) {
