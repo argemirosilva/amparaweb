@@ -314,6 +314,7 @@ export default function GravacoesPage() {
                       <GravacaoExpandedContent
                         gravacao={g}
                         sessionToken={sessionToken!}
+                        onCollapse={() => setExpanded(null)}
                       />
                     )}
                   </div>

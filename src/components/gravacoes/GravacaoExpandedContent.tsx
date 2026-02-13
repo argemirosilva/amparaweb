@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { callWebApi } from "@/services/webApiService";
 import { Button } from "@/components/ui/button";
 import { Download, FileText, Clock } from "lucide-react";
@@ -50,12 +50,51 @@ function resolveRiscoColor(nivel: string | null): string | null {
 export default function GravacaoExpandedContent({
   gravacao,
   sessionToken,
+  onCollapse,
 }: {
   gravacao: Gravacao;
   sessionToken: string;
+  onCollapse?: () => void;
 }) {
   const [analise, setAnalise] = useState<AnaliseData | null>(null);
   const [loadedAnalise, setLoadedAnalise] = useState(false);
+  const isPlayingRef = useRef(false);
+  const isInteractingRef = useRef(false);
+  const collapseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const resetCollapseTimer = useCallback(() => {
+    if (collapseTimerRef.current) clearTimeout(collapseTimerRef.current);
+    collapseTimerRef.current = setTimeout(() => {
+      if (!isPlayingRef.current && !isInteractingRef.current) {
+        onCollapse?.();
+      }
+    }, 5000);
+  }, [onCollapse]);
+
+  // Start timer on mount
+  useEffect(() => {
+    resetCollapseTimer();
+    return () => { if (collapseTimerRef.current) clearTimeout(collapseTimerRef.current); };
+  }, [resetCollapseTimer]);
+
+  const handlePlayingChange = useCallback((isPlaying: boolean) => {
+    isPlayingRef.current = isPlaying;
+    if (isPlaying) {
+      if (collapseTimerRef.current) clearTimeout(collapseTimerRef.current);
+    } else {
+      resetCollapseTimer();
+    }
+  }, [resetCollapseTimer]);
+
+  const handleInteractionStart = useCallback(() => {
+    isInteractingRef.current = true;
+    if (collapseTimerRef.current) clearTimeout(collapseTimerRef.current);
+  }, []);
+
+  const handleInteractionEnd = useCallback(() => {
+    isInteractingRef.current = false;
+    resetCollapseTimer();
+  }, [resetCollapseTimer]);
 
   // Fetch analysis when component mounts (for processado recordings)
   useEffect(() => {
@@ -144,6 +183,7 @@ export default function GravacaoExpandedContent({
           markers={markers}
           accentCssVar={cssVar}
           durationHint={gravacao.duracao_segundos || undefined}
+          onPlayingChange={handlePlayingChange}
         />
       ) : (
         <p className="text-xs text-muted-foreground italic">Áudio não disponível</p>
@@ -151,7 +191,13 @@ export default function GravacaoExpandedContent({
 
       {/* Transcription with highlights */}
       {gravacao.transcricao && (
-        <details className="rounded-lg border border-border/50 overflow-hidden group">
+        <details
+          className="rounded-lg border border-border/50 overflow-hidden group"
+          onToggle={(e) => {
+            if ((e.target as HTMLDetailsElement).open) handleInteractionStart();
+            else handleInteractionEnd();
+          }}
+        >
           <summary className="flex items-center justify-between px-3 py-2 bg-muted/30 cursor-pointer select-none hover:bg-muted/50 transition-colors">
             <div className="flex items-center gap-1.5">
               <FileText className="w-3 h-3 text-muted-foreground" />
