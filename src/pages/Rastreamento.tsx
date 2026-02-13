@@ -110,8 +110,21 @@ export default function Rastreamento() {
           const updated = payload.new as any;
           if (!updated.ativo) setStatus("expired");
         }
-      )
-      .subscribe();
+      );
+
+    // If linked to a panic alert, also listen for alert status changes
+    if (share.alerta_id) {
+      channel.on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "alertas_panico", filter: `id=eq.${share.alerta_id}` },
+        (payload) => {
+          const updated = payload.new as any;
+          if (updated.status !== "ativo") setStatus("expired");
+        }
+      );
+    }
+
+    channel.subscribe();
 
     return () => { supabase.removeChannel(channel); };
   }, [share]);

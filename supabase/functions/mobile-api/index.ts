@@ -1162,6 +1162,13 @@ async function handleCancelarPanico(
     },
   });
 
+  // Deactivate GPS sharing linked to this alert
+  await supabase
+    .from("compartilhamento_gps")
+    .update({ ativo: false })
+    .eq("user_id", user.id)
+    .eq("alerta_id", alerta.id);
+
   // Fire-and-forget: notify guardians that panic was resolved
   fireWhatsAppResolved(user.id);
 
