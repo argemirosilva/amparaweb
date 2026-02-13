@@ -1,6 +1,8 @@
 /// <reference types="google.maps" />
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 let cachedKey: string | null = null;
 let fetchPromise: Promise<string | null> | null = null;
@@ -11,15 +13,22 @@ async function fetchGoogleMapsKey(): Promise<string | null> {
 
   fetchPromise = (async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return null;
+      const sessionToken = localStorage.getItem("ampara_session_token");
+      if (!sessionToken) return null;
 
-      const res = await supabase.functions.invoke("google-maps-key", {
-        headers: { Authorization: `Bearer ${session.access_token}` },
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/google-maps-key`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: SUPABASE_KEY,
+        },
+        body: JSON.stringify({ session_token: sessionToken }),
       });
 
-      if (res.error || !res.data?.key) return null;
-      cachedKey = res.data.key;
+      if (!res.ok) return null;
+      const data = await res.json();
+      if (!data?.key) return null;
+      cachedKey = data.key;
       return cachedKey;
     } catch {
       return null;
@@ -85,7 +94,7 @@ export function useGoogleMaps() {
   return { maps, loading, error };
 }
 
-// Fetch key for public pages (no auth required) — returns the key from a URL param or public endpoint
+// Public version for tracking page (no auth needed)
 export function useGoogleMapsPublic() {
   const [maps, setMaps] = useState<typeof google.maps | null>(
     typeof google !== "undefined" && google.maps ? google.maps : null
@@ -98,8 +107,6 @@ export function useGoogleMapsPublic() {
 
     let cancelled = false;
     (async () => {
-      // For the tracking page, we fetch the key without auth via a query param approach
-      // We'll use a separate public endpoint
       const key = await fetchGoogleMapsKeyPublic();
       if (cancelled) return;
       if (!key) {
@@ -124,9 +131,17 @@ export function useGoogleMapsPublic() {
 async function fetchGoogleMapsKeyPublic(): Promise<string | null> {
   if (cachedKey) return cachedKey;
   try {
-    const res = await supabase.functions.invoke("google-maps-key-public");
-    if (res.error || !res.data?.key) return null;
-    cachedKey = res.data.key;
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/google-maps-key-public`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: SUPABASE_KEY,
+      },
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!data?.key) return null;
+    cachedKey = data.key;
     return cachedKey;
   } catch {
     return null;
