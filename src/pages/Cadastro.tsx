@@ -68,7 +68,7 @@ export default function CadastroPage() {
   };
 
   return (
-    <AuthLayout title="Criar conta" subtitle="Preencha seus dados para começar">
+    <AuthLayout title="" subtitle="">
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
           <div className="rounded-xl bg-destructive/10 border border-destructive/20 p-3 text-sm text-destructive">
