@@ -18,6 +18,7 @@ import NotFound from "./pages/NotFound";
 import DocApi from "./pages/DocApi";
 import Rastreamento from "./pages/Rastreamento";
 import Suporte from "./pages/Suporte";
+import Privacidade from "./pages/Privacidade";
 
 const queryClient = new QueryClient();
 
@@ -42,6 +43,7 @@ const App = () => (
               <Route path="/configuracoes" element={<Configuracoes />} />
             </Route>
             <Route path="/suporte" element={<Suporte />} />
+            <Route path="/privacidade" element={<Privacidade />} />
             <Route path="/doc-api" element={<DocApi />} />
             <Route path="/r/:codigo" element={<Rastreamento />} />
             <Route path="*" element={<NotFound />} />
