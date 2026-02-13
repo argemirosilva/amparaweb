@@ -323,8 +323,22 @@ export default function Rastreamento() {
       {location && (
         <div className="absolute bottom-6 left-4 right-4 z-10">
           <div className="rounded-2xl bg-card/85 backdrop-blur-md border border-border/50 shadow-sm px-4 py-3">
-            <p className="text-xs text-muted-foreground">Última atualização</p>
-            <p className="text-sm font-medium text-foreground">{new Date(location.created_at).toLocaleTimeString("pt-BR")}</p>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-muted-foreground">Última atualização</p>
+                <p className="text-sm font-medium text-foreground">{new Date(location.created_at).toLocaleTimeString("pt-BR")}</p>
+              </div>
+              <div className="text-right">
+                {(() => {
+                  const movement = classifyMovement(location.speed);
+                  return (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
+                      {movement.emoji} {movement.label}
+                    </span>
+                  );
+                })()}
+              </div>
+            </div>
             {location.precisao_metros && (
               <p className="text-[10px] text-muted-foreground mt-0.5">Precisão: ~{Math.round(location.precisao_metros)}m</p>
             )}
