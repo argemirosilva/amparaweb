@@ -8,7 +8,7 @@ interface AuthLayoutProps {
 
 export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-[100dvh]">
       <div className="flex-1 flex items-center justify-center p-4 sm:p-12 bg-background">
         <div className="w-full max-w-md animate-fade-in">
           {/* Logo */}
