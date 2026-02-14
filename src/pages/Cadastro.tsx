@@ -171,7 +171,7 @@ export default function CadastroPage() {
         </label>
 
         <button type="submit" disabled={loading} className="ampara-btn-primary mt-2">
-          {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : "Criar conta"}
+          {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : "Comece a se proteger"}
         </button>
 
         <p className="text-center text-sm text-muted-foreground pt-2">
