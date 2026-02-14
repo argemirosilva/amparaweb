@@ -85,7 +85,7 @@ export default function LoginPage() {
         </div>
 
         <button type="submit" disabled={loading} className="ampara-btn-primary mt-2 opacity-0 animate-fade-in" style={{ animationDelay: "300ms" }}>
-          {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : "Entrar"}
+          {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : "Acessar"}
         </button>
 
         <p className="text-center text-sm text-muted-foreground pt-2 opacity-0 animate-fade-in" style={{ animationDelay: "400ms" }}>
