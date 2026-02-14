@@ -89,9 +89,9 @@ export default function LoginPage() {
         </button>
 
         <p className="text-center text-sm text-muted-foreground pt-2 opacity-0 animate-fade-in" style={{ animationDelay: "400ms" }}>
-          Não tem uma conta?{" "}
+          Não está cadastrada?{" "}
           <Link to="/cadastro" className="text-primary font-medium hover:underline">
-            Criar conta
+            Proteja-se
           </Link>
         </p>
       </form>
