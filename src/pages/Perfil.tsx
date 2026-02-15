@@ -106,6 +106,10 @@ export default function PerfilPage() {
   const [showAddGuardiao, setShowAddGuardiao] = useState(false);
   const [newGuardiao, setNewGuardiao] = useState({ nome: "", vinculo: "", telefone_whatsapp: "" });
 
+  // Guardian editing
+  const [editingGuardiaoId, setEditingGuardiaoId] = useState<string | null>(null);
+  const [guardiaoEditForm, setGuardiaoEditForm] = useState({ nome: "", vinculo: "", telefone_whatsapp: "" });
+
   // Aggressor edit
   const [editingAgressorId, setEditingAgressorId] = useState<string | null>(null);
   const [agressorForm, setAgressorForm] = useState<AgressorEditForm | null>(null);
@@ -187,6 +191,24 @@ export default function PerfilPage() {
     await loadData();
   };
 
+  const startEditingGuardiao = (g: GuardiaoData) => {
+    setEditingGuardiaoId(g.id);
+    setGuardiaoEditForm({ nome: g.nome, vinculo: g.vinculo, telefone_whatsapp: formatPhone(g.telefone_whatsapp) });
+  };
+
+  const saveGuardiao = async () => {
+    if (!editingGuardiaoId || !guardiaoEditForm.nome.trim() || !guardiaoEditForm.vinculo.trim() || guardiaoEditForm.telefone_whatsapp.replace(/\D/g, "").length < 10) return;
+    setSaving(true);
+    const res = await api("updateGuardiao", { guardiao_id: editingGuardiaoId, ...guardiaoEditForm });
+    if (res.ok) {
+      toast({ title: "Guardião atualizado" });
+      setEditingGuardiaoId(null);
+      await loadData();
+    } else {
+      toast({ title: "Erro ao salvar", variant: "destructive" });
+    }
+    setSaving(false);
+  };
   const deleteVinculo = async (id: string) => {
     await api("deleteVinculo", { vinculo_id: id });
     await loadData();
@@ -404,14 +426,48 @@ export default function PerfilPage() {
         ) : (
           <div className="space-y-2">
             {guardioes.map(g => (
-              <div key={g.id} className="flex items-center justify-between border border-border rounded-xl p-3">
-                <div>
-                  <p className="font-medium text-foreground text-sm">{g.nome}</p>
-                  <p className="text-xs text-muted-foreground">{g.vinculo} • {formatPhone(g.telefone_whatsapp)}</p>
-                </div>
-                <button onClick={() => deleteGuardiao(g.id)} className="text-destructive hover:text-destructive/80">
-                  <Trash2 className="w-4 h-4" />
-                </button>
+              <div key={g.id} className="border border-border rounded-xl p-3 space-y-2">
+                {editingGuardiaoId === g.id ? (
+                  <>
+                    <input type="text" className="ampara-input" placeholder="Nome" value={guardiaoEditForm.nome}
+                      onChange={e => setGuardiaoEditForm({ ...guardiaoEditForm, nome: e.target.value })} />
+                    <select className="ampara-input" value={guardiaoEditForm.vinculo}
+                      onChange={e => setGuardiaoEditForm({ ...guardiaoEditForm, vinculo: e.target.value })}>
+                      <option value="" disabled>Selecione o vínculo</option>
+                      <option value="Amigo(a)">Amigo(a)</option>
+                      <option value="Irmão(ã)">Irmão(ã)</option>
+                      <option value="Pais">Pais</option>
+                      <option value="Vizinho(a)">Vizinho(a)</option>
+                      <option value="Colega">Colega</option>
+                      <option value="Outro">Outro</option>
+                    </select>
+                    <input type="tel" className="ampara-input" placeholder="(00) 00000-0000" value={guardiaoEditForm.telefone_whatsapp}
+                      onChange={e => setGuardiaoEditForm({ ...guardiaoEditForm, telefone_whatsapp: formatPhone(e.target.value) })} />
+                    <div className="flex gap-2">
+                      <Button onClick={saveGuardiao} disabled={saving} size="sm" className="flex-1">
+                        {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Check className="w-4 h-4 mr-1" /> Salvar</>}
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => setEditingGuardiaoId(null)}>
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-foreground text-sm">{g.nome}</p>
+                      <p className="text-xs text-muted-foreground">{g.vinculo} • {formatPhone(g.telefone_whatsapp)}</p>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <button onClick={() => startEditingGuardiao(g)} className="text-muted-foreground hover:text-foreground p-1">
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button onClick={() => deleteGuardiao(g.id)} className="text-destructive hover:text-destructive/80 p-1">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
