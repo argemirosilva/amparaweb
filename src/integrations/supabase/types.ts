@@ -43,42 +43,183 @@ export type Database = {
           },
         ]
       }
+      aggressor_incidents: {
+        Row: {
+          aggressor_id: string
+          confidence: number | null
+          created_at: string
+          description_sanitized: string | null
+          id: string
+          occurred_at_month: string | null
+          pattern_tags: string[] | null
+          reporter_user_id: string
+          severity: number | null
+          source_type: string | null
+          violence_types: string[] | null
+        }
+        Insert: {
+          aggressor_id: string
+          confidence?: number | null
+          created_at?: string
+          description_sanitized?: string | null
+          id?: string
+          occurred_at_month?: string | null
+          pattern_tags?: string[] | null
+          reporter_user_id: string
+          severity?: number | null
+          source_type?: string | null
+          violence_types?: string[] | null
+        }
+        Update: {
+          aggressor_id?: string
+          confidence?: number | null
+          created_at?: string
+          description_sanitized?: string | null
+          id?: string
+          occurred_at_month?: string | null
+          pattern_tags?: string[] | null
+          reporter_user_id?: string
+          severity?: number | null
+          source_type?: string | null
+          violence_types?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "aggressor_incidents_aggressor_id_fkey"
+            columns: ["aggressor_id"]
+            isOneToOne: false
+            referencedRelation: "agressores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "aggressor_incidents_reporter_user_id_fkey"
+            columns: ["reporter_user_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agressores: {
         Row: {
+          aliases: string[] | null
+          appearance_notes: string | null
+          appearance_tags: string[] | null
+          approx_age_max: number | null
+          approx_age_min: number | null
+          company_public: string | null
           created_at: string
           data_nascimento: string | null
+          display_name_masked: string | null
+          email_clues: Json | null
+          father_first_name: string | null
+          father_name_partial_normalized: string | null
+          flags: string[] | null
           forca_seguranca: boolean | null
+          geo_area_tags: string[] | null
           id: string
+          last_incident_at: string | null
+          mother_first_name: string | null
+          mother_name_partial_normalized: string | null
+          name_normalized: string | null
+          neighborhoods: string[] | null
           nome: string
           nome_mae_parcial: string | null
           nome_pai_parcial: string | null
+          phone_clues: Json | null
+          primary_city_uf: string | null
+          profession: string | null
+          quality_score: number | null
+          reference_points: string[] | null
+          risk_level: string | null
+          risk_score: number | null
+          search_tokens: string[] | null
+          sector: string | null
           telefone: string | null
           tem_arma_em_casa: boolean | null
           updated_at: string
+          vehicles: Json | null
+          violence_profile_probs: Json | null
         }
         Insert: {
+          aliases?: string[] | null
+          appearance_notes?: string | null
+          appearance_tags?: string[] | null
+          approx_age_max?: number | null
+          approx_age_min?: number | null
+          company_public?: string | null
           created_at?: string
           data_nascimento?: string | null
+          display_name_masked?: string | null
+          email_clues?: Json | null
+          father_first_name?: string | null
+          father_name_partial_normalized?: string | null
+          flags?: string[] | null
           forca_seguranca?: boolean | null
+          geo_area_tags?: string[] | null
           id?: string
+          last_incident_at?: string | null
+          mother_first_name?: string | null
+          mother_name_partial_normalized?: string | null
+          name_normalized?: string | null
+          neighborhoods?: string[] | null
           nome: string
           nome_mae_parcial?: string | null
           nome_pai_parcial?: string | null
+          phone_clues?: Json | null
+          primary_city_uf?: string | null
+          profession?: string | null
+          quality_score?: number | null
+          reference_points?: string[] | null
+          risk_level?: string | null
+          risk_score?: number | null
+          search_tokens?: string[] | null
+          sector?: string | null
           telefone?: string | null
           tem_arma_em_casa?: boolean | null
           updated_at?: string
+          vehicles?: Json | null
+          violence_profile_probs?: Json | null
         }
         Update: {
+          aliases?: string[] | null
+          appearance_notes?: string | null
+          appearance_tags?: string[] | null
+          approx_age_max?: number | null
+          approx_age_min?: number | null
+          company_public?: string | null
           created_at?: string
           data_nascimento?: string | null
+          display_name_masked?: string | null
+          email_clues?: Json | null
+          father_first_name?: string | null
+          father_name_partial_normalized?: string | null
+          flags?: string[] | null
           forca_seguranca?: boolean | null
+          geo_area_tags?: string[] | null
           id?: string
+          last_incident_at?: string | null
+          mother_first_name?: string | null
+          mother_name_partial_normalized?: string | null
+          name_normalized?: string | null
+          neighborhoods?: string[] | null
           nome?: string
           nome_mae_parcial?: string | null
           nome_pai_parcial?: string | null
+          phone_clues?: Json | null
+          primary_city_uf?: string | null
+          profession?: string | null
+          quality_score?: number | null
+          reference_points?: string[] | null
+          risk_level?: string | null
+          risk_score?: number | null
+          search_tokens?: string[] | null
+          sector?: string | null
           telefone?: string | null
           tem_arma_em_casa?: boolean | null
           updated_at?: string
+          vehicles?: Json | null
+          violence_profile_probs?: Json | null
         }
         Relationships: []
       }
@@ -983,7 +1124,57 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      normalize_text: { Args: { input: string }; Returns: string }
+      search_agressor_candidates: {
+        Args: {
+          p_age_approx?: number
+          p_alias?: string
+          p_city_uf?: string
+          p_ddd?: string
+          p_father_first?: string
+          p_mother_first?: string
+          p_name?: string
+          p_neighborhood?: string
+          p_phone_last_digits?: string
+          p_plate_prefix?: string
+          p_profession?: string
+        }
+        Returns: {
+          aliases: string[]
+          appearance_tags: string[]
+          approx_age_max: number
+          approx_age_min: number
+          data_nascimento: string
+          display_name_masked: string
+          father_first_name: string
+          father_name_partial_normalized: string
+          flags: string[]
+          forca_seguranca: boolean
+          id: string
+          last_incident_at: string
+          mother_first_name: string
+          mother_name_partial_normalized: string
+          name_normalized: string
+          name_similarity: number
+          neighborhoods: string[]
+          nome: string
+          phone_clues: Json
+          primary_city_uf: string
+          profession: string
+          quality_score: number
+          reference_points: string[]
+          risk_level: string
+          risk_score: number
+          sector: string
+          tem_arma_em_casa: boolean
+          total_vinculos: number
+          vehicles: Json
+          violence_profile_probs: Json
+        }[]
+      }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
+      unaccent: { Args: { "": string }; Returns: string }
     }
     Enums: {
       user_status: "pendente" | "ativo" | "inativo" | "bloqueado"

@@ -13,6 +13,7 @@ import Home from "./pages/Home";
 import Gravacoes from "./pages/Gravacoes";
 import Perfil from "./pages/Perfil";
 import Configuracoes from "./pages/Configuracoes";
+import BuscaPerfil from "./pages/BuscaPerfil";
 import Mapa from "./pages/Mapa";
 import NotFound from "./pages/NotFound";
 import DocApi from "./pages/DocApi";
@@ -41,6 +42,7 @@ const App = () => (
               <Route path="/gravacoes" element={<Gravacoes />} />
               <Route path="/perfil" element={<Perfil />} />
               <Route path="/configuracoes" element={<Configuracoes />} />
+              <Route path="/busca-perfil" element={<BuscaPerfil />} />
             </Route>
             <Route path="/suporte" element={<Suporte />} />
             <Route path="/privacidade" element={<Privacidade />} />
