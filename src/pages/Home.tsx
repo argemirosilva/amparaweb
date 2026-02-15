@@ -19,7 +19,7 @@ export default function HomePage() {
           className="w-full gap-2 border-primary/30 text-primary hover:bg-primary/10"
         >
           <Search className="w-4 h-4" />
-          Pesquisar perfil do agressor
+          Pesquisar agressor
         </Button>
         <DeviceStatusCard />
         <AudioRecorderCard />
