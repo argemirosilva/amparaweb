@@ -482,8 +482,11 @@ export default function PerfilPage() {
                     {/* Edit form */}
                   {isEditing && agressorForm && (
                     <div className="px-3 pb-3 space-y-2.5 border-t border-border pt-3">
-                      <input type="text" className="ampara-input text-sm" placeholder="Nome do agressor" value={agressorForm.nome}
-                        onChange={e => setAgressorForm({ ...agressorForm, nome: e.target.value })} />
+                      <div>
+                        <label className="block text-xs font-medium text-muted-foreground mb-1">Nome do agressor</label>
+                        <input type="text" className="ampara-input text-sm" placeholder="Nome completo ou parcial" value={agressorForm.nome}
+                          onChange={e => setAgressorForm({ ...agressorForm, nome: e.target.value })} />
+                      </div>
 
                       <div>
                         <label className="block text-xs font-medium text-muted-foreground mb-1">Tipo de vínculo</label>
@@ -494,38 +497,68 @@ export default function PerfilPage() {
                         </select>
                       </div>
 
-                      <input type="date" className="ampara-input text-sm" value={agressorForm.data_nascimento}
-                        onChange={e => setAgressorForm({ ...agressorForm, data_nascimento: e.target.value })} />
+                      <div>
+                        <label className="block text-xs font-medium text-muted-foreground mb-1">Data de nascimento</label>
+                        <input type="date" className="ampara-input text-sm" value={agressorForm.data_nascimento}
+                          onChange={e => setAgressorForm({ ...agressorForm, data_nascimento: e.target.value })} />
+                      </div>
 
-                      <input type="tel" className="ampara-input text-sm" placeholder="Telefone" value={agressorForm.telefone}
-                        onChange={e => setAgressorForm({ ...agressorForm, telefone: formatPhone(e.target.value) })} />
+                      <div>
+                        <label className="block text-xs font-medium text-muted-foreground mb-1">Telefone</label>
+                        <input type="tel" className="ampara-input text-sm" placeholder="(00) 00000-0000" value={agressorForm.telefone}
+                          onChange={e => setAgressorForm({ ...agressorForm, telefone: formatPhone(e.target.value) })} />
+                      </div>
 
-                      <input type="text" className="ampara-input text-sm" placeholder="Apelido" value={agressorForm.apelido} maxLength={50}
-                        onChange={e => setAgressorForm({ ...agressorForm, apelido: e.target.value })} />
-
-                      <div className="grid grid-cols-2 gap-2">
-                        <input type="text" className="ampara-input text-sm" placeholder="Nome do pai (parcial)" value={agressorForm.nome_pai_parcial}
-                          onChange={e => setAgressorForm({ ...agressorForm, nome_pai_parcial: e.target.value })} />
-                        <input type="text" className="ampara-input text-sm" placeholder="Nome da mãe (parcial)" value={agressorForm.nome_mae_parcial}
-                          onChange={e => setAgressorForm({ ...agressorForm, nome_mae_parcial: e.target.value })} />
+                      <div>
+                        <label className="block text-xs font-medium text-muted-foreground mb-1">Apelido</label>
+                        <input type="text" className="ampara-input text-sm" placeholder="Como é conhecido" value={agressorForm.apelido} maxLength={50}
+                          onChange={e => setAgressorForm({ ...agressorForm, apelido: e.target.value })} />
                       </div>
 
                       <div className="grid grid-cols-2 gap-2">
-                        <input type="text" className="ampara-input text-sm" placeholder="Cidade/UF" value={agressorForm.cidade_uf}
-                          onChange={e => setAgressorForm({ ...agressorForm, cidade_uf: e.target.value })} />
-                        <input type="text" className="ampara-input text-sm" placeholder="Bairro/Região" value={agressorForm.bairro}
-                          onChange={e => setAgressorForm({ ...agressorForm, bairro: e.target.value })} />
+                        <div>
+                          <label className="block text-xs font-medium text-muted-foreground mb-1">Nome do pai</label>
+                          <input type="text" className="ampara-input text-sm" placeholder="Parcial" value={agressorForm.nome_pai_parcial}
+                            onChange={e => setAgressorForm({ ...agressorForm, nome_pai_parcial: e.target.value })} />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-muted-foreground mb-1">Nome da mãe</label>
+                          <input type="text" className="ampara-input text-sm" placeholder="Parcial" value={agressorForm.nome_mae_parcial}
+                            onChange={e => setAgressorForm({ ...agressorForm, nome_mae_parcial: e.target.value })} />
+                        </div>
                       </div>
 
                       <div className="grid grid-cols-2 gap-2">
-                        <input type="text" className="ampara-input text-sm" placeholder="Profissão" value={agressorForm.profissao}
-                          onChange={e => setAgressorForm({ ...agressorForm, profissao: e.target.value })} />
-                        <input type="text" className="ampara-input text-sm" placeholder="Placa parcial" value={agressorForm.placa_parcial} maxLength={7}
-                          onChange={e => setAgressorForm({ ...agressorForm, placa_parcial: e.target.value.toUpperCase() })} />
+                        <div>
+                          <label className="block text-xs font-medium text-muted-foreground mb-1">Cidade/UF</label>
+                          <input type="text" className="ampara-input text-sm" placeholder="Ex: São Paulo/SP" value={agressorForm.cidade_uf}
+                            onChange={e => setAgressorForm({ ...agressorForm, cidade_uf: e.target.value })} />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-muted-foreground mb-1">Bairro/Região</label>
+                          <input type="text" className="ampara-input text-sm" placeholder="Bairro" value={agressorForm.bairro}
+                            onChange={e => setAgressorForm({ ...agressorForm, bairro: e.target.value })} />
+                        </div>
                       </div>
 
-                      <textarea className="ampara-input text-sm min-h-[60px]" placeholder="Observações de aparência (tatuagens, cicatrizes, etc.)" value={agressorForm.appearance_notes}
-                        onChange={e => setAgressorForm({ ...agressorForm, appearance_notes: e.target.value })} />
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-xs font-medium text-muted-foreground mb-1">Profissão</label>
+                          <input type="text" className="ampara-input text-sm" placeholder="Profissão ou setor" value={agressorForm.profissao}
+                            onChange={e => setAgressorForm({ ...agressorForm, profissao: e.target.value })} />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-muted-foreground mb-1">Placa parcial</label>
+                          <input type="text" className="ampara-input text-sm" placeholder="Ex: ABC1" value={agressorForm.placa_parcial} maxLength={7}
+                            onChange={e => setAgressorForm({ ...agressorForm, placa_parcial: e.target.value.toUpperCase() })} />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-medium text-muted-foreground mb-1">Observações de aparência</label>
+                        <textarea className="ampara-input text-sm min-h-[60px]" placeholder="Tatuagens, cicatrizes, porte físico, etc." value={agressorForm.appearance_notes}
+                          onChange={e => setAgressorForm({ ...agressorForm, appearance_notes: e.target.value })} />
+                      </div>
 
                       <label className="flex items-center gap-3 cursor-pointer">
                         <input type="checkbox" checked={agressorForm.forca_seguranca}
