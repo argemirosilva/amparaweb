@@ -39,6 +39,8 @@ interface AgressorForm {
   bairro: string;
   profissao: string;
   placa_parcial: string;
+  veiculo_modelo: string;
+  veiculo_cor: string;
 }
 
 interface SearchResult {
@@ -75,6 +77,7 @@ export default function OnboardingPage() {
     nome_pai_parcial: "", nome_mae_parcial: "",
     forca_seguranca: false, tem_arma_em_casa: false,
     apelido: "", cidade_uf: "", bairro: "", profissao: "", placa_parcial: "",
+    veiculo_modelo: "", veiculo_cor: "",
   });
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
@@ -148,7 +151,13 @@ export default function OnboardingPage() {
     if (agressor.cidade_uf.trim()) payload.primary_city_uf = agressor.cidade_uf.trim();
     if (agressor.bairro.trim()) payload.neighborhoods = [agressor.bairro.trim()];
     if (agressor.profissao.trim()) payload.profession = agressor.profissao.trim();
-    if (agressor.placa_parcial.trim()) payload.vehicles = [{ plate_partial: agressor.placa_parcial.trim() }];
+    if (agressor.placa_parcial.trim() || agressor.veiculo_modelo.trim() || agressor.veiculo_cor.trim()) {
+      payload.vehicles = [{
+        plate_partial: agressor.placa_parcial.trim() || undefined,
+        model: agressor.veiculo_modelo.trim() || undefined,
+        color: agressor.veiculo_cor.trim() || undefined,
+      }];
+    }
     const { ok, data } = await api("createAgressor", payload);
     if (!ok) { setError(data.error || "Erro ao cadastrar agressor"); setLoading(false); return; }
     await finishOnboarding();
@@ -357,6 +366,18 @@ export default function OnboardingPage() {
                 <label className="block text-sm font-medium text-foreground mb-1.5">Placa parcial</label>
                 <input type="text" className="ampara-input" placeholder="Ex: ABC1" value={agressor.placa_parcial} maxLength={7}
                   onChange={e => setAgressor({ ...agressor, placa_parcial: e.target.value.toUpperCase() })} />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1.5">Modelo do veículo</label>
+                  <input type="text" className="ampara-input" placeholder="Ex: Gol, Civic" value={agressor.veiculo_modelo} maxLength={50}
+                    onChange={e => setAgressor({ ...agressor, veiculo_modelo: e.target.value })} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1.5">Cor do veículo</label>
+                  <input type="text" className="ampara-input" placeholder="Ex: Preto, Prata" value={agressor.veiculo_cor} maxLength={30}
+                    onChange={e => setAgressor({ ...agressor, veiculo_cor: e.target.value })} />
+                </div>
               </div>
 
               <label className="flex items-center gap-3 cursor-pointer">
