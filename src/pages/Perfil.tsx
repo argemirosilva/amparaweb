@@ -83,6 +83,8 @@ interface AgressorEditForm {
   bairro: string;
   profissao: string;
   placa_parcial: string;
+  veiculo_modelo: string;
+  veiculo_cor: string;
   appearance_notes: string;
 }
 
@@ -209,6 +211,8 @@ export default function PerfilPage() {
       bairro: ag.neighborhoods?.length ? ag.neighborhoods[0] : "",
       profissao: ag.profession || "",
       placa_parcial: firstVehicle?.plate_partial || firstVehicle?.plate_prefix || "",
+      veiculo_modelo: firstVehicle?.model || "",
+      veiculo_cor: firstVehicle?.color || "",
       appearance_notes: ag.appearance_notes || "",
     });
   };
@@ -243,8 +247,13 @@ export default function PerfilPage() {
     else payload.neighborhoods = [];
     if (agressorForm.profissao.trim()) payload.profession = agressorForm.profissao.trim();
     else payload.profession = null;
-    if (agressorForm.placa_parcial.trim()) payload.vehicles = [{ plate_partial: agressorForm.placa_parcial.trim() }];
-    else payload.vehicles = [];
+    if (agressorForm.placa_parcial.trim() || agressorForm.veiculo_modelo.trim() || agressorForm.veiculo_cor.trim()) {
+      payload.vehicles = [{
+        plate_partial: agressorForm.placa_parcial.trim() || undefined,
+        model: agressorForm.veiculo_modelo.trim() || undefined,
+        color: agressorForm.veiculo_cor.trim() || undefined,
+      }];
+    } else payload.vehicles = [];
 
     const res = await api("updateAgressor", payload);
 
@@ -551,6 +560,19 @@ export default function PerfilPage() {
                           <label className="block text-xs font-medium text-muted-foreground mb-1">Placa parcial</label>
                           <input type="text" className="ampara-input text-sm" placeholder="Ex: ABC1" value={agressorForm.placa_parcial} maxLength={7}
                             onChange={e => setAgressorForm({ ...agressorForm, placa_parcial: e.target.value.toUpperCase() })} />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-xs font-medium text-muted-foreground mb-1">Modelo do veículo</label>
+                          <input type="text" className="ampara-input text-sm" placeholder="Ex: Gol, Civic" value={agressorForm.veiculo_modelo}
+                            onChange={e => setAgressorForm({ ...agressorForm, veiculo_modelo: e.target.value })} maxLength={50} />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-muted-foreground mb-1">Cor do veículo</label>
+                          <input type="text" className="ampara-input text-sm" placeholder="Ex: Preto, Prata" value={agressorForm.veiculo_cor}
+                            onChange={e => setAgressorForm({ ...agressorForm, veiculo_cor: e.target.value })} maxLength={30} />
                         </div>
                       </div>
 
