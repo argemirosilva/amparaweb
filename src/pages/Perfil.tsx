@@ -550,29 +550,30 @@ export default function PerfilPage() {
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <label className="block text-xs font-medium text-muted-foreground mb-1">Profissão</label>
-                          <input type="text" className="ampara-input text-sm" placeholder="Profissão ou setor" value={agressorForm.profissao}
-                            onChange={e => setAgressorForm({ ...agressorForm, profissao: e.target.value })} />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-muted-foreground mb-1">Placa parcial</label>
-                          <input type="text" className="ampara-input text-sm" placeholder="Ex: ABC1" value={agressorForm.placa_parcial} maxLength={7}
-                            onChange={e => setAgressorForm({ ...agressorForm, placa_parcial: e.target.value.toUpperCase() })} />
-                        </div>
+                      <div>
+                        <label className="block text-xs font-medium text-muted-foreground mb-1">Profissão</label>
+                        <input type="text" className="ampara-input text-sm" placeholder="Profissão ou setor" value={agressorForm.profissao}
+                          onChange={e => setAgressorForm({ ...agressorForm, profissao: e.target.value })} />
                       </div>
 
-                      <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <label className="block text-xs font-medium text-muted-foreground mb-1">Modelo do veículo</label>
-                          <input type="text" className="ampara-input text-sm" placeholder="Ex: Gol, Civic" value={agressorForm.veiculo_modelo}
-                            onChange={e => setAgressorForm({ ...agressorForm, veiculo_modelo: e.target.value })} maxLength={50} />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-muted-foreground mb-1">Cor do veículo</label>
-                          <input type="text" className="ampara-input text-sm" placeholder="Ex: Preto, Prata" value={agressorForm.veiculo_cor}
-                            onChange={e => setAgressorForm({ ...agressorForm, veiculo_cor: e.target.value })} maxLength={30} />
+                      <div className="border border-border rounded-lg p-2.5 space-y-2">
+                        <p className="text-xs font-semibold text-muted-foreground">Veículo</p>
+                        <div className="grid grid-cols-3 gap-2">
+                          <div>
+                            <label className="block text-xs font-medium text-muted-foreground mb-1">Placa parcial</label>
+                            <input type="text" className="ampara-input text-sm" placeholder="ABC1" value={agressorForm.placa_parcial} maxLength={7}
+                              onChange={e => setAgressorForm({ ...agressorForm, placa_parcial: e.target.value.toUpperCase() })} />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-muted-foreground mb-1">Modelo</label>
+                            <input type="text" className="ampara-input text-sm" placeholder="Gol, Civic" value={agressorForm.veiculo_modelo}
+                              onChange={e => setAgressorForm({ ...agressorForm, veiculo_modelo: e.target.value })} maxLength={50} />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-muted-foreground mb-1">Cor</label>
+                            <input type="text" className="ampara-input text-sm" placeholder="Preto" value={agressorForm.veiculo_cor}
+                              onChange={e => setAgressorForm({ ...agressorForm, veiculo_cor: e.target.value })} maxLength={30} />
+                          </div>
                         </div>
                       </div>
 
