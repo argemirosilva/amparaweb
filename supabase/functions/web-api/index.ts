@@ -756,17 +756,69 @@ serve(async (req) => {
           .eq("usuario_id", userId)
           .order("created_at", { ascending: true });
 
-        // Enrich with agressor details (only the user's own links)
+        // Enrich with agressor details (all editable fields)
         const enriched = await Promise.all((data || []).map(async (v: any) => {
           const { data: ag } = await supabase
             .from("agressores")
-            .select("nome, data_nascimento, telefone, forca_seguranca, tem_arma_em_casa")
+            .select("nome, data_nascimento, telefone, forca_seguranca, tem_arma_em_casa, aliases, nome_pai_parcial, nome_mae_parcial, primary_city_uf, neighborhoods, profession, vehicles, appearance_notes, risk_level, risk_score, display_name_masked")
             .eq("id", v.agressor_id)
             .single();
           return { ...v, agressor: ag };
         }));
 
         return json({ success: true, vinculos: enriched });
+      }
+
+      case "updateAgressor": {
+        const { agressor_id, ...agressorUpdates } = params;
+        if (!agressor_id) return json({ error: "agressor_id obrigatório" }, 400);
+
+        // Verify user has a link to this aggressor
+        const { data: linkCheck } = await supabase
+          .from("vitimas_agressores")
+          .select("id")
+          .eq("usuario_id", userId)
+          .eq("agressor_id", agressor_id)
+          .maybeSingle();
+        if (!linkCheck) return json({ error: "Você não tem vínculo com este agressor" }, 403);
+
+        const allowedFields = [
+          "nome", "data_nascimento", "telefone", "nome_pai_parcial", "nome_mae_parcial",
+          "forca_seguranca", "tem_arma_em_casa", "aliases", "approx_age_min", "approx_age_max",
+          "primary_city_uf", "neighborhoods", "reference_points", "geo_area_tags",
+          "profession", "sector", "company_public", "vehicles",
+          "appearance_notes", "appearance_tags", "phone_clues", "email_clues",
+        ];
+        const upd: Record<string, any> = {};
+        for (const key of allowedFields) {
+          if (agressorUpdates[key] !== undefined) {
+            if (key === "telefone" && agressorUpdates[key]) {
+              upd[key] = agressorUpdates[key].replace(/\D/g, "");
+            } else {
+              upd[key] = agressorUpdates[key];
+            }
+          }
+        }
+
+        if (Object.keys(upd).length === 0) {
+          return json({ error: "Nenhum campo para atualizar" }, 400);
+        }
+
+        const { error: updErr } = await supabase
+          .from("agressores")
+          .update(upd)
+          .eq("id", agressor_id);
+        if (updErr) {
+          console.error("Update agressor error:", updErr);
+          return json({ error: "Erro ao atualizar agressor" }, 500);
+        }
+
+        await supabase.from("audit_logs").insert({
+          user_id: userId, action_type: "aggressor_updated", success: true,
+          details: { agressor_id, fields: Object.keys(upd) },
+        });
+
+        return json({ success: true });
       }
 
       case "updateVinculo": {

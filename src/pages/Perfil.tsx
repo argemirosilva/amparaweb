@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { callWebApi } from "@/services/webApiService";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { UserCircle, Users, AlertTriangle, Loader2, Plus, Trash2, Edit2, X, Check, Camera } from "lucide-react";
+import { UserCircle, Users, AlertTriangle, Loader2, Plus, Trash2, Edit2, X, Check, Camera, ChevronDown, ChevronUp } from "lucide-react";
 import { EnderecoForm, emptyEndereco, EnderecoFields } from "@/components/EnderecoForm";
 import { useToast } from "@/hooks/use-toast";
 
@@ -13,6 +13,11 @@ function formatPhone(value: string): string {
   if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
   return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
 }
+
+const TIPOS_VINCULO = [
+  "Marido", "Ex-marido", "Namorado", "Ex-namorado",
+  "Noivo", "Ex-noivo", "Companheiro", "Ex-companheiro", "Outro",
+];
 
 interface PerfilData {
   nome_completo: string;
@@ -43,13 +48,42 @@ interface GuardiaoData {
 interface VinculoData {
   id: string;
   tipo_vinculo: string;
+  agressor_id: string;
   agressor: {
     nome: string;
     data_nascimento: string | null;
     telefone: string | null;
     forca_seguranca: boolean;
     tem_arma_em_casa: boolean;
+    aliases: string[] | null;
+    nome_pai_parcial: string | null;
+    nome_mae_parcial: string | null;
+    primary_city_uf: string | null;
+    neighborhoods: string[] | null;
+    profession: string | null;
+    vehicles: any[] | null;
+    appearance_notes: string | null;
+    risk_level: string | null;
+    risk_score: number | null;
+    display_name_masked: string | null;
   };
+}
+
+interface AgressorEditForm {
+  nome: string;
+  tipo_vinculo: string;
+  data_nascimento: string;
+  telefone: string;
+  nome_pai_parcial: string;
+  nome_mae_parcial: string;
+  forca_seguranca: boolean;
+  tem_arma_em_casa: boolean;
+  apelido: string;
+  cidade_uf: string;
+  bairro: string;
+  profissao: string;
+  placa_parcial: string;
+  appearance_notes: string;
 }
 
 export default function PerfilPage() {
@@ -69,6 +103,11 @@ export default function PerfilPage() {
   // New guardian form
   const [showAddGuardiao, setShowAddGuardiao] = useState(false);
   const [newGuardiao, setNewGuardiao] = useState({ nome: "", vinculo: "", telefone_whatsapp: "" });
+
+  // Aggressor edit
+  const [editingAgressorId, setEditingAgressorId] = useState<string | null>(null);
+  const [agressorForm, setAgressorForm] = useState<AgressorEditForm | null>(null);
+  const [editingVinculoId, setEditingVinculoId] = useState<string | null>(null);
 
   const api = (action: string, params: Record<string, any> = {}) =>
     callWebApi(action, sessionToken!, params);
@@ -93,7 +132,6 @@ export default function PerfilPage() {
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !usuario) return;
-
     if (!file.type.startsWith("image/")) {
       toast({ title: "Formato inválido", description: "Selecione uma imagem (JPG, PNG, etc.)", variant: "destructive" });
       return;
@@ -102,21 +140,14 @@ export default function PerfilPage() {
       toast({ title: "Arquivo muito grande", description: "O tamanho máximo é 5MB.", variant: "destructive" });
       return;
     }
-
     setUploadingAvatar(true);
     try {
       const ext = file.name.split(".").pop() || "jpg";
       const path = `${usuario.id}/avatar.${ext}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from("avatars")
-        .upload(path, file, { upsert: true, contentType: file.type });
-
+      const { error: uploadError } = await supabase.storage.from("avatars").upload(path, file, { upsert: true, contentType: file.type });
       if (uploadError) throw uploadError;
-
       const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(path);
       const avatarUrl = `${urlData.publicUrl}?t=${Date.now()}`;
-
       await api("updateMe", { avatar_url: avatarUrl });
       setPerfil(prev => prev ? { ...prev, avatar_url: avatarUrl } : prev);
       toast({ title: "Foto atualizada!" });
@@ -159,6 +190,77 @@ export default function PerfilPage() {
     await loadData();
   };
 
+  const startEditingAgressor = (v: VinculoData) => {
+    const ag = v.agressor;
+    const firstVehicle = Array.isArray(ag.vehicles) && ag.vehicles.length > 0 ? ag.vehicles[0] : null;
+    setEditingAgressorId(v.agressor_id);
+    setEditingVinculoId(v.id);
+    setAgressorForm({
+      nome: ag.nome || "",
+      tipo_vinculo: v.tipo_vinculo || "",
+      data_nascimento: ag.data_nascimento || "",
+      telefone: ag.telefone || "",
+      nome_pai_parcial: ag.nome_pai_parcial || "",
+      nome_mae_parcial: ag.nome_mae_parcial || "",
+      forca_seguranca: ag.forca_seguranca || false,
+      tem_arma_em_casa: ag.tem_arma_em_casa || false,
+      apelido: ag.aliases?.length ? ag.aliases[0] : "",
+      cidade_uf: ag.primary_city_uf || "",
+      bairro: ag.neighborhoods?.length ? ag.neighborhoods[0] : "",
+      profissao: ag.profession || "",
+      placa_parcial: firstVehicle?.plate_partial || firstVehicle?.plate_prefix || "",
+      appearance_notes: ag.appearance_notes || "",
+    });
+  };
+
+  const cancelEditingAgressor = () => {
+    setEditingAgressorId(null);
+    setEditingVinculoId(null);
+    setAgressorForm(null);
+  };
+
+  const saveAgressor = async () => {
+    if (!agressorForm || !editingAgressorId || !editingVinculoId) return;
+    setSaving(true);
+
+    const payload: Record<string, any> = {
+      agressor_id: editingAgressorId,
+      nome: agressorForm.nome,
+      data_nascimento: agressorForm.data_nascimento || null,
+      telefone: agressorForm.telefone || null,
+      nome_pai_parcial: agressorForm.nome_pai_parcial || null,
+      nome_mae_parcial: agressorForm.nome_mae_parcial || null,
+      forca_seguranca: agressorForm.forca_seguranca,
+      tem_arma_em_casa: agressorForm.tem_arma_em_casa,
+      appearance_notes: agressorForm.appearance_notes || null,
+    };
+
+    if (agressorForm.apelido.trim()) payload.aliases = [agressorForm.apelido.trim()];
+    else payload.aliases = [];
+    if (agressorForm.cidade_uf.trim()) payload.primary_city_uf = agressorForm.cidade_uf.trim();
+    else payload.primary_city_uf = null;
+    if (agressorForm.bairro.trim()) payload.neighborhoods = [agressorForm.bairro.trim()];
+    else payload.neighborhoods = [];
+    if (agressorForm.profissao.trim()) payload.profession = agressorForm.profissao.trim();
+    else payload.profession = null;
+    if (agressorForm.placa_parcial.trim()) payload.vehicles = [{ plate_partial: agressorForm.placa_parcial.trim() }];
+    else payload.vehicles = [];
+
+    const res = await api("updateAgressor", payload);
+
+    // Also update vínculo if tipo_vinculo changed
+    await api("updateVinculo", { vinculo_id: editingVinculoId, tipo_vinculo: agressorForm.tipo_vinculo });
+
+    if (res.ok) {
+      toast({ title: "Agressor atualizado" });
+      cancelEditingAgressor();
+      await loadData();
+    } else {
+      toast({ title: "Erro ao salvar", description: res.data?.error, variant: "destructive" });
+    }
+    setSaving(false);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -175,7 +277,6 @@ export default function PerfilPage() {
       <div className="ampara-card space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            {/* Avatar */}
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
@@ -188,20 +289,10 @@ export default function PerfilPage() {
                 <UserCircle className="w-8 h-8 text-muted-foreground" />
               )}
               <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                {uploadingAvatar ? (
-                  <Loader2 className="w-5 h-5 text-white animate-spin" />
-                ) : (
-                  <Camera className="w-5 h-5 text-white" />
-                )}
+                {uploadingAvatar ? <Loader2 className="w-5 h-5 text-white animate-spin" /> : <Camera className="w-5 h-5 text-white" />}
               </div>
             </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleAvatarUpload}
-            />
+            <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
             <div>
               <p className="font-semibold text-foreground">{perfil?.nome_completo}</p>
               <p className="text-sm text-muted-foreground">{perfil?.email}</p>
@@ -284,11 +375,8 @@ export default function PerfilPage() {
           <div className="border border-border rounded-xl p-3 space-y-2">
             <input type="text" className="ampara-input" placeholder="Nome" value={newGuardiao.nome}
               onChange={e => setNewGuardiao({ ...newGuardiao, nome: e.target.value })} />
-            <select
-              className="ampara-input"
-              value={newGuardiao.vinculo}
-              onChange={e => setNewGuardiao({ ...newGuardiao, vinculo: e.target.value })}
-            >
+            <select className="ampara-input" value={newGuardiao.vinculo}
+              onChange={e => setNewGuardiao({ ...newGuardiao, vinculo: e.target.value })}>
               <option value="" disabled>Selecione o vínculo</option>
               <option value="Amigo(a)">Amigo(a)</option>
               <option value="Irmão(ã)">Irmão(ã)</option>
@@ -331,26 +419,135 @@ export default function PerfilPage() {
         {vinculos.length === 0 ? (
           <p className="text-sm text-muted-foreground">Nenhum agressor vinculado.</p>
         ) : (
-          <div className="space-y-2">
-            {vinculos.map(v => (
-              <div key={v.id} className="flex items-center justify-between border border-border rounded-xl p-3">
-                <div>
-                  <p className="font-medium text-foreground text-sm">{v.agressor.nome}</p>
-                  <div className="flex flex-wrap gap-1.5 mt-1">
-                    <span className="ampara-tag !py-0.5 !px-2 text-xs">{v.tipo_vinculo}</span>
-                    {v.agressor.forca_seguranca && (
-                      <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-destructive/10 text-destructive">Força seg.</span>
-                    )}
-                    {v.agressor.tem_arma_em_casa && (
-                      <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-destructive/10 text-destructive">Arma</span>
-                    )}
+          <div className="space-y-3">
+            {vinculos.map(v => {
+              const isEditing = editingAgressorId === v.agressor_id;
+
+              return (
+                <div key={v.id} className="border border-border rounded-xl overflow-hidden">
+                  {/* Header row */}
+                  <div className="flex items-center justify-between p-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-foreground text-sm">{v.agressor.nome}</p>
+                      <div className="flex flex-wrap gap-1.5 mt-1">
+                        <span className="ampara-tag !py-0.5 !px-2 text-xs">{v.tipo_vinculo}</span>
+                        {v.agressor.risk_level && v.agressor.risk_level !== "baixo" && (
+                          <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${
+                            v.agressor.risk_level === "critico" ? "bg-destructive/20 text-destructive" :
+                            v.agressor.risk_level === "alto" ? "bg-orange-500/20 text-orange-700" :
+                            "bg-yellow-500/20 text-yellow-700"
+                          }`}>
+                            Risco {v.agressor.risk_level}
+                          </span>
+                        )}
+                        {v.agressor.forca_seguranca && (
+                          <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-destructive/10 text-destructive">Força seg.</span>
+                        )}
+                        {v.agressor.tem_arma_em_casa && (
+                          <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-destructive/10 text-destructive">Arma</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0 ml-2">
+                      <button
+                        onClick={() => isEditing ? cancelEditingAgressor() : startEditingAgressor(v)}
+                        className="p-1.5 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+                      >
+                        {isEditing ? <X className="w-4 h-4" /> : <Edit2 className="w-4 h-4" />}
+                      </button>
+                      <button onClick={() => deleteVinculo(v.id)} className="p-1.5 rounded-md hover:bg-destructive/10 transition-colors text-destructive hover:text-destructive/80">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
+
+                  {/* View details (collapsed) */}
+                  {!isEditing && (
+                    <div className="px-3 pb-3 grid grid-cols-2 gap-2 text-xs">
+                      {v.agressor.primary_city_uf && (
+                        <div><span className="text-muted-foreground">Cidade/UF:</span> <span className="text-foreground">{v.agressor.primary_city_uf}</span></div>
+                      )}
+                      {v.agressor.profession && (
+                        <div><span className="text-muted-foreground">Profissão:</span> <span className="text-foreground">{v.agressor.profession}</span></div>
+                      )}
+                      {v.agressor.aliases?.length ? (
+                        <div><span className="text-muted-foreground">Apelido:</span> <span className="text-foreground">{v.agressor.aliases[0]}</span></div>
+                      ) : null}
+                      {v.agressor.neighborhoods?.length ? (
+                        <div><span className="text-muted-foreground">Bairro:</span> <span className="text-foreground">{v.agressor.neighborhoods[0]}</span></div>
+                      ) : null}
+                    </div>
+                  )}
+
+                  {/* Edit form */}
+                  {isEditing && agressorForm && (
+                    <div className="px-3 pb-3 space-y-2.5 border-t border-border pt-3">
+                      <input type="text" className="ampara-input text-sm" placeholder="Nome do agressor" value={agressorForm.nome}
+                        onChange={e => setAgressorForm({ ...agressorForm, nome: e.target.value })} />
+
+                      <div>
+                        <label className="block text-xs font-medium text-muted-foreground mb-1">Tipo de vínculo</label>
+                        <select className="ampara-input text-sm" value={agressorForm.tipo_vinculo}
+                          onChange={e => setAgressorForm({ ...agressorForm, tipo_vinculo: e.target.value })}>
+                          <option value="">Selecione...</option>
+                          {TIPOS_VINCULO.map(t => <option key={t} value={t}>{t}</option>)}
+                        </select>
+                      </div>
+
+                      <input type="date" className="ampara-input text-sm" value={agressorForm.data_nascimento}
+                        onChange={e => setAgressorForm({ ...agressorForm, data_nascimento: e.target.value })} />
+
+                      <input type="tel" className="ampara-input text-sm" placeholder="Telefone" value={agressorForm.telefone}
+                        onChange={e => setAgressorForm({ ...agressorForm, telefone: formatPhone(e.target.value) })} />
+
+                      <input type="text" className="ampara-input text-sm" placeholder="Apelido" value={agressorForm.apelido} maxLength={50}
+                        onChange={e => setAgressorForm({ ...agressorForm, apelido: e.target.value })} />
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <input type="text" className="ampara-input text-sm" placeholder="Nome do pai (parcial)" value={agressorForm.nome_pai_parcial}
+                          onChange={e => setAgressorForm({ ...agressorForm, nome_pai_parcial: e.target.value })} />
+                        <input type="text" className="ampara-input text-sm" placeholder="Nome da mãe (parcial)" value={agressorForm.nome_mae_parcial}
+                          onChange={e => setAgressorForm({ ...agressorForm, nome_mae_parcial: e.target.value })} />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <input type="text" className="ampara-input text-sm" placeholder="Cidade/UF" value={agressorForm.cidade_uf}
+                          onChange={e => setAgressorForm({ ...agressorForm, cidade_uf: e.target.value })} />
+                        <input type="text" className="ampara-input text-sm" placeholder="Bairro/Região" value={agressorForm.bairro}
+                          onChange={e => setAgressorForm({ ...agressorForm, bairro: e.target.value })} />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <input type="text" className="ampara-input text-sm" placeholder="Profissão" value={agressorForm.profissao}
+                          onChange={e => setAgressorForm({ ...agressorForm, profissao: e.target.value })} />
+                        <input type="text" className="ampara-input text-sm" placeholder="Placa parcial" value={agressorForm.placa_parcial} maxLength={7}
+                          onChange={e => setAgressorForm({ ...agressorForm, placa_parcial: e.target.value.toUpperCase() })} />
+                      </div>
+
+                      <textarea className="ampara-input text-sm min-h-[60px]" placeholder="Observações de aparência (tatuagens, cicatrizes, etc.)" value={agressorForm.appearance_notes}
+                        onChange={e => setAgressorForm({ ...agressorForm, appearance_notes: e.target.value })} />
+
+                      <label className="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" checked={agressorForm.forca_seguranca}
+                          onChange={e => setAgressorForm({ ...agressorForm, forca_seguranca: e.target.checked })}
+                          className="h-4 w-4 rounded border-input accent-primary" />
+                        <span className="text-xs text-foreground">É de alguma força de segurança?</span>
+                      </label>
+                      <label className="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" checked={agressorForm.tem_arma_em_casa}
+                          onChange={e => setAgressorForm({ ...agressorForm, tem_arma_em_casa: e.target.checked })}
+                          className="h-4 w-4 rounded border-input accent-primary" />
+                        <span className="text-xs text-foreground">Tem arma em casa?</span>
+                      </label>
+
+                      <Button onClick={saveAgressor} disabled={saving} size="sm" className="w-full">
+                        {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Check className="w-4 h-4 mr-1" /> Salvar alterações</>}
+                      </Button>
+                    </div>
+                  )}
                 </div>
-                <button onClick={() => deleteVinculo(v.id)} className="text-destructive hover:text-destructive/80">
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
