@@ -362,21 +362,25 @@ export default function OnboardingPage() {
                 <input type="text" className="ampara-input" placeholder="Profissão ou setor" value={agressor.profissao} maxLength={60}
                   onChange={e => setAgressor({ ...agressor, profissao: e.target.value })} />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-1.5">Placa parcial</label>
-                <input type="text" className="ampara-input" placeholder="Ex: ABC1" value={agressor.placa_parcial} maxLength={7}
-                  onChange={e => setAgressor({ ...agressor, placa_parcial: e.target.value.toUpperCase() })} />
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-1.5">Modelo do veículo</label>
-                  <input type="text" className="ampara-input" placeholder="Ex: Gol, Civic" value={agressor.veiculo_modelo} maxLength={50}
-                    onChange={e => setAgressor({ ...agressor, veiculo_modelo: e.target.value })} />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-1.5">Cor do veículo</label>
-                  <input type="text" className="ampara-input" placeholder="Ex: Preto, Prata" value={agressor.veiculo_cor} maxLength={30}
-                    onChange={e => setAgressor({ ...agressor, veiculo_cor: e.target.value })} />
+
+              <div className="border border-border rounded-xl p-3 space-y-2.5">
+                <p className="text-sm font-semibold text-foreground">Veículo</p>
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-1.5">Placa parcial</label>
+                    <input type="text" className="ampara-input" placeholder="ABC1" value={agressor.placa_parcial} maxLength={7}
+                      onChange={e => setAgressor({ ...agressor, placa_parcial: e.target.value.toUpperCase() })} />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-1.5">Modelo</label>
+                    <input type="text" className="ampara-input" placeholder="Gol, Civic" value={agressor.veiculo_modelo} maxLength={50}
+                      onChange={e => setAgressor({ ...agressor, veiculo_modelo: e.target.value })} />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-1.5">Cor</label>
+                    <input type="text" className="ampara-input" placeholder="Preto" value={agressor.veiculo_cor} maxLength={30}
+                      onChange={e => setAgressor({ ...agressor, veiculo_cor: e.target.value })} />
+                  </div>
                 </div>
               </div>
 
