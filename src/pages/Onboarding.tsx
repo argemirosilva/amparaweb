@@ -298,8 +298,11 @@ export default function OnboardingPage() {
           {/* New aggressor form */}
           {agressorMode === "new" && (
             <div className="space-y-3">
-              <input type="text" className="ampara-input" placeholder="Nome do agressor" value={agressor.nome} maxLength={100}
-                onChange={e => setAgressor({ ...agressor, nome: e.target.value })} />
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1.5">Nome do agressor</label>
+                <input type="text" className="ampara-input" placeholder="Nome completo ou parcial" value={agressor.nome} maxLength={100}
+                  onChange={e => setAgressor({ ...agressor, nome: e.target.value })} />
+              </div>
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1.5">Tipo de vínculo</label>
                 <select className="ampara-input" value={agressor.tipo_vinculo}
@@ -308,26 +311,53 @@ export default function OnboardingPage() {
                   {TIPOS_VINCULO.map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
               </div>
-              <input type="date" className="ampara-input" value={agressor.data_nascimento}
-                onChange={e => setAgressor({ ...agressor, data_nascimento: e.target.value })} />
-              <input type="tel" className="ampara-input" placeholder="Telefone do agressor" value={agressor.telefone}
-                onChange={e => setAgressor({ ...agressor, telefone: formatPhone(e.target.value) })} />
-              <input type="text" className="ampara-input" placeholder="Nome do pai (pode ser parcial)" value={agressor.nome_pai_parcial} maxLength={100}
-                onChange={e => setAgressor({ ...agressor, nome_pai_parcial: e.target.value })} />
-              <input type="text" className="ampara-input" placeholder="Nome da mãe (pode ser parcial)" value={agressor.nome_mae_parcial} maxLength={100}
-                onChange={e => setAgressor({ ...agressor, nome_mae_parcial: e.target.value })} />
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1.5">Data de nascimento</label>
+                <input type="date" className="ampara-input" value={agressor.data_nascimento}
+                  onChange={e => setAgressor({ ...agressor, data_nascimento: e.target.value })} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1.5">Telefone</label>
+                <input type="tel" className="ampara-input" placeholder="(00) 00000-0000" value={agressor.telefone}
+                  onChange={e => setAgressor({ ...agressor, telefone: formatPhone(e.target.value) })} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1.5">Nome do pai</label>
+                <input type="text" className="ampara-input" placeholder="Pode ser parcial" value={agressor.nome_pai_parcial} maxLength={100}
+                  onChange={e => setAgressor({ ...agressor, nome_pai_parcial: e.target.value })} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1.5">Nome da mãe</label>
+                <input type="text" className="ampara-input" placeholder="Pode ser parcial" value={agressor.nome_mae_parcial} maxLength={100}
+                  onChange={e => setAgressor({ ...agressor, nome_mae_parcial: e.target.value })} />
+              </div>
 
-              {/* New privacy-first fields */}
-              <input type="text" className="ampara-input" placeholder="Apelido (como é conhecido)" value={agressor.apelido} maxLength={50}
-                onChange={e => setAgressor({ ...agressor, apelido: e.target.value })} />
-              <input type="text" className="ampara-input" placeholder="Cidade/UF (ex: São Paulo/SP)" value={agressor.cidade_uf} maxLength={60}
-                onChange={e => setAgressor({ ...agressor, cidade_uf: e.target.value })} />
-              <input type="text" className="ampara-input" placeholder="Bairro ou região" value={agressor.bairro} maxLength={60}
-                onChange={e => setAgressor({ ...agressor, bairro: e.target.value })} />
-              <input type="text" className="ampara-input" placeholder="Profissão ou setor" value={agressor.profissao} maxLength={60}
-                onChange={e => setAgressor({ ...agressor, profissao: e.target.value })} />
-              <input type="text" className="ampara-input" placeholder="Placa parcial (ex: ABC1)" value={agressor.placa_parcial} maxLength={7}
-                onChange={e => setAgressor({ ...agressor, placa_parcial: e.target.value.toUpperCase() })} />
+              {/* Privacy-first fields */}
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1.5">Apelido</label>
+                <input type="text" className="ampara-input" placeholder="Como é conhecido" value={agressor.apelido} maxLength={50}
+                  onChange={e => setAgressor({ ...agressor, apelido: e.target.value })} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1.5">Cidade/UF</label>
+                <input type="text" className="ampara-input" placeholder="Ex: São Paulo/SP" value={agressor.cidade_uf} maxLength={60}
+                  onChange={e => setAgressor({ ...agressor, cidade_uf: e.target.value })} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1.5">Bairro ou região</label>
+                <input type="text" className="ampara-input" placeholder="Bairro onde mora ou frequenta" value={agressor.bairro} maxLength={60}
+                  onChange={e => setAgressor({ ...agressor, bairro: e.target.value })} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1.5">Profissão</label>
+                <input type="text" className="ampara-input" placeholder="Profissão ou setor" value={agressor.profissao} maxLength={60}
+                  onChange={e => setAgressor({ ...agressor, profissao: e.target.value })} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1.5">Placa parcial</label>
+                <input type="text" className="ampara-input" placeholder="Ex: ABC1" value={agressor.placa_parcial} maxLength={7}
+                  onChange={e => setAgressor({ ...agressor, placa_parcial: e.target.value.toUpperCase() })} />
+              </div>
 
               <label className="flex items-center gap-3 cursor-pointer">
                 <input type="checkbox" checked={agressor.forca_seguranca}
