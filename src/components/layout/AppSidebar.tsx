@@ -8,6 +8,7 @@ import {
   UserCircle,
   Settings,
   LogOut,
+  Search,
 } from "lucide-react";
 import {
   Sidebar,
@@ -25,6 +26,7 @@ const menuItems = [
   { title: "Dashboard", url: "/home", icon: LayoutDashboard },
   { title: "Mapa", url: "/mapa", icon: MapPin },
   { title: "Gravações", url: "/gravacoes", icon: Mic },
+  { title: "Buscar Perfil", url: "/busca-perfil", icon: Search },
   { title: "Perfil", url: "/perfil", icon: UserCircle },
   { title: "Configurações", url: "/configuracoes", icon: Settings },
 ];

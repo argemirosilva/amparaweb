@@ -53,6 +53,152 @@ async function authenticateSession(supabase: any, sessionToken: string) {
   return data.user_id as string;
 }
 
+// ========== AI RANKING HELPER ==========
+async function rankCandidatesWithAI(searchInput: any, candidates: any[]) {
+  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+  if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
+
+  const systemPrompt = `Você é um módulo de análise forense de perfis para proteção de mulheres contra violência doméstica.
+Dado os critérios de busca da usuária e uma lista de candidatos do banco de dados, você deve:
+1. Pontuar cada candidato (0-100) com base nos pesos:
+   - Contato parcial: DDD bate +10, final 4 dígitos +25, 2-3 dígitos +10
+   - Nome muito similar +25, só primeiro nome +12, apelido similar +12
+   - Pai/mãe primeiro nome bate +10 cada, parcial similar +15 cada
+   - Cidade/UF bate +18, bairro +10, referência +6
+   - Profissão/setor +10
+   - Placa parcial forte +18, cor/modelo +8
+   - Conflitos fortes: -25 a -40
+2. Converter score em probabilidade (max 99%): >=85→90-99%, 70-84→70-89%, 55-69→50-69%, 40-54→30-49%, 25-39→15-29%, <25→<15%
+3. Para cada candidato, listar match_breakdown com status (completo/parcial/nao_bateu/conflitante)
+4. Calcular risk_level (Baixo/Médio/Alto/Crítico) e violence_probabilities com base nos incidents
+5. Retornar os top 10 ordenados por probabilidade
+
+RETORNE APENAS JSON válido com a estrutura:
+{
+  "results": [{
+    "profile_id": "uuid",
+    "display_name_masked": "string",
+    "location_summary": "string",
+    "probability_percent": number,
+    "match_breakdown": [{"field": "string", "status": "completo|parcial|nao_bateu|conflitante", "user_value_masked": "string", "candidate_value_masked": "string", "similarity": number}],
+    "strong_signals": ["string"],
+    "weak_signals": ["string"],
+    "conflicts": ["string"],
+    "risk_level": "Baixo|Médio|Alto|Crítico",
+    "violence_probabilities": {"psicologica": number, "moral": number, "patrimonial": number, "fisica": number, "sexual": number, "ameaca_perseguicao": number},
+    "explanation_short": "string",
+    "guidance": ["string"]
+  }],
+  "query_summary": {}
+}`;
+
+  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${LOVABLE_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: "google/gemini-2.5-flash",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: JSON.stringify({ search_input: searchInput, candidates }) },
+      ],
+      temperature: 0.1,
+      max_tokens: 8000,
+    }),
+  });
+
+  if (!response.ok) {
+    const err = await response.text();
+    throw new Error(`AI API error: ${response.status} - ${err}`);
+  }
+
+  const data = await response.json();
+  let content = data.choices?.[0]?.message?.content || "";
+  const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (jsonMatch) content = jsonMatch[1];
+  
+  try {
+    const parsed = JSON.parse(content.trim());
+    parsed.query_summary = searchInput;
+    return parsed;
+  } catch (e) {
+    console.error("Failed to parse AI response:", content);
+    throw new Error("Failed to parse AI ranking response");
+  }
+}
+
+// ========== RECALCULATE AGGRESSOR RISK ==========
+async function recalculateAgressorRisk(supabase: any, agressorId: string) {
+  const { data: incidents } = await supabase
+    .from("aggressor_incidents")
+    .select("violence_types, severity, occurred_at_month, pattern_tags, confidence")
+    .eq("aggressor_id", agressorId)
+    .order("occurred_at_month", { ascending: false });
+
+  if (!incidents || incidents.length === 0) {
+    await supabase.from("agressores").update({
+      risk_score: 0, risk_level: "baixo",
+      violence_profile_probs: {}, flags: [],
+    }).eq("id", agressorId);
+    return;
+  }
+
+  const typeCounts: Record<string, { count: number; totalSev: number; recent: boolean }> = {};
+  const now = new Date();
+  let maxSeverity = 0;
+  let recentHighSeverity = false;
+  const patternSet = new Set<string>();
+
+  for (const inc of incidents) {
+    const monthDiff = inc.occurred_at_month ? 
+      (now.getFullYear() * 12 + now.getMonth()) - 
+      (parseInt(inc.occurred_at_month.split("-")[0]) * 12 + parseInt(inc.occurred_at_month.split("-")[1]) - 1) : 12;
+    const isRecent = monthDiff <= 6;
+    for (const vt of (inc.violence_types || [])) {
+      if (!typeCounts[vt]) typeCounts[vt] = { count: 0, totalSev: 0, recent: false };
+      typeCounts[vt].count++;
+      typeCounts[vt].totalSev += inc.severity || 3;
+      if (isRecent) typeCounts[vt].recent = true;
+    }
+    if (inc.severity > maxSeverity) maxSeverity = inc.severity;
+    if (isRecent && inc.severity >= 4) recentHighSeverity = true;
+    for (const pt of (inc.pattern_tags || [])) patternSet.add(pt);
+  }
+
+  const totalIncidents = incidents.length;
+  const violenceProbs: Record<string, number> = {};
+  for (const [type, data] of Object.entries(typeCounts)) {
+    const freq = data.count / totalIncidents;
+    const sevFactor = data.totalSev / (data.count * 5);
+    const recencyBoost = data.recent ? 1.3 : 0.8;
+    violenceProbs[type] = Math.min(99, Math.round(freq * sevFactor * recencyBoost * 100));
+  }
+
+  let riskScore = Math.min(100, totalIncidents * 8 + maxSeverity * 10);
+  if (recentHighSeverity) riskScore = Math.min(100, riskScore + 20);
+  if (patternSet.has("perseguicao") || patternSet.has("stalking")) riskScore = Math.min(100, riskScore + 15);
+  if (patternSet.has("ameaca")) riskScore = Math.min(100, riskScore + 10);
+
+  const riskLevel = riskScore >= 80 ? "critico" : riskScore >= 55 ? "alto" : riskScore >= 30 ? "medio" : "baixo";
+
+  const flags: string[] = [];
+  if (totalIncidents >= 3) flags.push("reincidente");
+  if (recentHighSeverity) flags.push("escalada");
+  if (patternSet.has("perseguicao") || patternSet.has("stalking")) flags.push("stalking");
+  if (totalIncidents > 1) flags.push("multi-relatos");
+
+  const lastIncident = incidents[0]?.occurred_at_month ? 
+    new Date(incidents[0].occurred_at_month + "-01").toISOString() : null;
+
+  await supabase.from("agressores").update({
+    risk_score: riskScore, risk_level: riskLevel,
+    violence_profile_probs: violenceProbs, flags,
+    last_incident_at: lastIncident,
+  }).eq("id", agressorId);
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -293,23 +439,189 @@ serve(async (req) => {
         return json({ success: true, resultados: anonymized });
       }
 
+      // ========== BUSCA AVANÇADA DE PERFIL (PRIVACY-FIRST) ==========
+      case "searchAgressorAdvanced": {
+        const {
+          nome, apelido, idade_aprox,
+          nome_pai, nome_mae,
+          ddd, final_telefone,
+          cidade_uf, bairro,
+          profissao,
+          placa_parcial,
+        } = params;
+
+        // Need at least one search parameter
+        const hasAny = [nome, apelido, nome_pai, nome_mae, ddd, final_telefone, cidade_uf, bairro, profissao, placa_parcial].some(v => v && String(v).trim());
+        if (!hasAny) {
+          return json({ error: "Forneça pelo menos um critério de busca" }, 400);
+        }
+
+        // Phase A: SQL recall via the search_agressor_candidates function
+        const { data: candidates, error: searchErr } = await supabase.rpc("search_agressor_candidates", {
+          p_name: nome?.trim() || null,
+          p_alias: apelido?.trim() || null,
+          p_father_first: nome_pai?.trim() || null,
+          p_mother_first: nome_mae?.trim() || null,
+          p_ddd: ddd?.trim() || null,
+          p_phone_last_digits: final_telefone?.trim() || null,
+          p_city_uf: cidade_uf?.trim() || null,
+          p_neighborhood: bairro?.trim() || null,
+          p_profession: profissao?.trim() || null,
+          p_plate_prefix: placa_parcial?.trim() || null,
+          p_age_approx: idade_aprox ? parseInt(String(idade_aprox)) : null,
+        });
+
+        if (searchErr) {
+          console.error("Search error:", searchErr);
+          return json({ error: "Erro na busca" }, 500);
+        }
+
+        if (!candidates || candidates.length === 0) {
+          return json({ success: true, results: [], query_summary: params });
+        }
+
+        // Get incidents for all candidates
+        const candidateIds = candidates.map((c: any) => c.id);
+        const { data: allIncidents } = await supabase
+          .from("aggressor_incidents")
+          .select("aggressor_id, violence_types, severity, occurred_at_month, pattern_tags, confidence")
+          .in("aggressor_id", candidateIds);
+
+        const incidentsByAggressor: Record<string, any[]> = {};
+        for (const inc of (allIncidents || [])) {
+          if (!incidentsByAggressor[inc.aggressor_id]) incidentsByAggressor[inc.aggressor_id] = [];
+          incidentsByAggressor[inc.aggressor_id].push(inc);
+        }
+
+        // Phase B: AI ranking with Gemini
+        const searchInput = {
+          nome: nome?.trim() || null,
+          apelido: apelido?.trim() || null,
+          idade_aprox: idade_aprox || null,
+          nome_pai: nome_pai?.trim() || null,
+          nome_mae: nome_mae?.trim() || null,
+          ddd: ddd?.trim() || null,
+          final_telefone: final_telefone?.trim() || null,
+          cidade_uf: cidade_uf?.trim() || null,
+          bairro: bairro?.trim() || null,
+          profissao: profissao?.trim() || null,
+          placa_parcial: placa_parcial?.trim() || null,
+        };
+
+        // Prepare candidate summaries for AI (privacy-safe)
+        const candidateSummaries = candidates.slice(0, 50).map((c: any) => ({
+          id: c.id,
+          display_name_masked: c.display_name_masked,
+          name_normalized: c.name_normalized,
+          aliases: c.aliases || [],
+          data_nascimento_year: c.data_nascimento ? new Date(c.data_nascimento).getFullYear() : null,
+          approx_age_min: c.approx_age_min,
+          approx_age_max: c.approx_age_max,
+          father_first_name: c.father_first_name,
+          mother_first_name: c.mother_first_name,
+          primary_city_uf: c.primary_city_uf,
+          neighborhoods: c.neighborhoods || [],
+          profession: c.profession,
+          sector: c.sector,
+          phone_clues: c.phone_clues || [],
+          vehicles: c.vehicles || [],
+          forca_seguranca: c.forca_seguranca,
+          tem_arma_em_casa: c.tem_arma_em_casa,
+          risk_score: c.risk_score,
+          risk_level: c.risk_level,
+          violence_profile_probs: c.violence_profile_probs,
+          flags: c.flags || [],
+          appearance_tags: c.appearance_tags || [],
+          total_vinculos: c.total_vinculos,
+          name_similarity: c.name_similarity,
+          incidents: (incidentsByAggressor[c.id] || []).map((i: any) => ({
+            violence_types: i.violence_types,
+            severity: i.severity,
+            occurred_at_month: i.occurred_at_month,
+            pattern_tags: i.pattern_tags,
+          })),
+        }));
+
+        try {
+          const aiResult = await rankCandidatesWithAI(searchInput, candidateSummaries);
+          return json({ success: true, ...aiResult });
+        } catch (e) {
+          console.error("AI ranking error, falling back to SQL scoring:", e);
+          // Fallback: return SQL-scored results without AI
+          const fallbackResults = candidates.slice(0, 10).map((c: any) => {
+            const score = Math.min(99, Math.round((c.name_similarity || 0) * 60 + (c.quality_score || 0) * 0.4));
+            const prob = score >= 85 ? Math.min(99, 90 + Math.round(score - 85)) :
+                         score >= 70 ? 70 + Math.round((score - 70) * 1.3) :
+                         score >= 55 ? 50 + Math.round((score - 55) * 1.3) :
+                         score >= 40 ? 30 + Math.round((score - 40) * 1.3) :
+                         score >= 25 ? 15 + Math.round((score - 25) * 1) :
+                         Math.max(5, score);
+            return {
+              profile_id: c.id,
+              display_name_masked: c.display_name_masked || "Desconhecido",
+              location_summary: [c.primary_city_uf, (c.neighborhoods || [])[0]].filter(Boolean).join(", "),
+              probability_percent: Math.min(99, prob),
+              match_breakdown: [],
+              strong_signals: [],
+              weak_signals: [],
+              conflicts: [],
+              risk_level: c.risk_level || "Baixo",
+              violence_probabilities: c.violence_profile_probs || {},
+              explanation_short: "Ranking calculado sem IA (fallback).",
+              guidance: ["Adicione mais dados para refinar a busca"],
+            };
+          });
+          return json({ success: true, results: fallbackResults, query_summary: searchInput });
+        }
+      }
+
       case "createAgressor": {
-        const { nome, data_nascimento, telefone, nome_pai_parcial, nome_mae_parcial, forca_seguranca, tem_arma_em_casa, tipo_vinculo } = params;
+        const {
+          nome, data_nascimento, telefone, nome_pai_parcial, nome_mae_parcial,
+          forca_seguranca, tem_arma_em_casa, tipo_vinculo,
+          // New privacy-first fields
+          aliases, approx_age_min, approx_age_max,
+          primary_city_uf, neighborhoods, reference_points, geo_area_tags,
+          profession, sector, company_public,
+          vehicles, appearance_notes, appearance_tags,
+          phone_clues, email_clues,
+          // Incident data (optional first report)
+          incident,
+        } = params;
         if (!nome?.trim()) return json({ error: "Nome do agressor é obrigatório" }, 400);
         if (!tipo_vinculo?.trim()) return json({ error: "Tipo de vínculo é obrigatório" }, 400);
 
-        // Create aggressor record
+        // Create aggressor record with expanded fields
+        const insertData: Record<string, any> = {
+          nome: nome.trim(),
+          data_nascimento: data_nascimento || null,
+          telefone: telefone ? telefone.replace(/\D/g, "") : null,
+          nome_pai_parcial: nome_pai_parcial?.trim() || null,
+          nome_mae_parcial: nome_mae_parcial?.trim() || null,
+          forca_seguranca: forca_seguranca || false,
+          tem_arma_em_casa: tem_arma_em_casa || false,
+        };
+
+        // Add new privacy-first fields if provided
+        if (aliases?.length) insertData.aliases = aliases;
+        if (approx_age_min) insertData.approx_age_min = approx_age_min;
+        if (approx_age_max) insertData.approx_age_max = approx_age_max;
+        if (primary_city_uf) insertData.primary_city_uf = primary_city_uf.trim();
+        if (neighborhoods?.length) insertData.neighborhoods = neighborhoods;
+        if (reference_points?.length) insertData.reference_points = reference_points;
+        if (geo_area_tags?.length) insertData.geo_area_tags = geo_area_tags;
+        if (profession) insertData.profession = profession.trim();
+        if (sector) insertData.sector = sector.trim();
+        if (company_public) insertData.company_public = company_public.trim();
+        if (vehicles?.length) insertData.vehicles = vehicles;
+        if (appearance_notes) insertData.appearance_notes = appearance_notes.trim();
+        if (appearance_tags?.length) insertData.appearance_tags = appearance_tags;
+        if (phone_clues?.length) insertData.phone_clues = phone_clues;
+        if (email_clues?.length) insertData.email_clues = email_clues;
+
         const { data: agressor, error: aErr } = await supabase
           .from("agressores")
-          .insert({
-            nome: nome.trim(),
-            data_nascimento: data_nascimento || null,
-            telefone: telefone ? telefone.replace(/\D/g, "") : null,
-            nome_pai_parcial: nome_pai_parcial?.trim() || null,
-            nome_mae_parcial: nome_mae_parcial?.trim() || null,
-            forca_seguranca: forca_seguranca || false,
-            tem_arma_em_casa: tem_arma_em_casa || false,
-          })
+          .insert(insertData)
           .select("id")
           .single();
 
@@ -332,12 +644,73 @@ serve(async (req) => {
           return json({ error: "Erro ao vincular agressor" }, 500);
         }
 
+        // Create initial incident if provided
+        if (incident && incident.violence_types?.length) {
+          await supabase.from("aggressor_incidents").insert({
+            aggressor_id: agressor.id,
+            reporter_user_id: userId,
+            occurred_at_month: incident.occurred_at_month || null,
+            violence_types: incident.violence_types,
+            severity: incident.severity || 3,
+            pattern_tags: incident.pattern_tags || [],
+            description_sanitized: incident.description_sanitized?.trim() || null,
+            source_type: "usuaria",
+            confidence: 0.7,
+          });
+        }
+
         await supabase.from("audit_logs").insert([
           { user_id: userId, action_type: "aggressor_created", success: true, details: { agressor_id: agressor.id } },
           { user_id: userId, action_type: "aggressor_linked", success: true, details: { agressor_id: agressor.id, tipo_vinculo } },
         ]);
 
         return json({ success: true, agressor_id: agressor.id }, 201);
+      }
+
+      case "reportIncident": {
+        const { agressor_id, violence_types, severity, occurred_at_month, pattern_tags, description_sanitized } = params;
+        if (!agressor_id) return json({ error: "agressor_id obrigatório" }, 400);
+        if (!violence_types?.length) return json({ error: "Tipo(s) de violência obrigatório(s)" }, 400);
+
+        // Verify user has a link to this aggressor
+        const { data: link } = await supabase
+          .from("vitimas_agressores")
+          .select("id")
+          .eq("usuario_id", userId)
+          .eq("agressor_id", agressor_id)
+          .maybeSingle();
+        if (!link) return json({ error: "Você não tem vínculo com este agressor" }, 403);
+
+        const { data: inc, error: incErr } = await supabase
+          .from("aggressor_incidents")
+          .insert({
+            aggressor_id,
+            reporter_user_id: userId,
+            occurred_at_month: occurred_at_month || null,
+            violence_types,
+            severity: severity || 3,
+            pattern_tags: pattern_tags || [],
+            description_sanitized: description_sanitized?.trim() || null,
+            source_type: "usuaria",
+            confidence: 0.7,
+          })
+          .select("id")
+          .single();
+
+        if (incErr) {
+          console.error("Report incident error:", incErr);
+          return json({ error: "Erro ao registrar incidente" }, 500);
+        }
+
+        // Recalculate risk for this aggressor
+        await recalculateAgressorRisk(supabase, agressor_id);
+
+        await supabase.from("audit_logs").insert({
+          user_id: userId, action_type: "incident_reported", success: true,
+          details: { aggressor_id: agressor_id, incident_id: inc.id },
+        });
+
+        return json({ success: true, incident_id: inc.id }, 201);
       }
 
       case "linkAgressor": {

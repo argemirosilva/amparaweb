@@ -33,6 +33,12 @@ interface AgressorForm {
   nome_mae_parcial: string;
   forca_seguranca: boolean;
   tem_arma_em_casa: boolean;
+  // Privacy-first fields
+  apelido: string;
+  cidade_uf: string;
+  bairro: string;
+  profissao: string;
+  placa_parcial: string;
 }
 
 interface SearchResult {
@@ -68,6 +74,7 @@ export default function OnboardingPage() {
     nome: "", tipo_vinculo: "", data_nascimento: "", telefone: "",
     nome_pai_parcial: "", nome_mae_parcial: "",
     forca_seguranca: false, tem_arma_em_casa: false,
+    apelido: "", cidade_uf: "", bairro: "", profissao: "", placa_parcial: "",
   });
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
@@ -135,7 +142,14 @@ export default function OnboardingPage() {
     if (!agressor.nome.trim()) { setError("Nome do agressor é obrigatório"); return; }
     if (!agressor.tipo_vinculo) { setError("Tipo de vínculo é obrigatório"); return; }
     setLoading(true);
-    const { ok, data } = await api("createAgressor", agressor);
+    const payload: Record<string, any> = { ...agressor };
+    // Add privacy-first fields
+    if (agressor.apelido.trim()) payload.aliases = [agressor.apelido.trim()];
+    if (agressor.cidade_uf.trim()) payload.primary_city_uf = agressor.cidade_uf.trim();
+    if (agressor.bairro.trim()) payload.neighborhoods = [agressor.bairro.trim()];
+    if (agressor.profissao.trim()) payload.profession = agressor.profissao.trim();
+    if (agressor.placa_parcial.trim()) payload.vehicles = [{ plate_partial: agressor.placa_parcial.trim() }];
+    const { ok, data } = await api("createAgressor", payload);
     if (!ok) { setError(data.error || "Erro ao cadastrar agressor"); setLoading(false); return; }
     await finishOnboarding();
   };
@@ -302,6 +316,19 @@ export default function OnboardingPage() {
                 onChange={e => setAgressor({ ...agressor, nome_pai_parcial: e.target.value })} />
               <input type="text" className="ampara-input" placeholder="Nome da mãe (pode ser parcial)" value={agressor.nome_mae_parcial} maxLength={100}
                 onChange={e => setAgressor({ ...agressor, nome_mae_parcial: e.target.value })} />
+
+              {/* New privacy-first fields */}
+              <input type="text" className="ampara-input" placeholder="Apelido (como é conhecido)" value={agressor.apelido} maxLength={50}
+                onChange={e => setAgressor({ ...agressor, apelido: e.target.value })} />
+              <input type="text" className="ampara-input" placeholder="Cidade/UF (ex: São Paulo/SP)" value={agressor.cidade_uf} maxLength={60}
+                onChange={e => setAgressor({ ...agressor, cidade_uf: e.target.value })} />
+              <input type="text" className="ampara-input" placeholder="Bairro ou região" value={agressor.bairro} maxLength={60}
+                onChange={e => setAgressor({ ...agressor, bairro: e.target.value })} />
+              <input type="text" className="ampara-input" placeholder="Profissão ou setor" value={agressor.profissao} maxLength={60}
+                onChange={e => setAgressor({ ...agressor, profissao: e.target.value })} />
+              <input type="text" className="ampara-input" placeholder="Placa parcial (ex: ABC1)" value={agressor.placa_parcial} maxLength={7}
+                onChange={e => setAgressor({ ...agressor, placa_parcial: e.target.value.toUpperCase() })} />
+
               <label className="flex items-center gap-3 cursor-pointer">
                 <input type="checkbox" checked={agressor.forca_seguranca}
                   onChange={e => setAgressor({ ...agressor, forca_seguranca: e.target.checked })}
