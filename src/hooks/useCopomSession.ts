@@ -101,32 +101,9 @@ export function useCopomSession() {
     setState((s) => ({ ...s, isSpeaking: conversation.isSpeaking }));
   }, [conversation.isSpeaking]);
 
-  // Start the COPOM session
-  const startSession = useCallback(
-    async (panicAlertId?: string) => {
-      if (!usuario) {
-        setState((s) => ({ ...s, status: "error", error: "Usuária não autenticada" }));
-        return;
-      }
-
-      setState((s) => ({ ...s, status: "collecting", error: null, logs: [] }));
-      addLog("DATA_COLLECTION_START");
-
-      // 1. Collect data
-      const result = await collectCopomData(usuario.id, panicAlertId);
-
-      if (!result.valid || !result.context) {
-        addLog("VALIDATION_FAILED", { errors: result.errors });
-        setState((s) => ({
-          ...s,
-          status: "error",
-          error: `ABORTADO: dados mínimos ausentes - ${result.errors.join(", ")}`,
-        }));
-        return;
-      }
-
-      const ctx = result.context;
-      addLog("DATA_COLLECTED", { protocol_id: ctx.protocol_id, risk_level: ctx.risk_level });
+  // Internal: connect to ElevenLabs and send context
+  const connectAndSend = useCallback(
+    async (ctx: CopomContextPayload) => {
       setState((s) => ({
         ...s,
         context: ctx,
@@ -134,7 +111,7 @@ export function useCopomSession() {
         status: "connecting",
       }));
 
-      // 2. Request microphone
+      // Request microphone
       try {
         await navigator.mediaDevices.getUserMedia({ audio: true });
         addLog("MICROPHONE_GRANTED");
@@ -148,7 +125,7 @@ export function useCopomSession() {
         return;
       }
 
-      // 3. Start ElevenLabs session (public agent, no token needed)
+      // Start ElevenLabs session
       try {
         await conversation.startSession({
           agentId: AGENT_ID,
@@ -165,11 +142,11 @@ export function useCopomSession() {
         return;
       }
 
-      // 4. Send context (no response triggered)
+      // Send context
       conversation.sendContextualUpdate(JSON.stringify(ctx));
       addLog("CONTEXT_SENT", { payload_size: JSON.stringify(ctx).length });
 
-      // 5. Trigger the agent to speak
+      // Trigger the agent
       const triggerMessage =
         "Iniciar comunicado de urgência ao COPOM usando SOMENTE o contexto COPOM_ALERT_CONTEXT. " +
         "NUNCA invente dados. Se faltar algo, diga: 'essa informação não está disponível no sistema neste momento'. " +
@@ -178,7 +155,6 @@ export function useCopomSession() {
       conversation.sendUserMessage(triggerMessage);
       addLog("TRIGGER_MESSAGE_SENT");
 
-      // 6. Set last location for update tracking
       setState((s) => ({
         ...s,
         lastLocationSent: ctx.location.lat && ctx.location.lng
@@ -186,8 +162,39 @@ export function useCopomSession() {
           : null,
       }));
       lastMovementRef.current = ctx.location.movement_status;
+    },
+    [conversation, addLog]
+  );
 
-      // 7. Start real-time location updates
+  // Start the COPOM session (real data)
+  const startSession = useCallback(
+    async (panicAlertId?: string) => {
+      if (!usuario) {
+        setState((s) => ({ ...s, status: "error", error: "Usuária não autenticada" }));
+        return;
+      }
+
+      setState((s) => ({ ...s, status: "collecting", error: null, logs: [] }));
+      addLog("DATA_COLLECTION_START");
+
+      const result = await collectCopomData(usuario.id, panicAlertId);
+
+      if (!result.valid || !result.context) {
+        addLog("VALIDATION_FAILED", { errors: result.errors });
+        setState((s) => ({
+          ...s,
+          status: "error",
+          error: `ABORTADO: dados mínimos ausentes - ${result.errors.join(", ")}`,
+        }));
+        return;
+      }
+
+      const ctx = result.context;
+      addLog("DATA_COLLECTED", { protocol_id: ctx.protocol_id, risk_level: ctx.risk_level });
+
+      await connectAndSend(ctx);
+
+      // Start real-time location updates
       updateIntervalRef.current = setInterval(async () => {
         if (!usuario || !ctx.protocol_id) return;
 
@@ -218,8 +225,56 @@ export function useCopomSession() {
         });
       }, LOCATION_UPDATE_INTERVAL);
     },
-    [usuario, conversation, addLog]
+    [usuario, conversation, addLog, connectAndSend]
   );
+
+  // Start test session with hardcoded data
+  const startTestSession = useCallback(async () => {
+    setState((s) => ({ ...s, status: "collecting", error: null, logs: [] }));
+    addLog("TEST_MODE_START");
+
+    const testContext: CopomContextPayload = {
+      type: "COPOM_ALERT_CONTEXT",
+      protocol_id: `AMP-TEST-${Date.now().toString(36).toUpperCase()}`,
+      timestamp: new Date().toISOString(),
+      risk_level: "ALTO",
+      trigger_reason: "panico_manual",
+      victim: {
+        name: "Maria da Silva",
+        internal_id: "test-user-001",
+        phone_masked: "(14) ****-6686",
+      },
+      location: {
+        address: "Rua José Gonçalves de Oliveira Filho, 67 - Residencial Estoril Premium, Bauru/SP",
+        lat: -22.3154,
+        lng: -49.0615,
+        accuracy_m: 12,
+        movement_status: "PARADA",
+        speed_kmh: 0,
+      },
+      monitoring_link: `${window.location.origin}/TESTE123`,
+      aggressor: {
+        name_masked: "J*** S***",
+        description: "Ex-marido, ativo, risco: alto",
+        vehicle: {
+          model: "Onix",
+          color: "Prata",
+          plate_partial: "ABC1D23",
+        },
+        vehicle_note: "NAO_CONFIRMADO",
+      },
+      strict_rules: {
+        never_invent_data: true,
+        if_missing_say_unavailable: true,
+        do_not_claim_certainty: true,
+        privacy_first: true,
+      },
+    };
+
+    addLog("TEST_DATA_GENERATED", { protocol_id: testContext.protocol_id });
+
+    await connectAndSend(testContext);
+  }, [addLog, connectAndSend]);
 
   // End the session
   const endSession = useCallback(async () => {
@@ -262,6 +317,7 @@ export function useCopomSession() {
   return {
     state,
     startSession,
+    startTestSession,
     endSession,
     getResult,
     conversationStatus: conversation.status,

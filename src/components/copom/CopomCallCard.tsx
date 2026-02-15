@@ -17,8 +17,8 @@ import {
   ChevronUp,
 } from "lucide-react";
 
-export default function CopomCallCard({ panicAlertId }: { panicAlertId?: string }) {
-  const { state, startSession, endSession } = useCopomSession();
+export default function CopomCallCard({ panicAlertId, testMode }: { panicAlertId?: string; testMode?: boolean }) {
+  const { state, startSession, startTestSession, endSession } = useCopomSession();
   const [showLogs, setShowLogs] = useState(false);
 
   const statusConfig = {
@@ -94,13 +94,13 @@ export default function CopomCallCard({ panicAlertId }: { panicAlertId?: string 
           <div className="flex gap-2">
             {(state.status === "idle" || state.status === "error" || state.status === "ended") && (
               <Button
-                onClick={() => startSession(panicAlertId)}
+                onClick={() => testMode ? startTestSession() : startSession(panicAlertId)}
                 variant="destructive"
                 size="sm"
                 className="flex-1 gap-2"
               >
                 <Phone className="w-4 h-4" />
-                {state.status === "ended" ? "Ligar novamente" : "Iniciar comunicação"}
+                {state.status === "ended" ? "Ligar novamente" : testMode ? "Iniciar teste" : "Iniciar comunicação"}
               </Button>
             )}
             {(state.status === "active" || state.status === "connecting") && (
