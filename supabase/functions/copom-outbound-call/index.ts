@@ -48,6 +48,7 @@ serve(async (req) => {
       dynamicVariables.STATUS_MOVIMENTO = context.location?.movement_status || "";
       dynamicVariables.AGRESSOR_NOME = context.aggressor?.name || context.aggressor?.name_masked || "";
       dynamicVariables.AGRESSOR_DESCRICAO = context.aggressor?.description || "";
+      dynamicVariables.RELACAO = context.victim_aggressor_relation || "";
       // Remove protocol (https://) and www for cleaner speech
       const rawLink = context.monitoring_link || "";
       dynamicVariables.LINK_MONITORAMENTO = rawLink.replace(/^https?:\/\/(www\.)?/, "");

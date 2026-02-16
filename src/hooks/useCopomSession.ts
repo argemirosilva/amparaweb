@@ -253,6 +253,7 @@ export function useCopomSession() {
         speed_kmh: 0,
       },
       monitoring_link: "https://amparamulher.com.br/a2jb3",
+      victim_aggressor_relation: "Ex-marido",
       aggressor: {
         name: "João Santos",
         name_masked: "J*** S***",
