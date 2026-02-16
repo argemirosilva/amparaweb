@@ -47,3 +47,6 @@ verify_jwt = false
 
 [functions.mapbox-token]
 verify_jwt = false
+
+[functions.admin-api]
+verify_jwt = false
