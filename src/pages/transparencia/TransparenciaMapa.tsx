@@ -403,7 +403,12 @@ export default function TransparenciaMapa() {
         type: "symbol",
         source: "state-labels",
         layout: {
-          "text-field": ["concat", ["get", "uf_code"], " (", ["to-string", ["get", "eventos"]], ")"],
+          "text-field": [
+            "case",
+            [">", ["get", "eventos"], 0],
+            ["concat", ["get", "uf_code"], " (", ["to-string", ["get", "eventos"]], ")"],
+            ["get", "uf_code"],
+          ],
           "text-size": 11,
           "text-font": ["DIN Pro Bold", "Arial Unicode MS Bold"],
           "text-allow-overlap": false,
