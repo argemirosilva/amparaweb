@@ -570,31 +570,6 @@ export default function TransparenciaMapa() {
           </div>
         )}
 
-        {/* Legend */}
-        {mapLoaded && (
-          <div
-            className="absolute bottom-4 left-4 rounded-md border p-3"
-            style={{ background: "hsl(0 0% 100% / 0.95)", borderColor: "hsl(220 13% 91%)", zIndex: 5 }}
-          >
-            <p className="text-xs font-semibold mb-2" style={{ color: "hsl(220 13% 18%)" }}>
-              Eventos por UF
-            </p>
-            <div className="space-y-1">
-              {[
-                { color: "#dc2626", label: "Muito alto (15+)" },
-                { color: "#f97316", label: "Alto (6-14)" },
-                { color: "#facc15", label: "Moderado (3-5)" },
-                { color: "#4ade80", label: "Baixo (1-2)" },
-                { color: "#e5e7eb", label: "Sem dados" },
-              ].map((item) => (
-                <div key={item.label} className="flex items-center gap-2">
-                  <div className="w-4 h-3 rounded-sm" style={{ background: item.color }} />
-                  <span className="text-[10px]" style={{ color: "hsl(220 9% 46%)" }}>{item.label}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Sidebar panel */}
