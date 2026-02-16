@@ -38,7 +38,7 @@ export default function CopomCallCard({ panicAlertId, testMode }: { panicAlertId
       lat: -22.3154, lng: -49.0615, accuracy_m: 12,
       movement_status: "PARADA", speed_kmh: 0,
     },
-    monitoring_link: `${window.location.origin}/TESTE123`,
+    monitoring_link: "https://amparamulher.com.br/a2jb3",
     aggressor: {
       name: "João Santos", name_masked: "J*** S***", description: "Ex-marido, ativo, risco: alto",
       vehicle: { model: "Onix", color: "Prata", plate_partial: "ABC1D23" },
