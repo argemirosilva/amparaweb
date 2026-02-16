@@ -27,6 +27,10 @@ const STATE_NAME_TO_UF: Record<string, string> = {
   Tocantins: "TO",
 };
 
+const UF_TO_STATE_NAME: Record<string, string> = Object.fromEntries(
+  Object.entries(STATE_NAME_TO_UF).map(([name, uf]) => [uf, name])
+);
+
 function getColorForValue(value: number): string {
   if (value === 0) return "#e5e7eb";
   if (value >= 15) return "#dc2626";
@@ -305,7 +309,7 @@ export default function TransparenciaMapa() {
           const coords =
             f.geometry.type === "Polygon"
               ? f.geometry.coordinates[0]
-              : f.geometry.coordinates.flat(1);
+              : f.geometry.coordinates.flat(2);
           const lngs = coords.map((c: number[]) => c[0]);
           const lats = coords.map((c: number[]) => c[1]);
           const center = [
@@ -315,7 +319,7 @@ export default function TransparenciaMapa() {
           return {
             type: "Feature",
             geometry: { type: "Point", coordinates: center },
-            properties: { uf_code: f.properties.uf_code, eventos: f.properties.eventos || 0 },
+            properties: { uf_code: f.properties.uf_code, state_name: UF_TO_STATE_NAME[f.properties.uf_code] || f.properties.name || "", eventos: f.properties.eventos || 0 },
           };
         });
         (map.getSource("state-labels") as any).setData({ type: "FeatureCollection", features: labelFeatures });
@@ -367,7 +371,7 @@ export default function TransparenciaMapa() {
         const coords =
           f.geometry.type === "Polygon"
             ? f.geometry.coordinates[0]
-            : f.geometry.coordinates.flat(1);
+            : f.geometry.coordinates.flat(2);
         const lngs = coords.map((c: number[]) => c[0]);
         const lats = coords.map((c: number[]) => c[1]);
         const center = [
@@ -377,7 +381,7 @@ export default function TransparenciaMapa() {
         return {
           type: "Feature",
           geometry: { type: "Point", coordinates: center },
-          properties: { uf_code: f.properties.uf_code, eventos: f.properties.eventos || 0 },
+          properties: { uf_code: f.properties.uf_code, state_name: UF_TO_STATE_NAME[f.properties.uf_code] || f.properties.name || "", eventos: f.properties.eventos || 0 },
         };
       });
 
@@ -394,13 +398,15 @@ export default function TransparenciaMapa() {
           "text-field": [
             "case",
             [">", ["get", "eventos"], 0],
-            ["concat", ["get", "uf_code"], " (", ["to-string", ["get", "eventos"]], ")"],
-            ["get", "uf_code"],
+            ["concat", ["get", "state_name"], "\n", ["get", "uf_code"], " (", ["to-string", ["get", "eventos"]], ")"],
+            ["concat", ["get", "state_name"], "\n", ["get", "uf_code"]],
           ],
           "text-size": 11,
           "text-font": ["DIN Pro Bold", "Arial Unicode MS Bold"],
           "text-allow-overlap": false,
           "text-ignore-placement": false,
+          "text-anchor": "center",
+          "text-justify": "center",
         },
         paint: {
           "text-color": "hsl(220, 13%, 25%)",
