@@ -282,7 +282,7 @@ async function notifyGuardiansAlert(
         ativo: true,
       });
 
-      shareLink = `https://amparamulher.com.br/r/${codigo}`;
+      shareLink = `https://amparamulher.com.br/${codigo}`;
     }
   }
 
