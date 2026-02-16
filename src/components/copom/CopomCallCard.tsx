@@ -25,6 +25,30 @@ export default function CopomCallCard({ panicAlertId, testMode }: { panicAlertId
   const [showLogs, setShowLogs] = useState(false);
   const [isCallingPhone, setIsCallingPhone] = useState(false);
 
+  // Test context for display when in test mode and idle
+  const testContext = testMode ? {
+    type: "COPOM_ALERT_CONTEXT" as const,
+    protocol_id: "AMP-TEST-PREVIEW",
+    timestamp: new Date().toISOString(),
+    risk_level: "ALTO",
+    trigger_reason: "panico_manual",
+    victim: { name: "Maria da Silva", internal_id: "test-user-001", phone_masked: "(14) ****-6686" },
+    location: {
+      address: "Rua José Gonçalves de Oliveira Filho, 67 - Residencial Estoril Premium, Bauru/SP",
+      lat: -22.3154, lng: -49.0615, accuracy_m: 12,
+      movement_status: "PARADA", speed_kmh: 0,
+    },
+    monitoring_link: `${window.location.origin}/TESTE123`,
+    aggressor: {
+      name_masked: "J*** S***", description: "Ex-marido, ativo, risco: alto",
+      vehicle: { model: "Onix", color: "Prata", plate_partial: "ABC1D23" },
+      vehicle_note: "NAO_CONFIRMADO",
+    },
+    strict_rules: { never_invent_data: true, if_missing_say_unavailable: true, do_not_claim_certainty: true, privacy_first: true },
+  } : null;
+
+  const displayContext = state.context || testContext;
+
   const statusConfig = {
     idle: { label: "Pronto", color: "bg-muted text-muted-foreground", icon: Phone },
     collecting: { label: "Coletando dados…", color: "bg-yellow-500/20 text-yellow-700", icon: Loader2 },
@@ -54,26 +78,45 @@ export default function CopomCallCard({ panicAlertId, testMode }: { panicAlertId
             </Badge>
           </div>
 
-          {/* Context info when active */}
-          {state.context && (state.status === "active" || state.status === "ended") && (
+          {/* Context info - show when available */}
+          {displayContext && (
             <div className="space-y-2 text-xs">
               <div className="flex items-center gap-2 text-muted-foreground">
                 <span className="font-medium">Protocolo:</span>
-                <span className="font-mono text-foreground">{state.context.protocol_id}</span>
+                <span className="font-mono text-foreground">{displayContext.protocol_id}</span>
               </div>
-              {state.context.location.address && (
+              {displayContext.location.address && (
                 <div className="flex items-start gap-2 text-muted-foreground">
                   <MapPin className="w-3 h-3 mt-0.5 shrink-0" />
-                  <span className="text-foreground">{state.context.location.address}</span>
+                  <span className="text-foreground">{displayContext.location.address}</span>
                 </div>
               )}
               <div className="flex items-center gap-2 text-muted-foreground">
                 <span className="font-medium">Movimento:</span>
-                <span className="text-foreground">{state.context.location.movement_status}</span>
-                {state.context.location.speed_kmh !== null && (
-                  <span className="text-foreground">({state.context.location.speed_kmh} km/h)</span>
+                <span className="text-foreground">{displayContext.location.movement_status}</span>
+                {displayContext.location.speed_kmh !== null && (
+                  <span className="text-foreground">({displayContext.location.speed_kmh} km/h)</span>
                 )}
               </div>
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <span className="font-medium">Vítima:</span>
+                <span className="text-foreground">{displayContext.victim.name}</span>
+              </div>
+              {displayContext.aggressor && (
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <span className="font-medium">Agressor:</span>
+                  <span className="text-foreground">{displayContext.aggressor.name_masked} — {displayContext.aggressor.description}</span>
+                </div>
+              )}
+              {displayContext.aggressor?.vehicle && (
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <span className="font-medium">Veículo:</span>
+                  <span className="text-foreground">
+                    {displayContext.aggressor.vehicle.model} {displayContext.aggressor.vehicle.color}, placa {displayContext.aggressor.vehicle.plate_partial}
+                    {displayContext.aggressor.vehicle_note === "NAO_CONFIRMADO" && " (não confirmado)"}
+                  </span>
+                </div>
+              )}
             </div>
           )}
 
@@ -113,7 +156,7 @@ export default function CopomCallCard({ panicAlertId, testMode }: { panicAlertId
                       setIsCallingPhone(true);
                       try {
                         const { data, error } = await supabase.functions.invoke("copom-outbound-call", {
-                          body: { context: state.context },
+                          body: { context: state.context || testContext },
                         });
                         if (error) throw error;
                         toast.success("Ligação telefônica iniciada!", {
