@@ -40,6 +40,7 @@ export interface CopomContextPayload {
     };
     vehicle_note: "NAO_CONFIRMADO";
   };
+  victim_aggressor_relation: string | null;
   strict_rules: {
     never_invent_data: true;
     if_missing_say_unavailable: true;
@@ -238,6 +239,7 @@ export async function collectCopomData(
       speed_kmh: speedKmh,
     },
     monitoring_link: monitoringLink!,
+    victim_aggressor_relation: vinculo?.tipo_vinculo ?? null,
     aggressor: {
       name: agressorData?.nome ?? null,
       name_masked: agressorData?.display_name_masked ?? null,
