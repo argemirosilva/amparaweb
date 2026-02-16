@@ -1,43 +1,198 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import GovStatusBadge from "@/components/institucional/GovStatusBadge";
 
 const fontStyle = { fontFamily: "Inter, Roboto, sans-serif" };
 
-// We load mapbox-gl dynamically to handle the CSS import
-let mapboxgl: typeof import("mapbox-gl").default | null = null;
+const BRAZIL_GEOJSON_URL =
+  "https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/brazil-states.geojson";
+
+interface UfStats {
+  eventos: number;
+  emergencias: number;
+  monitoradas: number;
+}
+
+type StatsMap = Record<string, UfStats>;
+
+// Map GeoJSON state names to UF codes
+const STATE_NAME_TO_UF: Record<string, string> = {
+  Acre: "AC", Alagoas: "AL", Amapá: "AP", Amazonas: "AM", Bahia: "BA",
+  Ceará: "CE", "Distrito Federal": "DF", "Espírito Santo": "ES", Goiás: "GO",
+  Maranhão: "MA", "Mato Grosso": "MT", "Mato Grosso do Sul": "MS",
+  "Minas Gerais": "MG", Pará: "PA", Paraíba: "PB", Paraná: "PR",
+  Pernambuco: "PE", Piauí: "PI", "Rio de Janeiro": "RJ",
+  "Rio Grande do Norte": "RN", "Rio Grande do Sul": "RS", Rondônia: "RO",
+  Roraima: "RR", "Santa Catarina": "SC", "São Paulo": "SP", Sergipe: "SE",
+  Tocantins: "TO",
+};
+
+function getColorForValue(value: number, max: number): string {
+  if (max === 0 || value === 0) return "hsl(220 13% 93%)";
+  const ratio = value / max;
+  if (ratio > 0.75) return "hsl(0 73% 42%)";
+  if (ratio > 0.5) return "hsl(25 95% 53%)";
+  if (ratio > 0.25) return "hsl(45 93% 47%)";
+  if (ratio > 0) return "hsl(142 64% 45%)";
+  return "hsl(220 13% 93%)";
+}
+
+function getLevelLabel(value: number, max: number): { status: "verde" | "amarelo" | "vermelho"; label: string } {
+  if (max === 0 || value === 0) return { status: "verde", label: "Sem dados" };
+  const ratio = value / max;
+  if (ratio > 0.5) return { status: "vermelho", label: "Alto" };
+  if (ratio > 0.25) return { status: "amarelo", label: "Moderado" };
+  return { status: "verde", label: "Baixo" };
+}
 
 export default function TransparenciaMapa() {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
-  const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
+  const [selectedUf, setSelectedUf] = useState<string | null>(null);
   const [period, setPeriod] = useState("90d");
-  const [uf, setUf] = useState("");
+  const [filterUf, setFilterUf] = useState("");
+  const [stats, setStats] = useState<StatsMap>({});
+  const [geojson, setGeojson] = useState<any>(null);
+  const [municipios, setMunicipios] = useState<{ nome: string; eventos: number }[]>([]);
 
-  // Stats mock (would be computed from aggregated data)
-  const regionStats = {
-    total: 142,
-    emergencias: 23,
-    nivel: "amarelo" as const,
-    tendencia: "+8%",
-  };
+  // Load GeoJSON once
+  useEffect(() => {
+    fetch(BRAZIL_GEOJSON_URL)
+      .then((r) => r.json())
+      .then((data) => {
+        // Add uf_code property
+        data.features = data.features.map((f: any) => ({
+          ...f,
+          properties: {
+            ...f.properties,
+            uf_code: STATE_NAME_TO_UF[f.properties.name] || f.properties.name,
+          },
+        }));
+        setGeojson(data);
+      })
+      .catch(console.error);
+  }, []);
 
+  // Load aggregated stats from DB
+  useEffect(() => {
+    const periodDays = { "7d": 7, "30d": 30, "90d": 90, "12m": 365 }[period] || 90;
+    const since = new Date(Date.now() - periodDays * 24 * 60 * 60 * 1000).toISOString();
+
+    async function loadStats() {
+      // Get users with their UF
+      const { data: users } = await supabase
+        .from("usuarios")
+        .select("id, endereco_uf, status");
+
+      const userUfMap: Record<string, string> = {};
+      const ufSet = new Set<string>();
+      (users || []).forEach((u) => {
+        if (u.endereco_uf) {
+          userUfMap[u.id] = u.endereco_uf;
+          ufSet.add(u.endereco_uf);
+        }
+      });
+
+      // Get events and emergencies
+      const [{ data: eventos }, { data: emergencias }] = await Promise.all([
+        supabase.from("gravacoes_analises").select("user_id, created_at").gte("created_at", since),
+        supabase.from("alertas_panico").select("user_id, criado_em").gte("criado_em", since),
+      ]);
+
+      const statsMap: StatsMap = {};
+      // Init all UFs
+      ufSet.forEach((uf) => {
+        statsMap[uf] = { eventos: 0, emergencias: 0, monitoradas: 0 };
+      });
+
+      // Count active users per UF
+      (users || []).forEach((u) => {
+        if (u.endereco_uf && u.status === "ativo") {
+          if (!statsMap[u.endereco_uf]) statsMap[u.endereco_uf] = { eventos: 0, emergencias: 0, monitoradas: 0 };
+          statsMap[u.endereco_uf].monitoradas++;
+        }
+      });
+
+      // Count events per UF
+      (eventos || []).forEach((e) => {
+        const uf = userUfMap[e.user_id];
+        if (uf && statsMap[uf]) statsMap[uf].eventos++;
+      });
+
+      // Count emergencies per UF
+      (emergencias || []).forEach((e) => {
+        const uf = userUfMap[e.user_id];
+        if (uf && statsMap[uf]) statsMap[uf].emergencias++;
+      });
+
+      setStats(statsMap);
+    }
+
+    loadStats();
+  }, [period]);
+
+  // Load municipios for selected UF
+  useEffect(() => {
+    if (!selectedUf) {
+      setMunicipios([]);
+      return;
+    }
+
+    async function loadMunicipios() {
+      const periodDays = { "7d": 7, "30d": 30, "90d": 90, "12m": 365 }[period] || 90;
+      const since = new Date(Date.now() - periodDays * 24 * 60 * 60 * 1000).toISOString();
+
+      const { data: users } = await supabase
+        .from("usuarios")
+        .select("id, endereco_cidade")
+        .eq("endereco_uf", selectedUf);
+
+      const userIds = (users || []).map((u) => u.id);
+      if (userIds.length === 0) {
+        setMunicipios([]);
+        return;
+      }
+
+      const { data: eventos } = await supabase
+        .from("gravacoes_analises")
+        .select("user_id")
+        .gte("created_at", since)
+        .in("user_id", userIds);
+
+      const cidadeMap: Record<string, number> = {};
+      const userCidadeMap: Record<string, string> = {};
+      (users || []).forEach((u) => {
+        if (u.endereco_cidade) userCidadeMap[u.id] = u.endereco_cidade;
+      });
+
+      (eventos || []).forEach((e) => {
+        const cidade = userCidadeMap[e.user_id];
+        if (cidade) cidadeMap[cidade] = (cidadeMap[cidade] || 0) + 1;
+      });
+
+      const sorted = Object.entries(cidadeMap)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, 8)
+        .map(([nome, eventos]) => ({ nome: `${nome} - ${selectedUf}`, eventos }));
+
+      setMunicipios(sorted);
+    }
+
+    loadMunicipios();
+  }, [selectedUf, period]);
+
+  // Init map
   useEffect(() => {
     async function initMap() {
       if (!mapContainer.current || mapRef.current) return;
 
       const mb = await import("mapbox-gl");
-      mapboxgl = mb.default;
+      const mapboxgl = mb.default;
 
-      // Fetch token from edge function
       const tokenRes = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/mapbox-token`,
-        {
-          headers: {
-            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          },
-        }
+        { headers: { apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY } }
       );
 
       let token = "";
@@ -45,7 +200,6 @@ export default function TransparenciaMapa() {
         const data = await tokenRes.json();
         token = data.token;
       }
-
       if (!token) {
         console.warn("Mapbox token not available");
         return;
@@ -61,21 +215,145 @@ export default function TransparenciaMapa() {
       });
 
       map.addControl(new mapboxgl.NavigationControl(), "top-right");
-
-      map.on("load", () => {
-        setMapLoaded(true);
-      });
-
+      map.on("load", () => setMapLoaded(true));
       mapRef.current = map;
     }
 
     initMap();
-
     return () => {
       mapRef.current?.remove();
       mapRef.current = null;
     };
   }, []);
+
+  // Update choropleth when data or geojson changes
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapLoaded || !geojson) return;
+
+    const maxEventos = Math.max(1, ...Object.values(stats).map((s) => s.eventos));
+
+    // Enrich geojson with stats
+    const enriched = {
+      ...geojson,
+      features: geojson.features.map((f: any) => {
+        const uf = f.properties.uf_code;
+        const s = stats[uf] || { eventos: 0, emergencias: 0, monitoradas: 0 };
+        return {
+          ...f,
+          properties: {
+            ...f.properties,
+            eventos: s.eventos,
+            emergencias: s.emergencias,
+            monitoradas: s.monitoradas,
+            fill_color: getColorForValue(s.eventos, maxEventos),
+          },
+        };
+      }),
+    };
+
+    // Add or update source
+    if (map.getSource("states")) {
+      (map.getSource("states") as any).setData(enriched);
+    } else {
+      map.addSource("states", { type: "geojson", data: enriched });
+
+      map.addLayer({
+        id: "states-fill",
+        type: "fill",
+        source: "states",
+        paint: {
+          "fill-color": ["get", "fill_color"],
+          "fill-opacity": 0.7,
+        },
+      });
+
+      map.addLayer({
+        id: "states-outline",
+        type: "line",
+        source: "states",
+        paint: {
+          "line-color": "hsl(220, 13%, 70%)",
+          "line-width": 1,
+        },
+      });
+
+      map.addLayer({
+        id: "states-hover",
+        type: "fill",
+        source: "states",
+        paint: {
+          "fill-color": "hsl(224, 76%, 33%)",
+          "fill-opacity": 0.15,
+        },
+        filter: ["==", "uf_code", ""],
+      });
+
+      // Hover effect
+      map.on("mousemove", "states-fill", (e: any) => {
+        map.getCanvas().style.cursor = "pointer";
+        if (e.features?.length) {
+          map.setFilter("states-hover", ["==", "uf_code", e.features[0].properties.uf_code]);
+        }
+      });
+      map.on("mouseleave", "states-fill", () => {
+        map.getCanvas().style.cursor = "";
+        map.setFilter("states-hover", ["==", "uf_code", ""]);
+      });
+
+      // Click
+      map.on("click", "states-fill", (e: any) => {
+        if (e.features?.length) {
+          const ufCode = e.features[0].properties.uf_code;
+          setSelectedUf(ufCode);
+          setFilterUf(ufCode);
+        }
+      });
+    }
+  }, [geojson, stats, mapLoaded]);
+
+  // Fly to UF when filter changes
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapLoaded) return;
+
+    if (filterUf && geojson) {
+      const feature = geojson.features.find((f: any) => f.properties.uf_code === filterUf);
+      if (feature) {
+        // Compute bbox center
+        const coords = feature.geometry.type === "Polygon"
+          ? feature.geometry.coordinates[0]
+          : feature.geometry.coordinates.flat(1);
+        const lngs = coords.map((c: number[]) => c[0]);
+        const lats = coords.map((c: number[]) => c[1]);
+        const center: [number, number] = [
+          (Math.min(...lngs) + Math.max(...lngs)) / 2,
+          (Math.min(...lats) + Math.max(...lats)) / 2,
+        ];
+        map.flyTo({ center, zoom: 6, duration: 1200 });
+      }
+    } else {
+      map.flyTo({ center: [-53, -14], zoom: 3.8, duration: 1200 });
+      setSelectedUf(null);
+    }
+  }, [filterUf, mapLoaded, geojson]);
+
+  // Compute totals
+  const totalEventos = Object.values(stats).reduce((a, s) => a + s.eventos, 0);
+  const totalEmergencias = Object.values(stats).reduce((a, s) => a + s.emergencias, 0);
+  const totalMonitoradas = Object.values(stats).reduce((a, s) => a + s.monitoradas, 0);
+
+  const currentStats = selectedUf && stats[selectedUf]
+    ? stats[selectedUf]
+    : { eventos: totalEventos, emergencias: totalEmergencias, monitoradas: totalMonitoradas };
+
+  const maxEventos = Math.max(1, ...Object.values(stats).map((s) => s.eventos));
+  const level = getLevelLabel(currentStats.eventos, maxEventos);
+
+  // Top UFs for ranking
+  const topUfs = Object.entries(stats)
+    .sort(([, a], [, b]) => b.eventos - a.eventos)
+    .slice(0, 6);
 
   return (
     <div className="flex flex-col md:flex-row h-[calc(100vh-64px-57px)]" style={fontStyle}>
@@ -85,6 +363,32 @@ export default function TransparenciaMapa() {
         {!mapLoaded && (
           <div className="absolute inset-0 flex items-center justify-center" style={{ background: "hsl(210 17% 96%)" }}>
             <p className="text-sm" style={{ color: "hsl(220 9% 46%)" }}>Carregando mapa…</p>
+          </div>
+        )}
+
+        {/* Legend */}
+        {mapLoaded && (
+          <div
+            className="absolute bottom-4 left-4 rounded-md border p-3"
+            style={{ background: "hsl(0 0% 100% / 0.95)", borderColor: "hsl(220 13% 91%)", zIndex: 5 }}
+          >
+            <p className="text-xs font-semibold mb-2" style={{ color: "hsl(220 13% 18%)" }}>
+              Eventos por UF
+            </p>
+            <div className="space-y-1">
+              {[
+                { color: "hsl(0 73% 42%)", label: "Muito alto" },
+                { color: "hsl(25 95% 53%)", label: "Alto" },
+                { color: "hsl(45 93% 47%)", label: "Moderado" },
+                { color: "hsl(142 64% 45%)", label: "Baixo" },
+                { color: "hsl(220 13% 93%)", label: "Sem dados" },
+              ].map((item) => (
+                <div key={item.label} className="flex items-center gap-2">
+                  <div className="w-4 h-3 rounded-sm" style={{ background: item.color }} />
+                  <span className="text-[10px]" style={{ color: "hsl(220 9% 46%)" }}>{item.label}</span>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>
@@ -128,8 +432,11 @@ export default function TransparenciaMapa() {
             UF
           </label>
           <select
-            value={uf}
-            onChange={(e) => setUf(e.target.value)}
+            value={filterUf}
+            onChange={(e) => {
+              setFilterUf(e.target.value);
+              setSelectedUf(e.target.value || null);
+            }}
             className="w-full border rounded px-3 py-2 text-sm"
             style={{
               borderColor: "hsl(220 13% 91%)",
@@ -148,51 +455,89 @@ export default function TransparenciaMapa() {
 
         {/* Region summary */}
         <h3 className="text-sm font-semibold mb-2" style={{ color: "hsl(220 13% 18%)" }}>
-          {selectedRegion || "Brasil"}
+          {selectedUf || "Brasil"}
         </h3>
         <div className="space-y-2 text-xs" style={{ color: "hsl(220 9% 46%)" }}>
           <div className="flex justify-between">
-            <span>Total de eventos</span>
-            <span className="font-semibold" style={{ color: "hsl(220 13% 18%)" }}>{regionStats.total}</span>
+            <span>Monitoradas ativas</span>
+            <span className="font-semibold" style={{ color: "hsl(220 13% 18%)" }}>{currentStats.monitoradas}</span>
+          </div>
+          <div className="flex justify-between">
+            <span>Eventos no período</span>
+            <span className="font-semibold" style={{ color: "hsl(220 13% 18%)" }}>{currentStats.eventos}</span>
           </div>
           <div className="flex justify-between">
             <span>Emergências</span>
-            <span className="font-semibold" style={{ color: "hsl(220 13% 18%)" }}>{regionStats.emergencias}</span>
+            <span className="font-semibold" style={{ color: "hsl(220 13% 18%)" }}>{currentStats.emergencias}</span>
           </div>
           <div className="flex justify-between items-center">
-            <span>Nível predominante</span>
-            <GovStatusBadge status={regionStats.nivel} label="Moderado" />
-          </div>
-          <div className="flex justify-between">
-            <span>Tendência</span>
-            <span className="font-medium" style={{ color: "hsl(0 73% 42%)" }}>
-              {regionStats.tendencia}
-            </span>
+            <span>Nível</span>
+            <GovStatusBadge status={level.status} label={level.label} />
           </div>
         </div>
 
         <hr style={{ borderColor: "hsl(220 13% 91%)" }} className="my-4" />
 
-        {/* Municipalities table */}
-        <h3 className="text-sm font-semibold mb-2" style={{ color: "hsl(220 13% 18%)" }}>
-          Municípios em destaque
-        </h3>
-        <div className="space-y-1">
-          {[
-            { nome: "Porto Velho - RO", eventos: 28 },
-            { nome: "Ji-Paraná - RO", eventos: 19 },
-            { nome: "Ariquemes - RO", eventos: 14 },
-          ].map((m) => (
-            <div
-              key={m.nome}
-              className="flex items-center justify-between px-2 py-1.5 rounded text-xs"
-              style={{ background: "hsl(210 17% 96%)" }}
+        {/* Top UFs or Municipios */}
+        {selectedUf ? (
+          <>
+            <h3 className="text-sm font-semibold mb-2" style={{ color: "hsl(220 13% 18%)" }}>
+              Municípios — {selectedUf}
+            </h3>
+            {municipios.length === 0 ? (
+              <p className="text-xs" style={{ color: "hsl(220 9% 46%)" }}>Nenhum evento registrado</p>
+            ) : (
+              <div className="space-y-1">
+                {municipios.map((m) => (
+                  <div
+                    key={m.nome}
+                    className="flex items-center justify-between px-2 py-1.5 rounded text-xs"
+                    style={{ background: "hsl(210 17% 96%)" }}
+                  >
+                    <span style={{ color: "hsl(220 13% 18%)" }}>{m.nome}</span>
+                    <span className="font-semibold" style={{ color: "hsl(224 76% 33%)" }}>{m.eventos}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            <button
+              onClick={() => { setFilterUf(""); setSelectedUf(null); }}
+              className="mt-3 text-xs font-medium px-3 py-1.5 rounded border transition-colors"
+              style={{ borderColor: "hsl(224 76% 33%)", color: "hsl(224 76% 33%)" }}
             >
-              <span style={{ color: "hsl(220 13% 18%)" }}>{m.nome}</span>
-              <span className="font-semibold" style={{ color: "hsl(224 76% 33%)" }}>{m.eventos}</span>
-            </div>
-          ))}
-        </div>
+              ← Voltar para Brasil
+            </button>
+          </>
+        ) : (
+          <>
+            <h3 className="text-sm font-semibold mb-2" style={{ color: "hsl(220 13% 18%)" }}>
+              UFs com mais eventos
+            </h3>
+            {topUfs.length === 0 ? (
+              <p className="text-xs" style={{ color: "hsl(220 9% 46%)" }}>Nenhum dado no período</p>
+            ) : (
+              <div className="space-y-1">
+                {topUfs.map(([uf, s]) => (
+                  <button
+                    key={uf}
+                    onClick={() => { setFilterUf(uf); setSelectedUf(uf); }}
+                    className="w-full flex items-center justify-between px-2 py-1.5 rounded text-xs hover:bg-gray-50 transition-colors text-left"
+                    style={{ background: "hsl(210 17% 96%)" }}
+                  >
+                    <span style={{ color: "hsl(220 13% 18%)" }}>{uf}</span>
+                    <div className="flex items-center gap-2">
+                      <span style={{ color: "hsl(220 9% 46%)" }}>{s.eventos} ev.</span>
+                      <div
+                        className="w-2.5 h-2.5 rounded-sm"
+                        style={{ background: getColorForValue(s.eventos, maxEventos) }}
+                      />
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   );
