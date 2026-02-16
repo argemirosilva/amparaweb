@@ -30,6 +30,7 @@ export interface CopomContextPayload {
   };
   monitoring_link: string;
   aggressor: {
+    name: string | null;
     name_masked: string | null;
     description: string | null;
     vehicle: {
@@ -238,6 +239,7 @@ export async function collectCopomData(
     },
     monitoring_link: monitoringLink!,
     aggressor: {
+      name: agressorData?.nome ?? null,
       name_masked: agressorData?.display_name_masked ?? null,
       description: agressorDesc,
       vehicle: {

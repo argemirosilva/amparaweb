@@ -43,8 +43,9 @@ serve(async (req) => {
       `Status de movimento: ${loc.movement_status || "não informado"}` +
       (loc.speed_kmh != null ? `, velocidade ${loc.speed_kmh} quilômetros por hora` : "") + `. `;
 
-    if (aggressor.name_masked) {
-      firstMessage += `Agressor identificado: ${aggressor.name_masked}. ${aggressor.description || ""}. `;
+    const aggressorName = aggressor.name || aggressor.name_masked;
+    if (aggressorName) {
+      firstMessage += `Agressor identificado: ${aggressorName}. ${aggressor.description || ""}. `;
     }
     if (vehicle.model) {
       firstMessage += `Veículo possivelmente associado: ${vehicle.model} ${vehicle.color || ""}, placa parcial ${vehicle.plate_partial || "não disponível"}. ` +
