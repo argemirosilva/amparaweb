@@ -20,6 +20,41 @@ serve(async (req) => {
     const body = await req.json();
     const context = body.context; // CopomContextPayload
     const phoneNumber = body.phone_number || TEST_PHONE_NUMBER;
+    const userId = body.user_id;
+    const skipCooldown = body.skip_cooldown === true; // for test mode
+
+    // ── Cooldown de 60 minutos ──
+    if (userId && !skipCooldown) {
+      const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const sb = createClient(supabaseUrl, supabaseServiceKey);
+
+      // Check last COPOM call for this user in audit_logs
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+      const { data: recentCalls } = await sb
+        .from("audit_logs")
+        .select("id, created_at")
+        .eq("action_type", "copom_outbound_call")
+        .eq("user_id", userId)
+        .gte("created_at", oneHourAgo)
+        .limit(1);
+
+      if (recentCalls && recentCalls.length > 0) {
+        const lastCallAt = new Date(recentCalls[0].created_at);
+        const minutesRemaining = Math.ceil((60 * 60 * 1000 - (Date.now() - lastCallAt.getTime())) / 60000);
+        console.log(`COPOM cooldown active for user ${userId}. ${minutesRemaining}min remaining.`);
+        return new Response(
+          JSON.stringify({
+            error: "cooldown_active",
+            message: `Ligação COPOM bloqueada. Aguarde ${minutesRemaining} minuto(s) antes de tentar novamente.`,
+            minutes_remaining: minutesRemaining,
+            last_call_at: recentCalls[0].created_at,
+          }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
 
     if (!ELEVENLABS_API_KEY || !PHONE_NUMBER_ID) {
       return new Response(
@@ -94,6 +129,24 @@ serve(async (req) => {
     }
 
     console.log("Outbound call initiated:", result);
+
+    // Log successful call for cooldown tracking
+    if (userId) {
+      try {
+        const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
+        const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+        const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+        const sb = createClient(supabaseUrl, supabaseServiceKey);
+        await sb.from("audit_logs").insert({
+          action_type: "copom_outbound_call",
+          user_id: userId,
+          details: { protocol_id: context?.protocol_id, phone_number: phoneNumber },
+          success: true,
+        });
+      } catch (logErr) {
+        console.error("Failed to log COPOM call:", logErr);
+      }
+    }
 
     return new Response(
       JSON.stringify({ success: true, call: result }),

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useCopomSession } from "@/hooks/useCopomSession";
+import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,7 @@ import {
 
 export default function CopomCallCard({ panicAlertId, testMode }: { panicAlertId?: string; testMode?: boolean }) {
   const { state, startSession, startTestSession, endSession } = useCopomSession();
+  const { usuario } = useAuth();
   const [showLogs, setShowLogs] = useState(false);
   const [isCallingPhone, setIsCallingPhone] = useState(false);
 
@@ -177,9 +179,25 @@ export default function CopomCallCard({ panicAlertId, testMode }: { panicAlertId
                       setIsCallingPhone(true);
                       try {
                         const { data, error } = await supabase.functions.invoke("copom-outbound-call", {
-                          body: { context: state.context || testContext },
+                          body: {
+                            context: state.context || testContext,
+                            user_id: usuario?.id,
+                            skip_cooldown: testMode,
+                          },
                         });
-                        if (error) throw error;
+                        if (error) {
+                          // Check if it's a cooldown error (429)
+                          const errorBody = typeof error === "object" && (error as any)?.context?.body
+                            ? JSON.parse(await (error as any).context.body.text())
+                            : null;
+                          if (errorBody?.error === "cooldown_active") {
+                            toast.warning("Cooldown ativo", {
+                              description: errorBody.message,
+                            });
+                            return;
+                          }
+                          throw error;
+                        }
                         toast.success("Ligação telefônica iniciada!", {
                           description: `Chamando +5514997406686...`,
                         });
