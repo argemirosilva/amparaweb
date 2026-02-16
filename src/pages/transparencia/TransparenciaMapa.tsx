@@ -45,6 +45,7 @@ function getLevelLabel(value: number, max: number): { status: "verde" | "amarelo
 
 export default function TransparenciaMapa() {
   const mapContainer = useRef<HTMLDivElement>(null);
+  const mapModuleRef = useRef<any>(null);
   const mapRef = useRef<any>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [selectedUf, setSelectedUf] = useState<string | null>(null);
@@ -187,6 +188,7 @@ export default function TransparenciaMapa() {
 
       const mb = await import("mapbox-gl");
       const mapboxgl = mb.default;
+      mapModuleRef.current = mapboxgl;
 
       const tokenRes = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/mapbox-token`,
@@ -407,16 +409,48 @@ export default function TransparenciaMapa() {
         },
       });
 
+      // Tooltip popup
+      const mapboxgl = mapModuleRef.current;
+      if (!mapboxgl) return;
+      const popup = new mapboxgl.Popup({
+        closeButton: false,
+        closeOnClick: false,
+        className: "state-tooltip",
+        maxWidth: "220px",
+      });
+
       // Hover effect
       map.on("mousemove", "states-fill", (e: any) => {
         map.getCanvas().style.cursor = "pointer";
         if (e.features?.length) {
-          map.setFilter("states-hover", ["==", "uf_code", e.features[0].properties.uf_code]);
+          const props = e.features[0].properties;
+          const uf = props.uf_code;
+          map.setFilter("states-hover", ["==", "uf_code", uf]);
+
+          const html = `
+            <div style="font-family:Inter,Roboto,sans-serif;font-size:12px;line-height:1.6;color:hsl(220,13%,18%)">
+              <strong style="font-size:13px">${uf}</strong>
+              <div style="margin-top:4px;display:flex;justify-content:space-between;gap:12px">
+                <span style="color:hsl(220,9%,46%)">Monitoradas</span>
+                <strong>${props.monitoradas || 0}</strong>
+              </div>
+              <div style="display:flex;justify-content:space-between;gap:12px">
+                <span style="color:hsl(220,9%,46%)">Eventos</span>
+                <strong>${props.eventos || 0}</strong>
+              </div>
+              <div style="display:flex;justify-content:space-between;gap:12px">
+                <span style="color:hsl(220,9%,46%)">Emergências</span>
+                <strong style="color:hsl(0,72%,51%)">${props.emergencias || 0}</strong>
+              </div>
+            </div>
+          `;
+          popup.setLngLat(e.lngLat).setHTML(html).addTo(map);
         }
       });
       map.on("mouseleave", "states-fill", () => {
         map.getCanvas().style.cursor = "";
         map.setFilter("states-hover", ["==", "uf_code", ""]);
+        popup.remove();
       });
 
       // Click
