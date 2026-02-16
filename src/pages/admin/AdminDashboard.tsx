@@ -3,8 +3,30 @@ import { supabase } from "@/integrations/supabase/client";
 import { Users, AlertTriangle, Clock, BarChart3, TrendingUp } from "lucide-react";
 import GovKpiCard from "@/components/institucional/GovKpiCard";
 import GovStatusBadge from "@/components/institucional/GovStatusBadge";
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, Legend,
+} from "recharts";
+import { format, subDays, startOfDay } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 const fontStyle = { fontFamily: "Inter, Roboto, sans-serif" };
+
+const PIE_COLORS = [
+  "hsl(142 64% 34%)",   // baixo - green
+  "hsl(45 93% 47%)",    // moderado - yellow
+  "hsl(25 95% 53%)",    // alto - orange
+  "hsl(0 73% 42%)",     // critico - red
+  "hsl(220 9% 70%)",    // sem risco
+];
+
+const RISK_LABELS: Record<string, string> = {
+  baixo: "Baixo",
+  moderado: "Moderado",
+  alto: "Alto",
+  critico: "Crítico",
+  sem_risco: "Sem risco",
+};
 
 export default function AdminDashboard() {
   const [period, setPeriod] = useState("30d");
@@ -15,18 +37,19 @@ export default function AdminDashboard() {
     tempoMedio: "—",
     reincidencia: "—",
   });
+  const [timelineData, setTimelineData] = useState<{ date: string; eventos: number; emergencias: number }[]>([]);
+  const [riskDistribution, setRiskDistribution] = useState<{ name: string; value: number }[]>([]);
 
   useEffect(() => {
-    async function load() {
-      const periodMs = { "7d": 7, "30d": 30, "90d": 90, "12m": 365 }[period] || 30;
-      const since = new Date(Date.now() - periodMs * 24 * 60 * 60 * 1000).toISOString();
+    const periodDays = { "7d": 7, "30d": 30, "90d": 90, "12m": 365 }[period] || 30;
+    const since = new Date(Date.now() - periodDays * 24 * 60 * 60 * 1000).toISOString();
 
+    async function loadKpis() {
       const [{ count: monitoradas }, { count: eventos }, { count: emergencias }] = await Promise.all([
         supabase.from("usuarios").select("*", { count: "exact", head: true }).eq("status", "ativo"),
         supabase.from("gravacoes_analises").select("*", { count: "exact", head: true }).gte("created_at", since),
         supabase.from("alertas_panico").select("*", { count: "exact", head: true }).gte("criado_em", since),
       ]);
-
       setKpis({
         monitoradas: monitoradas || 0,
         eventos: eventos || 0,
@@ -35,7 +58,59 @@ export default function AdminDashboard() {
         reincidencia: "18%",
       });
     }
-    load();
+
+    async function loadTimeline() {
+      const [{ data: eventosData }, { data: panicData }] = await Promise.all([
+        supabase.from("gravacoes_analises").select("created_at").gte("created_at", since),
+        supabase.from("alertas_panico").select("criado_em").gte("criado_em", since),
+      ]);
+
+      // Build day buckets
+      const buckets: Record<string, { eventos: number; emergencias: number }> = {};
+      for (let i = 0; i < periodDays; i++) {
+        const key = format(subDays(new Date(), i), "yyyy-MM-dd");
+        buckets[key] = { eventos: 0, emergencias: 0 };
+      }
+      (eventosData || []).forEach((e) => {
+        const key = format(new Date(e.created_at), "yyyy-MM-dd");
+        if (buckets[key]) buckets[key].eventos++;
+      });
+      (panicData || []).forEach((e) => {
+        const key = format(new Date(e.criado_em), "yyyy-MM-dd");
+        if (buckets[key]) buckets[key].emergencias++;
+      });
+
+      const sorted = Object.entries(buckets)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([date, v]) => ({
+          date: format(new Date(date), periodDays <= 30 ? "dd/MM" : "MM/yy", { locale: ptBR }),
+          ...v,
+        }));
+      setTimelineData(sorted);
+    }
+
+    async function loadRiskDistribution() {
+      const { data } = await supabase
+        .from("gravacoes_analises")
+        .select("nivel_risco")
+        .gte("created_at", since);
+
+      const counts: Record<string, number> = {};
+      (data || []).forEach((r) => {
+        const key = r.nivel_risco || "sem_risco";
+        counts[key] = (counts[key] || 0) + 1;
+      });
+      setRiskDistribution(
+        Object.entries(counts).map(([key, value]) => ({
+          name: RISK_LABELS[key] || key,
+          value,
+        }))
+      );
+    }
+
+    loadKpis();
+    loadTimeline();
+    loadRiskDistribution();
   }, [period]);
 
   const regions = [
@@ -97,6 +172,114 @@ export default function AdminDashboard() {
         />
       </div>
 
+      {/* Charts Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8">
+        {/* Timeline Chart */}
+        <div
+          className="lg:col-span-2 rounded-md border p-4"
+          style={{ background: "hsl(0 0% 100%)", borderColor: "hsl(220 13% 91%)" }}
+        >
+          <h2 className="text-sm font-semibold mb-4" style={{ color: "hsl(220 13% 18%)" }}>
+            Evolução Temporal — Eventos e Emergências
+          </h2>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={timelineData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(220 13% 91%)" />
+                <XAxis
+                  dataKey="date"
+                  tick={{ fontSize: 11, fill: "hsl(220 9% 46%)" }}
+                  interval={timelineData.length > 60 ? Math.floor(timelineData.length / 12) : "preserveStartEnd"}
+                />
+                <YAxis tick={{ fontSize: 11, fill: "hsl(220 9% 46%)" }} allowDecimals={false} />
+                <Tooltip
+                  contentStyle={{
+                    fontFamily: "Inter, sans-serif",
+                    fontSize: 12,
+                    borderRadius: 6,
+                    border: "1px solid hsl(220 13% 91%)",
+                  }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="eventos"
+                  name="Eventos"
+                  stroke="hsl(224 76% 48%)"
+                  strokeWidth={2}
+                  dot={false}
+                  activeDot={{ r: 4 }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="emergencias"
+                  name="Emergências"
+                  stroke="hsl(0 73% 42%)"
+                  strokeWidth={2}
+                  dot={false}
+                  activeDot={{ r: 4 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+          {timelineData.length === 0 && (
+            <p className="text-center text-xs mt-2" style={{ color: "hsl(220 9% 46%)" }}>
+              Nenhum dado no período selecionado
+            </p>
+          )}
+        </div>
+
+        {/* Risk Distribution Pie */}
+        <div
+          className="rounded-md border p-4"
+          style={{ background: "hsl(0 0% 100%)", borderColor: "hsl(220 13% 91%)" }}
+        >
+          <h2 className="text-sm font-semibold mb-4" style={{ color: "hsl(220 13% 18%)" }}>
+            Distribuição por Nível de Risco
+          </h2>
+          <div className="h-64">
+            {riskDistribution.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={riskDistribution}
+                    cx="50%"
+                    cy="45%"
+                    innerRadius={45}
+                    outerRadius={75}
+                    paddingAngle={3}
+                    dataKey="value"
+                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    labelLine={false}
+                    style={{ fontSize: 11 }}
+                  >
+                    {riskDistribution.map((_, i) => (
+                      <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{
+                      fontFamily: "Inter, sans-serif",
+                      fontSize: 12,
+                      borderRadius: 6,
+                      border: "1px solid hsl(220 13% 91%)",
+                    }}
+                  />
+                  <Legend
+                    wrapperStyle={{ fontSize: 11, fontFamily: "Inter, sans-serif" }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex items-center justify-center">
+                <p className="text-xs" style={{ color: "hsl(220 9% 46%)" }}>
+                  Nenhum dado no período
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* Table */}
       <div
         className="rounded-md border overflow-hidden"
@@ -123,7 +306,7 @@ export default function AdminDashboard() {
               </tr>
             </thead>
             <tbody>
-              {regions.map((r, i) => (
+              {regions.map((r) => (
                 <tr
                   key={r.nome}
                   className="border-t"
