@@ -39,6 +39,7 @@ export default function CopomCallCard({ panicAlertId, testMode }: { panicAlertId
       movement_status: "PARADA", speed_kmh: 0,
     },
     monitoring_link: "https://amparamulher.com.br/a2jb3",
+    victim_aggressor_relation: "Ex-marido",
     aggressor: {
       name: "João Santos", name_masked: "J*** S***", description: "Ex-marido, ativo, risco: alto",
       vehicle: { model: "Onix", color: "Prata", plate_partial: "ABC1D23" },
@@ -110,6 +111,18 @@ export default function CopomCallCard({ panicAlertId, testMode }: { panicAlertId
                 <span className="font-medium">Vítima:</span>
                 <span className="text-foreground">{displayContext.victim.name}</span>
               </div>
+              {displayContext.victim.phone_masked && (
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <span className="font-medium">Telefone:</span>
+                  <span className="text-foreground">{displayContext.victim.phone_masked}</span>
+                </div>
+              )}
+              {(displayContext as any).victim_aggressor_relation && (
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <span className="font-medium">Relação:</span>
+                  <span className="text-foreground">{(displayContext as any).victim_aggressor_relation}</span>
+                </div>
+              )}
               {displayContext.aggressor && (
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <span className="font-medium">Agressor:</span>
