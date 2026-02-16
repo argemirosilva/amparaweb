@@ -215,6 +215,7 @@ export default function TransparenciaMapa() {
         style: {
           version: 8,
           name: "Brazil Clean",
+          glyphs: "mapbox://fonts/mapbox/{fontstack}/{range}.pbf",
           sources: {
             "simple-tiles": {
               type: "raster",
@@ -255,21 +256,6 @@ export default function TransparenciaMapa() {
       map.addControl(new mapboxgl.NavigationControl(), "top-right");
 
       map.on("load", () => {
-        // Hide country/territory labels to isolate Brazil
-        const style = map.getStyle();
-        if (style?.layers) {
-          style.layers.forEach((layer: any) => {
-            if (
-              layer.type === "symbol" &&
-              layer.id &&
-              (layer.id.includes("country-label") ||
-               layer.id.includes("state-label") ||
-               layer.id.includes("continent-label"))
-            ) {
-              map.setLayoutProperty(layer.id, "visibility", "none");
-            }
-          });
-        }
         setMapLoaded(true);
       });
       mapRef.current = map;
