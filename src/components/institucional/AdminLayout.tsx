@@ -1,5 +1,7 @@
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAdminRole } from "@/hooks/useAdminRole";
+import ProtectedAdminRoute from "./ProtectedAdminRoute";
 import {
   LayoutDashboard,
   Map,
@@ -29,6 +31,7 @@ export default function AdminLayout() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { logout, usuario } = useAuth();
+  const { roles } = useAdminRole();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const handleLogout = async () => {
@@ -39,6 +42,7 @@ export default function AdminLayout() {
   const fontStyle = { fontFamily: "Inter, Roboto, sans-serif" };
 
   return (
+    <ProtectedAdminRoute>
     <div className="min-h-screen flex flex-col" style={{ background: "hsl(210 17% 96%)", ...fontStyle }}>
       {/* Topbar */}
       <header
@@ -72,8 +76,8 @@ export default function AdminLayout() {
             <p className="text-sm font-medium" style={{ color: "hsl(220 13% 18%)" }}>
               {usuario?.nome_completo || "Administrador"}
             </p>
-            <p className="text-xs" style={{ color: "hsl(220 9% 46%)" }}>
-              ADMIN_TENANT
+            <p className="text-xs uppercase" style={{ color: "hsl(220 9% 46%)" }}>
+              {roles[0]?.replace("_", " ") || "—"}
             </p>
           </div>
           <button
@@ -134,5 +138,6 @@ export default function AdminLayout() {
         </main>
       </div>
     </div>
+    </ProtectedAdminRoute>
   );
 }

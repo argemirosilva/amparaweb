@@ -916,6 +916,38 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["admin_role"]
+          tenant_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["admin_role"]
+          tenant_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["admin_role"]
+          tenant_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_sessions: {
         Row: {
           created_at: string
@@ -1124,6 +1156,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      has_admin_role: {
+        Args: {
+          p_role: Database["public"]["Enums"]["admin_role"]
+          p_user_id: string
+        }
+        Returns: boolean
+      }
       normalize_text: { Args: { input: string }; Returns: string }
       search_agressor_candidates: {
         Args: {
@@ -1177,6 +1216,7 @@ export type Database = {
       unaccent: { Args: { "": string }; Returns: string }
     }
     Enums: {
+      admin_role: "admin_master" | "admin_tenant" | "operador"
       user_status: "pendente" | "ativo" | "inativo" | "bloqueado"
     }
     CompositeTypes: {
@@ -1305,6 +1345,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      admin_role: ["admin_master", "admin_tenant", "operador"],
       user_status: ["pendente", "ativo", "inativo", "bloqueado"],
     },
   },
