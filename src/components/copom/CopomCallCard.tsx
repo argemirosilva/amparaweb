@@ -85,6 +85,14 @@ export default function CopomCallCard({ panicAlertId, testMode }: { panicAlertId
                 <span className="font-medium">Protocolo:</span>
                 <span className="font-mono text-foreground">{displayContext.protocol_id}</span>
               </div>
+              {displayContext.monitoring_link && (
+                <div className="flex items-start gap-2 text-muted-foreground">
+                  <span className="font-medium">Link:</span>
+                  <a href={displayContext.monitoring_link} target="_blank" rel="noopener noreferrer" className="text-primary underline break-all">
+                    {displayContext.monitoring_link.replace(/^https?:\/\/(www\.)?/, "")}
+                  </a>
+                </div>
+              )}
               {displayContext.location.address && (
                 <div className="flex items-start gap-2 text-muted-foreground">
                   <MapPin className="w-3 h-3 mt-0.5 shrink-0" />
