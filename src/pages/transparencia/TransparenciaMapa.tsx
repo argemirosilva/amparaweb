@@ -215,10 +215,20 @@ export default function TransparenciaMapa() {
       const map = new mapboxgl.Map({
         container: mapContainer.current,
         style: "mapbox://styles/mapbox/light-v11",
-        center: [-53, -14],
-        zoom: 3.8,
+        center: [-52, -15],
+        zoom: 3.2,
         maxBounds: brazilBounds,
-        minZoom: 3.5,
+        minZoom: 2.8,
+        fitBoundsOptions: { padding: 40 },
+      });
+
+      // Fit Brazil fully in view after load
+      const brazilFitBounds: [[number, number], [number, number]] = [
+        [-73.5, -33.7], // SW corner of Brazil
+        [-34.8, 5.3],   // NE corner of Brazil
+      ];
+      map.once("load", () => {
+        map.fitBounds(brazilFitBounds, { padding: 30, duration: 0 });
       });
 
       map.addControl(new mapboxgl.NavigationControl(), "top-right");
@@ -358,7 +368,7 @@ export default function TransparenciaMapa() {
         map.flyTo({ center, zoom: 6, duration: 1200 });
       }
     } else {
-      map.flyTo({ center: [-53, -14], zoom: 3.8, duration: 1200 });
+      map.fitBounds([[-73.5, -33.7], [-34.8, 5.3]], { padding: 30, duration: 1200 });
       setSelectedUf(null);
     }
   }, [filterUf, mapLoaded, geojson]);
