@@ -28,11 +28,32 @@ serve(async (req) => {
       );
     }
 
-    // Build the first_message with context for the agent
-    const firstMessage =
-      "Iniciar comunicado de urgência ao COPOM usando SOMENTE o contexto COPOM_ALERT_CONTEXT. " +
-      "NUNCA invente dados. Se faltar algo, diga: 'essa informação não está disponível no sistema neste momento'. " +
-      "Não afirmar certeza. Se movement_status for VEICULO e houver dados de vehicle, cite como NAO_CONFIRMADO.";
+    // Build the first_message with actual data embedded
+    const loc = context?.location || {};
+    const victim = context?.victim || {};
+    const aggressor = context?.aggressor || {};
+    const vehicle = aggressor?.vehicle || {};
+
+    let firstMessage = `Comunicado urgente ao COPOM. Protocolo ${context?.protocol_id || "não disponível"}. ` +
+      `Nível de risco: ${context?.risk_level || "não informado"}. ` +
+      `Motivo do acionamento: ${context?.trigger_reason === "panico_manual" ? "botão de pânico acionado manualmente" : context?.trigger_reason || "não informado"}. ` +
+      `Vítima: ${victim.name || "nome não disponível"}, telefone: ${victim.phone_masked || "não disponível"}. ` +
+      `Localização atual: ${loc.address || "endereço não disponível"}. ` +
+      `Coordenadas: latitude ${loc.lat ?? "não disponível"}, longitude ${loc.lng ?? "não disponível"}. ` +
+      `Status de movimento: ${loc.movement_status || "não informado"}` +
+      (loc.speed_kmh != null ? `, velocidade ${loc.speed_kmh} quilômetros por hora` : "") + `. `;
+
+    if (aggressor.name_masked) {
+      firstMessage += `Agressor identificado: ${aggressor.name_masked}. ${aggressor.description || ""}. `;
+    }
+    if (vehicle.model) {
+      firstMessage += `Veículo possivelmente associado: ${vehicle.model} ${vehicle.color || ""}, placa parcial ${vehicle.plate_partial || "não disponível"}. ` +
+        `Atenção: dados do veículo são ${aggressor.vehicle_note === "NAO_CONFIRMADO" ? "NÃO CONFIRMADOS" : "não confirmados"}. `;
+    }
+    if (context?.monitoring_link) {
+      firstMessage += `Link de monitoramento em tempo real: ${context.monitoring_link}. `;
+    }
+    firstMessage += `NUNCA invente dados além do que foi informado. Se alguma informação não foi mencionada, diga que não está disponível no sistema neste momento.`;
 
     // Flatten context into dynamic_variables for ElevenLabs
     const dynamicVariables: Record<string, string> = {};
