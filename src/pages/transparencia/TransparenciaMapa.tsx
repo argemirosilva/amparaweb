@@ -311,6 +311,27 @@ export default function TransparenciaMapa() {
     // Add or update source
     if (map.getSource("states")) {
       (map.getSource("states") as any).setData(enriched);
+      // Also update label source with new event counts
+      if (map.getSource("state-labels")) {
+        const labelFeatures = enriched.features.map((f: any) => {
+          const coords =
+            f.geometry.type === "Polygon"
+              ? f.geometry.coordinates[0]
+              : f.geometry.coordinates.flat(1);
+          const lngs = coords.map((c: number[]) => c[0]);
+          const lats = coords.map((c: number[]) => c[1]);
+          const center = [
+            (Math.min(...lngs) + Math.max(...lngs)) / 2,
+            (Math.min(...lats) + Math.max(...lats)) / 2,
+          ];
+          return {
+            type: "Feature",
+            geometry: { type: "Point", coordinates: center },
+            properties: { uf_code: f.properties.uf_code, eventos: f.properties.eventos || 0 },
+          };
+        });
+        (map.getSource("state-labels") as any).setData({ type: "FeatureCollection", features: labelFeatures });
+      }
     } else {
       map.addSource("states", { type: "geojson", data: enriched });
 
@@ -368,7 +389,7 @@ export default function TransparenciaMapa() {
         return {
           type: "Feature",
           geometry: { type: "Point", coordinates: center },
-          properties: { uf_code: f.properties.uf_code },
+          properties: { uf_code: f.properties.uf_code, eventos: f.properties.eventos || 0 },
         };
       });
 
@@ -382,7 +403,7 @@ export default function TransparenciaMapa() {
         type: "symbol",
         source: "state-labels",
         layout: {
-          "text-field": ["get", "uf_code"],
+          "text-field": ["concat", ["get", "uf_code"], " (", ["to-string", ["get", "eventos"]], ")"],
           "text-size": 11,
           "text-font": ["DIN Pro Bold", "Arial Unicode MS Bold"],
           "text-allow-overlap": false,
