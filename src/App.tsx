@@ -21,6 +21,17 @@ import Rastreamento from "./pages/Rastreamento";
 import Suporte from "./pages/Suporte";
 import Privacidade from "./pages/Privacidade";
 import Copom from "./pages/Copom";
+import PortalLayout from "./components/institucional/PortalLayout";
+import TransparenciaHome from "./pages/transparencia/TransparenciaHome";
+import TransparenciaMapa from "./pages/transparencia/TransparenciaMapa";
+import TransparenciaMetodologia from "./pages/transparencia/TransparenciaMetodologia";
+import TransparenciaDadosAbertos from "./pages/transparencia/TransparenciaDadosAbertos";
+import AdminLayout from "./components/institucional/AdminLayout";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminUsuarios from "./pages/admin/AdminUsuarios";
+import AdminAuditoria from "./pages/admin/AdminAuditoria";
+import AdminRelatorios from "./pages/admin/AdminRelatorios";
+import AdminPlaceholder from "./pages/admin/AdminPlaceholder";
 
 const queryClient = new QueryClient();
 
@@ -45,6 +56,23 @@ const App = () => (
               <Route path="/configuracoes" element={<Configuracoes />} />
               <Route path="/busca-perfil" element={<BuscaPerfil />} />
               <Route path="/copom" element={<Copom />} />
+            </Route>
+            {/* Portal Público de Transparência */}
+            <Route element={<PortalLayout />}>
+              <Route path="/transparencia" element={<TransparenciaHome />} />
+              <Route path="/transparencia/mapa" element={<TransparenciaMapa />} />
+              <Route path="/transparencia/metodologia" element={<TransparenciaMetodologia />} />
+              <Route path="/transparencia/dados-abertos" element={<TransparenciaDadosAbertos />} />
+            </Route>
+            {/* Admin Governamental */}
+            <Route element={<AdminLayout />}>
+              <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/admin/usuarios" element={<AdminUsuarios />} />
+              <Route path="/admin/auditoria" element={<AdminAuditoria />} />
+              <Route path="/admin/relatorios" element={<AdminRelatorios />} />
+              <Route path="/admin/mapa" element={<AdminPlaceholder />} />
+              <Route path="/admin/orgaos" element={<AdminPlaceholder />} />
+              <Route path="/admin/configuracoes" element={<AdminPlaceholder />} />
             </Route>
             <Route path="/suporte" element={<Suporte />} />
             <Route path="/privacidade" element={<Privacidade />} />
