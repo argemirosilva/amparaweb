@@ -45,9 +45,7 @@ serve(async (req) => {
         agent_id: AGENT_ID,
         agent_phone_number_id: PHONE_NUMBER_ID,
         to_number: phoneNumber,
-        conversation_initiation_client_data: context
-          ? JSON.stringify(context)
-          : undefined,
+        conversation_initiation_client_data: context || undefined,
         first_message: firstMessage,
       }),
     });
