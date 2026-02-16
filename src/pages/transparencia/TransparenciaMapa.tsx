@@ -475,7 +475,7 @@ export default function TransparenciaMapa() {
         // Compute bbox center
         const coords = feature.geometry.type === "Polygon"
           ? feature.geometry.coordinates[0]
-          : feature.geometry.coordinates.flat(1);
+          : feature.geometry.coordinates.flat(2);
         const lngs = coords.map((c: number[]) => c[0]);
         const lats = coords.map((c: number[]) => c[1]);
         const center: [number, number] = [
