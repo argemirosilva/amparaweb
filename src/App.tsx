@@ -32,6 +32,8 @@ import AdminUsuarios from "./pages/admin/AdminUsuarios";
 import AdminAuditoria from "./pages/admin/AdminAuditoria";
 import AdminRelatorios from "./pages/admin/AdminRelatorios";
 import AdminPlaceholder from "./pages/admin/AdminPlaceholder";
+import AdminOrgaos from "./pages/admin/AdminOrgaos";
+import AdminConfiguracoes from "./pages/admin/AdminConfiguracoes";
 
 const queryClient = new QueryClient();
 
@@ -71,8 +73,8 @@ const App = () => (
               <Route path="/admin/auditoria" element={<AdminAuditoria />} />
               <Route path="/admin/relatorios" element={<AdminRelatorios />} />
               <Route path="/admin/mapa" element={<AdminPlaceholder />} />
-              <Route path="/admin/orgaos" element={<AdminPlaceholder />} />
-              <Route path="/admin/configuracoes" element={<AdminPlaceholder />} />
+              <Route path="/admin/orgaos" element={<AdminOrgaos />} />
+              <Route path="/admin/configuracoes" element={<AdminConfiguracoes />} />
             </Route>
             <Route path="/suporte" element={<Suporte />} />
             <Route path="/privacidade" element={<Privacidade />} />
