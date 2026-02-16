@@ -34,6 +34,29 @@ serve(async (req) => {
       "NUNCA invente dados. Se faltar algo, diga: 'essa informação não está disponível no sistema neste momento'. " +
       "Não afirmar certeza. Se movement_status for VEICULO e houver dados de vehicle, cite como NAO_CONFIRMADO.";
 
+    // Flatten context into dynamic_variables for ElevenLabs
+    const dynamicVariables: Record<string, string> = {};
+    if (context) {
+      dynamicVariables.context_json = JSON.stringify(context);
+      dynamicVariables.protocol_id = context.protocol_id || "";
+      dynamicVariables.risk_level = context.risk_level || "";
+      dynamicVariables.trigger_reason = context.trigger_reason || "";
+      dynamicVariables.victim_name = context.victim?.name || "";
+      dynamicVariables.victim_phone = context.victim?.phone_masked || "";
+      dynamicVariables.location_address = context.location?.address || "";
+      dynamicVariables.location_lat = String(context.location?.lat || "");
+      dynamicVariables.location_lng = String(context.location?.lng || "");
+      dynamicVariables.movement_status = context.location?.movement_status || "";
+      dynamicVariables.speed_kmh = String(context.location?.speed_kmh ?? "");
+      dynamicVariables.monitoring_link = context.monitoring_link || "";
+      dynamicVariables.aggressor_name = context.aggressor?.name_masked || "";
+      dynamicVariables.aggressor_description = context.aggressor?.description || "";
+      dynamicVariables.vehicle_model = context.aggressor?.vehicle?.model || "";
+      dynamicVariables.vehicle_color = context.aggressor?.vehicle?.color || "";
+      dynamicVariables.vehicle_plate = context.aggressor?.vehicle?.plate_partial || "";
+      dynamicVariables.vehicle_note = context.aggressor?.vehicle_note || "";
+    }
+
     // Call ElevenLabs Outbound Call API
     const response = await fetch("https://api.elevenlabs.io/v1/convai/twilio/outbound_call", {
       method: "POST",
@@ -45,7 +68,9 @@ serve(async (req) => {
         agent_id: AGENT_ID,
         agent_phone_number_id: PHONE_NUMBER_ID,
         to_number: phoneNumber,
-        conversation_initiation_client_data: context || undefined,
+        conversation_initiation_client_data: {
+          dynamic_variables: dynamicVariables,
+        },
         first_message: firstMessage,
       }),
     });
