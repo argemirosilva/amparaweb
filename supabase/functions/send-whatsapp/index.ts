@@ -264,7 +264,7 @@ async function notifyGuardiansAlert(
 
     if (shouldShare) {
       // Generate 5-char alphanumeric code
-      const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+      const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
       let codigo = "";
       const rnd = new Uint8Array(5);
       crypto.getRandomValues(rnd);
