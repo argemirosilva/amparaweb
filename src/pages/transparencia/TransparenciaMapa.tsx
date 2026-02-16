@@ -549,15 +549,39 @@ export default function TransparenciaMapa() {
 
   const currentStats = selectedUf && stats[selectedUf]
     ? stats[selectedUf]
-    : { eventos: totalEventos, emergencias: totalEmergencias, monitoradas: totalMonitoradas };
+    : { eventos: totalEventos, emergencias: totalEmergencias, monitoradas: totalMonitoradas, baixo: 0, medio: 0, alto: 0, critico: 0 };
+
+  // When viewing a specific UF, compute severity from stats
+  const ufSeverity = selectedUf && stats[selectedUf] ? stats[selectedUf] : null;
 
   const maxEventos = Math.max(1, ...Object.values(stats).map((s) => s.eventos));
   const level = getLevelLabel(currentStats.eventos, maxEventos);
+
+  // National representation %
+  const pctPais = selectedUf && totalEventos > 0
+    ? Math.round((currentStats.eventos / totalEventos) * 100)
+    : 100;
 
   // Top UFs for ranking
   const topUfs = Object.entries(stats)
     .sort(([, a], [, b]) => b.eventos - a.eventos)
     .slice(0, 6);
+
+  // Severity bar helper
+  const SeverityBar = ({ label, value, total, color }: { label: string; value: number; total: number; color: string }) => {
+    const pct = total > 0 ? Math.round((value / total) * 100) : 0;
+    return (
+      <div className="flex items-center gap-2">
+        <div className="w-2.5 h-2.5 rounded-sm flex-shrink-0" style={{ background: color }} />
+        <span className="text-xs flex-1" style={{ color: "hsl(220 9% 46%)" }}>{label}</span>
+        <div className="w-20 h-1.5 rounded-full overflow-hidden" style={{ background: "hsl(220 13% 93%)" }}>
+          <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: color }} />
+        </div>
+        <span className="text-xs font-semibold w-8 text-right" style={{ color: "hsl(220 13% 18%)" }}>{value}</span>
+        <span className="text-[10px] w-8 text-right" style={{ color: "hsl(220 9% 46%)" }}>{pct}%</span>
+      </div>
+    );
+  };
 
   return (
     <div className="flex flex-col md:flex-row h-[calc(100vh-64px-57px)]" style={fontStyle}>
@@ -632,48 +656,83 @@ export default function TransparenciaMapa() {
 
         <hr style={{ borderColor: "hsl(220 13% 91%)" }} className="mb-4" />
 
-        {/* Region summary */}
-        <h3 className="text-sm font-semibold mb-2" style={{ color: "hsl(220 13% 18%)" }}>
-          {selectedUf || "Brasil"}
-        </h3>
-        <div className="space-y-2 text-xs" style={{ color: "hsl(220 9% 46%)" }}>
-          <div className="flex justify-between">
-            <span>Monitoradas ativas</span>
-            <span className="font-semibold" style={{ color: "hsl(220 13% 18%)" }}>{currentStats.monitoradas}</span>
+        {/* Region header */}
+        <div className="flex items-baseline justify-between mb-3">
+          <h3 className="text-sm font-bold" style={{ color: "hsl(220 13% 18%)" }}>
+            {selectedUf ? `${UF_TO_STATE_NAME[selectedUf] || selectedUf} — ${selectedUf}` : "Brasil"}
+          </h3>
+          {selectedUf && (
+            <span className="text-[10px] px-2 py-0.5 rounded-full font-medium" style={{ background: "hsl(224 76% 33% / 0.1)", color: "hsl(224 76% 33%)" }}>
+              {pctPais}% do país
+            </span>
+          )}
+        </div>
+
+        {/* Metric cards */}
+        <div className="grid grid-cols-3 gap-2 mb-4">
+          <div className="rounded-lg p-2.5 text-center" style={{ background: "hsl(210 17% 96%)" }}>
+            <p className="text-lg font-bold" style={{ color: "hsl(224 76% 33%)" }}>{currentStats.monitoradas}</p>
+            <p className="text-[10px] leading-tight mt-0.5" style={{ color: "hsl(220 9% 46%)" }}>Monitoradas</p>
           </div>
-          <div className="flex justify-between">
-            <span>Eventos no período</span>
-            <span className="font-semibold" style={{ color: "hsl(220 13% 18%)" }}>{currentStats.eventos}</span>
+          <div className="rounded-lg p-2.5 text-center" style={{ background: "hsl(210 17% 96%)" }}>
+            <p className="text-lg font-bold" style={{ color: "hsl(220 13% 18%)" }}>{currentStats.eventos}</p>
+            <p className="text-[10px] leading-tight mt-0.5" style={{ color: "hsl(220 9% 46%)" }}>Eventos</p>
           </div>
-          <div className="flex justify-between">
-            <span>Emergências</span>
-            <span className="font-semibold" style={{ color: "hsl(220 13% 18%)" }}>{currentStats.emergencias}</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span>Nível</span>
-            <GovStatusBadge status={level.status} label={level.label} />
+          <div className="rounded-lg p-2.5 text-center" style={{ background: "hsl(0 72% 51% / 0.06)" }}>
+            <p className="text-lg font-bold" style={{ color: "hsl(0 72% 51%)" }}>{currentStats.emergencias}</p>
+            <p className="text-[10px] leading-tight mt-0.5" style={{ color: "hsl(220 9% 46%)" }}>Emergências</p>
           </div>
         </div>
+
+        {/* Level badge */}
+        <div className="flex items-center justify-between mb-4 px-2 py-2 rounded-lg" style={{ background: "hsl(210 17% 96%)" }}>
+          <span className="text-xs" style={{ color: "hsl(220 9% 46%)" }}>Nível de risco</span>
+          <GovStatusBadge status={level.status} label={level.label} />
+        </div>
+
+        {/* Severity breakdown — only when state selected and has events */}
+        {selectedUf && ufSeverity && (ufSeverity.baixo + ufSeverity.medio + ufSeverity.alto + ufSeverity.critico) > 0 && (
+          <>
+            <div className="mb-2">
+              <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "hsl(220 9% 46%)" }}>
+                Distribuição de gravidade
+              </span>
+            </div>
+            <div className="space-y-2 mb-4">
+              <SeverityBar label="Crítico" value={ufSeverity.critico} total={ufSeverity.eventos} color="#dc2626" />
+              <SeverityBar label="Alto" value={ufSeverity.alto} total={ufSeverity.eventos} color="#f97316" />
+              <SeverityBar label="Médio" value={ufSeverity.medio} total={ufSeverity.eventos} color="#facc15" />
+              <SeverityBar label="Baixo" value={ufSeverity.baixo} total={ufSeverity.eventos} color="#4ade80" />
+            </div>
+          </>
+        )}
 
         <hr style={{ borderColor: "hsl(220 13% 91%)" }} className="my-4" />
 
         {/* Top UFs or Municipios */}
         {selectedUf ? (
           <>
-            <h3 className="text-sm font-semibold mb-2" style={{ color: "hsl(220 13% 18%)" }}>
+            <h3 className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "hsl(220 9% 46%)" }}>
               Municípios — {selectedUf}
             </h3>
             {municipios.length === 0 ? (
-              <p className="text-xs" style={{ color: "hsl(220 9% 46%)" }}>Nenhum evento registrado</p>
+              <p className="text-xs py-3 text-center rounded-lg" style={{ color: "hsl(220 9% 46%)", background: "hsl(210 17% 96%)" }}>
+                Nenhum evento registrado
+              </p>
             ) : (
               <div className="space-y-1">
-                {municipios.map((m) => (
+                {municipios.map((m, i) => (
                   <div
                     key={m.nome}
-                    className="flex items-center justify-between px-2 py-1.5 rounded text-xs"
+                    className="flex items-center justify-between px-3 py-2 rounded-lg text-xs"
                     style={{ background: "hsl(210 17% 96%)" }}
                   >
-                    <span style={{ color: "hsl(220 13% 18%)" }}>{m.nome}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold" style={{ background: "hsl(224 76% 33% / 0.1)", color: "hsl(224 76% 33%)" }}>
+                        {i + 1}
+                      </span>
+                      <span style={{ color: "hsl(220 13% 18%)" }}>{m.nome}</span>
+                    </div>
                     <span className="font-semibold" style={{ color: "hsl(224 76% 33%)" }}>{m.eventos}</span>
                   </div>
                 ))}
@@ -681,7 +740,7 @@ export default function TransparenciaMapa() {
             )}
             <button
               onClick={() => { setFilterUf(""); setSelectedUf(null); }}
-              className="mt-3 text-xs font-medium px-3 py-1.5 rounded border transition-colors"
+              className="mt-4 w-full text-xs font-medium px-3 py-2 rounded-lg border transition-colors hover:bg-gray-50"
               style={{ borderColor: "hsl(224 76% 33%)", color: "hsl(224 76% 33%)" }}
             >
               ← Voltar para Brasil
@@ -689,21 +748,23 @@ export default function TransparenciaMapa() {
           </>
         ) : (
           <>
-            <h3 className="text-sm font-semibold mb-2" style={{ color: "hsl(220 13% 18%)" }}>
+            <h3 className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "hsl(220 9% 46%)" }}>
               UFs com mais eventos
             </h3>
             {topUfs.length === 0 ? (
-              <p className="text-xs" style={{ color: "hsl(220 9% 46%)" }}>Nenhum dado no período</p>
+              <p className="text-xs py-3 text-center rounded-lg" style={{ color: "hsl(220 9% 46%)", background: "hsl(210 17% 96%)" }}>
+                Nenhum dado no período
+              </p>
             ) : (
               <div className="space-y-1">
                 {topUfs.map(([uf, s]) => (
                   <button
                     key={uf}
                     onClick={() => { setFilterUf(uf); setSelectedUf(uf); }}
-                    className="w-full flex items-center justify-between px-2 py-1.5 rounded text-xs hover:bg-gray-50 transition-colors text-left"
+                    className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs hover:bg-gray-50 transition-colors text-left"
                     style={{ background: "hsl(210 17% 96%)" }}
                   >
-                    <span style={{ color: "hsl(220 13% 18%)" }}>{uf}</span>
+                    <span className="font-medium" style={{ color: "hsl(220 13% 18%)" }}>{UF_TO_STATE_NAME[uf] || uf}</span>
                     <div className="flex items-center gap-2">
                       <span style={{ color: "hsl(220 9% 46%)" }}>{s.eventos} ev.</span>
                       <div
