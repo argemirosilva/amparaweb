@@ -472,17 +472,14 @@ export default function TransparenciaMapa() {
     if (filterUf && geojson) {
       const feature = geojson.features.find((f: any) => f.properties.uf_code === filterUf);
       if (feature) {
-        // Compute bbox center
         const coords = feature.geometry.type === "Polygon"
           ? feature.geometry.coordinates[0]
           : feature.geometry.coordinates.flat(2);
         const lngs = coords.map((c: number[]) => c[0]);
         const lats = coords.map((c: number[]) => c[1]);
-        const center: [number, number] = [
-          (Math.min(...lngs) + Math.max(...lngs)) / 2,
-          (Math.min(...lats) + Math.max(...lats)) / 2,
-        ];
-        map.flyTo({ center, zoom: 6, duration: 1200 });
+        const sw: [number, number] = [Math.min(...lngs), Math.min(...lats)];
+        const ne: [number, number] = [Math.max(...lngs), Math.max(...lats)];
+        map.fitBounds([sw, ne], { padding: 60, duration: 1200 });
       }
     } else {
       map.fitBounds([[-73.5, -33.7], [-34.8, 5.3]], { padding: 30, duration: 1200 });
