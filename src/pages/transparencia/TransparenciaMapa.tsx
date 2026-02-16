@@ -512,8 +512,14 @@ export default function TransparenciaMapa() {
       map.on("click", "states-fill", (e: any) => {
         if (e.features?.length) {
           const ufCode = e.features[0].properties.uf_code;
-          setSelectedUf(ufCode);
-          setFilterUf(ufCode);
+          setSelectedUf((prev) => {
+            if (prev === ufCode) {
+              setFilterUf("");
+              return null;
+            }
+            setFilterUf(ufCode);
+            return ufCode;
+          });
         }
       });
     }
