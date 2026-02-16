@@ -1,0 +1,23 @@
+/* ========================================================
+   DESIGN SYSTEM INSTITUCIONAL — AMPARA GOV
+   Paleta sóbria inspirada em portais do CNJ / Judiciário
+   ======================================================== */
+
+:root {
+  /* Institucional tokens */
+  --gov-bg: 210 17% 96%;
+  --gov-card: 0 0% 100%;
+  --gov-text: 220 13% 18%;
+  --gov-text-secondary: 220 9% 46%;
+  --gov-blue: 224 76% 33%;
+  --gov-blue-hover: 224 68% 48%;
+  --gov-border: 220 13% 91%;
+  --gov-radius: 6px;
+  --gov-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06);
+
+  /* Status */
+  --gov-green: 142 64% 24%;
+  --gov-yellow: 45 93% 41%;
+  --gov-orange: 20 91% 40%;
+  --gov-red: 0 73% 42%;
+}
