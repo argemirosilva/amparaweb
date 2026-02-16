@@ -27,14 +27,12 @@ const STATE_NAME_TO_UF: Record<string, string> = {
   Tocantins: "TO",
 };
 
-function getColorForValue(value: number, max: number): string {
-  if (max === 0 || value === 0) return "hsl(220 13% 93%)";
-  const ratio = value / max;
-  if (ratio > 0.75) return "hsl(0 73% 42%)";
-  if (ratio > 0.5) return "hsl(25 95% 53%)";
-  if (ratio > 0.25) return "hsl(45 93% 47%)";
-  if (ratio > 0) return "hsl(142 64% 45%)";
-  return "hsl(220 13% 93%)";
+function getColorForValue(value: number): string {
+  if (value === 0) return "#e5e7eb";
+  if (value >= 10) return "#dc2626";
+  if (value >= 6) return "#f97316";
+  if (value >= 3) return "#facc15";
+  return "#4ade80";
 }
 
 function getLevelLabel(value: number, max: number): { status: "verde" | "amarelo" | "vermelho"; label: string } {
@@ -214,7 +212,30 @@ export default function TransparenciaMapa() {
 
       const map = new mapboxgl.Map({
         container: mapContainer.current,
-        style: "mapbox://styles/mapbox/light-v11",
+        style: {
+          version: 8,
+          name: "Brazil Clean",
+          sources: {
+            "simple-tiles": {
+              type: "raster",
+              tiles: [
+                "https://a.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}@2x.png",
+                "https://b.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}@2x.png",
+                "https://c.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}@2x.png",
+              ],
+              tileSize: 256,
+            },
+          },
+          layers: [
+            {
+              id: "simple-tiles-layer",
+              type: "raster",
+              source: "simple-tiles",
+              minzoom: 0,
+              maxzoom: 22,
+            },
+          ],
+        },
         center: [-52, -15],
         zoom: 3.2,
         maxBounds: brazilBounds,
@@ -281,7 +302,7 @@ export default function TransparenciaMapa() {
             eventos: s.eventos,
             emergencias: s.emergencias,
             monitoradas: s.monitoradas,
-            fill_color: getColorForValue(s.eventos, maxEventos),
+            fill_color: getColorForValue(s.eventos),
           },
         };
       }),
@@ -298,8 +319,16 @@ export default function TransparenciaMapa() {
         type: "fill",
         source: "states",
         paint: {
-          "fill-color": ["get", "fill_color"],
-          "fill-opacity": 0.7,
+          "fill-color": [
+            "step",
+            ["get", "eventos"],
+            "#e5e7eb",  // 0 events — light gray
+            1, "#4ade80",   // 1+ — green
+            3, "#facc15",   // 3+ — yellow
+            6, "#f97316",   // 6+ — orange
+            10, "#dc2626",  // 10+ — red
+          ],
+          "fill-opacity": 0.75,
         },
       });
 
@@ -454,11 +483,11 @@ export default function TransparenciaMapa() {
             </p>
             <div className="space-y-1">
               {[
-                { color: "hsl(0 73% 42%)", label: "Muito alto" },
-                { color: "hsl(25 95% 53%)", label: "Alto" },
-                { color: "hsl(45 93% 47%)", label: "Moderado" },
-                { color: "hsl(142 64% 45%)", label: "Baixo" },
-                { color: "hsl(220 13% 93%)", label: "Sem dados" },
+                { color: "#dc2626", label: "Muito alto (10+)" },
+                { color: "#f97316", label: "Alto (6-9)" },
+                { color: "#facc15", label: "Moderado (3-5)" },
+                { color: "#4ade80", label: "Baixo (1-2)" },
+                { color: "#e5e7eb", label: "Sem dados" },
               ].map((item) => (
                 <div key={item.label} className="flex items-center gap-2">
                   <div className="w-4 h-3 rounded-sm" style={{ background: item.color }} />
@@ -606,7 +635,7 @@ export default function TransparenciaMapa() {
                       <span style={{ color: "hsl(220 9% 46%)" }}>{s.eventos} ev.</span>
                       <div
                         className="w-2.5 h-2.5 rounded-sm"
-                        style={{ background: getColorForValue(s.eventos, maxEventos) }}
+                        style={{ background: getColorForValue(s.eventos) }}
                       />
                     </div>
                   </button>
