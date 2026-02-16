@@ -254,6 +254,7 @@ export function useCopomSession() {
       },
       monitoring_link: `${window.location.origin}/TESTE123`,
       aggressor: {
+        name: "João Santos",
         name_masked: "J*** S***",
         description: "Ex-marido, ativo, risco: alto",
         vehicle: {

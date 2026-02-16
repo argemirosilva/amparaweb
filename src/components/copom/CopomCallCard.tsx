@@ -40,7 +40,7 @@ export default function CopomCallCard({ panicAlertId, testMode }: { panicAlertId
     },
     monitoring_link: `${window.location.origin}/TESTE123`,
     aggressor: {
-      name_masked: "J*** S***", description: "Ex-marido, ativo, risco: alto",
+      name: "João Santos", name_masked: "J*** S***", description: "Ex-marido, ativo, risco: alto",
       vehicle: { model: "Onix", color: "Prata", plate_partial: "ABC1D23" },
       vehicle_note: "NAO_CONFIRMADO",
     },
