@@ -418,8 +418,8 @@ export default function TransparenciaMapa() {
           "text-field": [
             "case",
             [">", ["get", "eventos"], 0],
-            ["concat", ["get", "state_name"], "\n", ["get", "uf_code"], " (", ["to-string", ["get", "eventos"]], ")"],
-            ["concat", ["get", "state_name"], "\n", ["get", "uf_code"]],
+            ["concat", ["get", "uf_code"], " (", ["to-string", ["get", "eventos"]], ")"],
+            ["get", "uf_code"],
           ],
           "text-size": 11,
           "text-font": ["DIN Pro Bold", "Arial Unicode MS Bold"],
