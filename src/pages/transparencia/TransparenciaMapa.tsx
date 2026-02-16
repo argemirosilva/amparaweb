@@ -324,6 +324,48 @@ export default function TransparenciaMapa() {
         filter: ["==", "uf_code", ""],
       });
 
+      // UF labels — compute centroids from polygons
+      const labelFeatures = enriched.features.map((f: any) => {
+        const coords =
+          f.geometry.type === "Polygon"
+            ? f.geometry.coordinates[0]
+            : f.geometry.coordinates.flat(1);
+        const lngs = coords.map((c: number[]) => c[0]);
+        const lats = coords.map((c: number[]) => c[1]);
+        const center = [
+          (Math.min(...lngs) + Math.max(...lngs)) / 2,
+          (Math.min(...lats) + Math.max(...lats)) / 2,
+        ];
+        return {
+          type: "Feature",
+          geometry: { type: "Point", coordinates: center },
+          properties: { uf_code: f.properties.uf_code },
+        };
+      });
+
+      map.addSource("state-labels", {
+        type: "geojson",
+        data: { type: "FeatureCollection", features: labelFeatures },
+      });
+
+      map.addLayer({
+        id: "state-labels-layer",
+        type: "symbol",
+        source: "state-labels",
+        layout: {
+          "text-field": ["get", "uf_code"],
+          "text-size": 11,
+          "text-font": ["DIN Pro Bold", "Arial Unicode MS Bold"],
+          "text-allow-overlap": false,
+          "text-ignore-placement": false,
+        },
+        paint: {
+          "text-color": "hsl(220, 13%, 25%)",
+          "text-halo-color": "hsl(0, 0%, 100%)",
+          "text-halo-width": 1.5,
+        },
+      });
+
       // Hover effect
       map.on("mousemove", "states-fill", (e: any) => {
         map.getCanvas().style.cursor = "pointer";
