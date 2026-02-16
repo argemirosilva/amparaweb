@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_settings: {
+        Row: {
+          categoria: string
+          chave: string
+          descricao: string | null
+          id: string
+          updated_at: string
+          valor: string
+        }
+        Insert: {
+          categoria?: string
+          chave: string
+          descricao?: string | null
+          id?: string
+          updated_at?: string
+          valor: string
+        }
+        Update: {
+          categoria?: string
+          chave?: string
+          descricao?: string | null
+          id?: string
+          updated_at?: string
+          valor?: string
+        }
+        Relationships: []
+      }
       agendamentos_monitoramento: {
         Row: {
           id: string
@@ -915,6 +942,63 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      tenants: {
+        Row: {
+          ativo: boolean
+          cidade: string | null
+          cnpj: string | null
+          created_at: string
+          email_contato: string | null
+          endereco: string | null
+          id: string
+          max_usuarios: number
+          nome: string
+          responsavel_email: string | null
+          responsavel_nome: string | null
+          sigla: string
+          telefone_contato: string | null
+          tipo: string
+          uf: string | null
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          cidade?: string | null
+          cnpj?: string | null
+          created_at?: string
+          email_contato?: string | null
+          endereco?: string | null
+          id?: string
+          max_usuarios?: number
+          nome: string
+          responsavel_email?: string | null
+          responsavel_nome?: string | null
+          sigla: string
+          telefone_contato?: string | null
+          tipo?: string
+          uf?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          cidade?: string | null
+          cnpj?: string | null
+          created_at?: string
+          email_contato?: string | null
+          endereco?: string | null
+          id?: string
+          max_usuarios?: number
+          nome?: string
+          responsavel_email?: string | null
+          responsavel_nome?: string | null
+          sigla?: string
+          telefone_contato?: string | null
+          tipo?: string
+          uf?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
