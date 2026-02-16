@@ -1,12 +1,15 @@
 import { useState } from "react";
 import { useCopomSession } from "@/hooks/useCopomSession";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { toast } from "sonner";
 import {
   Phone,
   PhoneOff,
+  PhoneCall,
   Loader2,
   AlertTriangle,
   CheckCircle2,
@@ -20,6 +23,7 @@ import {
 export default function CopomCallCard({ panicAlertId, testMode }: { panicAlertId?: string; testMode?: boolean }) {
   const { state, startSession, startTestSession, endSession } = useCopomSession();
   const [showLogs, setShowLogs] = useState(false);
+  const [isCallingPhone, setIsCallingPhone] = useState(false);
 
   const statusConfig = {
     idle: { label: "Pronto", color: "bg-muted text-muted-foreground", icon: Phone },
@@ -93,15 +97,46 @@ export default function CopomCallCard({ panicAlertId, testMode }: { panicAlertId
           {/* Actions */}
           <div className="flex gap-2">
             {(state.status === "idle" || state.status === "error" || state.status === "ended") && (
-              <Button
-                onClick={() => testMode ? startTestSession() : startSession(panicAlertId)}
-                variant="destructive"
-                size="sm"
-                className="flex-1 gap-2"
-              >
-                <Phone className="w-4 h-4" />
-                {state.status === "ended" ? "Ligar novamente" : testMode ? "Iniciar teste" : "Iniciar comunicação"}
-              </Button>
+              <>
+                <Button
+                  onClick={() => testMode ? startTestSession() : startSession(panicAlertId)}
+                  variant="destructive"
+                  size="sm"
+                  className="flex-1 gap-2"
+                >
+                  <Phone className="w-4 h-4" />
+                  {state.status === "ended" ? "Ligar novamente" : testMode ? "Iniciar teste" : "Iniciar comunicação"}
+                </Button>
+                {testMode && (
+                  <Button
+                    onClick={async () => {
+                      setIsCallingPhone(true);
+                      try {
+                        const { data, error } = await supabase.functions.invoke("copom-outbound-call", {
+                          body: { context: state.context },
+                        });
+                        if (error) throw error;
+                        toast.success("Ligação telefônica iniciada!", {
+                          description: `Chamando +5514997406686...`,
+                        });
+                      } catch (err: any) {
+                        toast.error("Erro ao iniciar ligação", {
+                          description: err?.message || String(err),
+                        });
+                      } finally {
+                        setIsCallingPhone(false);
+                      }
+                    }}
+                    variant="outline"
+                    size="sm"
+                    className="gap-2 border-green-600 text-green-700 hover:bg-green-50 dark:border-green-500 dark:text-green-400 dark:hover:bg-green-950"
+                    disabled={isCallingPhone}
+                  >
+                    {isCallingPhone ? <Loader2 className="w-4 h-4 animate-spin" /> : <PhoneCall className="w-4 h-4" />}
+                    Ligar telefone
+                  </Button>
+                )}
+              </>
             )}
             {(state.status === "active" || state.status === "connecting") && (
               <Button
