@@ -29,7 +29,7 @@ const STATE_NAME_TO_UF: Record<string, string> = {
 
 function getColorForValue(value: number): string {
   if (value === 0) return "#e5e7eb";
-  if (value >= 10) return "#dc2626";
+  if (value >= 15) return "#dc2626";
   if (value >= 6) return "#f97316";
   if (value >= 3) return "#facc15";
   return "#4ade80";
@@ -347,7 +347,7 @@ export default function TransparenciaMapa() {
             1, "#4ade80",   // 1+ — green
             3, "#facc15",   // 3+ — yellow
             6, "#f97316",   // 6+ — orange
-            10, "#dc2626",  // 10+ — red
+            15, "#dc2626",  // 15+ — red
           ],
           "fill-opacity": 0.75,
         },
@@ -504,8 +504,8 @@ export default function TransparenciaMapa() {
             </p>
             <div className="space-y-1">
               {[
-                { color: "#dc2626", label: "Muito alto (10+)" },
-                { color: "#f97316", label: "Alto (6-9)" },
+                { color: "#dc2626", label: "Muito alto (15+)" },
+                { color: "#f97316", label: "Alto (6-14)" },
                 { color: "#facc15", label: "Moderado (3-5)" },
                 { color: "#4ade80", label: "Baixo (1-2)" },
                 { color: "#e5e7eb", label: "Sem dados" },
