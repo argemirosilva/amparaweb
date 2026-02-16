@@ -34,6 +34,7 @@ import AdminRelatorios from "./pages/admin/AdminRelatorios";
 import AdminPlaceholder from "./pages/admin/AdminPlaceholder";
 import AdminOrgaos from "./pages/admin/AdminOrgaos";
 import AdminConfiguracoes from "./pages/admin/AdminConfiguracoes";
+import AdminLogin from "./pages/admin/AdminLogin";
 
 const queryClient = new QueryClient();
 
@@ -46,6 +47,7 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/" element={<Navigate to="/login" replace />} />
+            <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/cadastro" element={<Cadastro />} />
             <Route path="/validar-email" element={<ValidarEmail />} />
             <Route path="/login" element={<Login />} />
