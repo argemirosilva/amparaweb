@@ -157,8 +157,29 @@ async function notifyGuardiansAlert(
   tipo: string, // "panico" | "alto" | "critico" | "coacao"
   lat?: number | null,
   lon?: number | null,
-  alertaId?: string | null
-): Promise<{ sent: number; skipped: boolean }> {
+  alertaId?: string | null,
+  skipCooldown?: boolean
+): Promise<{ sent: number; skipped: boolean; cooldown?: boolean; minutes_remaining?: number }> {
+  // 0. Cooldown de 60 minutos
+  if (userId && !skipCooldown) {
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const { data: recentAlerts } = await supabase
+      .from("audit_logs")
+      .select("id, created_at")
+      .eq("action_type", "whatsapp_alert_sent")
+      .eq("user_id", userId)
+      .eq("success", true)
+      .gte("created_at", oneHourAgo)
+      .limit(1);
+
+    if (recentAlerts && recentAlerts.length > 0) {
+      const lastAt = new Date(recentAlerts[0].created_at);
+      const minutesRemaining = Math.ceil((60 * 60 * 1000 - (Date.now() - lastAt.getTime())) / 60000);
+      console.log(`WhatsApp cooldown active for user ${userId}. ${minutesRemaining}min remaining.`);
+      return { sent: 0, skipped: true, cooldown: true, minutes_remaining: minutesRemaining };
+    }
+  }
+
   // 1. Fetch user data
   const { data: usuario } = await supabase
     .from("usuarios")
@@ -368,14 +389,17 @@ serve(async (req) => {
   );
 
   try {
-    const { action, user_id, tipo, lat, lon, alerta_id } = await req.json();
+    const { action, user_id, tipo, lat, lon, alerta_id, skip_cooldown } = await req.json();
 
     if (!action) return json({ error: "action obrigatória" }, 400);
     if (!user_id) return json({ error: "user_id obrigatório" }, 400);
 
     if (action === "notify_alert") {
       if (!tipo) return json({ error: "tipo obrigatório" }, 400);
-      const result = await notifyGuardiansAlert(supabase, user_id, tipo, lat, lon, alerta_id);
+      const result = await notifyGuardiansAlert(supabase, user_id, tipo, lat, lon, alerta_id, skip_cooldown === true);
+      if (result.cooldown) {
+        return json({ error: "cooldown_active", message: `Notificação WhatsApp bloqueada. Aguarde ${result.minutes_remaining} minuto(s).`, ...result }, 429);
+      }
       return json({ success: true, ...result });
     }
 
