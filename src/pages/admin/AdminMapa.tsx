@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useMapbox } from "@/hooks/useMapbox";
 import { MapPin, AlertTriangle, Smartphone, Users, RefreshCw } from "lucide-react";
 
 const fontStyle = { fontFamily: "Inter, Roboto, sans-serif" };
@@ -54,9 +55,9 @@ type StatsMap = Record<string, UfStats>;
 
 export default function AdminMapa() {
   const mapContainer = useRef<HTMLDivElement>(null);
-  const mapModuleRef = useRef<any>(null);
   const mapRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
+  const { mapboxgl: mapboxglInstance, loading: mbLoading } = useMapbox();
   const [mapLoaded, setMapLoaded] = useState(false);
   const [geojson, setGeojson] = useState<any>(null);
   const [stats, setStats] = useState<StatsMap>({});
@@ -212,68 +213,47 @@ export default function AdminMapa() {
 
   // Init map
   useEffect(() => {
-    async function initMap() {
-      if (!mapContainer.current || mapRef.current) return;
+    if (!mapContainer.current || mapRef.current || !mapboxglInstance) return;
 
-      const mb = await import("mapbox-gl");
-      const mapboxgl = mb.default;
-      mapModuleRef.current = mapboxgl;
-
-      const tokenRes = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/mapbox-token`,
-        { headers: { apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY } }
-      );
-
-      let token = "";
-      if (tokenRes.ok) {
-        const data = await tokenRes.json();
-        token = data.token;
-      }
-      if (!token) return;
-
-      mapboxgl.accessToken = token;
-
-      const map = new mapboxgl.Map({
-        container: mapContainer.current,
-        style: {
-          version: 8,
-          name: "Admin Clean",
-          glyphs: "mapbox://fonts/mapbox/{fontstack}/{range}.pbf",
-          sources: {
-            "simple-tiles": {
-              type: "raster",
-              tiles: [
-                "https://a.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}@2x.png",
-                "https://b.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}@2x.png",
-              ],
-              tileSize: 256,
-            },
+    const map = new mapboxglInstance.Map({
+      container: mapContainer.current,
+      style: {
+        version: 8,
+        name: "Admin Clean",
+        glyphs: "mapbox://fonts/mapbox/{fontstack}/{range}.pbf",
+        sources: {
+          "simple-tiles": {
+            type: "raster",
+            tiles: [
+              "https://a.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}@2x.png",
+              "https://b.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}@2x.png",
+            ],
+            tileSize: 256,
           },
-          layers: [
-            { id: "simple-tiles-layer", type: "raster", source: "simple-tiles", minzoom: 0, maxzoom: 22 },
-          ],
         },
-        center: [-52, -15],
-        zoom: 3.2,
-        maxBounds: [[-75, -35], [-28, 6]],
-        minZoom: 2.8,
-      });
+        layers: [
+          { id: "simple-tiles-layer", type: "raster", source: "simple-tiles", minzoom: 0, maxzoom: 22 },
+        ],
+      },
+      center: [-52, -15],
+      zoom: 3.2,
+      maxBounds: [[-75, -35], [-28, 6]],
+      minZoom: 2.8,
+    });
 
-      map.once("load", () => {
-        map.fitBounds([[-73.5, -33.7], [-34.8, 5.3]], { padding: 30, duration: 0 });
-      });
+    map.once("load", () => {
+      map.fitBounds([[-73.5, -33.7], [-34.8, 5.3]], { padding: 30, duration: 0 });
+    });
 
-      map.addControl(new mapboxgl.NavigationControl(), "top-right");
-      map.on("load", () => setMapLoaded(true));
-      mapRef.current = map;
-    }
+    map.addControl(new mapboxglInstance.NavigationControl(), "top-right");
+    map.on("load", () => setMapLoaded(true));
+    mapRef.current = map;
 
-    initMap();
     return () => {
       mapRef.current?.remove();
       mapRef.current = null;
     };
-  }, []);
+  }, [mapboxglInstance]);
 
   // Choropleth layer
   useEffect(() => {
@@ -362,8 +342,9 @@ export default function AdminMapa() {
       });
 
       // Tooltip
-      const mapboxgl = mapModuleRef.current;
-      const popup = new mapboxgl.Popup({ closeButton: false, closeOnClick: false, maxWidth: "240px" });
+      const mbgl = mapboxglInstance;
+      if (!mbgl) return;
+      const popup = new mbgl.Popup({ closeButton: false, closeOnClick: false, maxWidth: "240px" });
 
       map.on("mousemove", "states-fill", (e: any) => {
         map.getCanvas().style.cursor = "pointer";
@@ -420,8 +401,8 @@ export default function AdminMapa() {
   // Markers for alerts and devices
   useEffect(() => {
     const map = mapRef.current;
-    const mapboxgl = mapModuleRef.current;
-    if (!map || !mapboxgl || !mapLoaded) return;
+    const mbgl = mapboxglInstance;
+    if (!map || !mbgl || !mapLoaded) return;
 
     // Clear old markers
     markersRef.current.forEach((m) => m.remove());
@@ -434,7 +415,7 @@ export default function AdminMapa() {
         el.style.cssText = "width:28px;height:28px;border-radius:50%;background:hsl(0,72%,51%);border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3);cursor:pointer;display:flex;align-items:center;justify-content:center;animation:pulse 2s infinite";
         el.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
 
-        const popup = new mapboxgl.Popup({ offset: 15, maxWidth: "220px" }).setHTML(`
+        const popup = new mbgl.Popup({ offset: 15, maxWidth: "220px" }).setHTML(`
           <div style="font-family:Inter,sans-serif;font-size:11px;line-height:1.5">
             <strong style="color:hsl(0,72%,51%)">⚠ Alerta Ativo</strong>
             <div style="margin-top:4px"><span style="color:hsl(220,9%,46%)">Usuária:</span> ${a.userName}</div>
@@ -443,7 +424,7 @@ export default function AdminMapa() {
           </div>
         `);
 
-        const marker = new mapboxgl.Marker({ element: el }).setLngLat([a.lng, a.lat]).setPopup(popup).addTo(map);
+        const marker = new mbgl.Marker({ element: el }).setLngLat([a.lng, a.lat]).setPopup(popup).addTo(map);
         markersRef.current.push(marker);
       });
     }
@@ -455,7 +436,7 @@ export default function AdminMapa() {
         const el = document.createElement("div");
         el.style.cssText = `width:20px;height:20px;border-radius:50%;background:${isOnline ? "hsl(142,71%,35%)" : "hsl(220,9%,60%)"};border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.2);cursor:pointer`;
 
-        const popup = new mapboxgl.Popup({ offset: 12, maxWidth: "220px" }).setHTML(`
+        const popup = new mbgl.Popup({ offset: 12, maxWidth: "220px" }).setHTML(`
           <div style="font-family:Inter,sans-serif;font-size:11px;line-height:1.5">
             <strong>${d.userName}</strong>
             <div style="margin-top:4px">
@@ -468,11 +449,11 @@ export default function AdminMapa() {
           </div>
         `);
 
-        const marker = new mapboxgl.Marker({ element: el }).setLngLat([d.lng, d.lat]).setPopup(popup).addTo(map);
+        const marker = new mbgl.Marker({ element: el }).setLngLat([d.lng, d.lat]).setPopup(popup).addTo(map);
         markersRef.current.push(marker);
       });
     }
-  }, [alerts, devices, showAlerts, showDevices, mapLoaded]);
+  }, [alerts, devices, showAlerts, showDevices, mapLoaded, mapboxglInstance]);
 
   // Fly to UF
   useEffect(() => {

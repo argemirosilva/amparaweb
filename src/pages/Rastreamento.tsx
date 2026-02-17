@@ -1,12 +1,12 @@
-/// <reference types="google.maps" />
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveAddress } from "@/services/reverseGeocodeService";
 import { classifyMovement } from "@/hooks/useMovementStatus";
-import { useGoogleMapsPublic } from "@/hooks/useGoogleMaps";
+import { useMapbox } from "@/hooks/useMapbox";
 import amparaIcon from "@/assets/ampara-icon-transparent.png";
 import { Navigation, Locate, Signal } from "lucide-react";
+import type mapboxgl from "mapbox-gl";
 
 function formatRelativeTime(isoDate: string): string {
   const diff = Date.now() - new Date(isoDate).getTime();
@@ -37,7 +37,7 @@ function estimateSpeed(locs: LocationData[]): number | null {
   return dist / timeDiffSec;
 }
 
-const STYLE_ID = "ampara-gmap-nav-styles";
+const STYLE_ID = "ampara-mbx-track-styles";
 function injectStyles() {
   if (document.getElementById(STYLE_ID)) return;
   const style = document.createElement("style");
@@ -51,7 +51,6 @@ function injectStyles() {
     .ampara-nav-img { width:100%; height:100%; object-fit:cover; }
     .ampara-nav-placeholder { width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:hsl(240 5% 26%); color:white; font-weight:700; font-size:20px; }
     .ampara-nav-arrow { width:0; height:0; border-left:8px solid transparent; border-right:8px solid transparent; border-top:10px solid white; margin-top:-2px; filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3)); }
-    .ampara-accuracy-circle { border-radius:50%; background:hsla(220,80%,55%,0.08); border:1.5px solid hsla(220,80%,55%,0.25); position:absolute; transform:translate(-50%,-50%); pointer-events:none; }
   `;
   document.head.appendChild(style);
 }
@@ -80,21 +79,53 @@ interface UserInfo {
   avatar_url: string | null;
 }
 
-/** Smoothly animate AdvancedMarkerElement position */
+const DARK_STYLE = {
+  version: 8 as const,
+  name: "Ampara Dark Track",
+  glyphs: "mapbox://fonts/mapbox/{fontstack}/{range}.pbf",
+  sources: {
+    "dark-tiles": {
+      type: "raster" as const,
+      tiles: [
+        "https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
+        "https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
+      ],
+      tileSize: 256,
+    },
+  },
+  layers: [
+    { id: "dark-tiles-layer", type: "raster" as const, source: "dark-tiles", minzoom: 0, maxzoom: 22 },
+  ],
+};
+
+function createCircleGeoJSON(center: [number, number], radiusMeters: number, steps = 64) {
+  const coords: [number, number][] = [];
+  const km = radiusMeters / 1000;
+  for (let i = 0; i <= steps; i++) {
+    const angle = (i / steps) * 2 * Math.PI;
+    const dx = km * Math.cos(angle);
+    const dy = km * Math.sin(angle);
+    const lat = center[1] + (dy / 111.32);
+    const lng = center[0] + (dx / (111.32 * Math.cos(center[1] * (Math.PI / 180))));
+    coords.push([lng, lat]);
+  }
+  return { type: "Feature" as const, geometry: { type: "Polygon" as const, coordinates: [coords] }, properties: {} };
+}
+
 function smoothPanMarker(
-  marker: google.maps.marker.AdvancedMarkerElement,
-  from: google.maps.LatLngLiteral,
-  to: google.maps.LatLngLiteral,
+  marker: mapboxgl.Marker,
+  from: [number, number],
+  to: [number, number],
   duration = 800,
 ) {
   const start = performance.now();
   function step(now: number) {
     const t = Math.min((now - start) / duration, 1);
-    const ease = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t; // easeInOut
-    marker.position = {
-      lat: from.lat + (to.lat - from.lat) * ease,
-      lng: from.lng + (to.lng - from.lng) * ease,
-    };
+    const ease = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+    marker.setLngLat([
+      from[0] + (to[0] - from[0]) * ease,
+      from[1] + (to[1] - from[1]) * ease,
+    ]);
     if (t < 1) requestAnimationFrame(step);
   }
   requestAnimationFrame(step);
@@ -112,12 +143,12 @@ export default function Rastreamento() {
   const [stationarySince, setStationarySince] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
   const [following, setFollowing] = useState(true);
-  const mapRef = useRef<google.maps.Map | null>(null);
-  const markerRef = useRef<google.maps.marker.AdvancedMarkerElement | null>(null);
-  const accuracyCircleRef = useRef<google.maps.Circle | null>(null);
-  const prevPosRef = useRef<google.maps.LatLngLiteral | null>(null);
+  const mapRef = useRef<mapboxgl.Map | null>(null);
+  const markerRef = useRef<mapboxgl.Marker | null>(null);
+  const prevPosRef = useRef<[number, number] | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const { maps } = useGoogleMapsPublic();
+  const mapLoadedRef = useRef(false);
+  const { mapboxgl } = useMapbox();
 
   // Fetch share data
   useEffect(() => {
@@ -176,11 +207,9 @@ export default function Rastreamento() {
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "localizacoes", filter: `user_id=eq.${share.user_id}` }, (payload) => {
         const d = payload.new as any;
         const loc: LocationData = { latitude: d.latitude, longitude: d.longitude, precisao_metros: d.precisao_metros, speed: d.speed, heading: d.heading, created_at: d.created_at };
-        // Update position instantly
         setLocation(loc);
         setRecentLocs(prev => {
           const updated = [loc, ...prev].slice(0, 5);
-          // Recalculate stationarySince incrementally
           let since = loc.created_at;
           for (let i = 1; i < updated.length; i++) {
             if (haversineDistance(loc.latitude, loc.longitude, updated[i].latitude, updated[i].longitude) <= 100) {
@@ -190,13 +219,11 @@ export default function Rastreamento() {
           setStationarySince(since !== loc.created_at ? since : null);
           return updated;
         });
-        // Resolve address asynchronously (doesn't block marker movement)
         resolveAddress(loc.latitude, loc.longitude).then(geo => { setAddress(geo?.display_address || "Localizando..."); });
       })
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "compartilhamento_gps", filter: `id=eq.${share.id}` }, (payload) => {
         const updated = payload.new as any;
         if (!updated.ativo) {
-          if (markerRef.current) { markerRef.current.map = null; markerRef.current = null; }
           setStatus("expired");
         }
       });
@@ -205,7 +232,6 @@ export default function Rastreamento() {
       channel.on("postgres_changes", { event: "UPDATE", schema: "public", table: "alertas_panico", filter: `id=eq.${share.alerta_id}` }, (payload) => {
         const updated = payload.new as any;
         if (updated.status !== "ativo") {
-          if (markerRef.current) { markerRef.current.map = null; markerRef.current = null; }
           setStatus("expired");
         }
       });
@@ -214,18 +240,11 @@ export default function Rastreamento() {
     return () => { supabase.removeChannel(channel); };
   }, [share]);
 
-  // Refresh relative times every 3s for GPS feel
+  // Refresh relative times every 3s
   useEffect(() => {
     const id = setInterval(() => setTick(t => t + 1), 3_000);
     return () => clearInterval(id);
   }, []);
-
-  // Stop following when user drags map
-  useEffect(() => {
-    if (!mapRef.current || !maps) return;
-    const listener = mapRef.current.addListener("dragstart", () => setFollowing(false));
-    return () => google.maps.event.removeListener(listener);
-  }, [maps, mapRef.current]);
 
   // Countdown timer
   useEffect(() => {
@@ -245,26 +264,27 @@ export default function Rastreamento() {
   // Clean up map when expired
   useEffect(() => {
     if (status === "expired") {
-      if (markerRef.current) { markerRef.current.map = null; markerRef.current = null; }
-      if (accuracyCircleRef.current) { accuracyCircleRef.current.setMap(null); accuracyCircleRef.current = null; }
-      mapRef.current = null;
-      if (containerRef.current) containerRef.current.innerHTML = "";
+      if (markerRef.current) { markerRef.current.remove(); markerRef.current = null; }
+      if (mapRef.current) { mapRef.current.remove(); mapRef.current = null; }
+      mapLoadedRef.current = false;
     }
   }, [status]);
 
-  // Google Map + marker with smooth animation
+  // Map + marker with smooth animation
   useEffect(() => {
-    if (status !== "active" || !location || !containerRef.current || !maps) return;
+    if (status !== "active" || !location || !containerRef.current || !mapboxgl) return;
     injectStyles();
 
     if (!mapRef.current) {
-      mapRef.current = new maps.Map(containerRef.current, {
-        center: { lat: location.latitude, lng: location.longitude },
+      mapRef.current = new mapboxgl.Map({
+        container: containerRef.current,
+        style: DARK_STYLE,
+        center: [location.longitude, location.latitude],
         zoom: 17,
-        mapId: "ampara-tracking-map",
-        disableDefaultUI: true,
-        gestureHandling: "greedy",
+        attributionControl: false,
       });
+      mapRef.current.on("load", () => { mapLoadedRef.current = true; });
+      mapRef.current.on("dragstart", () => setFollowing(false));
     }
 
     const isPanic = share?.tipo === "panico";
@@ -279,60 +299,62 @@ export default function Rastreamento() {
     const heading = location.heading;
     const rotation = heading != null && heading > 0 ? `transform:rotate(${heading}deg)` : "";
 
-    const content = document.createElement("div");
-    content.innerHTML = `
+    const el = document.createElement("div");
+    el.innerHTML = `
       <div class="ampara-nav-marker" style="${rotation}">
         <div class="${dotClass}">${imgHtml}</div>
         <div class="ampara-nav-arrow"></div>
       </div>
     `;
 
-    const position = { lat: location.latitude, lng: location.longitude };
+    const position: [number, number] = [location.longitude, location.latitude];
 
     if (markerRef.current) {
-      // Smooth animate from previous position
       const from = prevPosRef.current || position;
       smoothPanMarker(markerRef.current, from, position, 800);
-      markerRef.current.content = content;
+      const markerEl = markerRef.current.getElement();
+      markerEl.innerHTML = "";
+      markerEl.appendChild(el.firstElementChild!);
     } else {
-      markerRef.current = new maps.marker.AdvancedMarkerElement({
-        map: mapRef.current,
-        position,
-        content,
-      });
+      markerRef.current = new mapboxgl.Marker({ element: el, anchor: "bottom" })
+        .setLngLat(position)
+        .addTo(mapRef.current);
     }
 
     // Accuracy circle
     const accuracy = location.precisao_metros ?? 20;
-    if (accuracyCircleRef.current) {
-      accuracyCircleRef.current.setCenter(position);
-      accuracyCircleRef.current.setRadius(accuracy);
-    } else {
-      accuracyCircleRef.current = new maps.Circle({
-        map: mapRef.current,
-        center: position,
-        radius: accuracy,
-        fillColor: isPanic ? "#ef4444" : "#3b82f6",
-        fillOpacity: 0.08,
-        strokeColor: isPanic ? "#ef4444" : "#3b82f6",
-        strokeOpacity: 0.25,
-        strokeWeight: 1.5,
-        clickable: false,
-      });
+    const circleData = createCircleGeoJSON(position, accuracy);
+    const fillColor = isPanic ? "#ef4444" : "#3b82f6";
+
+    if (mapLoadedRef.current || mapRef.current.isStyleLoaded()) {
+      if (mapRef.current.getSource("accuracy")) {
+        (mapRef.current.getSource("accuracy") as any).setData(circleData);
+        mapRef.current.setPaintProperty("accuracy-fill", "fill-color", fillColor);
+        mapRef.current.setPaintProperty("accuracy-outline", "line-color", fillColor);
+      } else {
+        mapRef.current.addSource("accuracy", { type: "geojson", data: circleData as any });
+        mapRef.current.addLayer({
+          id: "accuracy-fill", type: "fill", source: "accuracy",
+          paint: { "fill-color": fillColor, "fill-opacity": 0.08 },
+        });
+        mapRef.current.addLayer({
+          id: "accuracy-outline", type: "line", source: "accuracy",
+          paint: { "line-color": fillColor, "line-opacity": 0.25, "line-width": 1.5 },
+        });
+      }
     }
 
-    // Follow mode: smooth pan
     if (following) {
       mapRef.current.panTo(position);
     }
 
     prevPosRef.current = position;
-  }, [location, share, userInfo, maps, recentLocs, tick, following]);
+  }, [location, share, userInfo, mapboxgl, recentLocs, tick, following]);
 
   const recenter = useCallback(() => {
     if (!mapRef.current || !location) return;
     setFollowing(true);
-    mapRef.current.panTo({ lat: location.latitude, lng: location.longitude });
+    mapRef.current.panTo([location.longitude, location.latitude]);
     mapRef.current.setZoom(17);
   }, [location]);
 
