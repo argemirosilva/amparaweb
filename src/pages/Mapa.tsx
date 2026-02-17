@@ -165,13 +165,16 @@ export default function Mapa() {
     if (markerRef.current) {
       const from = prevPosRef.current || position;
       smoothPanMarker(markerRef.current, from, position, 800);
-      // Update visual
+      // Update visual — only replace inner content, preserve mapboxgl-marker wrapper class
       const markerEl = markerRef.current.getElement();
-      markerEl.className = "ampara-nav-marker";
-      markerEl.innerHTML = `
+      markerEl.innerHTML = "";
+      const inner = document.createElement("div");
+      inner.className = "ampara-nav-marker";
+      inner.innerHTML = `
         <div class="${dotClass}">${imgHtml}</div>
         <div class="ampara-nav-arrow"></div>
       `;
+      markerEl.appendChild(inner);
     } else {
       markerRef.current = new mapboxgl.Marker({ element: el, anchor: "bottom" })
         .setLngLat(position)
