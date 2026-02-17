@@ -271,8 +271,8 @@ export default function Mapa() {
           <div>Estilo: <span className="text-white font-bold">{isSatellite ? "Satélite" : "Ruas"}</span></div>
         </div>
 
-        {/* Re-center button */}
-        {!following && data && (
+        {/* Re-center button - always visible */}
+        {data && (
           <button
             onClick={recenter}
             className="absolute right-3 bottom-32 z-10 w-10 h-10 rounded-full bg-black/70 backdrop-blur-md border border-white/10 shadow-xl flex items-center justify-center text-white hover:bg-black/90 transition-all active:scale-95"
