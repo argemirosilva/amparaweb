@@ -4,7 +4,8 @@ import { toast } from "sonner";
 import {
   generateInstitucionalPDF,
   generateMunicipioPDF,
-  generateConformidadePDF,
+  generateAlertasPDF,
+  generateMonitoramentoPDF,
   exportCSV,
 } from "@/services/pdfReportService";
 
@@ -34,11 +35,18 @@ const reports: ReportDef[] = [
     csvType: "municipio",
   },
   {
-    id: "conformidade",
-    nome: "Relatório de conformidade",
-    descricao: "Verificação de cumprimento de SLAs, prazos de resposta e taxas de acionamento.",
-    pdfFn: generateConformidadePDF,
-    csvType: "conformidade",
+    id: "alertas",
+    nome: "Relatório de alertas e emergências",
+    descricao: "Análise detalhada de alertas de pânico: tempos de resposta, tipos de acionamento e padrões de cancelamento.",
+    pdfFn: generateAlertasPDF,
+    csvType: "alertas",
+  },
+  {
+    id: "monitoramento",
+    nome: "Relatório de monitoramento e gravações",
+    descricao: "Sessões de monitoramento, gravações processadas, cobertura de análise de IA e distribuição temporal.",
+    pdfFn: generateMonitoramentoPDF,
+    csvType: "monitoramento",
   },
 ];
 
