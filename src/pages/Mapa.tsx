@@ -85,6 +85,7 @@ export default function Mapa() {
   const [isSatellite, setIsSatellite] = useState(false);
   const [webglError, setWebglError] = useState<string | null>(null);
   const mapLoadedRef = useRef(false);
+  const [mapState, setMapState] = useState({ zoom: 4, pitch: 0, bearing: 0, center: [-47.93, -15.78] as [number, number] });
 
   // Refresh every 3s for GPS feel
   useEffect(() => {
@@ -120,6 +121,15 @@ export default function Mapa() {
     map.on("load", () => {
       mapLoadedRef.current = true;
     });
+
+    const updateMapState = () => {
+      const c = map.getCenter();
+      setMapState({ zoom: map.getZoom(), pitch: map.getPitch(), bearing: map.getBearing(), center: [c.lng, c.lat] });
+    };
+    map.on("moveend", updateMapState);
+    map.on("zoomend", updateMapState);
+    map.on("pitchend", updateMapState);
+    map.on("move", updateMapState);
 
     map.on("dragstart", () => setFollowing(false));
 
@@ -249,6 +259,17 @@ export default function Mapa() {
             <p className="text-sm text-muted-foreground">{displayError}</p>
           </div>
         )}
+
+        {/* Debug HUD */}
+        <div className="absolute top-3 left-3 z-10 rounded-xl bg-black/70 backdrop-blur-md border border-white/10 px-3 py-2 text-[10px] font-mono text-white/80 space-y-0.5 pointer-events-none">
+          <div>Zoom: <span className="text-white font-bold">{mapState.zoom.toFixed(2)}</span></div>
+          <div>Pitch: <span className="text-white font-bold">{mapState.pitch.toFixed(1)}°</span></div>
+          <div>Bearing: <span className="text-white font-bold">{mapState.bearing.toFixed(1)}°</span></div>
+          <div>Lat: <span className="text-white font-bold">{mapState.center[1].toFixed(6)}</span></div>
+          <div>Lng: <span className="text-white font-bold">{mapState.center[0].toFixed(6)}</span></div>
+          <div>Following: <span className={`font-bold ${following ? "text-green-400" : "text-red-400"}`}>{following ? "Sim" : "Não"}</span></div>
+          <div>Estilo: <span className="text-white font-bold">{isSatellite ? "Satélite" : "Ruas"}</span></div>
+        </div>
 
         {/* Re-center button */}
         {!following && data && (
