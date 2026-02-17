@@ -7,7 +7,7 @@ import {
   ShieldQuestion,
   AlertTriangle,
   Brain,
-  Tag,
+  
   TrendingUp,
   Scale,
   Loader2,
@@ -221,22 +221,6 @@ export default function AnaliseCard({
               <p className="text-xs text-foreground leading-relaxed">
                 {completa.justificativa_risco}
               </p>
-            </Section>
-          )}
-
-          {/* Palavras-chave */}
-          {analise.palavras_chave && analise.palavras_chave.length > 0 && (
-            <Section icon={Tag} title="Palavras-chave">
-              <div className="flex flex-wrap gap-1">
-                {analise.palavras_chave.map((p, i) => (
-                  <span
-                    key={i}
-                    className="inline-block px-2 py-0.5 rounded-full bg-muted text-[10px] text-muted-foreground"
-                  >
-                    {p}
-                  </span>
-                ))}
-              </div>
             </Section>
           )}
         </div>
