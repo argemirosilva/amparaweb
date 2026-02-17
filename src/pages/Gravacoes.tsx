@@ -247,9 +247,9 @@ export default function GravacoesPage() {
           </p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {groupByDate(gravacoes).map((group) => (
-            <div key={group.label} className="space-y-1.5">
+            <div key={group.label} className="space-y-0.5">
               <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1 pt-1">
                 {group.label}
               </h2>
@@ -266,7 +266,7 @@ export default function GravacoesPage() {
                   >
                     <button
                       onClick={() => setExpanded(isExpanded ? null : g.id)}
-                      className="w-full px-2 py-1 text-left hover:bg-accent/30 transition-colors"
+                      className="w-full px-1.5 py-0.5 text-left hover:bg-accent/30 transition-colors"
                     >
                       <div className="flex items-center gap-1.5">
                         <GradientIcon icon={Play} size="xs" className="shrink-0" />
