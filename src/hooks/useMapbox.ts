@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import "mapbox-gl/dist/mapbox-gl.css";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -32,20 +33,11 @@ async function fetchMapboxToken(): Promise<string | null> {
   return tokenFetchPromise;
 }
 
-function injectMapboxCSS() {
-  if (document.getElementById("mapbox-gl-css")) return;
-  const link = document.createElement("link");
-  link.id = "mapbox-gl-css";
-  link.rel = "stylesheet";
-  link.href = "https://api.mapbox.com/mapbox-gl-js/v3.9.4/mapbox-gl.css";
-  document.head.appendChild(link);
-}
-
 async function loadMapboxModule(): Promise<typeof import("mapbox-gl")> {
   if (mapboxModule) return mapboxModule;
   if (moduleLoadPromise) return moduleLoadPromise;
 
-  injectMapboxCSS();
+  
   moduleLoadPromise = import("mapbox-gl").then((m) => {
     mapboxModule = m;
     return m;
