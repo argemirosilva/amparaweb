@@ -99,18 +99,8 @@ async function transcribeAudio(audioBytes: Uint8Array, ext: string): Promise<str
   return result.trim();
 }
 
-async function analyzeTranscription(transcricao: string): Promise<{
-  resumo: string;
-  sentimento: string;
-  nivel_risco: string;
-  categorias: string[];
-  palavras_chave: string[];
-  analise_completa: any;
-}> {
-  const messages = [
-    {
-      role: "system",
-      content: `Você atuará como um 'Especialista em Análise Contextual de Violência Doméstica', com foco na interpretação semântica e comportamental de diálogos para identificar padrões de abuso e risco.
+async function getAnalysisPrompt(supabase: any): Promise<string> {
+  const FALLBACK_PROMPT = `Você atuará como um 'Especialista em Análise Contextual de Violência Doméstica', com foco na interpretação semântica e comportamental de diálogos para identificar padrões de abuso e risco.
 
 Objetivo:
 - Avaliar conversas de forma holística, indo além de frases isoladas.
@@ -149,12 +139,32 @@ Tom e Restrições:
 - Evite falsos positivos; não assuma intenções sem evidências claras.
 - Não forneça aconselhamento jurídico ou instruções operacionais.
 - Se o diálogo for claramente consensual, declare a ausência de padrões abusivos.
-- Baseie-se exclusivamente no conteúdo da transcrição.`,
-    },
-    {
-      role: "user",
-      content: `Analise esta transcrição:\n\n${transcricao}`,
-    },
+- Baseie-se exclusivamente no conteúdo da transcrição.`;
+
+  try {
+    const { data } = await supabase
+      .from("admin_settings")
+      .select("valor")
+      .eq("chave", "ia_prompt_analise")
+      .maybeSingle();
+    return data?.valor?.trim() || FALLBACK_PROMPT;
+  } catch {
+    return FALLBACK_PROMPT;
+  }
+}
+
+async function analyzeTranscription(transcricao: string, supabase: any): Promise<{
+  resumo: string;
+  sentimento: string;
+  nivel_risco: string;
+  categorias: string[];
+  palavras_chave: string[];
+  analise_completa: any;
+}> {
+  const systemPrompt = await getAnalysisPrompt(supabase);
+  const messages = [
+    { role: "system", content: systemPrompt },
+    { role: "user", content: `Analise esta transcrição:\n\n${transcricao}` },
   ];
 
   const raw = await callAI(messages);
@@ -265,7 +275,7 @@ serve(async (req) => {
     // 6. Analyze with AI
     let analysis;
     try {
-      analysis = await analyzeTranscription(transcricao);
+      analysis = await analyzeTranscription(transcricao, supabase);
     } catch (e) {
       console.error("Analysis error:", e);
       // Transcription succeeded, mark partially done

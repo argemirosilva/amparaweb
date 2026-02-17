@@ -57,10 +57,13 @@ const FRIENDLY_LABELS: Record<string, string> = {
   ia_modelo_analise: "Modelo de análise",
   ia_modelo_risco: "Modelo de risco",
   ia_ativa: "Integração ativa",
+  ia_prompt_analise: "Prompt de análise",
   elevenlabs_agent_id: "Agent ID",
   elevenlabs_ativa: "Integração ativa",
   elevenlabs_telefonia_ativa: "Telefonia ativa",
 };
+
+const TEXTAREA_KEYS = new Set(["ia_prompt_analise"]);
 
 export default function AdminIntegracoes() {
   const { sessionToken } = useAuth();
@@ -161,6 +164,42 @@ export default function AdminIntegracoes() {
       );
     }
 
+    // Textarea for long text fields (prompts)
+    if (TEXTAREA_KEYS.has(s.chave)) {
+      return (
+        <div className="flex flex-col gap-2">
+          <textarea
+            style={{
+              ...inputStyle,
+              maxWidth: "100%",
+              width: "100%",
+              minHeight: 200,
+              maxHeight: 400,
+              resize: "vertical",
+              lineHeight: 1.5,
+            }}
+            value={currentValue}
+            onChange={(e) => handleChange(s.id, e.target.value)}
+          />
+          {isModified && (
+            <div className="flex gap-2 justify-end">
+              <button onClick={() => resetField(s.id)} className="flex items-center gap-1 px-2.5 py-1.5 rounded text-xs hover:bg-gray-100" title="Desfazer">
+                <RotateCcw className="w-3.5 h-3.5" style={{ color: "hsl(220 9% 46%)" }} /> Desfazer
+              </button>
+              <button
+                onClick={() => handleSave(s)}
+                disabled={saving === s.id}
+                className="flex items-center gap-1 px-3 py-1.5 rounded text-xs text-white"
+                style={{ background: "hsl(224 76% 33%)" }}
+              >
+                <Save className="w-3.5 h-3.5" /> Salvar
+              </button>
+            </div>
+          )}
+        </div>
+      );
+    }
+
     return (
       <div className="flex items-center gap-2">
         <input
@@ -252,21 +291,24 @@ export default function AdminIntegracoes() {
 
                 {/* Fields */}
                 <div className="divide-y" style={{ borderColor: "hsl(220 13% 91%)" }}>
-                  {items.map((s) => (
-                    <div key={s.id} className="px-4 py-3.5 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium" style={{ color: "hsl(220 13% 18%)" }}>
-                          {FRIENDLY_LABELS[s.chave] || s.chave.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
-                        </p>
-                        {s.descricao && (
-                          <p className="text-xs mt-0.5" style={{ color: "hsl(220 9% 46%)" }}>
-                            {s.descricao}
+                  {items.map((s) => {
+                    const isTextarea = TEXTAREA_KEYS.has(s.chave);
+                    return (
+                      <div key={s.id} className={`px-4 py-3.5 ${isTextarea ? "flex flex-col gap-2" : "flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6"}`}>
+                        <div className={isTextarea ? "" : "flex-1 min-w-0"}>
+                          <p className="text-sm font-medium" style={{ color: "hsl(220 13% 18%)" }}>
+                            {FRIENDLY_LABELS[s.chave] || s.chave.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
                           </p>
-                        )}
+                          {s.descricao && (
+                            <p className="text-xs mt-0.5" style={{ color: "hsl(220 9% 46%)" }}>
+                              {s.descricao}
+                            </p>
+                          )}
+                        </div>
+                        <div className={isTextarea ? "w-full" : "sm:w-96 shrink-0"}>{renderField(s)}</div>
                       </div>
-                      <div className="sm:w-96 shrink-0">{renderField(s)}</div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             );
