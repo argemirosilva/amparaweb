@@ -113,7 +113,7 @@ export default function Rastreamento() {
   const [stationarySince, setStationarySince] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
   const [following, setFollowing] = useState(true);
-  const [arrowAngle, setArrowAngle] = useState<number | null>(null);
+  const [offScreenInfo, setOffScreenInfo] = useState<{ x: number; y: number; angle: number; cardinal: string } | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markerRef = useRef<mapboxgl.Marker | null>(null);
   const prevPosRef = useRef<[number, number] | null>(null);
@@ -349,7 +349,7 @@ export default function Rastreamento() {
     prevPosRef.current = position;
   }, [location, share, userInfo, mapboxgl, recentLocs, tick, following]);
 
-  // Track whether marker is off-screen and compute arrow angle
+  // Track whether marker is off-screen and compute edge-clamped position
   useEffect(() => {
     if (!mapRef.current || !location) return;
     const map = mapRef.current;
@@ -360,14 +360,21 @@ export default function Rastreamento() {
       const w = canvas.clientWidth;
       const h = canvas.clientHeight;
       const margin = 40;
+      const pad = 28;
 
       if (point.x >= margin && point.x <= w - margin && point.y >= margin && point.y <= h - margin) {
-        setArrowAngle(null);
+        setOffScreenInfo(null);
       } else {
         const cx = w / 2;
         const cy = h / 2;
-        const angle = Math.atan2(point.y - cy, point.x - cx) * (180 / Math.PI);
-        setArrowAngle(angle);
+        const angle = Math.atan2(point.y - cy, point.x - cx);
+        const ex = Math.max(pad, Math.min(w - pad, point.x));
+        const ey = Math.max(pad, Math.min(h - pad, point.y));
+        const bearing = map.getBearing();
+        const geoBearing = (Math.atan2(point.x - cx, -(point.y - cy)) * 180 / Math.PI + bearing + 360) % 360;
+        const cardinals = ["N", "NE", "L", "SE", "S", "SO", "O", "NO"];
+        const cardinal = cardinals[Math.round(geoBearing / 45) % 8];
+        setOffScreenInfo({ x: ex, y: ey, angle: angle * 180 / Math.PI, cardinal });
       }
     };
 
@@ -464,19 +471,20 @@ export default function Rastreamento() {
       </div>
 
       {/* Directional arrow when marker is off-screen */}
-      {arrowAngle !== null && location && (
+      {offScreenInfo && location && (
         <button
           onClick={recenter}
-          className="absolute z-20 transition-all duration-300"
+          className="absolute z-20 transition-all duration-200"
           style={{
-            left: `calc(50% + ${Math.cos(arrowAngle * Math.PI / 180) * 45}%)`,
-            top: `calc(50% + ${Math.sin(arrowAngle * Math.PI / 180) * 40}%)`,
-            transform: `translate(-50%, -50%) rotate(${arrowAngle + 90}deg)`,
+            left: offScreenInfo.x,
+            top: offScreenInfo.y,
+            transform: `translate(-50%, -50%)`,
           }}
           title="Ir para o marcador"
         >
-          <div className="w-12 h-12 rounded-full bg-primary/90 backdrop-blur-md shadow-2xl flex items-center justify-center border-2 border-white/30 animate-pulse">
-            <Navigation className="w-5 h-5 text-white fill-white" />
+          <div className="relative w-12 h-12 rounded-full bg-primary/90 backdrop-blur-md shadow-2xl flex flex-col items-center justify-center border-2 border-white/30 animate-pulse">
+            <span className="text-[10px] font-bold text-white leading-none">{offScreenInfo.cardinal}</span>
+            <Navigation className="w-4 h-4 text-white fill-white" style={{ transform: `rotate(${offScreenInfo.angle + 90}deg)` }} />
           </div>
         </button>
       )}
