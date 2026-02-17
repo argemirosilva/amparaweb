@@ -166,7 +166,8 @@ export default function Mapa() {
       markerRef.current = new mapboxgl.Marker({ element: el, anchor: "bottom" })
         .setLngLat(position)
         .addTo(mapRef.current);
-      mapRef.current.flyTo({ center: position, zoom: 16, duration: 1500 });
+      const currentZoom = mapRef.current.getZoom();
+      mapRef.current.flyTo({ center: position, zoom: Math.max(currentZoom, 16), duration: 1500 });
     }
 
     // Accuracy circle
