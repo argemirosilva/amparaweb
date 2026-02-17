@@ -292,12 +292,6 @@ export default function GravacoesPage() {
                                 <Clock className="w-2.5 h-2.5" />
                                 {formatDuration(g.duracao_segundos)}
                               </span>
-                              {g.tamanho_mb && (
-                                <span className="text-[9px] text-muted-foreground inline-flex items-center gap-0.5">
-                                  <HardDrive className="w-2.5 h-2.5" />
-                                  {formatSize(g.tamanho_mb)}
-                                </span>
-                              )}
                             </div>
                             <div className="flex items-center gap-1.5 shrink-0">
                               {g.nivel_risco && (
@@ -311,28 +305,24 @@ export default function GravacoesPage() {
                                   {RISCO_LABELS[g.nivel_risco] || g.nivel_risco}
                                 </span>
                               )}
-                              {statusInfo.variant === "destructive" && (
-                                <Badge variant={statusInfo.variant} className="text-[9px] px-1.5 py-0">
-                                  {statusInfo.label}
-                                </Badge>
-                              )}
+                              <Badge variant={statusInfo.variant} className="text-[9px] px-1.5 py-0">
+                                {statusInfo.label}
+                              </Badge>
                             </div>
                           </div>
 
-                          {/* Row 2: Transcription preview */}
-                          {(() => {
-                            const preview = getTranscriptionPreview(g.transcricao);
-                            return preview ? (
-                              <p className="text-[10px] text-muted-foreground mt-1 leading-snug line-clamp-1 italic">
-                                "{preview}"
-                              </p>
-                            ) : g.status === "pendente" || g.status === "processando" ? (
-                              <p className="text-[10px] text-muted-foreground/60 mt-1 leading-snug italic inline-flex items-center gap-1">
+                          {/* Row 2: date + processing indicator */}
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="text-[9px] text-muted-foreground">
+                              {formatDate(g.created_at)}
+                            </span>
+                            {(g.status === "pendente" || g.status === "processando") && (
+                              <span className="text-[9px] text-muted-foreground/60 inline-flex items-center gap-0.5 italic">
                                 <Loader2 className="w-2.5 h-2.5 animate-spin" />
-                                Processando transcrição…
-                              </p>
-                            ) : null;
-                          })()}
+                                Processando…
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </button>

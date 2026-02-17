@@ -211,8 +211,8 @@ serve(async (req) => {
       }
     }
 
-    // ── Step 2: Process sessions awaiting finalization (with 60s tolerance) ──
-    const cutoff = new Date(Date.now() - 60 * 1000).toISOString();
+    // ── Step 2: Process sessions awaiting finalization (with 30s tolerance) ──
+    const cutoff = new Date(Date.now() - 30 * 1000).toISOString();
 
     const { data: pendingSessions } = await supabase
       .from("monitoramento_sessoes")
