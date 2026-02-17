@@ -266,62 +266,44 @@ export default function GravacoesPage() {
                   >
                     <button
                       onClick={() => setExpanded(isExpanded ? null : g.id)}
-                      className="w-full px-2.5 py-1.5 text-left hover:bg-accent/30 transition-colors"
+                      className="w-full px-2 py-1 text-left hover:bg-accent/30 transition-colors"
                     >
-                      <div className="flex items-start gap-2">
-                        <GradientIcon icon={Play} size="xs" className="shrink-0 mt-0.5" />
+                      <div className="flex items-center gap-1.5">
+                        <GradientIcon icon={Play} size="xs" className="shrink-0" />
 
-                        <div className="flex-1 min-w-0">
-                          {/* Row 1: Time, device, duration, size */}
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-2">
-                              <span className="text-[11px] font-medium text-foreground">
-                                {formatTime(g.created_at)}
-                              </span>
-                              {(() => {
-                                const device = getDeviceLabel(g.device_id);
-                                const DeviceIcon = device.icon;
-                                return (
-                                  <span className="text-[9px] text-muted-foreground inline-flex items-center gap-0.5">
-                                    <DeviceIcon className="w-2.5 h-2.5" />
-                                    {device.label}
-                                  </span>
-                                );
-                              })()}
-                              <span className="text-[10px] text-muted-foreground inline-flex items-center gap-0.5">
-                                <Clock className="w-2.5 h-2.5" />
-                                {formatDuration(g.duracao_segundos)}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-1.5 shrink-0">
-                              {g.nivel_risco && (
-                                <span
-                                  className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full"
-                                  style={{
-                                    backgroundColor: `${RISCO_COLORS[g.nivel_risco]}20`,
-                                    color: RISCO_COLORS[g.nivel_risco],
-                                  }}
-                                >
-                                  {RISCO_LABELS[g.nivel_risco] || g.nivel_risco}
-                                </span>
-                              )}
-                              <Badge variant={statusInfo.variant} className="text-[9px] px-1.5 py-0">
-                                {statusInfo.label}
-                              </Badge>
-                            </div>
-                          </div>
-
-                          {/* Row 2: date + processing indicator */}
-                          <div className="flex items-center gap-2 mt-0.5">
-                            <span className="text-[9px] text-muted-foreground">
-                              {formatDate(g.created_at)}
+                        <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[11px] font-medium text-foreground">
+                              {formatTime(g.created_at)}
+                            </span>
+                            {(() => {
+                              const device = getDeviceLabel(g.device_id);
+                              const DeviceIcon = device.icon;
+                              return <DeviceIcon className="w-2.5 h-2.5 text-muted-foreground" />;
+                            })()}
+                            <span className="text-[9px] text-muted-foreground inline-flex items-center gap-0.5">
+                              <Clock className="w-2.5 h-2.5" />
+                              {formatDuration(g.duracao_segundos)}
                             </span>
                             {(g.status === "pendente" || g.status === "processando") && (
-                              <span className="text-[9px] text-muted-foreground/60 inline-flex items-center gap-0.5 italic">
-                                <Loader2 className="w-2.5 h-2.5 animate-spin" />
-                                Processando…
+                              <Loader2 className="w-2.5 h-2.5 animate-spin text-muted-foreground/60" />
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0">
+                            {g.nivel_risco && (
+                              <span
+                                className="text-[8px] font-semibold px-1.5 py-0 rounded-full leading-4"
+                                style={{
+                                  backgroundColor: `${RISCO_COLORS[g.nivel_risco]}20`,
+                                  color: RISCO_COLORS[g.nivel_risco],
+                                }}
+                              >
+                                {RISCO_LABELS[g.nivel_risco] || g.nivel_risco}
                               </span>
                             )}
+                            <Badge variant={statusInfo.variant} className="text-[8px] px-1.5 py-0 leading-4">
+                              {statusInfo.label}
+                            </Badge>
                           </div>
                         </div>
                       </div>
