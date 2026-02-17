@@ -1660,7 +1660,7 @@ async function handleReportarStatusGravacao(
 
   // ── Session sealing flow ──
   // Only seal immediately for specific motivos; otherwise just update device flags
-  const MOTIVOS_SEAL_IMEDIATO = ["botao_manual", "parada_panico"];
+  const MOTIVOS_SEAL_IMEDIATO = ["botao_manual", "manual", "parada_panico"];
 
   if (statusGravacao === "finalizada") {
     let sessionQuery = supabase
