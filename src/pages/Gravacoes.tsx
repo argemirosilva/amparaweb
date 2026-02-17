@@ -16,6 +16,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Play,
+  Smartphone,
+  Monitor,
+  HardDrive,
 } from "lucide-react";
 
 interface Gravacao {
@@ -54,6 +57,32 @@ function formatDuration(s: number | null): string {
     return `${h}h ${m % 60}m`;
   }
   return `${m}:${sec.toString().padStart(2, "0")}`;
+}
+
+function formatSize(mb: number | null): string {
+  if (!mb) return "";
+  if (mb < 1) return `${Math.round(mb * 1024)} KB`;
+  return `${mb.toFixed(1)} MB`;
+}
+
+function getDeviceLabel(deviceId: string | null): { label: string; icon: typeof Smartphone } {
+  if (!deviceId || deviceId === "web") return { label: "Web", icon: Monitor };
+  return { label: "Celular", icon: Smartphone };
+}
+
+function getTranscriptionPreview(transcricao: string | null): string | null {
+  if (!transcricao) return null;
+  try {
+    const segments = JSON.parse(transcricao);
+    if (Array.isArray(segments) && segments.length > 0) {
+      const firstText = segments[0]?.text || "";
+      return firstText.length > 80 ? firstText.substring(0, 77) + "..." : firstText;
+    }
+  } catch {
+    // plain text transcription
+    return transcricao.length > 80 ? transcricao.substring(0, 77) + "..." : transcricao;
+  }
+  return null;
 }
 
 function formatDate(iso: string, compact = false): string {
@@ -237,77 +266,75 @@ export default function GravacoesPage() {
                   >
                     <button
                       onClick={() => setExpanded(isExpanded ? null : g.id)}
-                      className="w-full flex items-center gap-2 px-2.5 py-1 md:py-1.5 text-left hover:bg-accent/30 transition-colors"
+                      className="w-full px-2.5 py-2 md:py-2.5 text-left hover:bg-accent/30 transition-colors"
                     >
-                      <GradientIcon icon={Play} size="xs" className="shrink-0" />
+                      <div className="flex items-start gap-2">
+                        <GradientIcon icon={Play} size="xs" className="shrink-0 mt-0.5" />
 
-                      {/* Desktop: single row */}
-                      {!isMobile ? (
-                        <>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-[10px] text-muted-foreground">
+                        <div className="flex-1 min-w-0">
+                          {/* Row 1: Time, device, duration, size */}
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              <span className="text-[11px] font-medium text-foreground">
                                 {formatTime(g.created_at)}
                               </span>
+                              {(() => {
+                                const device = getDeviceLabel(g.device_id);
+                                const DeviceIcon = device.icon;
+                                return (
+                                  <span className="text-[9px] text-muted-foreground inline-flex items-center gap-0.5">
+                                    <DeviceIcon className="w-2.5 h-2.5" />
+                                    {device.label}
+                                  </span>
+                                );
+                              })()}
                               <span className="text-[10px] text-muted-foreground inline-flex items-center gap-0.5">
                                 <Clock className="w-2.5 h-2.5" />
                                 {formatDuration(g.duracao_segundos)}
                               </span>
+                              {g.tamanho_mb && (
+                                <span className="text-[9px] text-muted-foreground inline-flex items-center gap-0.5">
+                                  <HardDrive className="w-2.5 h-2.5" />
+                                  {formatSize(g.tamanho_mb)}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              {g.nivel_risco && (
+                                <span
+                                  className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full"
+                                  style={{
+                                    backgroundColor: `${RISCO_COLORS[g.nivel_risco]}20`,
+                                    color: RISCO_COLORS[g.nivel_risco],
+                                  }}
+                                >
+                                  {RISCO_LABELS[g.nivel_risco] || g.nivel_risco}
+                                </span>
+                              )}
+                              {statusInfo.variant === "destructive" && (
+                                <Badge variant={statusInfo.variant} className="text-[9px] px-1.5 py-0">
+                                  {statusInfo.label}
+                                </Badge>
+                              )}
                             </div>
                           </div>
-                          <div className="flex items-center gap-1.5 shrink-0">
-                            {g.nivel_risco && (
-                              <span
-                                className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full"
-                                style={{
-                                  backgroundColor: `${RISCO_COLORS[g.nivel_risco]}20`,
-                                  color: RISCO_COLORS[g.nivel_risco],
-                                }}
-                              >
-                                {RISCO_LABELS[g.nivel_risco] || g.nivel_risco}
-                              </span>
-                            )}
-                            {statusInfo.variant === "destructive" && (
-                              <Badge variant={statusInfo.variant} className="text-[9px] px-1.5 py-0">
-                                {statusInfo.label}
-                              </Badge>
-                            )}
-                          </div>
-                        </>
-                      ) : (
-                        /* Mobile: two compact rows */
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-[10px] text-muted-foreground">
-                                {formatTime(g.created_at)}
-                              </span>
-                            </div>
-                            {statusInfo.variant === "destructive" && (
-                              <Badge variant={statusInfo.variant} className="text-[9px] px-1.5 py-0">
-                                {statusInfo.label}
-                              </Badge>
-                            )}
-                          </div>
-                          <div className="flex items-center justify-between mt-0.5">
-                            <span className="text-[10px] text-muted-foreground inline-flex items-center gap-0.5">
-                              <Clock className="w-2.5 h-2.5" />
-                              {formatDuration(g.duracao_segundos)}
-                            </span>
-                            {g.nivel_risco && (
-                              <span
-                                className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full"
-                                style={{
-                                  backgroundColor: `${RISCO_COLORS[g.nivel_risco]}20`,
-                                  color: RISCO_COLORS[g.nivel_risco],
-                                }}
-                              >
-                                {RISCO_LABELS[g.nivel_risco] || g.nivel_risco}
-                              </span>
-                            )}
-                          </div>
+
+                          {/* Row 2: Transcription preview */}
+                          {(() => {
+                            const preview = getTranscriptionPreview(g.transcricao);
+                            return preview ? (
+                              <p className="text-[10px] text-muted-foreground mt-1 leading-snug line-clamp-1 italic">
+                                "{preview}"
+                              </p>
+                            ) : g.status === "pendente" || g.status === "processando" ? (
+                              <p className="text-[10px] text-muted-foreground/60 mt-1 leading-snug italic inline-flex items-center gap-1">
+                                <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                                Processando transcrição…
+                              </p>
+                            ) : null;
+                          })()}
                         </div>
-                      )}
+                      </div>
                     </button>
 
                     {isExpanded && (
