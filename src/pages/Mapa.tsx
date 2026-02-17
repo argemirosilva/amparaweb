@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { useMapDeviceData } from "@/hooks/useMapDeviceData";
 import { useMovementStatus } from "@/hooks/useMovementStatus";
 import { useMapbox } from "@/hooks/useMapbox";
-import { Loader2, MapPin, Locate, Signal, Box, Map } from "lucide-react";
+import { Loader2, MapPin, Locate, Signal, Box, Map, Satellite } from "lucide-react";
 import type mapboxgl from "mapbox-gl";
 
 function formatRelativeTime(isoDate: string): string {
@@ -34,7 +34,8 @@ function injectStyles() {
   document.head.appendChild(style);
 }
 
-const MAP_STYLE = "mapbox://styles/mapbox/streets-v12";
+const STYLE_STREETS = "mapbox://styles/mapbox/streets-v12";
+const STYLE_SATELLITE = "mapbox://styles/mapbox/satellite-streets-v12";
 
 /** Generate a GeoJSON circle polygon */
 function createCircleGeoJSON(center: [number, number], radiusMeters: number, steps = 64) {
@@ -82,6 +83,7 @@ export default function Mapa() {
   const [tick, setTick] = useState(0);
   const [following, setFollowing] = useState(true);
   const [is3D, setIs3D] = useState(true);
+  const [isSatellite, setIsSatellite] = useState(false);
   const [webglError, setWebglError] = useState<string | null>(null);
   const mapLoadedRef = useRef(false);
 
@@ -100,7 +102,7 @@ export default function Mapa() {
     try {
       map = new mapboxgl.Map({
         container: mapContainerRef.current,
-        style: MAP_STYLE,
+        style: STYLE_STREETS,
         center: [-47.93, -15.78],
         zoom: 4,
         attributionControl: false,
@@ -243,6 +245,41 @@ export default function Mapa() {
     }
   }, [is3D]);
 
+  const toggleSatellite = useCallback(() => {
+    if (!mapRef.current) return;
+    const newStyle = isSatellite ? STYLE_STREETS : STYLE_SATELLITE;
+    mapRef.current.setStyle(newStyle);
+    setIsSatellite(!isSatellite);
+
+    // Re-add 3D buildings after style change
+    mapRef.current.once("style.load", () => {
+      mapLoadedRef.current = true;
+      const layers = mapRef.current!.getStyle().layers;
+      const labelLayerId = layers?.find(
+        (layer) => layer.type === "symbol" && (layer.layout as any)?.["text-field"]
+      )?.id;
+      if (!mapRef.current!.getLayer("3d-buildings")) {
+        mapRef.current!.addLayer(
+          {
+            id: "3d-buildings",
+            source: "composite",
+            "source-layer": "building",
+            filter: ["==", "extrude", "true"],
+            type: "fill-extrusion",
+            minzoom: 14,
+            paint: {
+              "fill-extrusion-color": isSatellite ? "#ddd" : "#aaa",
+              "fill-extrusion-height": ["interpolate", ["linear"], ["zoom"], 14, 0, 14.5, ["get", "height"]],
+              "fill-extrusion-base": ["interpolate", ["linear"], ["zoom"], 14, 0, 14.5, ["get", "min_height"]],
+              "fill-extrusion-opacity": 0.7,
+            },
+          },
+          labelLayerId
+        );
+      }
+    });
+  }, [isSatellite]);
+
   const isLoading = loading || mapsLoading;
   const displayError = error || mapsError || webglError;
 
@@ -292,6 +329,14 @@ export default function Mapa() {
           {is3D ? <Map className="w-4 h-4" /> : <Box className="w-4 h-4" />}
         </button>
 
+        {/* Satellite toggle button */}
+        <button
+          onClick={toggleSatellite}
+          className="absolute right-3 bottom-56 z-10 w-10 h-10 rounded-full bg-black/70 backdrop-blur-md border border-white/10 shadow-xl flex items-center justify-center text-white hover:bg-black/90 transition-all active:scale-95"
+          title={isSatellite ? "Mapa" : "Satélite"}
+        >
+          <Satellite className="w-4 h-4" />
+        </button>
 
         {data && !isLoading && (
           <div className="absolute bottom-3 left-3 right-3 z-10">
