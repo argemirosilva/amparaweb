@@ -82,6 +82,7 @@ export default function Mapa() {
   const [tick, setTick] = useState(0);
   const [following, setFollowing] = useState(true);
   const [is3D, setIs3D] = useState(true);
+  const [webglError, setWebglError] = useState<string | null>(null);
   const mapLoadedRef = useRef(false);
 
   // Refresh every 3s for GPS feel
@@ -95,16 +96,23 @@ export default function Mapa() {
     injectStyles();
     if (!mapContainerRef.current || mapRef.current || !mapboxgl) return;
 
-    const map = new mapboxgl.Map({
-      container: mapContainerRef.current,
-      style: MAP_STYLE,
-      center: [-47.93, -15.78],
-      zoom: 4,
-      attributionControl: false,
-      pitch: 45,
-      bearing: -10,
-      antialias: true,
-    });
+    let map: mapboxgl.Map;
+    try {
+      map = new mapboxgl.Map({
+        container: mapContainerRef.current,
+        style: MAP_STYLE,
+        center: [-47.93, -15.78],
+        zoom: 4,
+        attributionControl: false,
+        pitch: 45,
+        bearing: -10,
+        failIfMajorPerformanceCaveat: false,
+      });
+    } catch (e) {
+      console.error("[Mapa] WebGL init failed:", e);
+      setWebglError("Seu navegador não suporta WebGL. Tente outro navegador ou dispositivo.");
+      return;
+    }
 
     map.addControl(new mapboxgl.NavigationControl({ showCompass: true, visualizePitch: true }), "top-right");
 
@@ -236,7 +244,7 @@ export default function Mapa() {
   }, [is3D]);
 
   const isLoading = loading || mapsLoading;
-  const displayError = error || mapsError;
+  const displayError = error || mapsError || webglError;
 
   // Computed HUD values
   const movement = data ? updateMovement(data.speed, data.precisao_metros) : null;
