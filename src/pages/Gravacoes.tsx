@@ -301,9 +301,11 @@ export default function GravacoesPage() {
                                 {RISCO_LABELS[g.nivel_risco] || g.nivel_risco}
                               </span>
                             )}
-                            <Badge variant={statusInfo.variant} className="text-[8px] px-1.5 py-0 leading-4">
-                              {statusInfo.label}
-                            </Badge>
+                            {statusInfo.variant === "destructive" && (
+                              <Badge variant={statusInfo.variant} className="text-[8px] px-1.5 py-0 leading-4">
+                                {statusInfo.label}
+                              </Badge>
+                            )}
                           </div>
                         </div>
                       </div>
