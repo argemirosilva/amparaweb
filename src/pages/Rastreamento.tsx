@@ -476,10 +476,12 @@ export default function Rastreamento() {
           className="absolute z-20 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
           aria-label="Centralizar no marcador"
         >
-          <div className="relative w-12 h-12 rounded-full bg-primary/90 backdrop-blur-md shadow-2xl flex flex-col items-center justify-center border-2 border-white/30 animate-pulse">
-            <span className="text-[10px] font-bold text-white leading-none">{offScreenInfo.cardinal}</span>
-            <Navigation className="w-4 h-4 text-white fill-white" style={{ transform: `rotate(${offScreenInfo.angle + 90}deg)` }} />
-          </div>
+            <div className="relative w-12 h-12 rounded-full bg-primary/90 backdrop-blur-md shadow-2xl flex flex-col items-center justify-center border-2 border-white/30 animate-pulse">
+              <span className="text-[10px] font-bold text-white leading-none">{offScreenInfo.cardinal}</span>
+              <svg width="16" height="16" viewBox="0 0 16 16" className="text-white" style={{ transform: `rotate(${offScreenInfo.angle + 90}deg)` }}>
+                <path d="M8 2 L14 12 L8 9 L2 12 Z" fill="currentColor" />
+              </svg>
+            </div>
         </button>
       )}
 
