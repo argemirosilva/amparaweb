@@ -159,11 +159,10 @@ export default function Mapa() {
     const dotClass = data.panicActive ? "ampara-nav-dot ampara-nav-dot-panic" : recentLocation ? "ampara-nav-dot ampara-nav-dot-active" : "ampara-nav-dot";
 
     const el = document.createElement("div");
+    el.className = "ampara-nav-marker";
     el.innerHTML = `
-      <div class="ampara-nav-marker">
-        <div class="${dotClass}">${imgHtml}</div>
-        <div class="ampara-nav-arrow"></div>
-      </div>
+      <div class="${dotClass}">${imgHtml}</div>
+      <div class="ampara-nav-arrow"></div>
     `;
 
     const position: [number, number] = [data.longitude, data.latitude];
@@ -173,8 +172,11 @@ export default function Mapa() {
       smoothPanMarker(markerRef.current, from, position, 800);
       // Update visual
       const markerEl = markerRef.current.getElement();
-      markerEl.innerHTML = "";
-      markerEl.appendChild(el.firstElementChild!);
+      markerEl.className = "ampara-nav-marker";
+      markerEl.innerHTML = `
+        <div class="${dotClass}">${imgHtml}</div>
+        <div class="ampara-nav-arrow"></div>
+      `;
     } else {
       markerRef.current = new mapboxgl.Marker({ element: el, anchor: "bottom" })
         .setLngLat(position)
