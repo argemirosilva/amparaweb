@@ -81,19 +81,6 @@ interface UserInfo {
 
 const STYLE_STREETS = "mapbox://styles/mapbox/streets-v12";
 
-function createCircleGeoJSON(center: [number, number], radiusMeters: number, steps = 64) {
-  const coords: [number, number][] = [];
-  const km = radiusMeters / 1000;
-  for (let i = 0; i <= steps; i++) {
-    const angle = (i / steps) * 2 * Math.PI;
-    const dx = km * Math.cos(angle);
-    const dy = km * Math.sin(angle);
-    const lat = center[1] + (dy / 111.32);
-    const lng = center[0] + (dx / (111.32 * Math.cos(center[1] * (Math.PI / 180))));
-    coords.push([lng, lat]);
-  }
-  return { type: "Feature" as const, geometry: { type: "Polygon" as const, coordinates: [coords] }, properties: {} };
-}
 
 function smoothPanMarker(
   marker: mapboxgl.Marker,
@@ -354,28 +341,6 @@ export default function Rastreamento() {
       markerContentRef.current = { avatarUrl, panicActive: isPanic, recentLocation };
     }
 
-    // Accuracy circle
-    const accuracy = location.precisao_metros ?? 20;
-    const circleData = createCircleGeoJSON(position, accuracy);
-    const fillColor = isPanic ? "#ef4444" : "#3b82f6";
-
-    if (mapLoadedRef.current || mapRef.current.isStyleLoaded()) {
-      if (mapRef.current.getSource("accuracy")) {
-        (mapRef.current.getSource("accuracy") as any).setData(circleData);
-        mapRef.current.setPaintProperty("accuracy-fill", "fill-color", fillColor);
-        mapRef.current.setPaintProperty("accuracy-outline", "line-color", fillColor);
-      } else {
-        mapRef.current.addSource("accuracy", { type: "geojson", data: circleData as any });
-        mapRef.current.addLayer({
-          id: "accuracy-fill", type: "fill", source: "accuracy",
-          paint: { "fill-color": fillColor, "fill-opacity": 0.08 },
-        });
-        mapRef.current.addLayer({
-          id: "accuracy-outline", type: "line", source: "accuracy",
-          paint: { "line-color": fillColor, "line-opacity": 0.25, "line-width": 1.5 },
-        });
-      }
-    }
 
     if (following) {
       mapRef.current.panTo(position);
