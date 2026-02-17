@@ -260,17 +260,6 @@ export default function Mapa() {
           </div>
         )}
 
-        {/* Debug HUD */}
-        <div className="absolute top-3 left-3 z-10 rounded-xl bg-black/70 backdrop-blur-md border border-white/10 px-3 py-2 text-[10px] font-mono text-white/80 space-y-0.5 pointer-events-none">
-          <div>Zoom: <span className="text-white font-bold">{mapState.zoom.toFixed(2)}</span></div>
-          <div>Pitch: <span className="text-white font-bold">{mapState.pitch.toFixed(1)}°</span></div>
-          <div>Bearing: <span className="text-white font-bold">{mapState.bearing.toFixed(1)}°</span></div>
-          <div>Lat: <span className="text-white font-bold">{mapState.center[1].toFixed(6)}</span></div>
-          <div>Lng: <span className="text-white font-bold">{mapState.center[0].toFixed(6)}</span></div>
-          <div>Following: <span className={`font-bold ${following ? "text-green-400" : "text-red-400"}`}>{following ? "Sim" : "Não"}</span></div>
-          <div>Estilo: <span className="text-white font-bold">{isSatellite ? "Satélite" : "Ruas"}</span></div>
-        </div>
-
         {/* Re-center button - always visible */}
         {data && (
           <button
