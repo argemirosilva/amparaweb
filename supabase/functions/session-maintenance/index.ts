@@ -216,9 +216,9 @@ serve(async (req) => {
 
     const { data: pendingSessions } = await supabase
       .from("monitoramento_sessoes")
-      .select("id, user_id, device_id, origem")
+      .select("id, user_id, device_id, origem, closed_at, finalizado_em")
       .eq("status", "aguardando_finalizacao")
-      .lt("closed_at", cutoff);
+      .or(`closed_at.lt.${cutoff},and(closed_at.is.null,finalizado_em.lt.${cutoff})`);
 
     if (pendingSessions && pendingSessions.length > 0) {
       for (const session of pendingSessions) {
