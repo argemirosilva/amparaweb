@@ -22,7 +22,7 @@ export default function ProtectedAdminRoute({ children, requiredRole }: Protecte
   }
 
   if (!usuario) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/admin/login" replace />;
   }
 
   if (!hasAnyAdminAccess) {
