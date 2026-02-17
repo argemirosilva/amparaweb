@@ -34,24 +34,7 @@ function injectStyles() {
   document.head.appendChild(style);
 }
 
-const DARK_STYLE = {
-  version: 8 as const,
-  name: "Ampara Dark",
-  glyphs: "mapbox://fonts/mapbox/{fontstack}/{range}.pbf",
-  sources: {
-    "dark-tiles": {
-      type: "raster" as const,
-      tiles: [
-        "https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
-        "https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
-      ],
-      tileSize: 256,
-    },
-  },
-  layers: [
-    { id: "dark-tiles-layer", type: "raster" as const, source: "dark-tiles", minzoom: 0, maxzoom: 22 },
-  ],
-};
+const DARK_STYLE = "mapbox://styles/mapbox/dark-v11";
 
 /** Generate a GeoJSON circle polygon */
 function createCircleGeoJSON(center: [number, number], radiusMeters: number, steps = 64) {
