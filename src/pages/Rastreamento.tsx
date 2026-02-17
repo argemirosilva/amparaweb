@@ -79,7 +79,7 @@ interface UserInfo {
   avatar_url: string | null;
 }
 
-const DARK_STYLE = "mapbox://styles/mapbox/dark-v11";
+const STYLE_STREETS = "mapbox://styles/mapbox/navigation-day-v1";
 
 function createCircleGeoJSON(center: [number, number], radiusMeters: number, steps = 64) {
   const coords: [number, number][] = [];
@@ -261,10 +261,12 @@ export default function Rastreamento() {
     if (!mapRef.current) {
       mapRef.current = new mapboxgl.Map({
         container: containerRef.current,
-        style: DARK_STYLE,
+        style: STYLE_STREETS,
         center: [location.longitude, location.latitude],
-        zoom: 17,
+        zoom: 16,
         attributionControl: false,
+        pitch: 0,
+        bearing: 0,
       });
       mapRef.current.on("load", () => { mapLoadedRef.current = true; });
       mapRef.current.on("dragstart", () => setFollowing(false));
@@ -338,7 +340,7 @@ export default function Rastreamento() {
     if (!mapRef.current || !location) return;
     setFollowing(true);
     mapRef.current.panTo([location.longitude, location.latitude]);
-    mapRef.current.setZoom(17);
+    mapRef.current.setZoom(16);
   }, [location]);
 
   // Computed values for HUD
@@ -421,8 +423,8 @@ export default function Rastreamento() {
         </div>
       </div>
 
-      {/* Re-center button */}
-      {!following && (
+      {/* Re-center button - always visible */}
+      {location && (
         <button
           onClick={recenter}
           className="absolute right-4 bottom-44 z-10 w-11 h-11 rounded-full bg-black/80 backdrop-blur-md border border-white/10 shadow-2xl flex items-center justify-center text-white hover:bg-black/90 transition-all active:scale-95"
