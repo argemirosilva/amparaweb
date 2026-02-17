@@ -86,9 +86,9 @@ export default function Mapa() {
   const mapLoadedRef = useRef(false);
   const [arrowAngle, setArrowAngle] = useState<number | null>(null); // null = marker is on screen
 
-  // Refresh every 3s for GPS feel
+  // Refresh relative timestamps every 15s (no need for 3s – data comes via realtime)
   useEffect(() => {
-    const id = setInterval(() => setTick(t => t + 1), 3_000);
+    const id = setInterval(() => setTick(t => t + 1), 15_000);
     return () => clearInterval(id);
   }, []);
 
