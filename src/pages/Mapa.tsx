@@ -133,46 +133,79 @@ export default function Mapa() {
     };
   }, [mapboxgl]);
 
+  // Build marker element once, update only classes when status changes
+  const markerContentRef = useRef<{ avatarUrl: string | null; panicActive: boolean; recentLocation: boolean } | null>(null);
+
   // Update marker with smooth animation
   useEffect(() => {
     if (!mapRef.current || !data || !mapboxgl) return;
 
     const recentLocation = Date.now() - new Date(data.created_at).getTime() < 60_000;
-
-    const initial = data.firstName.charAt(0).toUpperCase();
-    const imgHtml = data.avatarUrl
-      ? `<img src="${data.avatarUrl}" class="ampara-nav-img" alt="${data.firstName}" crossorigin="anonymous" onerror="this.style.display='none';this.parentElement.insertAdjacentHTML('beforeend','<div class=ampara-nav-placeholder>${initial}</div>')" />`
-      : `<div class="ampara-nav-placeholder">${initial}</div>`;
-    const dotClass = data.panicActive ? "ampara-nav-dot ampara-nav-dot-panic" : recentLocation ? "ampara-nav-dot ampara-nav-dot-active" : "ampara-nav-dot";
-
-    const el = document.createElement("div");
-    el.className = "ampara-nav-marker";
-    el.innerHTML = `
-      <div class="${dotClass}">${imgHtml}</div>
-      <div class="ampara-nav-arrow"></div>
-    `;
-
     const position: [number, number] = [data.longitude, data.latitude];
 
+    const needsVisualUpdate = !markerContentRef.current
+      || markerContentRef.current.avatarUrl !== data.avatarUrl
+      || markerContentRef.current.panicActive !== data.panicActive
+      || markerContentRef.current.recentLocation !== recentLocation;
+
     if (markerRef.current) {
+      // Smooth position animation
       const from = prevPosRef.current || position;
       smoothPanMarker(markerRef.current, from, position, 800);
-      // Update visual — only replace inner content, preserve mapboxgl-marker wrapper class
-      const markerEl = markerRef.current.getElement();
-      markerEl.innerHTML = "";
-      const inner = document.createElement("div");
-      inner.className = "ampara-nav-marker";
-      inner.innerHTML = `
-        <div class="${dotClass}">${imgHtml}</div>
-        <div class="ampara-nav-arrow"></div>
-      `;
-      markerEl.appendChild(inner);
+
+      // Only rebuild DOM when visual state actually changes (not every tick)
+      if (needsVisualUpdate) {
+        const dotClass = data.panicActive ? "ampara-nav-dot ampara-nav-dot-panic" : recentLocation ? "ampara-nav-dot ampara-nav-dot-active" : "ampara-nav-dot";
+        const dot = markerRef.current.getElement().querySelector(".ampara-nav-dot");
+        if (dot) {
+          dot.className = dotClass;
+        }
+        markerContentRef.current = { avatarUrl: data.avatarUrl, panicActive: data.panicActive, recentLocation };
+      }
     } else {
+      // First time: create marker with preloaded image
+      const initial = data.firstName.charAt(0).toUpperCase();
+      const dotClass = data.panicActive ? "ampara-nav-dot ampara-nav-dot-panic" : recentLocation ? "ampara-nav-dot ampara-nav-dot-active" : "ampara-nav-dot";
+
+      const el = document.createElement("div");
+      el.className = "ampara-nav-marker";
+
+      const dot = document.createElement("div");
+      dot.className = dotClass;
+
+      if (data.avatarUrl) {
+        const img = new Image();
+        img.className = "ampara-nav-img";
+        img.alt = data.firstName;
+        img.crossOrigin = "anonymous";
+        img.onerror = () => {
+          img.remove();
+          const placeholder = document.createElement("div");
+          placeholder.className = "ampara-nav-placeholder";
+          placeholder.textContent = initial;
+          dot.appendChild(placeholder);
+        };
+        img.src = data.avatarUrl;
+        dot.appendChild(img);
+      } else {
+        const placeholder = document.createElement("div");
+        placeholder.className = "ampara-nav-placeholder";
+        placeholder.textContent = initial;
+        dot.appendChild(placeholder);
+      }
+
+      const arrow = document.createElement("div");
+      arrow.className = "ampara-nav-arrow";
+
+      el.appendChild(dot);
+      el.appendChild(arrow);
+
       markerRef.current = new mapboxgl.Marker({ element: el, anchor: "bottom" })
         .setLngLat(position)
         .addTo(mapRef.current);
       const currentZoom = mapRef.current.getZoom();
       mapRef.current.flyTo({ center: position, zoom: Math.max(currentZoom, 16), duration: 1500 });
+      markerContentRef.current = { avatarUrl: data.avatarUrl, panicActive: data.panicActive, recentLocation };
     }
 
     // Accuracy circle
