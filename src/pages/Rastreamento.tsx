@@ -126,6 +126,7 @@ export default function Rastreamento() {
   const [stationarySince, setStationarySince] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
   const [following, setFollowing] = useState(true);
+  const [arrowAngle, setArrowAngle] = useState<number | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markerRef = useRef<mapboxgl.Marker | null>(null);
   const prevPosRef = useRef<[number, number] | null>(null);
@@ -375,6 +376,33 @@ export default function Rastreamento() {
     prevPosRef.current = position;
   }, [location, share, userInfo, mapboxgl, recentLocs, tick, following]);
 
+  // Track whether marker is off-screen and compute arrow angle
+  useEffect(() => {
+    if (!mapRef.current || !location) return;
+    const map = mapRef.current;
+
+    const checkVisibility = () => {
+      const point = map.project([location.longitude, location.latitude]);
+      const canvas = map.getCanvas();
+      const w = canvas.clientWidth;
+      const h = canvas.clientHeight;
+      const margin = 40;
+
+      if (point.x >= margin && point.x <= w - margin && point.y >= margin && point.y <= h - margin) {
+        setArrowAngle(null);
+      } else {
+        const cx = w / 2;
+        const cy = h / 2;
+        const angle = Math.atan2(point.y - cy, point.x - cx) * (180 / Math.PI);
+        setArrowAngle(angle);
+      }
+    };
+
+    checkVisibility();
+    map.on("move", checkVisibility);
+    return () => { map.off("move", checkVisibility); };
+  }, [location]);
+
   const recenter = useCallback(() => {
     if (!mapRef.current || !location) return;
     setFollowing(true);
@@ -461,6 +489,24 @@ export default function Rastreamento() {
           </div>
         </div>
       </div>
+
+      {/* Directional arrow when marker is off-screen */}
+      {arrowAngle !== null && location && (
+        <button
+          onClick={recenter}
+          className="absolute z-20 transition-all duration-300"
+          style={{
+            left: `calc(50% + ${Math.cos(arrowAngle * Math.PI / 180) * 45}%)`,
+            top: `calc(50% + ${Math.sin(arrowAngle * Math.PI / 180) * 40}%)`,
+            transform: `translate(-50%, -50%) rotate(${arrowAngle + 90}deg)`,
+          }}
+          title="Ir para o marcador"
+        >
+          <div className="w-12 h-12 rounded-full bg-primary/90 backdrop-blur-md shadow-2xl flex items-center justify-center border-2 border-white/30 animate-pulse">
+            <Navigation className="w-5 h-5 text-white fill-white" />
+          </div>
+        </button>
+      )}
 
       {/* Re-center button - always visible */}
       {location && (
