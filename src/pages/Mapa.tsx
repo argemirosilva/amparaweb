@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { useMapDeviceData } from "@/hooks/useMapDeviceData";
 import { useMovementStatus } from "@/hooks/useMovementStatus";
 import { useMapbox } from "@/hooks/useMapbox";
-import { Loader2, MapPin, Locate, Signal } from "lucide-react";
+import { Loader2, MapPin, Locate, Signal, Box, Map } from "lucide-react";
 import type mapboxgl from "mapbox-gl";
 
 function formatRelativeTime(isoDate: string): string {
@@ -81,6 +81,7 @@ export default function Mapa() {
   const { mapboxgl, loading: mapsLoading, error: mapsError } = useMapbox();
   const [tick, setTick] = useState(0);
   const [following, setFollowing] = useState(true);
+  const [is3D, setIs3D] = useState(true);
   const mapLoadedRef = useRef(false);
 
   // Refresh every 3s for GPS feel
@@ -222,6 +223,17 @@ export default function Mapa() {
     mapRef.current.setZoom(17);
   }, [data]);
 
+  const toggle3D = useCallback(() => {
+    if (!mapRef.current) return;
+    if (is3D) {
+      mapRef.current.easeTo({ pitch: 0, bearing: 0, duration: 500 });
+      setIs3D(false);
+    } else {
+      mapRef.current.easeTo({ pitch: 45, bearing: -10, duration: 500 });
+      setIs3D(true);
+    }
+  }, [is3D]);
+
   const isLoading = loading || mapsLoading;
   const displayError = error || mapsError;
 
@@ -262,7 +274,16 @@ export default function Mapa() {
           </button>
         )}
 
-        {/* Bottom HUD overlay */}
+        {/* 2D/3D toggle button */}
+        <button
+          onClick={toggle3D}
+          className="absolute right-3 bottom-44 z-10 w-10 h-10 rounded-full bg-black/70 backdrop-blur-md border border-white/10 shadow-xl flex items-center justify-center text-white hover:bg-black/90 transition-all active:scale-95"
+          title={is3D ? "Visão 2D" : "Visão 3D"}
+        >
+          {is3D ? <Map className="w-4 h-4" /> : <Box className="w-4 h-4" />}
+        </button>
+
+
         {data && !isLoading && (
           <div className="absolute bottom-3 left-3 right-3 z-10">
             <div className={`rounded-2xl backdrop-blur-xl shadow-2xl border overflow-hidden ${data.panicActive ? "bg-red-950/90 border-red-800/40" : "bg-black/80 border-white/10"}`}>
