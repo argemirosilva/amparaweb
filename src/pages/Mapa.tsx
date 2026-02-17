@@ -37,6 +37,20 @@ function injectStyles() {
 const STYLE_STREETS = "mapbox://styles/mapbox/navigation-day-v1";
 const STYLE_SATELLITE = "mapbox://styles/mapbox/satellite-streets-v12";
 
+/** Make all POI / landmark / place layers visible and lower their min-zoom so they appear earlier */
+function showAllPOIs(map: mapboxgl.Map) {
+  const style = map.getStyle();
+  if (!style?.layers) return;
+  for (const layer of style.layers) {
+    const id = layer.id.toLowerCase();
+    const isPOI = id.includes("poi") || id.includes("place") || id.includes("label") || id.includes("transit") || id.includes("airport") || id.includes("park") || id.includes("building") || id.includes("landuse") || id.includes("hospital") || id.includes("school") || id.includes("police") || id.includes("fire") || id.includes("church") || id.includes("shop");
+    if (isPOI) {
+      map.setLayoutProperty(layer.id, "visibility", "visible");
+      try { map.setLayerZoomRange(layer.id, 0, 24); } catch {}
+    }
+  }
+}
+
 /** Generate a GeoJSON circle polygon */
 function createCircleGeoJSON(center: [number, number], radiusMeters: number, steps = 64) {
   const coords: [number, number][] = [];
@@ -120,6 +134,8 @@ export default function Mapa() {
 
     map.on("load", () => {
       mapLoadedRef.current = true;
+      // Maximize POI visibility for emergency reference
+      showAllPOIs(map);
     });
 
     const updateMapState = () => {
@@ -231,6 +247,7 @@ export default function Mapa() {
 
     mapRef.current.once("style.load", () => {
       mapLoadedRef.current = true;
+      showAllPOIs(mapRef.current!);
     });
   }, [isSatellite]);
 
