@@ -73,12 +73,13 @@ export default function GravacaoExpandedContent({
   const [loadedAnalise, setLoadedAnalise] = useState(false);
   const isPlayingRef = useRef(false);
   const isInteractingRef = useRef(false);
+  const isAnaliseActiveRef = useRef(false);
   const collapseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const resetCollapseTimer = useCallback(() => {
     if (collapseTimerRef.current) clearTimeout(collapseTimerRef.current);
     collapseTimerRef.current = setTimeout(() => {
-      if (!isPlayingRef.current && !isInteractingRef.current) {
+      if (!isPlayingRef.current && !isInteractingRef.current && !isAnaliseActiveRef.current) {
         onCollapse?.();
       }
     }, 6000);
@@ -107,6 +108,15 @@ export default function GravacaoExpandedContent({
   const handleInteractionEnd = useCallback(() => {
     isInteractingRef.current = false;
     resetCollapseTimer();
+  }, [resetCollapseTimer]);
+
+  const handleAnaliseActiveChange = useCallback((active: boolean) => {
+    isAnaliseActiveRef.current = active;
+    if (active) {
+      if (collapseTimerRef.current) clearTimeout(collapseTimerRef.current);
+    } else {
+      resetCollapseTimer();
+    }
   }, [resetCollapseTimer]);
 
   // Fetch analysis when component mounts (for processado recordings)
@@ -295,6 +305,7 @@ export default function GravacaoExpandedContent({
         status={gravacao.status}
         sessionToken={sessionToken}
         preloadedData={loadedAnalise ? analise : undefined}
+        onActiveChange={handleAnaliseActiveChange}
       />
     </div>
   );
