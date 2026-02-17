@@ -212,7 +212,7 @@ export default function Mapa() {
     }
 
     if (following) {
-      mapRef.current.panTo(position);
+      mapRef.current.easeTo({ center: position, duration: 300 });
     }
 
     prevPosRef.current = position;
@@ -221,8 +221,7 @@ export default function Mapa() {
   const recenter = useCallback(() => {
     if (!mapRef.current || !data) return;
     setFollowing(true);
-    mapRef.current.panTo([data.longitude, data.latitude]);
-    mapRef.current.setZoom(17);
+    mapRef.current.flyTo({ center: [data.longitude, data.latitude], zoom: 15, duration: 800 });
   }, [data]);
 
   const toggle3D = useCallback(() => {
