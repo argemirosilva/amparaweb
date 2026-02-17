@@ -85,7 +85,7 @@ export default function Mapa() {
   const [isSatellite, setIsSatellite] = useState(false);
   const [webglError, setWebglError] = useState<string | null>(null);
   const mapLoadedRef = useRef(false);
-  const [mapState, setMapState] = useState({ zoom: 4, pitch: 0, bearing: 0, center: [-47.93, -15.78] as [number, number] });
+  const [mapState, setMapState] = useState({ zoom: 16, pitch: 0, bearing: 0, center: [-47.93, -15.78] as [number, number] });
 
   // Refresh every 3s for GPS feel
   useEffect(() => {
@@ -104,7 +104,7 @@ export default function Mapa() {
         container: mapContainerRef.current,
         style: STYLE_STREETS,
         center: [-47.93, -15.78],
-        zoom: 4,
+        zoom: 16,
         attributionControl: false,
         pitch: 0,
         bearing: 0,
