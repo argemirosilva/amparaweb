@@ -75,11 +75,13 @@ export default function AnaliseCard({
   status,
   sessionToken,
   preloadedData,
+  onActiveChange,
 }: {
   gravacaoId: string;
   status: string;
   sessionToken: string;
   preloadedData?: AnaliseData | null;
+  onActiveChange?: (active: boolean) => void;
 }) {
   const [analise, setAnalise] = useState<AnaliseData | null>(null);
   const [loading, setLoading] = useState(false);
@@ -91,6 +93,7 @@ export default function AnaliseCard({
     if (preloadedData !== undefined) {
       setAnalise(preloadedData);
       setLoaded(true);
+      if (preloadedData) onActiveChange?.(true);
     }
   }, [preloadedData]);
 
@@ -99,6 +102,7 @@ export default function AnaliseCard({
   const loadAnalise = async () => {
     if (loaded) return;
     setLoading(true);
+    onActiveChange?.(true);
     const res = await callWebApi("getAnalise", sessionToken, { gravacao_id: gravacaoId });
     if (res.ok && res.data.analise) {
       setAnalise(res.data.analise);
