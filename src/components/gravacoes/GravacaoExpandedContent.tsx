@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { toast } from "@/hooks/use-toast";
 import { callWebApi } from "@/services/webApiService";
 import { Button } from "@/components/ui/button";
 import { Download, FileText, Trash2 } from "lucide-react";
@@ -284,7 +285,12 @@ export default function GravacaoExpandedContent({
                 <AlertDialogAction
                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                   onClick={async () => {
-                    await callWebApi("deleteGravacao", sessionToken, { gravacao_id: gravacao.id });
+                    const res = await callWebApi("deleteGravacao", sessionToken, { gravacao_id: gravacao.id });
+                    if (res.ok) {
+                      toast({ title: "Gravação excluída", description: "A gravação foi removida com sucesso." });
+                    } else {
+                      toast({ title: "Erro ao excluir", description: res.data?.error || "Tente novamente.", variant: "destructive" });
+                    }
                     onDeleted?.();
                   }}
                 >
