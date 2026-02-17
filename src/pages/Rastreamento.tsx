@@ -265,7 +265,15 @@ export default function Rastreamento() {
         pitch: 0,
         bearing: 0,
       });
-      mapRef.current.on("load", () => { mapLoadedRef.current = true; });
+      mapRef.current.on("load", () => {
+        mapLoadedRef.current = true;
+        // Force POI layers visible from zoom 10
+        mapRef.current!.getStyle().layers.forEach((layer) => {
+          if (layer.id.includes("poi") || layer.id.includes("label")) {
+            try { mapRef.current!.setLayerZoomRange(layer.id, 10, 24); } catch {}
+          }
+        });
+      });
       mapRef.current.on("dragstart", () => setFollowing(false));
     }
 

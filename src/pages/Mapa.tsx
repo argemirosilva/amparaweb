@@ -105,6 +105,12 @@ export default function Mapa() {
 
     map.on("load", () => {
       mapLoadedRef.current = true;
+      // Force POI layers visible from zoom 10
+      map.getStyle().layers.forEach((layer) => {
+        if (layer.id.includes("poi") || layer.id.includes("label")) {
+          try { map.setLayerZoomRange(layer.id, 10, 24); } catch {}
+        }
+      });
     });
 
     
@@ -243,6 +249,11 @@ export default function Mapa() {
 
     mapRef.current.once("style.load", () => {
       mapLoadedRef.current = true;
+      mapRef.current!.getStyle().layers.forEach((layer) => {
+        if (layer.id.includes("poi") || layer.id.includes("label")) {
+          try { mapRef.current!.setLayerZoomRange(layer.id, 10, 24); } catch {}
+        }
+      });
     });
   }, [isSatellite]);
 
