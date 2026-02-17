@@ -23,7 +23,7 @@ function injectStyles() {
   style.id = MARKER_STYLE_ID;
   style.textContent = `
     .ampara-nav-marker { display:flex; flex-direction:column; align-items:center; filter:drop-shadow(0 4px 12px rgba(0,0,0,0.4)); transition: transform 0.3s ease; }
-    .ampara-nav-dot { width:48px; height:48px; border-radius:50%; border:3px solid white; overflow:hidden; box-shadow:0 0 0 3px hsla(280,70%,50%,0.5); transition: box-shadow 0.3s ease; }
+    .ampara-nav-dot { width:48px; height:48px; border-radius:50%; border:3px solid white; overflow:hidden; box-shadow:0 0 0 3px hsla(280,70%,50%,0.5), 0 4px 12px rgba(0,0,0,0.3); transition: box-shadow 0.3s ease; }
     .ampara-nav-dot-active { box-shadow:0 0 0 3px hsla(220,80%,55%,0.6), 0 0 20px 4px hsla(220,80%,55%,0.3); }
     .ampara-nav-dot-panic { box-shadow:0 0 0 3px hsla(0,80%,50%,0.6), 0 0 20px 4px hsla(0,80%,50%,0.3); animation:ampara-nav-pulse 1.2s ease-in-out infinite; }
     @keyframes ampara-nav-pulse { 0%,100%{box-shadow:0 0 0 3px hsla(0,80%,50%,0.6), 0 0 20px 4px hsla(0,80%,50%,0.3);} 50%{box-shadow:0 0 0 6px hsla(0,80%,50%,0.4), 0 0 30px 8px hsla(0,80%,50%,0.2);} }
@@ -34,7 +34,7 @@ function injectStyles() {
   document.head.appendChild(style);
 }
 
-const DARK_STYLE = "mapbox://styles/mapbox/dark-v11";
+const MAP_STYLE = "mapbox://styles/mapbox/streets-v12";
 
 /** Generate a GeoJSON circle polygon */
 function createCircleGeoJSON(center: [number, number], radiusMeters: number, steps = 64) {
@@ -96,15 +96,45 @@ export default function Mapa() {
 
     const map = new mapboxgl.Map({
       container: mapContainerRef.current,
-      style: DARK_STYLE,
+      style: MAP_STYLE,
       center: [-47.93, -15.78],
       zoom: 4,
       attributionControl: false,
+      pitch: 45,
+      bearing: -10,
+      antialias: true,
     });
 
-    map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "top-right");
+    map.addControl(new mapboxgl.NavigationControl({ showCompass: true, visualizePitch: true }), "top-right");
 
-    map.on("load", () => { mapLoadedRef.current = true; });
+    map.on("load", () => {
+      mapLoadedRef.current = true;
+
+      // Add 3D building extrusions
+      const layers = map.getStyle().layers;
+      const labelLayerId = layers?.find(
+        (layer) => layer.type === "symbol" && (layer.layout as any)?.["text-field"]
+      )?.id;
+
+      map.addLayer(
+        {
+          id: "3d-buildings",
+          source: "composite",
+          "source-layer": "building",
+          filter: ["==", "extrude", "true"],
+          type: "fill-extrusion",
+          minzoom: 14,
+          paint: {
+            "fill-extrusion-color": "#ddd",
+            "fill-extrusion-height": ["interpolate", ["linear"], ["zoom"], 14, 0, 14.5, ["get", "height"]],
+            "fill-extrusion-base": ["interpolate", ["linear"], ["zoom"], 14, 0, 14.5, ["get", "min_height"]],
+            "fill-extrusion-opacity": 0.7,
+          },
+        },
+        labelLayerId
+      );
+    });
+
     map.on("dragstart", () => setFollowing(false));
 
     mapRef.current = map;
