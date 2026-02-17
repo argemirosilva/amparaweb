@@ -131,6 +131,7 @@ export default function Rastreamento() {
   const prevPosRef = useRef<[number, number] | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const mapLoadedRef = useRef(false);
+  const markerContentRef = useRef<{ avatarUrl: string; panicActive: boolean; recentLocation: boolean } | null>(null);
   const { mapboxgl } = useMapbox();
 
   // Fetch share data
@@ -276,34 +277,72 @@ export default function Rastreamento() {
     const firstName = userInfo?.nome_completo?.split(" ")[0] || "";
     const avatarUrl = userInfo?.avatar_url || "";
     const recentLocation = Date.now() - new Date(location.created_at).getTime() < 60_000;
-    const imgHtml = avatarUrl
-      ? `<img src="${avatarUrl}" class="ampara-nav-img" alt="${firstName}" />`
-      : `<div class="ampara-nav-placeholder">${firstName.charAt(0).toUpperCase() || "?"}</div>`;
-    const dotClass = isPanic ? "ampara-nav-dot ampara-nav-dot-panic" : recentLocation ? "ampara-nav-dot ampara-nav-dot-active" : "ampara-nav-dot";
+    const position: [number, number] = [location.longitude, location.latitude];
+
+    const needsVisualUpdate = !markerContentRef.current
+      || markerContentRef.current.avatarUrl !== avatarUrl
+      || markerContentRef.current.panicActive !== isPanic
+      || markerContentRef.current.recentLocation !== recentLocation;
 
     const heading = location.heading;
-    const rotation = heading != null && heading > 0 ? `transform:rotate(${heading}deg)` : "";
-
-    const el = document.createElement("div");
-    el.innerHTML = `
-      <div class="ampara-nav-marker" style="${rotation}">
-        <div class="${dotClass}">${imgHtml}</div>
-        <div class="ampara-nav-arrow"></div>
-      </div>
-    `;
-
-    const position: [number, number] = [location.longitude, location.latitude];
+    const rotation = heading != null && heading > 0 ? `rotate(${heading}deg)` : "";
 
     if (markerRef.current) {
       const from = prevPosRef.current || position;
       smoothPanMarker(markerRef.current, from, position, 800);
-      const markerEl = markerRef.current.getElement();
-      markerEl.innerHTML = "";
-      markerEl.appendChild(el.firstElementChild!);
+
+      if (needsVisualUpdate) {
+        const dotClass = isPanic ? "ampara-nav-dot ampara-nav-dot-panic" : recentLocation ? "ampara-nav-dot ampara-nav-dot-active" : "ampara-nav-dot";
+        const dot = markerRef.current.getElement().querySelector(".ampara-nav-dot");
+        if (dot) dot.className = dotClass;
+        markerContentRef.current = { avatarUrl, panicActive: isPanic, recentLocation };
+      }
+
+      // Update rotation
+      const markerInner = markerRef.current.getElement().querySelector(".ampara-nav-marker") as HTMLElement | null;
+      if (markerInner) markerInner.style.transform = rotation;
     } else {
+      const initial = firstName.charAt(0).toUpperCase() || "?";
+      const dotClass = isPanic ? "ampara-nav-dot ampara-nav-dot-panic" : recentLocation ? "ampara-nav-dot ampara-nav-dot-active" : "ampara-nav-dot";
+
+      const el = document.createElement("div");
+      el.className = "ampara-nav-marker";
+      if (rotation) el.style.transform = rotation;
+
+      const dot = document.createElement("div");
+      dot.className = dotClass;
+
+      if (avatarUrl) {
+        const img = new Image();
+        img.className = "ampara-nav-img";
+        img.alt = firstName;
+        img.crossOrigin = "anonymous";
+        img.onerror = () => {
+          img.remove();
+          const placeholder = document.createElement("div");
+          placeholder.className = "ampara-nav-placeholder";
+          placeholder.textContent = initial;
+          dot.appendChild(placeholder);
+        };
+        img.src = avatarUrl;
+        dot.appendChild(img);
+      } else {
+        const placeholder = document.createElement("div");
+        placeholder.className = "ampara-nav-placeholder";
+        placeholder.textContent = initial;
+        dot.appendChild(placeholder);
+      }
+
+      const arrow = document.createElement("div");
+      arrow.className = "ampara-nav-arrow";
+
+      el.appendChild(dot);
+      el.appendChild(arrow);
+
       markerRef.current = new mapboxgl.Marker({ element: el, anchor: "bottom" })
         .setLngLat(position)
         .addTo(mapRef.current);
+      markerContentRef.current = { avatarUrl, panicActive: isPanic, recentLocation };
     }
 
     // Accuracy circle
