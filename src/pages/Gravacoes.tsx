@@ -261,15 +261,15 @@ export default function GravacoesPage() {
                   <div
                     key={g.id}
                     ref={isExpanded ? (el) => { if (el) setTimeout(() => el.scrollIntoView({ behavior: "smooth", block: "start" }), 100); } : undefined}
-                    className="ampara-card overflow-hidden relative"
-                    style={g.nivel_risco ? { borderLeftWidth: "3px", borderLeftStyle: "solid", borderLeftColor: `${RISCO_COLORS[g.nivel_risco] || "transparent"}90` } : undefined}
+                    className="ampara-card !p-0 !rounded-lg overflow-hidden relative"
+                    style={g.nivel_risco ? { borderLeftWidth: "2px", borderLeftStyle: "solid", borderLeftColor: `${RISCO_COLORS[g.nivel_risco] || "transparent"}90` } : undefined}
                   >
                     <button
                       onClick={() => setExpanded(isExpanded ? null : g.id)}
-                      className="w-full px-1.5 py-px text-left hover:bg-accent/30 transition-colors"
+                      className="w-full px-2 py-1 text-left hover:bg-accent/30 transition-colors"
                     >
-                      <div className="flex items-center gap-1.5">
-                        <GradientIcon icon={Play} size="xs" className="shrink-0" />
+                      <div className="flex items-center gap-1">
+                        <Play className="w-3 h-3 shrink-0 text-primary" />
 
                         <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
                           <div className="flex items-center gap-1.5">
