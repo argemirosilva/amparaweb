@@ -13,6 +13,7 @@ import {
   LogOut,
   Menu,
   X,
+  Plug,
 } from "lucide-react";
 import amparaLogo from "@/assets/ampara-logo.png";
 import { useState } from "react";
@@ -25,6 +26,7 @@ const sidebarItems = [
   { label: "Auditoria", path: "/admin/auditoria", icon: Shield },
   { label: "Relatórios", path: "/admin/relatorios", icon: FileText },
   { label: "Configurações", path: "/admin/configuracoes", icon: Settings },
+  { label: "Integrações", path: "/admin/integracoes", icon: Plug },
 ];
 
 export default function AdminLayout() {

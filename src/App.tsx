@@ -35,6 +35,7 @@ import AdminPlaceholder from "./pages/admin/AdminPlaceholder";
 import AdminMapa from "./pages/admin/AdminMapa";
 import AdminOrgaos from "./pages/admin/AdminOrgaos";
 import AdminConfiguracoes from "./pages/admin/AdminConfiguracoes";
+import AdminIntegracoes from "./pages/admin/AdminIntegracoes";
 import AdminLogin from "./pages/admin/AdminLogin";
 
 const queryClient = new QueryClient();
@@ -78,6 +79,7 @@ const App = () => (
               <Route path="/admin/mapa" element={<AdminMapa />} />
               <Route path="/admin/orgaos" element={<AdminOrgaos />} />
               <Route path="/admin/configuracoes" element={<AdminConfiguracoes />} />
+              <Route path="/admin/integracoes" element={<AdminIntegracoes />} />
             </Route>
             <Route path="/suporte" element={<Suporte />} />
             <Route path="/privacidade" element={<Privacidade />} />
