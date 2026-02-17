@@ -153,7 +153,15 @@ export default function Rastreamento() {
         .select("nome_completo, avatar_url")
         .eq("id", data.user_id)
         .maybeSingle();
-      if (userData) setUserInfo(userData);
+      if (userData) {
+        setUserInfo(userData);
+        // Preload avatar into browser cache before marker is created
+        if (userData.avatar_url) {
+          const img = new Image();
+          img.crossOrigin = "anonymous";
+          img.src = userData.avatar_url;
+        }
+      }
     };
     fetchShare();
   }, [codigo]);
@@ -225,9 +233,9 @@ export default function Rastreamento() {
     return () => { supabase.removeChannel(channel); };
   }, [share]);
 
-  // Refresh relative times every 3s
+  // Refresh relative times every 15s (GPS data arrives via realtime, no need for 3s)
   useEffect(() => {
-    const id = setInterval(() => setTick(t => t + 1), 3_000);
+    const id = setInterval(() => setTick(t => t + 1), 15_000);
     return () => clearInterval(id);
   }, []);
 
