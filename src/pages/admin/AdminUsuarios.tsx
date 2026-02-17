@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import GovStatusBadge from "@/components/institucional/GovStatusBadge";
-import { Plus, X } from "lucide-react";
+import { Plus, X, Search } from "lucide-react";
 
 const fontStyle = { fontFamily: "Inter, Roboto, sans-serif" };
 
@@ -18,19 +18,34 @@ export default function AdminUsuarios() {
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [drawerUser, setDrawerUser] = useState<UserRow | null>(null);
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  // Debounce search
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search.trim()), 300);
+    return () => clearTimeout(t);
+  }, [search]);
 
   useEffect(() => {
     async function load() {
-      const { data } = await supabase
+      setLoading(true);
+      let query = supabase
         .from("usuarios")
         .select("id, nome_completo, email, status, ultimo_acesso, created_at")
         .order("created_at", { ascending: false })
         .limit(50);
+
+      if (debouncedSearch) {
+        query = query.or(`nome_completo.ilike.%${debouncedSearch}%,email.ilike.%${debouncedSearch}%`);
+      }
+
+      const { data } = await query;
       setUsers((data as UserRow[]) || []);
       setLoading(false);
     }
     load();
-  }, []);
+  }, [debouncedSearch]);
 
   const statusMap: Record<string, "verde" | "amarelo" | "laranja" | "vermelho"> = {
     ativo: "verde",
@@ -42,17 +57,38 @@ export default function AdminUsuarios() {
   return (
     <div style={fontStyle} className="relative">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
         <div>
           <p className="text-xs mb-1" style={{ color: "hsl(220 9% 46%)" }}>Admin &gt; Usuários</p>
           <h1 className="text-xl font-semibold" style={{ color: "hsl(220 13% 18%)" }}>Usuários</h1>
         </div>
-        <button
-          className="flex items-center gap-1.5 px-4 py-2 rounded text-sm font-semibold transition-colors"
-          style={{ background: "hsl(224 76% 33%)", color: "#fff" }}
-        >
-          <Plus className="w-4 h-4" /> Novo Usuário
-        </button>
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          <div
+            className="flex items-center gap-2 px-3 py-2 rounded-md border flex-1 sm:flex-initial sm:w-72"
+            style={{ borderColor: "hsl(220 13% 87%)", background: "hsl(210 17% 98%)" }}
+          >
+            <Search className="w-4 h-4 shrink-0" style={{ color: "hsl(220 9% 46%)" }} />
+            <input
+              type="text"
+              placeholder="Buscar por nome ou email…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="bg-transparent outline-none text-sm w-full"
+              style={{ color: "hsl(220 13% 18%)" }}
+            />
+            {search && (
+              <button onClick={() => setSearch("")} className="shrink-0">
+                <X className="w-3.5 h-3.5" style={{ color: "hsl(220 9% 46%)" }} />
+              </button>
+            )}
+          </div>
+          <button
+            className="flex items-center gap-1.5 px-4 py-2 rounded text-sm font-semibold transition-colors shrink-0"
+            style={{ background: "hsl(224 76% 33%)", color: "#fff" }}
+          >
+            <Plus className="w-4 h-4" /> Novo
+          </button>
+        </div>
       </div>
 
       {/* Table */}
