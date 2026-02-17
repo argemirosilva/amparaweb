@@ -6,45 +6,64 @@ import { Ear } from "lucide-react";
 import GradientIcon from "@/components/ui/gradient-icon";
 
 const DAY_KEYS = ["dom", "seg", "ter", "qua", "qui", "sex", "sab"] as const;
+const DAY_LABELS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"] as const;
 
 interface Period { inicio: string; fim: string }
 
 type MonitoringState =
   | { type: "monitoring"; inicio: string; fim: string }
   | { type: "monitoring_no_window" }
-  | { type: "next"; inicio: string }
-  | { type: "outside" }
-  | { type: "done_today" };
+  | { type: "next_today"; inicio: string }
+  | { type: "next_other_day"; dayLabel: string; inicio: string }
+  | { type: "no_schedule" };
 
 function toMinutes(time: string): number {
   const [h, m] = time.split(":").map(Number);
   return h * 60 + m;
 }
 
-function resolveState(periods: Period[]): MonitoringState {
-  if (!periods || periods.length === 0) return { type: "outside" };
+function getSPNow(): Date {
+  return new Date(new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
+}
 
-  const now = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
+function resolveState(allPeriods: Record<string, Period[]> | null): MonitoringState {
+  if (!allPeriods) return { type: "no_schedule" };
+
+  const now = getSPNow();
   const nowMin = now.getHours() * 60 + now.getMinutes();
+  const todayIdx = now.getDay();
+  const todayKey = DAY_KEYS[todayIdx];
+  const todayPeriods = allPeriods[todayKey] ?? [];
 
-  for (const p of periods) {
+  // Check if currently in a period
+  for (const p of todayPeriods) {
     if (nowMin >= toMinutes(p.inicio) && nowMin < toMinutes(p.fim)) {
       return { type: "monitoring", inicio: p.inicio, fim: p.fim };
     }
   }
 
-  const upcoming = periods
+  // Check for upcoming period today
+  const upcoming = todayPeriods
     .filter(p => toMinutes(p.inicio) > nowMin)
     .sort((a, b) => toMinutes(a.inicio) - toMinutes(b.inicio));
 
-  if (upcoming.length > 0) return { type: "next", inicio: upcoming[0].inicio };
+  if (upcoming.length > 0) {
+    return { type: "next_today", inicio: upcoming[0].inicio };
+  }
 
-  // All periods for today have passed
-  return { type: "done_today" };
-}
+  // Look ahead up to 7 days for the next period
+  for (let offset = 1; offset <= 7; offset++) {
+    const dayIdx = (todayIdx + offset) % 7;
+    const dayKey = DAY_KEYS[dayIdx];
+    const periods = allPeriods[dayKey] ?? [];
+    if (periods.length > 0) {
+      const sorted = [...periods].sort((a, b) => toMinutes(a.inicio) - toMinutes(b.inicio));
+      const label = offset === 1 ? "amanhã" : DAY_LABELS[dayIdx];
+      return { type: "next_other_day", dayLabel: label, inicio: sorted[0].inicio };
+    }
+  }
 
-function formatTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  return { type: "no_schedule" };
 }
 
 export default function MonitoringStatusCard() {
@@ -62,12 +81,8 @@ export default function MonitoringStatusCard() {
       .maybeSingle();
 
     const periodos = scheduleRes.data?.periodos_semana as unknown as Record<string, Period[]> | null;
-    const todayKey = DAY_KEYS[new Date(new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" })).getDay()];
-    const todayPeriods = periodos?.[todayKey] ?? [];
 
-    // Always resolve state from the schedule, not from active sessions
-    setState(resolveState(todayPeriods));
-
+    setState(resolveState(periodos));
     setLoading(false);
   }, [usuario]);
 
@@ -112,19 +127,19 @@ export default function MonitoringStatusCard() {
               até {state.fim}
             </p>
           )}
-          {state?.type === "next" && (
+          {state?.type === "next_today" && (
             <p className="text-xs font-medium text-blue-600">
-              Inicia o monitoramento às {state.inicio}
+              Próximo período hoje às {state.inicio}
             </p>
           )}
-          {state?.type === "done_today" && (
+          {state?.type === "next_other_day" && (
             <p className="text-xs font-medium text-blue-600">
-              Sem mais períodos para hoje
+              Próximo período {state.dayLabel} às {state.inicio}
             </p>
           )}
-          {state?.type === "outside" && (
-            <p className="text-xs font-medium text-blue-600">
-              Fora do período de monitoramento
+          {state?.type === "no_schedule" && (
+            <p className="text-xs font-medium text-muted-foreground">
+              Nenhum período agendado
             </p>
           )}
         </div>
