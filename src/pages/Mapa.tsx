@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { useMapDeviceData } from "@/hooks/useMapDeviceData";
 import { useMovementStatus } from "@/hooks/useMovementStatus";
 import { useMapbox } from "@/hooks/useMapbox";
+import { enhancePOILayers } from "@/hooks/useMapPOI";
 import { Loader2, MapPin, Locate, Signal, Satellite, Navigation } from "lucide-react";
 import type mapboxgl from "mapbox-gl";
 
@@ -105,12 +106,7 @@ export default function Mapa() {
 
     map.on("load", () => {
       mapLoadedRef.current = true;
-      // Force POI layers visible from zoom 10
-      map.getStyle().layers.forEach((layer) => {
-        if (layer.id.includes("poi") || layer.id.includes("label")) {
-          try { map.setLayerZoomRange(layer.id, 10, 24); } catch {}
-        }
-      });
+      enhancePOILayers(map);
     });
 
     
@@ -249,11 +245,7 @@ export default function Mapa() {
 
     mapRef.current.once("style.load", () => {
       mapLoadedRef.current = true;
-      mapRef.current!.getStyle().layers.forEach((layer) => {
-        if (layer.id.includes("poi") || layer.id.includes("label")) {
-          try { mapRef.current!.setLayerZoomRange(layer.id, 10, 24); } catch {}
-        }
-      });
+      enhancePOILayers(mapRef.current!);
     });
   }, [isSatellite]);
 
