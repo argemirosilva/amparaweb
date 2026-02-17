@@ -70,7 +70,7 @@ export default function Mapa() {
   const [isSatellite, setIsSatellite] = useState(false);
   const [webglError, setWebglError] = useState<string | null>(null);
   const mapLoadedRef = useRef(false);
-  const [offScreenInfo, setOffScreenInfo] = useState<{ x: number; y: number; angle: number; cardinal: string } | null>(null);
+  const [offScreenInfo, setOffScreenInfo] = useState<{ angle: number; cardinal: string } | null>(null);
 
   // Refresh relative timestamps every 15s (no need for 3s – data comes via realtime)
   useEffect(() => {
@@ -216,15 +216,12 @@ export default function Mapa() {
         const cx = w / 2;
         const cy = h / 2;
         const angle = Math.atan2(point.y - cy, point.x - cx);
-        // Clamp to viewport edges
-        const ex = Math.max(pad, Math.min(w - pad, point.x));
-        const ey = Math.max(pad, Math.min(h - pad, point.y));
-        // Cardinal from geographic bearing
+
         const bearing = map.getBearing();
         const geoBearing = (Math.atan2(point.x - cx, -(point.y - cy)) * 180 / Math.PI + bearing + 360) % 360;
         const cardinals = ["N", "NE", "L", "SE", "S", "SO", "O", "NO"];
         const cardinal = cardinals[Math.round(geoBearing / 45) % 8];
-        setOffScreenInfo({ x: ex, y: ey, angle: angle * 180 / Math.PI, cardinal });
+        setOffScreenInfo({ angle: angle * 180 / Math.PI, cardinal });
       }
     };
 
@@ -282,13 +279,8 @@ export default function Mapa() {
         {offScreenInfo && data && (
           <button
             onClick={recenter}
-            className="absolute z-20 transition-all duration-200"
-            style={{
-              left: offScreenInfo.x,
-              top: offScreenInfo.y,
-              transform: `translate(-50%, -50%)`,
-            }}
-            title="Ir para o marcador"
+            className="absolute z-20 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+            aria-label="Centralizar no marcador"
           >
             <div className="relative w-12 h-12 rounded-full bg-primary/90 backdrop-blur-md shadow-2xl flex flex-col items-center justify-center border-2 border-white/30 animate-pulse">
               <span className="text-[10px] font-bold text-white leading-none">{offScreenInfo.cardinal}</span>
