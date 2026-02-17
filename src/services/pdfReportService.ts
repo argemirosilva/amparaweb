@@ -333,8 +333,8 @@ export async function generateMunicipioPDF(period: string) {
   doc.save(`relatorio-municipio-${format(new Date(), "yyyy-MM-dd")}.pdf`);
 }
 
-// ============ RELATÓRIO DE CONFORMIDADE ============
-export async function generateConformidadePDF(period: string) {
+// ============ RELATÓRIO DE ALERTAS E EMERGÊNCIAS ============
+export async function generateAlertasPDF(period: string) {
   const days = getPeriodDays(period);
   const since = new Date(Date.now() - days * 86400000).toISOString();
 
@@ -344,7 +344,7 @@ export async function generateConformidadePDF(period: string) {
   ]);
 
   const doc = new jsPDF();
-  let y = addHeader(doc, "Relatório de Conformidade", "Verificação de cumprimento de SLAs e prazos", getPeriodLabel(period));
+  let y = addHeader(doc, "Relatório de Alertas e Emergências", "Análise detalhada de alertas de pânico e padrões de acionamento", getPeriodLabel(period));
 
   const totalAlertas = (alertas || []).length;
   const alertasAtivos = (alertas || []).filter((a) => a.status === "ativo").length;
@@ -352,27 +352,28 @@ export async function generateConformidadePDF(period: string) {
   const comNotificacao = (alertas || []).filter((a) => a.guardioes_notificados).length;
   const comAutoridades = (alertas || []).filter((a) => a.autoridades_acionadas).length;
   const canceladosDentroJanela = (alertas || []).filter((a) => a.cancelado_dentro_janela).length;
+  const comGPS = (alertas || []).filter((a) => a.latitude && a.longitude).length;
 
+  // KPIs
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(...DARK_TEXT);
-  doc.text("Indicadores de Conformidade", 14, y);
+  doc.text("Indicadores de Emergência", 14, y);
   y += 6;
-
-  const conformData = [
-    ["Total de Alertas no Período", String(totalAlertas)],
-    ["Alertas Ativos (pendentes)", String(alertasAtivos)],
-    ["Alertas Cancelados", String(alertasCancelados)],
-    ["Cancelados dentro da janela de segurança", String(canceladosDentroJanela)],
-    ["Guardiões Notificados", `${comNotificacao} (${totalAlertas ? ((comNotificacao / totalAlertas) * 100).toFixed(1) : 0}%)`],
-    ["Autoridades Acionadas", `${comAutoridades} (${totalAlertas ? ((comAutoridades / totalAlertas) * 100).toFixed(1) : 0}%)`],
-    ["Usuárias Ativas", String(totalUsuarias || 0)],
-  ];
 
   autoTable(doc, {
     startY: y,
-    head: [["Métrica", "Valor"]],
-    body: conformData,
+    head: [["Indicador", "Valor"]],
+    body: [
+      ["Total de Alertas no Período", String(totalAlertas)],
+      ["Alertas Ativos (pendentes)", String(alertasAtivos)],
+      ["Alertas Cancelados", String(alertasCancelados)],
+      ["Cancelados dentro da janela de segurança", String(canceladosDentroJanela)],
+      ["Guardiões Notificados", `${comNotificacao} (${totalAlertas ? ((comNotificacao / totalAlertas) * 100).toFixed(1) : 0}%)`],
+      ["Autoridades Acionadas", `${comAutoridades} (${totalAlertas ? ((comAutoridades / totalAlertas) * 100).toFixed(1) : 0}%)`],
+      ["Alertas com Geolocalização", `${comGPS} (${totalAlertas ? ((comGPS / totalAlertas) * 100).toFixed(1) : 0}%)`],
+      ["Usuárias Ativas no Sistema", String(totalUsuarias || 0)],
+    ],
     theme: "grid",
     headStyles: { fillColor: BRAND_COLOR, fontSize: 9 },
     bodyStyles: { fontSize: 9, textColor: DARK_TEXT },
@@ -382,7 +383,7 @@ export async function generateConformidadePDF(period: string) {
 
   y = (doc as any).lastAutoTable.finalY + 10;
 
-  // Breakdown by acionamento type
+  // By acionamento type
   const tipoAcionamento: Record<string, number> = {};
   (alertas || []).forEach((a) => {
     const tipo = a.tipo_acionamento || "não informado";
@@ -398,36 +399,71 @@ export async function generateConformidadePDF(period: string) {
   autoTable(doc, {
     startY: y,
     head: [["Tipo", "Quantidade", "Percentual"]],
-    body: Object.entries(tipoAcionamento).map(([tipo, count]) => [
-      tipo.charAt(0).toUpperCase() + tipo.slice(1),
-      String(count),
-      `${((count / (totalAlertas || 1)) * 100).toFixed(1)}%`,
-    ]),
+    body: Object.entries(tipoAcionamento)
+      .sort(([, a], [, b]) => b - a)
+      .map(([tipo, count]) => [
+        tipo.charAt(0).toUpperCase() + tipo.slice(1),
+        String(count),
+        `${((count / (totalAlertas || 1)) * 100).toFixed(1)}%`,
+      ]),
     theme: "grid",
     headStyles: { fillColor: BRAND_COLOR, fontSize: 9 },
     bodyStyles: { fontSize: 9, textColor: DARK_TEXT },
     margin: { left: 14, right: 14 },
   });
 
-  // SLA Analysis
   y = (doc as any).lastAutoTable.finalY + 10;
+
+  // Tempo médio de cancelamento
+  const tempos = (alertas || [])
+    .filter((a) => a.tempo_ate_cancelamento_segundos != null)
+    .map((a) => a.tempo_ate_cancelamento_segundos!);
+  const tempoMedio = tempos.length ? (tempos.reduce((a, b) => a + b, 0) / tempos.length).toFixed(0) : "—";
+  const tempoMin = tempos.length ? Math.min(...tempos) : 0;
+  const tempoMax = tempos.length ? Math.max(...tempos) : 0;
+
+  if (y > 230) { addFooter(doc, doc.getNumberOfPages()); doc.addPage(); y = 20; }
 
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(...DARK_TEXT);
-  doc.text("Análise de SLA", 14, y);
+  doc.text("Tempos de Cancelamento (segundos)", 14, y);
   y += 6;
-
-  const slaData = [
-    ["SLA de notificação de guardiões (< 60s)", comNotificacao > 0 ? "✓ Cumprido" : "— Sem dados suficientes"],
-    ["SLA de acionamento de autoridades (< 5min)", comAutoridades > 0 ? "✓ Cumprido" : "— Sem dados suficientes"],
-    ["Taxa de cancelamento dentro da janela", `${canceladosDentroJanela}/${alertasCancelados} cancelamentos`],
-  ];
 
   autoTable(doc, {
     startY: y,
-    head: [["SLA", "Status"]],
-    body: slaData,
+    head: [["Métrica", "Valor"]],
+    body: [
+      ["Tempo médio até cancelamento", `${tempoMedio}s`],
+      ["Tempo mínimo", `${tempoMin}s`],
+      ["Tempo máximo", `${tempoMax}s`],
+      ["Total de cancelamentos com tempo registrado", String(tempos.length)],
+    ],
+    theme: "grid",
+    headStyles: { fillColor: BRAND_COLOR, fontSize: 9 },
+    bodyStyles: { fontSize: 9, textColor: DARK_TEXT },
+    columnStyles: { 0: { fontStyle: "bold", cellWidth: 120 } },
+    margin: { left: 14, right: 14 },
+  });
+
+  // Distribuição por dia da semana
+  y = (doc as any).lastAutoTable.finalY + 10;
+  if (y > 230) { addFooter(doc, doc.getNumberOfPages()); doc.addPage(); y = 20; }
+
+  const diasSemana = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
+  const porDia: number[] = [0, 0, 0, 0, 0, 0, 0];
+  (alertas || []).forEach((a) => { porDia[new Date(a.criado_em).getDay()]++; });
+
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(...DARK_TEXT);
+  doc.text("Distribuição por Dia da Semana", 14, y);
+  y += 6;
+
+  autoTable(doc, {
+    startY: y,
+    head: [["Dia", "Alertas", "Percentual"]],
+    body: diasSemana.map((dia, i) => [dia, String(porDia[i]), `${((porDia[i] / (totalAlertas || 1)) * 100).toFixed(1)}%`]),
     theme: "grid",
     headStyles: { fillColor: BRAND_COLOR, fontSize: 9 },
     bodyStyles: { fontSize: 9, textColor: DARK_TEXT },
@@ -435,12 +471,132 @@ export async function generateConformidadePDF(period: string) {
   });
 
   const totalPages = doc.getNumberOfPages();
-  for (let i = 1; i <= totalPages; i++) {
-    doc.setPage(i);
-    addFooter(doc, i);
-  }
+  for (let i = 1; i <= totalPages; i++) { doc.setPage(i); addFooter(doc, i); }
+  doc.save(`relatorio-alertas-${format(new Date(), "yyyy-MM-dd")}.pdf`);
+}
 
-  doc.save(`relatorio-conformidade-${format(new Date(), "yyyy-MM-dd")}.pdf`);
+// ============ RELATÓRIO DE MONITORAMENTO E GRAVAÇÕES ============
+export async function generateMonitoramentoPDF(period: string) {
+  const days = getPeriodDays(period);
+  const since = new Date(Date.now() - days * 86400000).toISOString();
+
+  const [
+    { data: sessoes, count: totalSessoes },
+    { data: gravacoes, count: totalGravacoes },
+    { count: totalAnalises },
+    { data: segmentos },
+  ] = await Promise.all([
+    supabase.from("monitoramento_sessoes").select("*", { count: "exact" }).gte("created_at", since),
+    supabase.from("gravacoes").select("*", { count: "exact" }).gte("created_at", since),
+    supabase.from("gravacoes_analises").select("*", { count: "exact", head: true }).gte("created_at", since),
+    supabase.from("gravacoes_segmentos").select("duracao_segundos, tamanho_mb").gte("created_at", since),
+  ]);
+
+  const doc = new jsPDF();
+  let y = addHeader(doc, "Relatório de Monitoramento e Gravações", "Sessões, gravações processadas e cobertura de análise de IA", getPeriodLabel(period));
+
+  // KPIs
+  const totalDuracao = (sessoes || []).reduce((acc, s) => acc + (s.total_duration_seconds || 0), 0);
+  const totalSegmentos = (sessoes || []).reduce((acc, s) => acc + (s.total_segments || 0), 0);
+  const sessoesAtivas = (sessoes || []).filter((s) => s.status === "ativa").length;
+  const sessoesFinalizadas = (sessoes || []).filter((s) => s.status === "finalizada" || s.closed_at).length;
+
+  const gravProcessadas = (gravacoes || []).filter((g) => g.status === "processada").length;
+  const gravPendentes = (gravacoes || []).filter((g) => g.status === "pendente").length;
+  const gravErro = (gravacoes || []).filter((g) => g.status === "erro").length;
+  const totalMB = (segmentos || []).reduce((acc, s) => acc + (s.tamanho_mb || 0), 0);
+  const coberturaIA = (totalGravacoes || 0) > 0 ? (((totalAnalises || 0) / (totalGravacoes || 1)) * 100).toFixed(1) : "0";
+
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(...DARK_TEXT);
+  doc.text("Indicadores de Monitoramento", 14, y);
+  y += 6;
+
+  autoTable(doc, {
+    startY: y,
+    head: [["Indicador", "Valor"]],
+    body: [
+      ["Total de Sessões", String(totalSessoes || 0)],
+      ["Sessões Ativas", String(sessoesAtivas)],
+      ["Sessões Finalizadas", String(sessoesFinalizadas)],
+      ["Total de Segmentos", String(totalSegmentos)],
+      ["Duração Total de Monitoramento", `${(totalDuracao / 3600).toFixed(1)} horas`],
+      ["Total de Gravações", String(totalGravacoes || 0)],
+      ["Gravações Processadas", String(gravProcessadas)],
+      ["Gravações Pendentes", String(gravPendentes)],
+      ["Gravações com Erro", String(gravErro)],
+      ["Análises de IA Realizadas", String(totalAnalises || 0)],
+      ["Cobertura de IA", `${coberturaIA}%`],
+      ["Volume Total de Áudio", `${totalMB.toFixed(1)} MB`],
+    ],
+    theme: "grid",
+    headStyles: { fillColor: BRAND_COLOR, fontSize: 9 },
+    bodyStyles: { fontSize: 9, textColor: DARK_TEXT },
+    columnStyles: { 0: { fontStyle: "bold", cellWidth: 120 } },
+    margin: { left: 14, right: 14 },
+  });
+
+  y = (doc as any).lastAutoTable.finalY + 10;
+  if (y > 230) { addFooter(doc, doc.getNumberOfPages()); doc.addPage(); y = 20; }
+
+  // Status das gravações
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(...DARK_TEXT);
+  doc.text("Distribuição de Status das Gravações", 14, y);
+  y += 6;
+
+  const statusCount: Record<string, number> = {};
+  (gravacoes || []).forEach((g) => { statusCount[g.status] = (statusCount[g.status] || 0) + 1; });
+
+  autoTable(doc, {
+    startY: y,
+    head: [["Status", "Quantidade", "Percentual"]],
+    body: Object.entries(statusCount)
+      .sort(([, a], [, b]) => b - a)
+      .map(([status, count]) => [
+        status.charAt(0).toUpperCase() + status.slice(1),
+        String(count),
+        `${(((count) / ((totalGravacoes || 1))) * 100).toFixed(1)}%`,
+      ]),
+    theme: "grid",
+    headStyles: { fillColor: BRAND_COLOR, fontSize: 9 },
+    bodyStyles: { fontSize: 9, textColor: DARK_TEXT },
+    margin: { left: 14, right: 14 },
+  });
+
+  // Origem das sessões
+  y = (doc as any).lastAutoTable.finalY + 10;
+  if (y > 230) { addFooter(doc, doc.getNumberOfPages()); doc.addPage(); y = 20; }
+
+  const origemCount: Record<string, number> = {};
+  (sessoes || []).forEach((s) => {
+    const origem = s.origem || "não informada";
+    origemCount[origem] = (origemCount[origem] || 0) + 1;
+  });
+
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(...DARK_TEXT);
+  doc.text("Sessões por Origem", 14, y);
+  y += 6;
+
+  autoTable(doc, {
+    startY: y,
+    head: [["Origem", "Quantidade"]],
+    body: Object.entries(origemCount)
+      .sort(([, a], [, b]) => b - a)
+      .map(([origem, count]) => [origem.charAt(0).toUpperCase() + origem.slice(1), String(count)]),
+    theme: "grid",
+    headStyles: { fillColor: BRAND_COLOR, fontSize: 9 },
+    bodyStyles: { fontSize: 9, textColor: DARK_TEXT },
+    margin: { left: 14, right: 14 },
+  });
+
+  const totalPages = doc.getNumberOfPages();
+  for (let i = 1; i <= totalPages; i++) { doc.setPage(i); addFooter(doc, i); }
+  doc.save(`relatorio-monitoramento-${format(new Date(), "yyyy-MM-dd")}.pdf`);
 }
 
 // ============ CSV EXPORT ============
@@ -490,11 +646,23 @@ export async function exportCSV(type: string, period: string) {
       .forEach((c) => {
         csvContent += `"${c.cidade}",${c.uf},${c.monitoradas},${c.eventos},${c.emergencias}\n`;
       });
-  } else {
+  } else if (type === "alertas") {
     const { data: alertas } = await supabase.from("alertas_panico").select("*").gte("criado_em", since);
-    csvContent = "Data,Status,Tipo Acionamento,Guardiões Notificados,Autoridades Acionadas\n";
+    csvContent = "Data,Status,Tipo Acionamento,Guardiões Notificados,Autoridades Acionadas,Cancelado Dentro Janela,Tempo Cancelamento (s),Latitude,Longitude\n";
     (alertas || []).forEach((a) => {
-      csvContent += `${format(new Date(a.criado_em), "dd/MM/yyyy HH:mm")},${a.status},${a.tipo_acionamento || ""},${a.guardioes_notificados},${a.autoridades_acionadas}\n`;
+      csvContent += `${format(new Date(a.criado_em), "dd/MM/yyyy HH:mm")},${a.status},${a.tipo_acionamento || ""},${a.guardioes_notificados},${a.autoridades_acionadas},${a.cancelado_dentro_janela || ""},${a.tempo_ate_cancelamento_segundos || ""},${a.latitude || ""},${a.longitude || ""}\n`;
+    });
+  } else {
+    const [{ data: sessoes }, { data: gravacoes }] = await Promise.all([
+      supabase.from("monitoramento_sessoes").select("iniciado_em, status, total_duration_seconds, total_segments, origem").gte("created_at", since),
+      supabase.from("gravacoes").select("created_at, status, duracao_segundos, tamanho_mb").gte("created_at", since),
+    ]);
+    csvContent = "Tipo,Data,Status,Duração (s),Segmentos/Tamanho (MB),Origem\n";
+    (sessoes || []).forEach((s) => {
+      csvContent += `Sessão,${format(new Date(s.iniciado_em), "dd/MM/yyyy HH:mm")},${s.status},${s.total_duration_seconds},${s.total_segments},${s.origem || ""}\n`;
+    });
+    (gravacoes || []).forEach((g) => {
+      csvContent += `Gravação,${format(new Date(g.created_at), "dd/MM/yyyy HH:mm")},${g.status},${g.duracao_segundos || ""},${g.tamanho_mb || ""},\n`;
     });
   }
 
