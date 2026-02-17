@@ -166,20 +166,58 @@ export default function AdminIntegracoes() {
 
     // Textarea for long text fields (prompts)
     if (TEXTAREA_KEYS.has(s.chave)) {
+      const lineCount = currentValue.split("\n").length;
       return (
         <div className="flex flex-col gap-2">
+          {/* Prompt editor header */}
+          <div
+            className="flex items-center gap-2 px-3 py-1.5 rounded-t-md border border-b-0"
+            style={{
+              background: "hsl(220 20% 16%)",
+              borderColor: "hsl(220 13% 30%)",
+            }}
+          >
+            <div className="flex gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full" style={{ background: "hsl(0 70% 55%)" }} />
+              <span className="w-2.5 h-2.5 rounded-full" style={{ background: "hsl(45 80% 55%)" }} />
+              <span className="w-2.5 h-2.5 rounded-full" style={{ background: "hsl(130 50% 50%)" }} />
+            </div>
+            <span
+              className="text-[10px] font-medium tracking-wider uppercase ml-2"
+              style={{ color: "hsl(220 10% 60%)", fontFamily: "'JetBrains Mono', 'Fira Code', 'SF Mono', Menlo, monospace" }}
+            >
+              system_prompt.txt
+            </span>
+            <span
+              className="ml-auto text-[10px]"
+              style={{ color: "hsl(220 10% 50%)", fontFamily: "'JetBrains Mono', 'Fira Code', 'SF Mono', Menlo, monospace" }}
+            >
+              {lineCount} linhas · {currentValue.length} chars
+            </span>
+          </div>
           <textarea
             style={{
-              ...inputStyle,
-              maxWidth: "100%",
+              border: "1px solid hsl(220 13% 30%)",
+              borderTop: "none",
+              borderRadius: "0 0 6px 6px",
+              padding: "12px 16px",
+              fontSize: 12.5,
+              outline: "none",
+              fontFamily: "'JetBrains Mono', 'Fira Code', 'SF Mono', Menlo, monospace",
+              color: "hsl(150 60% 80%)",
+              background: "hsl(220 20% 12%)",
               width: "100%",
-              minHeight: 200,
-              maxHeight: 400,
+              minHeight: 280,
+              maxHeight: 500,
               resize: "vertical",
-              lineHeight: 1.5,
+              lineHeight: 1.7,
+              tabSize: 2,
+              whiteSpace: "pre-wrap",
+              wordBreak: "break-word",
             }}
             value={currentValue}
             onChange={(e) => handleChange(s.id, e.target.value)}
+            spellCheck={false}
           />
           {isModified && (
             <div className="flex gap-2 justify-end">
