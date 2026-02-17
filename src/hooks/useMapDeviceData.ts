@@ -64,6 +64,14 @@ interface ProfileCache {
   endereco_fixo: string | null;
 }
 
+/** Preload avatar image into browser cache so marker renders instantly */
+function preloadImage(url: string | null) {
+  if (!url) return;
+  const img = new Image();
+  img.crossOrigin = "anonymous";
+  img.src = url;
+}
+
 export function useMapDeviceData(): MapDeviceResult {
   const { usuario } = useAuth();
   const [data, setData] = useState<MapDeviceData | null>(null);
@@ -82,8 +90,10 @@ export function useMapDeviceData(): MapDeviceResult {
         .eq("id", usuario.id)
         .single();
       if (profile) {
+        const avatarUrl = profile.avatar_url || usuario.avatar_url || null;
+        preloadImage(avatarUrl);
         profileRef.current = {
-          avatarUrl: profile.avatar_url || usuario.avatar_url || null,
+          avatarUrl,
           firstName: (profile.nome_completo || usuario.nome_completo || "").split(" ")[0],
           homeAddress: {
             logradouro: profile.endereco_logradouro,
