@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import GovStatusBadge from "@/components/institucional/GovStatusBadge";
+import { useMapbox } from "@/hooks/useMapbox";
 
 const fontStyle = { fontFamily: "Inter, Roboto, sans-serif" };
 
@@ -53,8 +54,8 @@ function getLevelLabel(value: number, max: number): { status: "verde" | "amarelo
 
 export default function TransparenciaMapa() {
   const mapContainer = useRef<HTMLDivElement>(null);
-  const mapModuleRef = useRef<any>(null);
   const mapRef = useRef<any>(null);
+  const { mapboxgl: mapboxglInstance, loading: mbLoading } = useMapbox();
   const [mapLoaded, setMapLoaded] = useState(false);
   const [selectedUf, setSelectedUf] = useState<string | null>(null);
   const [period, setPeriod] = useState("90d");
@@ -200,92 +201,54 @@ export default function TransparenciaMapa() {
 
   // Init map
   useEffect(() => {
-    async function initMap() {
-      if (!mapContainer.current || mapRef.current) return;
+    if (!mapContainer.current || mapRef.current || !mapboxglInstance) return;
 
-      const mb = await import("mapbox-gl");
-      const mapboxgl = mb.default;
-      mapModuleRef.current = mapboxgl;
+    const brazilBounds: [[number, number], [number, number]] = [
+      [-75, -35],
+      [-28, 6],
+    ];
 
-      const tokenRes = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/mapbox-token`,
-        { headers: { apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY } }
-      );
-
-      let token = "";
-      if (tokenRes.ok) {
-        const data = await tokenRes.json();
-        token = data.token;
-      }
-      if (!token) {
-        console.warn("Mapbox token not available");
-        return;
-      }
-
-      mapboxgl.accessToken = token;
-
-      const brazilBounds: [[number, number], [number, number]] = [
-        [-75, -35], // SW
-        [-28, 6],   // NE
-      ];
-
-      const map = new mapboxgl.Map({
-        container: mapContainer.current,
-        style: {
-          version: 8,
-          name: "Brazil Clean",
-          glyphs: "mapbox://fonts/mapbox/{fontstack}/{range}.pbf",
-          sources: {
-            "simple-tiles": {
-              type: "raster",
-              tiles: [
-                "https://a.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}@2x.png",
-                "https://b.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}@2x.png",
-                "https://c.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}@2x.png",
-              ],
-              tileSize: 256,
-            },
+    const map = new mapboxglInstance.Map({
+      container: mapContainer.current,
+      style: {
+        version: 8,
+        name: "Brazil Clean",
+        glyphs: "mapbox://fonts/mapbox/{fontstack}/{range}.pbf",
+        sources: {
+          "simple-tiles": {
+            type: "raster",
+            tiles: [
+              "https://a.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}@2x.png",
+              "https://b.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}@2x.png",
+              "https://c.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}@2x.png",
+            ],
+            tileSize: 256,
           },
-          layers: [
-            {
-              id: "simple-tiles-layer",
-              type: "raster",
-              source: "simple-tiles",
-              minzoom: 0,
-              maxzoom: 22,
-            },
-          ],
         },
-        center: [-52, -15],
-        zoom: 3.2,
-        maxBounds: brazilBounds,
-        minZoom: 2.8,
-        fitBoundsOptions: { padding: 40 },
-      });
+        layers: [
+          { id: "simple-tiles-layer", type: "raster", source: "simple-tiles", minzoom: 0, maxzoom: 22 },
+        ],
+      },
+      center: [-52, -15],
+      zoom: 3.2,
+      maxBounds: brazilBounds,
+      minZoom: 2.8,
+      fitBoundsOptions: { padding: 40 },
+    });
 
-      // Fit Brazil fully in view after load
-      const brazilFitBounds: [[number, number], [number, number]] = [
-        [-73.5, -33.7], // SW corner of Brazil
-        [-34.8, 5.3],   // NE corner of Brazil
-      ];
-      map.once("load", () => {
-        map.fitBounds(brazilFitBounds, { padding: 30, duration: 0 });
-      });
+    map.once("load", () => {
+      map.fitBounds([[-73.5, -33.7], [-34.8, 5.3]], { padding: 30, duration: 0 });
+    });
 
-      map.addControl(new mapboxgl.NavigationControl(), "top-right");
+    map.addControl(new mapboxglInstance.NavigationControl(), "top-right");
+    map.on("load", () => { setMapLoaded(true); });
+    mapRef.current = map;
 
-      map.on("load", () => {
-        setMapLoaded(true);
-      });
-      mapRef.current = map;
-    }
-
-    initMap();
     return () => {
       mapRef.current?.remove();
       mapRef.current = null;
     };
-  }, []);
+  }, [mapboxglInstance]);
 
   // Update choropleth when data or geojson changes
   useEffect(() => {
@@ -436,9 +399,8 @@ export default function TransparenciaMapa() {
       });
 
       // Tooltip popup
-      const mapboxgl = mapModuleRef.current;
-      if (!mapboxgl) return;
-      const popup = new mapboxgl.Popup({
+      if (!mapboxglInstance) return;
+      const popup = new mapboxglInstance.Popup({
         closeButton: false,
         closeOnClick: false,
         className: "state-tooltip",

@@ -1,9 +1,9 @@
-/// <reference types="google.maps" />
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useMapDeviceData } from "@/hooks/useMapDeviceData";
 import { useMovementStatus } from "@/hooks/useMovementStatus";
-import { useGoogleMaps } from "@/hooks/useGoogleMaps";
+import { useMapbox } from "@/hooks/useMapbox";
 import { Loader2, MapPin, Locate, Signal } from "lucide-react";
+import type mapboxgl from "mapbox-gl";
 
 function formatRelativeTime(isoDate: string): string {
   const diff = Date.now() - new Date(isoDate).getTime();
@@ -16,7 +16,7 @@ function formatRelativeTime(isoDate: string): string {
   return `${days}d`;
 }
 
-const MARKER_STYLE_ID = "ampara-gmap-nav-styles";
+const MARKER_STYLE_ID = "ampara-mbx-nav-styles";
 function injectStyles() {
   if (document.getElementById(MARKER_STYLE_ID)) return;
   const style = document.createElement("style");
@@ -34,21 +34,55 @@ function injectStyles() {
   document.head.appendChild(style);
 }
 
-/** Smoothly animate AdvancedMarkerElement position */
+const DARK_STYLE = {
+  version: 8 as const,
+  name: "Ampara Dark",
+  glyphs: "mapbox://fonts/mapbox/{fontstack}/{range}.pbf",
+  sources: {
+    "dark-tiles": {
+      type: "raster" as const,
+      tiles: [
+        "https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
+        "https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
+      ],
+      tileSize: 256,
+    },
+  },
+  layers: [
+    { id: "dark-tiles-layer", type: "raster" as const, source: "dark-tiles", minzoom: 0, maxzoom: 22 },
+  ],
+};
+
+/** Generate a GeoJSON circle polygon */
+function createCircleGeoJSON(center: [number, number], radiusMeters: number, steps = 64) {
+  const coords: [number, number][] = [];
+  const km = radiusMeters / 1000;
+  for (let i = 0; i <= steps; i++) {
+    const angle = (i / steps) * 2 * Math.PI;
+    const dx = km * Math.cos(angle);
+    const dy = km * Math.sin(angle);
+    const lat = center[1] + (dy / 111.32);
+    const lng = center[0] + (dx / (111.32 * Math.cos(center[1] * (Math.PI / 180))));
+    coords.push([lng, lat]);
+  }
+  return { type: "Feature" as const, geometry: { type: "Polygon" as const, coordinates: [coords] }, properties: {} };
+}
+
+/** Smoothly animate marker position */
 function smoothPanMarker(
-  marker: google.maps.marker.AdvancedMarkerElement,
-  from: google.maps.LatLngLiteral,
-  to: google.maps.LatLngLiteral,
+  marker: mapboxgl.Marker,
+  from: [number, number],
+  to: [number, number],
   duration = 800,
 ) {
   const start = performance.now();
   function step(now: number) {
     const t = Math.min((now - start) / duration, 1);
     const ease = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
-    marker.position = {
-      lat: from.lat + (to.lat - from.lat) * ease,
-      lng: from.lng + (to.lng - from.lng) * ease,
-    };
+    marker.setLngLat([
+      from[0] + (to[0] - from[0]) * ease,
+      from[1] + (to[1] - from[1]) * ease,
+    ]);
     if (t < 1) requestAnimationFrame(step);
   }
   requestAnimationFrame(step);
@@ -56,15 +90,15 @@ function smoothPanMarker(
 
 export default function Mapa() {
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<google.maps.Map | null>(null);
-  const markerRef = useRef<google.maps.marker.AdvancedMarkerElement | null>(null);
-  const accuracyCircleRef = useRef<google.maps.Circle | null>(null);
-  const prevPosRef = useRef<google.maps.LatLngLiteral | null>(null);
+  const mapRef = useRef<mapboxgl.Map | null>(null);
+  const markerRef = useRef<mapboxgl.Marker | null>(null);
+  const prevPosRef = useRef<[number, number] | null>(null);
   const { data, loading, error } = useMapDeviceData();
   const { update: updateMovement } = useMovementStatus();
-  const { maps, loading: mapsLoading, error: mapsError } = useGoogleMaps();
+  const { mapboxgl, loading: mapsLoading, error: mapsError } = useMapbox();
   const [tick, setTick] = useState(0);
   const [following, setFollowing] = useState(true);
+  const mapLoadedRef = useRef(false);
 
   // Refresh every 3s for GPS feel
   useEffect(() => {
@@ -75,35 +109,33 @@ export default function Mapa() {
   // Init map
   useEffect(() => {
     injectStyles();
-    if (!mapContainerRef.current || mapRef.current || !maps) return;
+    if (!mapContainerRef.current || mapRef.current || !mapboxgl) return;
 
-    mapRef.current = new maps.Map(mapContainerRef.current, {
-      center: { lat: -15.78, lng: -47.93 },
+    const map = new mapboxgl.Map({
+      container: mapContainerRef.current,
+      style: DARK_STYLE,
+      center: [-47.93, -15.78],
       zoom: 4,
-      mapId: "ampara-main-map",
-      disableDefaultUI: true,
-      zoomControl: true,
-      streetViewControl: false,
-      mapTypeControl: false,
-      fullscreenControl: false,
-      gestureHandling: "greedy",
+      attributionControl: false,
     });
 
-    return () => {
-      mapRef.current = null;
-    };
-  }, [maps]);
+    map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "top-right");
 
-  // Stop following on drag
-  useEffect(() => {
-    if (!mapRef.current || !maps) return;
-    const listener = mapRef.current.addListener("dragstart", () => setFollowing(false));
-    return () => google.maps.event.removeListener(listener);
-  }, [maps, mapRef.current]);
+    map.on("load", () => { mapLoadedRef.current = true; });
+    map.on("dragstart", () => setFollowing(false));
+
+    mapRef.current = map;
+
+    return () => {
+      map.remove();
+      mapRef.current = null;
+      mapLoadedRef.current = false;
+    };
+  }, [mapboxgl]);
 
   // Update marker with smooth animation
   useEffect(() => {
-    if (!mapRef.current || !data || !maps) return;
+    if (!mapRef.current || !data || !mapboxgl) return;
 
     const recentLocation = Date.now() - new Date(data.created_at).getTime() < 60_000;
 
@@ -112,46 +144,55 @@ export default function Mapa() {
       : `<div class="ampara-nav-placeholder">${data.firstName.charAt(0).toUpperCase()}</div>`;
     const dotClass = data.panicActive ? "ampara-nav-dot ampara-nav-dot-panic" : recentLocation ? "ampara-nav-dot ampara-nav-dot-active" : "ampara-nav-dot";
 
-    const content = document.createElement("div");
-    content.innerHTML = `
+    const el = document.createElement("div");
+    el.innerHTML = `
       <div class="ampara-nav-marker">
         <div class="${dotClass}">${imgHtml}</div>
         <div class="ampara-nav-arrow"></div>
       </div>
     `;
 
-    const position = { lat: data.latitude, lng: data.longitude };
+    const position: [number, number] = [data.longitude, data.latitude];
 
     if (markerRef.current) {
       const from = prevPosRef.current || position;
       smoothPanMarker(markerRef.current, from, position, 800);
-      markerRef.current.content = content;
+      // Update visual
+      const markerEl = markerRef.current.getElement();
+      markerEl.innerHTML = "";
+      markerEl.appendChild(el.firstElementChild!);
     } else {
-      markerRef.current = new maps.marker.AdvancedMarkerElement({
-        map: mapRef.current,
-        position,
-        content,
-      });
+      markerRef.current = new mapboxgl.Marker({ element: el, anchor: "bottom" })
+        .setLngLat(position)
+        .addTo(mapRef.current);
       mapRef.current.setZoom(17);
     }
 
     // Accuracy circle
     const accuracy = data.precisao_metros ?? 20;
-    if (accuracyCircleRef.current) {
-      accuracyCircleRef.current.setCenter(position);
-      accuracyCircleRef.current.setRadius(accuracy);
-    } else {
-      accuracyCircleRef.current = new maps.Circle({
-        map: mapRef.current,
-        center: position,
-        radius: accuracy,
-        fillColor: data.panicActive ? "#ef4444" : "#3b82f6",
-        fillOpacity: 0.08,
-        strokeColor: data.panicActive ? "#ef4444" : "#3b82f6",
-        strokeOpacity: 0.25,
-        strokeWeight: 1.5,
-        clickable: false,
-      });
+    const circleData = createCircleGeoJSON(position, accuracy);
+    const fillColor = data.panicActive ? "#ef4444" : "#3b82f6";
+
+    if (mapLoadedRef.current || mapRef.current.isStyleLoaded()) {
+      if (mapRef.current.getSource("accuracy")) {
+        (mapRef.current.getSource("accuracy") as any).setData(circleData);
+        mapRef.current.setPaintProperty("accuracy-fill", "fill-color", fillColor);
+        mapRef.current.setPaintProperty("accuracy-outline", "line-color", fillColor);
+      } else {
+        mapRef.current.addSource("accuracy", { type: "geojson", data: circleData as any });
+        mapRef.current.addLayer({
+          id: "accuracy-fill",
+          type: "fill",
+          source: "accuracy",
+          paint: { "fill-color": fillColor, "fill-opacity": 0.08 },
+        });
+        mapRef.current.addLayer({
+          id: "accuracy-outline",
+          type: "line",
+          source: "accuracy",
+          paint: { "line-color": fillColor, "line-opacity": 0.25, "line-width": 1.5 },
+        });
+      }
     }
 
     if (following) {
@@ -159,12 +200,12 @@ export default function Mapa() {
     }
 
     prevPosRef.current = position;
-  }, [data, maps, tick, following]);
+  }, [data, mapboxgl, tick, following]);
 
   const recenter = useCallback(() => {
     if (!mapRef.current || !data) return;
     setFollowing(true);
-    mapRef.current.panTo({ lat: data.latitude, lng: data.longitude });
+    mapRef.current.panTo([data.longitude, data.latitude]);
     mapRef.current.setZoom(17);
   }, [data]);
 

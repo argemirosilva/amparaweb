@@ -1,8 +1,7 @@
-/// <reference types="google.maps" />
 import { useEffect, useRef } from "react";
-import { useGoogleMaps } from "@/hooks/useGoogleMaps";
+import { useMapbox } from "@/hooks/useMapbox";
 
-interface MiniGoogleMapProps {
+interface MiniMapProps {
   latitude: number;
   longitude: number;
   avatarUrl?: string | null;
@@ -11,7 +10,7 @@ interface MiniGoogleMapProps {
   locationTimestamp?: string | null;
 }
 
-const STYLE_ID = "mini-gmap-marker-styles";
+const STYLE_ID = "mini-mbx-marker-styles";
 function injectStyles() {
   if (document.getElementById(STYLE_ID)) return;
   const style = document.createElement("style");
@@ -30,24 +29,43 @@ function injectStyles() {
   document.head.appendChild(style);
 }
 
-export default function MiniLeafletMap({ latitude, longitude, avatarUrl, firstName = "", panicActive = false, locationTimestamp }: MiniGoogleMapProps) {
+const DARK_STYLE = {
+  version: 8 as const,
+  name: "Ampara Dark Mini",
+  glyphs: "mapbox://fonts/mapbox/{fontstack}/{range}.pbf",
+  sources: {
+    "dark-tiles": {
+      type: "raster" as const,
+      tiles: [
+        "https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
+        "https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
+      ],
+      tileSize: 256,
+    },
+  },
+  layers: [
+    { id: "dark-tiles-layer", type: "raster" as const, source: "dark-tiles", minzoom: 0, maxzoom: 22 },
+  ],
+};
+
+export default function MiniLeafletMap({ latitude, longitude, avatarUrl, firstName = "", panicActive = false, locationTimestamp }: MiniMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<google.maps.Map | null>(null);
-  const markerRef = useRef<google.maps.marker.AdvancedMarkerElement | null>(null);
-  const { maps } = useGoogleMaps();
+  const mapRef = useRef<mapboxgl.Map | null>(null);
+  const markerRef = useRef<mapboxgl.Marker | null>(null);
+  const { mapboxgl, loading } = useMapbox();
 
   useEffect(() => {
     injectStyles();
-    if (!containerRef.current || !maps) return;
+    if (!containerRef.current || !mapboxgl || loading) return;
 
     if (!mapRef.current) {
-      mapRef.current = new maps.Map(containerRef.current, {
-        center: { lat: latitude, lng: longitude },
+      mapRef.current = new mapboxgl.Map({
+        container: containerRef.current,
+        style: DARK_STYLE,
+        center: [longitude, latitude],
         zoom: 16,
-        mapId: "ampara-mini-map",
-        disableDefaultUI: true,
-        gestureHandling: "none",
-        keyboardShortcuts: false,
+        interactive: false,
+        attributionControl: false,
       });
     }
 
@@ -61,37 +79,39 @@ export default function MiniLeafletMap({ latitude, longitude, avatarUrl, firstNa
 
     const pulseClass = panicActive ? "mini-marker-panic" : recentLocation ? "mini-marker-active" : "";
 
-    const content = document.createElement("div");
-    content.innerHTML = `
+    const el = document.createElement("div");
+    el.innerHTML = `
       <div class="mini-marker ${pulseClass}">
         <div class="mini-marker-ring">${imgHtml}</div>
         <div class="mini-marker-label">${firstName}</div>
       </div>
     `;
 
-    const position = { lat: latitude, lng: longitude };
-
     if (markerRef.current) {
-      markerRef.current.position = position;
-      markerRef.current.content = content;
+      markerRef.current.setLngLat([longitude, latitude]);
+      // Replace element content
+      const markerEl = markerRef.current.getElement();
+      markerEl.innerHTML = "";
+      markerEl.appendChild(el.firstElementChild!);
     } else {
-      markerRef.current = new maps.marker.AdvancedMarkerElement({
-        map: mapRef.current,
-        position,
-        content,
-      });
+      markerRef.current = new mapboxgl.Marker({ element: el, anchor: "bottom" })
+        .setLngLat([longitude, latitude])
+        .addTo(mapRef.current);
     }
 
-    mapRef.current.setCenter(position);
+    mapRef.current.setCenter([longitude, latitude]);
 
     return () => {
       if (markerRef.current) {
-        markerRef.current.map = null;
+        markerRef.current.remove();
         markerRef.current = null;
       }
-      mapRef.current = null;
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
     };
-  }, [latitude, longitude, avatarUrl, firstName, panicActive, maps, locationTimestamp]);
+  }, [latitude, longitude, avatarUrl, firstName, panicActive, mapboxgl, loading, locationTimestamp]);
 
   return (
     <div
