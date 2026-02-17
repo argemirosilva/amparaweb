@@ -34,22 +34,8 @@ function injectStyles() {
   document.head.appendChild(style);
 }
 
-const STYLE_STREETS = "mapbox://styles/mapbox/navigation-day-v1";
+const STYLE_STREETS = "mapbox://styles/mapbox/streets-v12";
 const STYLE_SATELLITE = "mapbox://styles/mapbox/satellite-streets-v12";
-
-/** Make all POI / landmark / place layers visible and lower their min-zoom so they appear earlier */
-function showAllPOIs(map: mapboxgl.Map) {
-  const style = map.getStyle();
-  if (!style?.layers) return;
-  for (const layer of style.layers) {
-    const id = layer.id.toLowerCase();
-    const isPOI = id.includes("poi") || id.includes("place") || id.includes("label") || id.includes("transit") || id.includes("airport") || id.includes("park") || id.includes("building") || id.includes("landuse") || id.includes("hospital") || id.includes("school") || id.includes("police") || id.includes("fire") || id.includes("church") || id.includes("shop");
-    if (isPOI) {
-      map.setLayoutProperty(layer.id, "visibility", "visible");
-      try { map.setLayerZoomRange(layer.id, 0, 24); } catch {}
-    }
-  }
-}
 
 /** Generate a GeoJSON circle polygon */
 function createCircleGeoJSON(center: [number, number], radiusMeters: number, steps = 64) {
@@ -99,7 +85,7 @@ export default function Mapa() {
   const [isSatellite, setIsSatellite] = useState(false);
   const [webglError, setWebglError] = useState<string | null>(null);
   const mapLoadedRef = useRef(false);
-  const [mapState, setMapState] = useState({ zoom: 16, pitch: 0, bearing: 0, center: [-47.93, -15.78] as [number, number] });
+  
 
   // Refresh every 3s for GPS feel
   useEffect(() => {
@@ -134,18 +120,7 @@ export default function Mapa() {
 
     map.on("load", () => {
       mapLoadedRef.current = true;
-      // Maximize POI visibility for emergency reference
-      showAllPOIs(map);
     });
-
-    const updateMapState = () => {
-      const c = map.getCenter();
-      setMapState({ zoom: map.getZoom(), pitch: map.getPitch(), bearing: map.getBearing(), center: [c.lng, c.lat] });
-    };
-    map.on("moveend", updateMapState);
-    map.on("zoomend", updateMapState);
-    map.on("pitchend", updateMapState);
-    map.on("move", updateMapState);
 
     map.on("dragstart", () => setFollowing(false));
 
@@ -164,9 +139,10 @@ export default function Mapa() {
 
     const recentLocation = Date.now() - new Date(data.created_at).getTime() < 60_000;
 
+    const initial = data.firstName.charAt(0).toUpperCase();
     const imgHtml = data.avatarUrl
-      ? `<img src="${data.avatarUrl}" class="ampara-nav-img" alt="${data.firstName}" />`
-      : `<div class="ampara-nav-placeholder">${data.firstName.charAt(0).toUpperCase()}</div>`;
+      ? `<img src="${data.avatarUrl}" class="ampara-nav-img" alt="${data.firstName}" crossorigin="anonymous" onerror="this.style.display='none';this.parentElement.insertAdjacentHTML('beforeend','<div class=ampara-nav-placeholder>${initial}</div>')" />`
+      : `<div class="ampara-nav-placeholder">${initial}</div>`;
     const dotClass = data.panicActive ? "ampara-nav-dot ampara-nav-dot-panic" : recentLocation ? "ampara-nav-dot ampara-nav-dot-active" : "ampara-nav-dot";
 
     const el = document.createElement("div");
@@ -247,7 +223,6 @@ export default function Mapa() {
 
     mapRef.current.once("style.load", () => {
       mapLoadedRef.current = true;
-      showAllPOIs(mapRef.current!);
     });
   }, [isSatellite]);
 
