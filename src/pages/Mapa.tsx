@@ -204,8 +204,8 @@ export default function Mapa() {
   const isRecent = data ? Date.now() - new Date(data.created_at).getTime() < 60_000 : false;
 
   return (
-    <div className="relative w-full flex-1 flex flex-col">
-      <div className="relative w-full flex-1 rounded-2xl overflow-hidden border border-border">
+    <div className="relative w-full flex-1 flex flex-col min-h-0">
+      <div className="relative w-full flex-1 rounded-2xl overflow-hidden border border-border" style={{ minHeight: "calc(100vh - 10rem)" }}>
         <div ref={mapContainerRef} className="absolute inset-0 z-0" />
 
         {isLoading && (
