@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { useMapDeviceData } from "@/hooks/useMapDeviceData";
 import { useMovementStatus } from "@/hooks/useMovementStatus";
 import { useMapbox } from "@/hooks/useMapbox";
-import { Loader2, MapPin, Locate, Signal, Box, Map, Satellite } from "lucide-react";
+import { Loader2, MapPin, Locate, Signal, Satellite } from "lucide-react";
 import type mapboxgl from "mapbox-gl";
 
 function formatRelativeTime(isoDate: string): string {
@@ -34,7 +34,7 @@ function injectStyles() {
   document.head.appendChild(style);
 }
 
-const STYLE_STREETS = "mapbox://styles/mapbox/streets-v12";
+const STYLE_STREETS = "mapbox://styles/mapbox/navigation-day-v1";
 const STYLE_SATELLITE = "mapbox://styles/mapbox/satellite-streets-v12";
 
 /** Generate a GeoJSON circle polygon */
@@ -82,7 +82,6 @@ export default function Mapa() {
   const { mapboxgl, loading: mapsLoading, error: mapsError } = useMapbox();
   const [tick, setTick] = useState(0);
   const [following, setFollowing] = useState(true);
-  const [is3D, setIs3D] = useState(true);
   const [isSatellite, setIsSatellite] = useState(false);
   const [webglError, setWebglError] = useState<string | null>(null);
   const mapLoadedRef = useRef(false);
@@ -106,8 +105,8 @@ export default function Mapa() {
         center: [-47.93, -15.78],
         zoom: 4,
         attributionControl: false,
-        pitch: 45,
-        bearing: -10,
+        pitch: 0,
+        bearing: 0,
         failIfMajorPerformanceCaveat: false,
       });
     } catch (e) {
@@ -120,30 +119,6 @@ export default function Mapa() {
 
     map.on("load", () => {
       mapLoadedRef.current = true;
-
-      // Add 3D building extrusions
-      const layers = map.getStyle().layers;
-      const labelLayerId = layers?.find(
-        (layer) => layer.type === "symbol" && (layer.layout as any)?.["text-field"]
-      )?.id;
-
-      map.addLayer(
-        {
-          id: "3d-buildings",
-          source: "composite",
-          "source-layer": "building",
-          filter: ["==", "extrude", "true"],
-          type: "fill-extrusion",
-          minzoom: 14,
-          paint: {
-            "fill-extrusion-color": "#ddd",
-            "fill-extrusion-height": ["interpolate", ["linear"], ["zoom"], 14, 0, 14.5, ["get", "height"]],
-            "fill-extrusion-base": ["interpolate", ["linear"], ["zoom"], 14, 0, 14.5, ["get", "min_height"]],
-            "fill-extrusion-opacity": 0.7,
-          },
-        },
-        labelLayerId
-      );
     });
 
     map.on("dragstart", () => setFollowing(false));
@@ -191,7 +166,7 @@ export default function Mapa() {
       markerRef.current = new mapboxgl.Marker({ element: el, anchor: "bottom" })
         .setLngLat(position)
         .addTo(mapRef.current);
-      mapRef.current.flyTo({ center: position, zoom: 15, pitch: 45, bearing: -10, duration: 1500 });
+      mapRef.current.flyTo({ center: position, zoom: 16, duration: 1500 });
     }
 
     // Accuracy circle
@@ -231,19 +206,8 @@ export default function Mapa() {
   const recenter = useCallback(() => {
     if (!mapRef.current || !data) return;
     setFollowing(true);
-    mapRef.current.flyTo({ center: [data.longitude, data.latitude], zoom: 15, duration: 800 });
+    mapRef.current.flyTo({ center: [data.longitude, data.latitude], zoom: 16, duration: 800 });
   }, [data]);
-
-  const toggle3D = useCallback(() => {
-    if (!mapRef.current) return;
-    if (is3D) {
-      mapRef.current.easeTo({ pitch: 0, bearing: 0, duration: 500 });
-      setIs3D(false);
-    } else {
-      mapRef.current.easeTo({ pitch: 45, bearing: -10, duration: 500 });
-      setIs3D(true);
-    }
-  }, [is3D]);
 
   const toggleSatellite = useCallback(() => {
     if (!mapRef.current) return;
@@ -251,32 +215,8 @@ export default function Mapa() {
     mapRef.current.setStyle(newStyle);
     setIsSatellite(!isSatellite);
 
-    // Re-add 3D buildings after style change
     mapRef.current.once("style.load", () => {
       mapLoadedRef.current = true;
-      const layers = mapRef.current!.getStyle().layers;
-      const labelLayerId = layers?.find(
-        (layer) => layer.type === "symbol" && (layer.layout as any)?.["text-field"]
-      )?.id;
-      if (!mapRef.current!.getLayer("3d-buildings")) {
-        mapRef.current!.addLayer(
-          {
-            id: "3d-buildings",
-            source: "composite",
-            "source-layer": "building",
-            filter: ["==", "extrude", "true"],
-            type: "fill-extrusion",
-            minzoom: 14,
-            paint: {
-              "fill-extrusion-color": isSatellite ? "#ddd" : "#aaa",
-              "fill-extrusion-height": ["interpolate", ["linear"], ["zoom"], 14, 0, 14.5, ["get", "height"]],
-              "fill-extrusion-base": ["interpolate", ["linear"], ["zoom"], 14, 0, 14.5, ["get", "min_height"]],
-              "fill-extrusion-opacity": 0.7,
-            },
-          },
-          labelLayerId
-        );
-      }
     });
   }, [isSatellite]);
 
@@ -320,19 +260,10 @@ export default function Mapa() {
           </button>
         )}
 
-        {/* 2D/3D toggle button */}
-        <button
-          onClick={toggle3D}
-          className="absolute right-3 bottom-44 z-10 w-10 h-10 rounded-full bg-black/70 backdrop-blur-md border border-white/10 shadow-xl flex items-center justify-center text-white hover:bg-black/90 transition-all active:scale-95"
-          title={is3D ? "Visão 2D" : "Visão 3D"}
-        >
-          {is3D ? <Map className="w-4 h-4" /> : <Box className="w-4 h-4" />}
-        </button>
-
         {/* Satellite toggle button */}
         <button
           onClick={toggleSatellite}
-          className="absolute right-3 bottom-56 z-10 w-10 h-10 rounded-full bg-black/70 backdrop-blur-md border border-white/10 shadow-xl flex items-center justify-center text-white hover:bg-black/90 transition-all active:scale-95"
+          className="absolute right-3 bottom-44 z-10 w-10 h-10 rounded-full bg-black/70 backdrop-blur-md border border-white/10 shadow-xl flex items-center justify-center text-white hover:bg-black/90 transition-all active:scale-95"
           title={isSatellite ? "Mapa" : "Satélite"}
         >
           <Satellite className="w-4 h-4" />
