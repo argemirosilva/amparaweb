@@ -79,21 +79,7 @@ interface UserInfo {
   avatar_url: string | null;
 }
 
-const STYLE_STREETS = "mapbox://styles/mapbox/navigation-day-v1";
-
-/** Make all POI / landmark / place layers visible and lower their min-zoom */
-function showAllPOIs(map: mapboxgl.Map) {
-  const style = map.getStyle();
-  if (!style?.layers) return;
-  for (const layer of style.layers) {
-    const id = layer.id.toLowerCase();
-    const isPOI = id.includes("poi") || id.includes("place") || id.includes("label") || id.includes("transit") || id.includes("airport") || id.includes("park") || id.includes("building") || id.includes("landuse") || id.includes("hospital") || id.includes("school") || id.includes("police") || id.includes("fire") || id.includes("church") || id.includes("shop");
-    if (isPOI) {
-      map.setLayoutProperty(layer.id, "visibility", "visible");
-      try { map.setLayerZoomRange(layer.id, 0, 24); } catch {}
-    }
-  }
-}
+const STYLE_STREETS = "mapbox://styles/mapbox/streets-v12";
 
 function createCircleGeoJSON(center: [number, number], radiusMeters: number, steps = 64) {
   const coords: [number, number][] = [];
@@ -282,7 +268,7 @@ export default function Rastreamento() {
         pitch: 0,
         bearing: 0,
       });
-      mapRef.current.on("load", () => { mapLoadedRef.current = true; showAllPOIs(mapRef.current!); });
+      mapRef.current.on("load", () => { mapLoadedRef.current = true; });
       mapRef.current.on("dragstart", () => setFollowing(false));
     }
 
