@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { useMapDeviceData } from "@/hooks/useMapDeviceData";
 import { useMovementStatus } from "@/hooks/useMovementStatus";
 import { useMapbox } from "@/hooks/useMapbox";
-import { Loader2, MapPin, Locate, Signal, Satellite } from "lucide-react";
+import { Loader2, MapPin, Locate, Signal, Satellite, Navigation } from "lucide-react";
 import type mapboxgl from "mapbox-gl";
 
 function formatRelativeTime(isoDate: string): string {
@@ -81,11 +81,10 @@ export default function Mapa() {
   const { update: updateMovement } = useMovementStatus();
   const { mapboxgl, loading: mapsLoading, error: mapsError } = useMapbox();
   const [tick, setTick] = useState(0);
-  const [following, setFollowing] = useState(true);
   const [isSatellite, setIsSatellite] = useState(false);
   const [webglError, setWebglError] = useState<string | null>(null);
   const mapLoadedRef = useRef(false);
-  
+  const [arrowAngle, setArrowAngle] = useState<number | null>(null); // null = marker is on screen
 
   // Refresh every 3s for GPS feel
   useEffect(() => {
@@ -122,7 +121,7 @@ export default function Mapa() {
       mapLoadedRef.current = true;
     });
 
-    map.on("dragstart", () => setFollowing(false));
+    
 
     mapRef.current = map;
 
@@ -235,16 +234,39 @@ export default function Mapa() {
       }
     }
 
-    if (following) {
-      mapRef.current.easeTo({ center: position, duration: 300 });
-    }
-
     prevPosRef.current = position;
-  }, [data, mapboxgl, tick, following]);
+  }, [data, mapboxgl, tick]);
+
+  // Track whether marker is off-screen and compute arrow angle
+  useEffect(() => {
+    if (!mapRef.current || !data) return;
+    const map = mapRef.current;
+
+    const checkVisibility = () => {
+      const point = map.project([data.longitude, data.latitude]);
+      const canvas = map.getCanvas();
+      const w = canvas.clientWidth;
+      const h = canvas.clientHeight;
+      const margin = 40;
+
+      if (point.x >= margin && point.x <= w - margin && point.y >= margin && point.y <= h - margin) {
+        setArrowAngle(null);
+      } else {
+        // Angle from center of screen to marker
+        const cx = w / 2;
+        const cy = h / 2;
+        const angle = Math.atan2(point.y - cy, point.x - cx) * (180 / Math.PI);
+        setArrowAngle(angle);
+      }
+    };
+
+    checkVisibility();
+    map.on("move", checkVisibility);
+    return () => { map.off("move", checkVisibility); };
+  }, [data]);
 
   const recenter = useCallback(() => {
     if (!mapRef.current || !data) return;
-    setFollowing(true);
     mapRef.current.flyTo({ center: [data.longitude, data.latitude], zoom: 16, duration: 800 });
   }, [data]);
 
@@ -286,6 +308,24 @@ export default function Mapa() {
             <MapPin className="w-10 h-10 text-muted-foreground" />
             <p className="text-sm text-muted-foreground">{displayError}</p>
           </div>
+        )}
+
+        {/* Directional arrow when marker is off-screen */}
+        {arrowAngle !== null && data && (
+          <button
+            onClick={recenter}
+            className="absolute z-20 transition-all duration-300"
+            style={{
+              left: `calc(50% + ${Math.cos(arrowAngle * Math.PI / 180) * Math.min(45, 45)}%)`,
+              top: `calc(50% + ${Math.sin(arrowAngle * Math.PI / 180) * Math.min(40, 40)}%)`,
+              transform: `translate(-50%, -50%) rotate(${arrowAngle + 90}deg)`,
+            }}
+            title="Ir para o marcador"
+          >
+            <div className="w-12 h-12 rounded-full bg-primary/90 backdrop-blur-md shadow-2xl flex items-center justify-center border-2 border-white/30 animate-pulse">
+              <Navigation className="w-5 h-5 text-white fill-white" />
+            </div>
+          </button>
         )}
 
         {/* Re-center button - always visible */}
