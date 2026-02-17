@@ -67,6 +67,7 @@ export default function AdminMapa() {
   const [showDevices, setShowDevices] = useState(true);
   const [loading, setLoading] = useState(false);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
+  const [period, setPeriod] = useState<"24h" | "7d" | "30d">("7d");
 
   // Summary counts
   const totalUsuarios = Object.values(stats).reduce((a, s) => a + s.usuarios, 0);
@@ -95,6 +96,9 @@ export default function AdminMapa() {
   const fetchData = useCallback(async () => {
     setLoading(true);
 
+    const periodHours = { "24h": 24, "7d": 168, "30d": 720 }[period];
+    const since = new Date(Date.now() - periodHours * 60 * 60 * 1000).toISOString();
+
     const [
       { data: users },
       { data: deviceData },
@@ -103,8 +107,8 @@ export default function AdminMapa() {
     ] = await Promise.all([
       supabase.from("usuarios").select("id, nome_completo, endereco_uf, endereco_lat, endereco_lon, status"),
       supabase.from("device_status").select("*").order("updated_at", { ascending: false }),
-      supabase.from("alertas_panico").select("*").eq("status", "ativo").order("criado_em", { ascending: false }).limit(50),
-      supabase.from("localizacoes").select("user_id, latitude, longitude, created_at").order("created_at", { ascending: false }).limit(200),
+      supabase.from("alertas_panico").select("*").gte("criado_em", since).order("criado_em", { ascending: false }).limit(50),
+      supabase.from("localizacoes").select("user_id, latitude, longitude, created_at").gte("created_at", since).order("created_at", { ascending: false }).limit(200),
     ]);
 
     const userMap: Record<string, { nome: string; uf: string; lat: number | null; lng: number | null }> = {};
@@ -200,7 +204,7 @@ export default function AdminMapa() {
 
     setLastRefresh(new Date());
     setLoading(false);
-  }, []);
+  }, [period]);
 
   useEffect(() => {
     fetchData();
@@ -504,15 +508,34 @@ export default function AdminMapa() {
             Mapa Operacional
           </h1>
         </div>
-        <button
-          onClick={fetchData}
-          disabled={loading}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-md border text-xs font-medium transition-colors hover:bg-gray-50 disabled:opacity-50"
-          style={{ borderColor: "hsl(220 13% 91%)", color: "hsl(220 9% 46%)" }}
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
-          Atualizar
-        </button>
+        <div className="flex items-center gap-2">
+          <div className="flex gap-1">
+            {([["24h", "24h"], ["7d", "7 dias"], ["30d", "30 dias"]] as const).map(([key, label]) => (
+              <button
+                key={key}
+                onClick={() => setPeriod(key)}
+                className="px-3 py-1.5 text-xs rounded-md border transition-colors"
+                style={{
+                  borderColor: period === key ? "hsl(224 76% 33%)" : "hsl(220 13% 91%)",
+                  background: period === key ? "hsl(224 76% 33%)" : "transparent",
+                  color: period === key ? "#fff" : "hsl(220 9% 46%)",
+                  fontWeight: period === key ? 600 : 400,
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={fetchData}
+            disabled={loading}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md border text-xs font-medium transition-colors hover:bg-gray-50 disabled:opacity-50"
+            style={{ borderColor: "hsl(220 13% 91%)", color: "hsl(220 9% 46%)" }}
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
+            Atualizar
+          </button>
+        </div>
       </div>
 
       {/* Summary cards */}
