@@ -32,6 +32,7 @@ import AdminUsuarios from "./pages/admin/AdminUsuarios";
 import AdminAuditoria from "./pages/admin/AdminAuditoria";
 import AdminRelatorios from "./pages/admin/AdminRelatorios";
 import AdminPlaceholder from "./pages/admin/AdminPlaceholder";
+import AdminMapa from "./pages/admin/AdminMapa";
 import AdminOrgaos from "./pages/admin/AdminOrgaos";
 import AdminConfiguracoes from "./pages/admin/AdminConfiguracoes";
 import AdminLogin from "./pages/admin/AdminLogin";
@@ -74,7 +75,7 @@ const App = () => (
               <Route path="/admin/usuarios" element={<AdminUsuarios />} />
               <Route path="/admin/auditoria" element={<AdminAuditoria />} />
               <Route path="/admin/relatorios" element={<AdminRelatorios />} />
-              <Route path="/admin/mapa" element={<AdminPlaceholder />} />
+              <Route path="/admin/mapa" element={<AdminMapa />} />
               <Route path="/admin/orgaos" element={<AdminOrgaos />} />
               <Route path="/admin/configuracoes" element={<AdminConfiguracoes />} />
             </Route>

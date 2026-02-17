@@ -21,3 +21,9 @@
   --gov-orange: 20 91% 40%;
   --gov-red: 0 73% 42%;
 }
+
+/* Pulse animation for alert markers */
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.5); }
+  50% { box-shadow: 0 0 0 8px rgba(220, 38, 38, 0); }
+}
