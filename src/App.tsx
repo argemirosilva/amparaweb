@@ -27,6 +27,7 @@ import TransparenciaMapa from "./pages/transparencia/TransparenciaMapa";
 import TransparenciaMetodologia from "./pages/transparencia/TransparenciaMetodologia";
 import TransparenciaDadosAbertos from "./pages/transparencia/TransparenciaDadosAbertos";
 import AdminLayout from "./components/institucional/AdminLayout";
+import ProtectedAdminRoute from "./components/institucional/ProtectedAdminRoute";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminUsuarios from "./pages/admin/AdminUsuarios";
 import AdminAuditoria from "./pages/admin/AdminAuditoria";
@@ -78,8 +79,8 @@ const App = () => (
               <Route path="/admin/relatorios" element={<AdminRelatorios />} />
               <Route path="/admin/mapa" element={<AdminMapa />} />
               <Route path="/admin/orgaos" element={<AdminOrgaos />} />
-              <Route path="/admin/configuracoes" element={<AdminConfiguracoes />} />
-              <Route path="/admin/integracoes" element={<AdminIntegracoes />} />
+              <Route path="/admin/configuracoes" element={<ProtectedAdminRoute requiredRole="admin_master"><AdminConfiguracoes /></ProtectedAdminRoute>} />
+              <Route path="/admin/integracoes" element={<ProtectedAdminRoute requiredRole="admin_master"><AdminIntegracoes /></ProtectedAdminRoute>} />
             </Route>
             <Route path="/suporte" element={<Suporte />} />
             <Route path="/privacidade" element={<Privacidade />} />

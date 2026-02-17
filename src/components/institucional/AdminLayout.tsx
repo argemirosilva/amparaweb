@@ -18,6 +18,8 @@ import {
 import amparaLogo from "@/assets/ampara-logo.png";
 import { useState } from "react";
 
+const TECNICO_PATHS = ["/admin/configuracoes", "/admin/integracoes"];
+
 const sidebarItems = [
   { label: "Dashboard", path: "/admin", icon: LayoutDashboard },
   { label: "Mapa Agregado", path: "/admin/mapa", icon: Map },
@@ -33,7 +35,8 @@ export default function AdminLayout() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { logout, usuario } = useAuth();
-  const { roles } = useAdminRole();
+  const { roles, hasRole } = useAdminRole();
+  const isTecnico = hasRole("admin_master");
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const handleLogout = async () => {
@@ -79,7 +82,7 @@ export default function AdminLayout() {
               {usuario?.nome_completo || "Administrador"}
             </p>
             <p className="text-xs uppercase" style={{ color: "hsl(220 9% 46%)" }}>
-              {roles[0]?.replace("_", " ") || "—"}
+              {hasRole("admin_master") ? "Técnico" : "Operacional"}
             </p>
           </div>
           <button
@@ -103,7 +106,9 @@ export default function AdminLayout() {
           style={{ background: "hsl(0 0% 100%)", borderColor: "hsl(220 13% 91%)" }}
         >
           <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
-            {sidebarItems.map((item) => {
+            {sidebarItems
+              .filter((item) => !TECNICO_PATHS.includes(item.path) || isTecnico)
+              .map((item) => {
               const isActive = pathname === item.path || (item.path !== "/admin" && pathname.startsWith(item.path));
               const Icon = item.icon;
               return (
