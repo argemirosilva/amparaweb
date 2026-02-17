@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { useDeviceStatus } from "@/hooks/useDeviceStatus";
 import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Smartphone, Clock, BatteryFull, BatteryMedium, BatteryLow, BatteryCharging, Wifi, WifiOff, MapPin, X, Mic, AlertTriangle } from "lucide-react";
+import { Smartphone, Clock, BatteryFull, BatteryMedium, BatteryLow, BatteryCharging, Wifi, WifiOff, MapPin, Mic, AlertTriangle } from "lucide-react";
 import GradientIcon from "@/components/ui/gradient-icon";
-import MiniLeafletMap from "./MiniLeafletMap";
 
 function timeSince(date: string): string {
   const s = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
@@ -59,9 +59,8 @@ function formatDateTime(iso: string): string {
 export default function DeviceStatusCard() {
   const { device, location, geo, addressLoading, loading, error } = useDeviceStatus();
   const { usuario } = useAuth();
+  const navigate = useNavigate();
   const firstName = (usuario?.nome_completo || "").split(" ")[0];
-  const avatarUrl = usuario?.avatar_url || null;
-  const [showMap, setShowMap] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const counterStartRef = useRef<number | null>(null);
   const prevActiveRef = useRef(false);
@@ -180,7 +179,7 @@ export default function DeviceStatusCard() {
               : false;
             return (
               <button
-                onClick={() => setShowMap(true)}
+                onClick={() => navigate("/mapa")}
                 className={`inline-flex items-center gap-1 text-[10px] font-medium transition-colors ${
                   panicActive
                     ? "text-destructive"
@@ -217,58 +216,6 @@ export default function DeviceStatusCard() {
         )}
       </div>
 
-      {/* Location overlay */}
-      {showMap && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setShowMap(false)}>
-          <div className="bg-card rounded-2xl shadow-xl w-full max-w-sm overflow-hidden" onClick={(e) => e.stopPropagation()}>
-            {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-border">
-              <div className="flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-primary" />
-                <span className="text-sm font-semibold text-foreground">Última localização</span>
-              </div>
-              <button onClick={() => setShowMap(false)} className="text-muted-foreground hover:text-foreground transition-colors">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Content */}
-            <div className="p-4">
-              {location ? (
-                <div className="space-y-3">
-                  <MiniLeafletMap
-                    latitude={location.latitude}
-                    longitude={location.longitude}
-                    avatarUrl={avatarUrl}
-                    firstName={firstName}
-                    panicActive={panicActive}
-                    locationTimestamp={location.created_at}
-                  />
-
-                  {/* Address */}
-                  <div className="space-y-1">
-                    <p className="text-sm text-foreground font-medium">
-                      {addressLoading ? "Localizando endereço..." : (geo?.display_address || "Endereço indisponível")}
-                    </p>
-                    <p className="text-[11px] text-muted-foreground">
-                      {formatDateTime(location.created_at)}
-                    </p>
-                    <p className="text-[10px] text-muted-foreground/70">
-                      {location.latitude.toFixed(5)}, {location.longitude.toFixed(5)}
-                      {location.precisao_metros != null && ` · ±${Math.round(location.precisao_metros)}m`}
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-8 gap-2">
-                  <MapPin className="w-8 h-8 text-muted-foreground/50" />
-                  <p className="text-sm text-muted-foreground text-center">Nenhuma localização recebida</p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 }
