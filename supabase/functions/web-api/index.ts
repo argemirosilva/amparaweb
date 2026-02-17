@@ -943,9 +943,14 @@ serve(async (req) => {
         // Delete analysis
         await supabase.from("gravacoes_analises").delete().eq("gravacao_id", gravacao_id);
 
-        // Delete storage file if exists
+        // Delete audio file from R2
         if (grav.storage_path) {
-          await supabase.storage.from("gravacoes").remove([grav.storage_path]);
+          try {
+            const r2 = getR2Client();
+            await r2.fetch(r2Url(grav.storage_path), { method: "DELETE" });
+          } catch (e) {
+            console.error("R2 delete error:", e);
+          }
         }
 
         // Delete recording
