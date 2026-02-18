@@ -207,6 +207,11 @@ export default function AdminDashboard() {
         ))}
       </div>
 
+      {/* Map */}
+      <div className="mb-6">
+        <DashboardMapCard />
+      </div>
+
       {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <GovKpiCard title="Monitoradas Ativas" value={kpis.monitoradas} icon={Users} />
@@ -253,11 +258,6 @@ export default function AdminDashboard() {
             )}
           </div>
         </div>
-      </div>
-
-      {/* Map */}
-      <div className="mb-6">
-        <DashboardMapCard />
       </div>
 
       {/* Row 2: Alert Type */}
