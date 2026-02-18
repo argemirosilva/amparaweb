@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import GovStatusBadge from "@/components/institucional/GovStatusBadge";
 import { Plus, X, Search, ChevronLeft, ChevronRight, Building2, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 const fontStyle = { fontFamily: "Inter, Roboto, sans-serif" };
 const PAGE_SIZE_OPTIONS = [25, 50, 100] as const;
@@ -28,6 +29,7 @@ interface TenantOption {
 
 export default function AdminUsuarios() {
   const { sessionToken } = useAuth();
+  const { toast } = useToast();
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [drawerUser, setDrawerUser] = useState<UserRow | null>(null);
@@ -517,6 +519,7 @@ export default function AdminUsuarios() {
                         });
                         const data = await res.json();
                         if (res.ok && data.success) {
+                          toast({ title: "Usuário atualizado", description: "As alterações foram salvas com sucesso." });
                           setEditMode(false);
                           setDrawerUser(null);
                           loadUsers();
@@ -609,6 +612,10 @@ export default function AdminUsuarios() {
                             });
                             const data = await res.json();
                             if (res.ok && data.success) {
+                              toast({
+                                title: newStatus === "bloqueado" ? "Usuário bloqueado" : "Usuário desbloqueado",
+                                description: newStatus === "bloqueado" ? "O acesso do usuário foi bloqueado." : "O acesso do usuário foi restaurado.",
+                              });
                               setDrawerUser(null);
                               setBlockConfirm(false);
                               loadUsers();
