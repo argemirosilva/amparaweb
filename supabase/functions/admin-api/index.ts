@@ -249,6 +249,67 @@ serve(async (req) => {
       return json({ setting: data });
     }
 
+    // ========== UPDATE USER ==========
+    if (action === "updateUser") {
+      const { user_id: targetUserId, nome_completo, email, status, tenant_id } = params;
+
+      if (!targetUserId) return json({ error: "ID do usuário não informado" }, 400);
+      if (!nome_completo?.trim()) return json({ error: "Nome é obrigatório" }, 400);
+      if (!email?.trim()) return json({ error: "Email é obrigatório" }, 400);
+
+      const emailClean = email.trim().toLowerCase();
+      const validStatuses = ["ativo", "pendente", "inativo", "bloqueado"];
+      const finalStatus = validStatuses.includes(status) ? status : "pendente";
+
+      // Check if email is taken by another user
+      const { data: existing } = await supabase
+        .from("usuarios")
+        .select("id")
+        .eq("email", emailClean)
+        .neq("id", targetUserId)
+        .maybeSingle();
+
+      if (existing) {
+        return json({ error: "Este email já está em uso por outro usuário" }, 409);
+      }
+
+      // Update user
+      const { error: updateError } = await supabase
+        .from("usuarios")
+        .update({
+          nome_completo: nome_completo.trim(),
+          email: emailClean,
+          status: finalStatus,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", targetUserId);
+
+      if (updateError) {
+        return json({ error: "Erro ao atualizar: " + updateError.message }, 500);
+      }
+
+      // Update tenant association
+      if (tenant_id) {
+        // Remove existing roles and set new one
+        await supabase.from("user_roles").delete().eq("user_id", targetUserId);
+        await supabase.from("user_roles").insert({
+          user_id: targetUserId,
+          role: "operador",
+          tenant_id: tenant_id,
+        });
+      }
+
+      // Audit log
+      await supabase.from("audit_logs").insert({
+        user_id: userId,
+        action_type: "admin_update_user",
+        success: true,
+        details: { updated_user_id: targetUserId, email: emailClean, status: finalStatus, tenant_id },
+      });
+
+      return json({ success: true });
+    }
+
     return json({ error: `Ação desconhecida: ${action}` }, 400);
   } catch (err) {
     return json({ error: err.message || "Erro interno" }, 500);
