@@ -35,7 +35,7 @@ export default function AdminLayout() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { logout, usuario } = useAuth();
-  const { roles, hasRole } = useAdminRole();
+  const { roles, hasRole, tenantSigla } = useAdminRole();
   const isTecnico = hasRole("admin_master");
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -67,12 +67,14 @@ export default function AdminLayout() {
             <span className="text-sm font-semibold" style={{ color: "hsl(224 76% 33%)" }}>
               Painel de Administração — AMPARA
             </span>
-            <span
-              className="text-xs px-2 py-0.5 rounded"
-              style={{ background: "hsl(224 76% 33% / 0.08)", color: "hsl(224 76% 33%)" }}
-            >
-              TJRO
-            </span>
+            {tenantSigla && (
+              <span
+                className="text-xs px-2 py-0.5 rounded"
+                style={{ background: "hsl(224 76% 33% / 0.08)", color: "hsl(224 76% 33%)" }}
+              >
+                {tenantSigla}
+              </span>
+            )}
           </div>
         </div>
 
