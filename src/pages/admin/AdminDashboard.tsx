@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Users, AlertTriangle, Clock, BarChart3, TrendingUp, Shield, Smartphone } from "lucide-react";
+import { Users, AlertTriangle, BarChart3, Smartphone } from "lucide-react";
 import GovKpiCard from "@/components/institucional/GovKpiCard";
 import GovStatusBadge from "@/components/institucional/GovStatusBadge";
 import DashboardMapCard from "@/components/institucional/DashboardMapCard";
@@ -65,8 +65,8 @@ const tooltipStyle = {
 export default function AdminDashboard() {
   const [period, setPeriod] = useState("30d");
   const [kpis, setKpis] = useState({
-    monitoradas: 0, eventos: 0, emergencias: 0, tempoMedio: "—", reincidencia: "—",
-    dispositivosOnline: 0, orgaosAtivos: 0,
+    monitoradas: 0, eventos: 0, emergencias: 0,
+    dispositivosOnline: 0,
   });
   const [timelineData, setTimelineData] = useState<{ date: string; eventos: number; emergencias: number }[]>([]);
   const [riskDistribution, setRiskDistribution] = useState<{ name: string; value: number }[]>([]);
@@ -86,7 +86,7 @@ export default function AdminDashboard() {
         { count: eventos },
         { count: emergencias },
         { data: deviceData },
-        { count: orgaosAtivos },
+        
         { data: eventosData },
         { data: panicData },
         { data: riskData },
@@ -97,7 +97,7 @@ export default function AdminDashboard() {
         supabase.from("gravacoes_analises").select("*", { count: "exact", head: true }).gte("created_at", since),
         supabase.from("alertas_panico").select("*", { count: "exact", head: true }).gte("criado_em", since),
         supabase.from("device_status").select("status"),
-        supabase.from("tenants").select("*", { count: "exact", head: true }).eq("ativo", true),
+        
         supabase.from("gravacoes_analises").select("created_at").gte("created_at", since),
         supabase.from("alertas_panico").select("criado_em, tipo_acionamento").gte("criado_em", since),
         supabase.from("gravacoes_analises").select("nivel_risco").gte("created_at", since),
@@ -112,10 +112,7 @@ export default function AdminDashboard() {
         monitoradas: monitoradas || 0,
         eventos: eventos || 0,
         emergencias: emergencias || 0,
-        tempoMedio: "2m 47s",
-        reincidencia: "18%",
         dispositivosOnline: onlineCount,
-        orgaosAtivos: orgaosAtivos || 0,
       });
 
       // Timeline
@@ -211,14 +208,11 @@ export default function AdminDashboard() {
       </div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <GovKpiCard title="Monitoradas Ativas" value={kpis.monitoradas} icon={Users} />
         <GovKpiCard title="Eventos no Período" value={kpis.eventos} icon={BarChart3} />
         <GovKpiCard title="Emergências" value={kpis.emergencias} icon={AlertTriangle} />
-        <GovKpiCard title="Tempo Médio Resposta" value={kpis.tempoMedio} icon={Clock} />
-        <GovKpiCard title="Taxa Reincidência" value={kpis.reincidencia} icon={TrendingUp} trend={{ value: "vs. período anterior", positive: false }} />
         <GovKpiCard title="Dispositivos Online" value={kpis.dispositivosOnline} icon={Smartphone} />
-        <GovKpiCard title="Órgãos Ativos" value={kpis.orgaosAtivos} icon={Shield} />
       </div>
 
       {/* Row 1: Timeline + Risk Pie */}
