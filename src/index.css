@@ -255,3 +255,14 @@ html, body, #root {
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 }
+
+/* Dashboard map tooltip */
+.dashboard-map-tooltip .mapboxgl-popup-content {
+  padding: 8px 12px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  border: 1px solid hsl(220 13% 91%);
+}
+.dashboard-map-tooltip .mapboxgl-popup-tip {
+  border-top-color: hsl(0 0% 100%);
+}
