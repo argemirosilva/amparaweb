@@ -203,12 +203,12 @@ export default function DashboardMapCard() {
       const labelFeatures = enriched.features.map((f: any) => {
         const coords = f.geometry.type === "Polygon" ? f.geometry.coordinates[0] : f.geometry.coordinates.flat(2);
         const lngs = coords.map((c: number[]) => c[0]); const lats = coords.map((c: number[]) => c[1]);
-        return { type: "Feature", geometry: { type: "Point", coordinates: [(Math.min(...lngs) + Math.max(...lngs)) / 2, (Math.min(...lats) + Math.max(...lats)) / 2] }, properties: { uf_code: f.properties.uf_code, usuarios: f.properties.usuarios || 0 } };
+        return { type: "Feature", geometry: { type: "Point", coordinates: [(Math.min(...lngs) + Math.max(...lngs)) / 2, (Math.min(...lats) + Math.max(...lats)) / 2] }, properties: { uf_code: f.properties.uf_code, usuarios: f.properties.usuarios || 0, online: f.properties.online || 0 } };
       });
       map.addSource("state-labels", { type: "geojson", data: { type: "FeatureCollection", features: labelFeatures } });
       map.addLayer({
         id: "state-labels-layer", type: "symbol", source: "state-labels",
-        layout: { "text-field": ["case", [">", ["get", "usuarios"], 0], ["concat", ["get", "uf_code"], " (", ["to-string", ["get", "usuarios"]], ")"], ["get", "uf_code"]], "text-size": 10, "text-font": ["DIN Pro Bold", "Arial Unicode MS Bold"], "text-allow-overlap": false },
+        layout: { "text-field": ["case", [">", ["get", "usuarios"], 0], ["concat", ["get", "uf_code"], "\n", ["to-string", ["get", "usuarios"]], "u · ", ["to-string", ["get", "online"]], "on"], ["get", "uf_code"]], "text-size": 10, "text-font": ["DIN Pro Bold", "Arial Unicode MS Bold"], "text-allow-overlap": false },
         paint: { "text-color": "hsl(220, 13%, 25%)", "text-halo-color": "hsl(0, 0%, 100%)", "text-halo-width": 1.5 },
       });
 
