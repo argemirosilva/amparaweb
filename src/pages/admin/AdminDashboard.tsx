@@ -260,30 +260,8 @@ export default function AdminDashboard() {
         <DashboardMapCard />
       </div>
 
-      {/* Row 2: Users by UF + Alert Type */}
+      {/* Row 2: Alert Type */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-        {/* Users by UF */}
-        <div className="rounded-md border p-4" style={cardStyle}>
-          <h2 className="text-sm font-semibold mb-4" style={titleStyle}>Usuárias por Estado (UF)</h2>
-          <div className="h-64">
-            {ufData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={ufData} margin={{ top: 5, right: 10, bottom: 5, left: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(220 13% 91%)" />
-                  <XAxis dataKey="uf" tick={{ fontSize: 10, fill: "hsl(220 9% 46%)" }} />
-                  <YAxis tick={{ fontSize: 10, fill: "hsl(220 9% 46%)" }} allowDecimals={false} />
-                  <Tooltip contentStyle={tooltipStyle} />
-                  <Bar dataKey="total" name="Usuárias" radius={[4, 4, 0, 0]}>
-                    {ufData.map((_, i) => <Cell key={i} fill={BAR_COLORS[i % BAR_COLORS.length]} />)}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="h-full flex items-center justify-center"><p className="text-xs" style={subtitleStyle}>Nenhum dado</p></div>
-            )}
-          </div>
-        </div>
-
         {/* Alert by type */}
         <div className="rounded-md border p-4" style={cardStyle}>
           <h2 className="text-sm font-semibold mb-4" style={titleStyle}>Alertas por Tipo de Acionamento</h2>
@@ -363,6 +341,28 @@ export default function AdminDashboard() {
         </div>
         <div className="px-4 py-3 border-t text-xs" style={{ borderColor: "hsl(220 13% 91%)", ...subtitleStyle }}>
           Dados agregados. Visualizações detalhadas são auditadas.
+        </div>
+      </div>
+
+      {/* Row 5: Users by UF */}
+      <div className="rounded-md border p-4 mt-6" style={cardStyle}>
+        <h2 className="text-sm font-semibold mb-4" style={titleStyle}>Usuárias por Estado (UF)</h2>
+        <div className="h-64">
+          {ufData.length > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={ufData} margin={{ top: 5, right: 10, bottom: 5, left: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(220 13% 91%)" />
+                <XAxis dataKey="uf" tick={{ fontSize: 10, fill: "hsl(220 9% 46%)" }} />
+                <YAxis tick={{ fontSize: 10, fill: "hsl(220 9% 46%)" }} allowDecimals={false} />
+                <Tooltip contentStyle={tooltipStyle} />
+                <Bar dataKey="total" name="Usuárias" radius={[4, 4, 0, 0]}>
+                  {ufData.map((_, i) => <Cell key={i} fill={BAR_COLORS[i % BAR_COLORS.length]} />)}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-full flex items-center justify-center"><p className="text-xs" style={subtitleStyle}>Nenhum dado</p></div>
+          )}
         </div>
       </div>
     </div>
