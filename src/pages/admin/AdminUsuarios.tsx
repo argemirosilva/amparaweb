@@ -20,6 +20,7 @@ export default function AdminUsuarios() {
   const [drawerUser, setDrawerUser] = useState<UserRow | null>(null);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("todos");
 
   // Debounce search
   useEffect(() => {
@@ -39,13 +40,16 @@ export default function AdminUsuarios() {
       if (debouncedSearch) {
         query = query.or(`nome_completo.ilike.%${debouncedSearch}%,email.ilike.%${debouncedSearch}%`);
       }
+      if (statusFilter !== "todos") {
+        query = query.eq("status", statusFilter as "ativo" | "pendente" | "inativo" | "bloqueado");
+      }
 
       const { data } = await query;
       setUsers((data as UserRow[]) || []);
       setLoading(false);
     }
     load();
-  }, [debouncedSearch]);
+  }, [debouncedSearch, statusFilter]);
 
   const statusMap: Record<string, "verde" | "amarelo" | "laranja" | "vermelho"> = {
     ativo: "verde",
@@ -89,6 +93,30 @@ export default function AdminUsuarios() {
             <Plus className="w-4 h-4" /> Novo
           </button>
         </div>
+      </div>
+
+      {/* Status filters */}
+      <div className="flex items-center gap-2 mb-4 flex-wrap">
+        {[
+          { value: "todos", label: "Todos" },
+          { value: "ativo", label: "Ativo" },
+          { value: "pendente", label: "Pendente" },
+          { value: "inativo", label: "Inativo" },
+          { value: "bloqueado", label: "Bloqueado" },
+        ].map((f) => (
+          <button
+            key={f.value}
+            onClick={() => setStatusFilter(f.value)}
+            className="px-3 py-1.5 rounded-full text-xs font-medium border transition-colors"
+            style={{
+              borderColor: statusFilter === f.value ? "hsl(224 76% 33%)" : "hsl(220 13% 87%)",
+              background: statusFilter === f.value ? "hsl(224 76% 33%)" : "transparent",
+              color: statusFilter === f.value ? "#fff" : "hsl(220 9% 46%)",
+            }}
+          >
+            {f.label}
+          </button>
+        ))}
       </div>
 
       {/* Table */}
