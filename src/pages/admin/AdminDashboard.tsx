@@ -187,7 +187,7 @@ export default function AdminDashboard() {
       {/* Header */}
       <div className="mb-6">
         <p className="text-xs mb-1" style={subtitleStyle}>Admin &gt; Dashboard</p>
-        <h1 className="text-xl font-semibold" style={titleStyle}>Dashboard Institucional</h1>
+        <h1 className="text-xl font-semibold" style={titleStyle}>Dashboard</h1>
         <p className="text-sm" style={subtitleStyle}>Visão agregada por órgão e período</p>
       </div>
 
