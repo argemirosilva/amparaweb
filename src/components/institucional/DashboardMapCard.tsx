@@ -28,17 +28,12 @@ interface UfStats {
   online: number;
   alertas: number;
   monitorando: number;
-}
-
-interface AlertItem {
-  id: string;
-  lat: number;
-  lng: number;
-  status: string;
-  protocolo: string | null;
-  criado_em: string;
-  userName: string;
-  tipo_acionamento: string | null;
+  eventos: number;
+  emergencias: number;
+  baixo: number;
+  medio: number;
+  alto: number;
+  critico: number;
 }
 
 interface DeviceItem {
@@ -55,12 +50,16 @@ interface DeviceItem {
 
 type SelectedItem =
   | { type: "uf"; uf: string; stats: UfStats }
-  | { type: "alert"; data: AlertItem }
   | { type: "device"; data: DeviceItem };
 
 const cardStyle = { background: "hsl(0 0% 100%)", borderColor: "hsl(220 13% 91%)" };
 const titleStyle = { color: "hsl(220 13% 18%)" };
 const subtitleStyle = { color: "hsl(220 9% 46%)" };
+
+const emptyStats = (): UfStats => ({
+  usuarios: 0, online: 0, alertas: 0, monitorando: 0,
+  eventos: 0, emergencias: 0, baixo: 0, medio: 0, alto: 0, critico: 0,
+});
 
 export default function DashboardMapCard() {
   const mapContainer = useRef<HTMLDivElement>(null);
@@ -71,15 +70,13 @@ export default function DashboardMapCard() {
   const [mapLoaded, setMapLoaded] = useState(false);
   const [geojson, setGeojson] = useState<any>(null);
   const [stats, setStats] = useState<Record<string, UfStats>>({});
-  const [alerts, setAlerts] = useState<AlertItem[]>([]);
   const [devices, setDevices] = useState<DeviceItem[]>([]);
   const [selected, setSelected] = useState<SelectedItem | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Summary
   const totalOnline = Object.values(stats).reduce((a, s) => a + s.online, 0);
-  const totalAlertas = alerts.filter((a) => a.status === "ativo").length;
   const totalMonitorando = Object.values(stats).reduce((a, s) => a + s.monitorando, 0);
+  const totalEventos = Object.values(stats).reduce((a, s) => a + s.eventos, 0);
 
   // Load GeoJSON
   useEffect(() => {
@@ -98,13 +95,14 @@ export default function DashboardMapCard() {
   // Fetch data
   const fetchData = useCallback(async () => {
     setLoading(true);
-    const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
-    const [{ data: users }, { data: deviceData }, { data: alertData }, { data: locations }] = await Promise.all([
+    const [{ data: users }, { data: deviceData }, { data: alertData }, { data: locations }, { data: eventosData }] = await Promise.all([
       supabase.from("usuarios").select("id, nome_completo, endereco_uf, endereco_lat, endereco_lon, status"),
       supabase.from("device_status").select("*").order("updated_at", { ascending: false }),
-      supabase.from("alertas_panico").select("*").gte("criado_em", since).order("criado_em", { ascending: false }).limit(50),
+      supabase.from("alertas_panico").select("*").gte("criado_em", since).order("criado_em", { ascending: false }).limit(200),
       supabase.from("localizacoes").select("user_id, latitude, longitude, created_at").gte("created_at", since).order("created_at", { ascending: false }).limit(200),
+      supabase.from("gravacoes_analises").select("user_id, created_at, nivel_risco").gte("created_at", since),
     ]);
 
     const userMap: Record<string, { nome: string; uf: string; lat: number | null; lng: number | null }> = {};
@@ -114,26 +112,42 @@ export default function DashboardMapCard() {
 
     // UF stats
     const ufStats: Record<string, UfStats> = {};
-    const ensureUf = (uf: string) => { if (!ufStats[uf]) ufStats[uf] = { usuarios: 0, online: 0, alertas: 0, monitorando: 0 }; };
-    (users || []).forEach((u) => { if (u.endereco_uf && u.status === "ativo") { ensureUf(u.endereco_uf); ufStats[u.endereco_uf].usuarios++; } });
+    const ensureUf = (uf: string) => { if (!ufStats[uf]) ufStats[uf] = emptyStats(); };
 
+    // Active users per UF
+    (users || []).forEach((u) => {
+      if (u.endereco_uf && u.status === "ativo") { ensureUf(u.endereco_uf); ufStats[u.endereco_uf].usuarios++; }
+    });
+
+    // Devices
     const latestDeviceByUser: Record<string, any> = {};
     (deviceData || []).forEach((d) => { if (!latestDeviceByUser[d.user_id]) latestDeviceByUser[d.user_id] = d; });
     Object.values(latestDeviceByUser).forEach((d: any) => {
       const uf = userMap[d.user_id]?.uf;
       if (uf) { ensureUf(uf); if (d.status === "online") ufStats[uf].online++; if (d.is_monitoring) ufStats[uf].monitorando++; }
     });
-    (alertData || []).forEach((a) => { const uf = userMap[a.user_id]?.uf; if (uf) { ensureUf(uf); ufStats[uf].alertas++; } });
-    setStats(ufStats);
 
-    // Alert items
-    setAlerts(
-      (alertData || []).filter((a) => a.latitude && a.longitude).map((a) => ({
-        id: a.id, lat: a.latitude!, lng: a.longitude!, status: a.status,
-        protocolo: a.protocolo, criado_em: a.criado_em, userName: userMap[a.user_id]?.nome || "—",
-        tipo_acionamento: a.tipo_acionamento,
-      }))
-    );
+    // Alerts (panic)
+    (alertData || []).forEach((a) => {
+      const uf = userMap[a.user_id]?.uf;
+      if (uf) { ensureUf(uf); ufStats[uf].alertas++; ufStats[uf].emergencias++; }
+    });
+
+    // Events with severity
+    (eventosData || []).forEach((e: any) => {
+      const uf = userMap[e.user_id]?.uf;
+      if (uf) {
+        ensureUf(uf);
+        ufStats[uf].eventos++;
+        const nivel = e.nivel_risco as string;
+        if (nivel === "baixo") ufStats[uf].baixo++;
+        else if (nivel === "medio" || nivel === "moderado") ufStats[uf].medio++;
+        else if (nivel === "alto") ufStats[uf].alto++;
+        else if (nivel === "critico") ufStats[uf].critico++;
+      }
+    });
+
+    setStats(ufStats);
 
     // Device items
     const userLastLoc: Record<string, { lat: number; lng: number }> = {};
@@ -179,37 +193,69 @@ export default function DashboardMapCard() {
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !mapLoaded || !geojson) return;
+
     const enriched = {
       ...geojson,
       features: geojson.features.map((f: any) => {
         const uf = f.properties.uf_code;
-        const s = stats[uf] || { usuarios: 0, online: 0, alertas: 0, monitorando: 0 };
-        return { ...f, properties: { ...f.properties, ...s } };
+        const s = stats[uf] || emptyStats();
+        const pctPais = totalEventos > 0 ? Math.round((s.eventos / totalEventos) * 100) : 0;
+        return { ...f, properties: { ...f.properties, ...s, pct_pais: pctPais } };
       }),
     };
+
     if (map.getSource("states")) {
       (map.getSource("states") as any).setData(enriched);
+      if (map.getSource("state-labels")) {
+        const labelFeatures = enriched.features.map((f: any) => {
+          const coords = f.geometry.type === "Polygon" ? f.geometry.coordinates[0] : f.geometry.coordinates.flat(2);
+          const lngs = coords.map((c: number[]) => c[0]); const lats = coords.map((c: number[]) => c[1]);
+          return {
+            type: "Feature",
+            geometry: { type: "Point", coordinates: [(Math.min(...lngs) + Math.max(...lngs)) / 2, (Math.min(...lats) + Math.max(...lats)) / 2] },
+            properties: { uf_code: f.properties.uf_code, eventos: f.properties.eventos || 0 },
+          };
+        });
+        (map.getSource("state-labels") as any).setData({ type: "FeatureCollection", features: labelFeatures });
+      }
     } else {
       map.addSource("states", { type: "geojson", data: enriched });
+
+      // Choropleth colored by eventos (same thresholds as TransparenciaMapa)
       map.addLayer({
         id: "states-fill", type: "fill", source: "states",
-        paint: { "fill-color": ["step", ["get", "usuarios"], "#e5e7eb", 1, "#bfdbfe", 5, "#93c5fd", 10, "#60a5fa", 20, "#3b82f6"], "fill-opacity": 0.6 },
+        paint: {
+          "fill-color": ["step", ["get", "eventos"], "#e5e7eb", 1, "#4ade80", 3, "#facc15", 6, "#f97316", 15, "#dc2626"],
+          "fill-opacity": 0.75,
+        },
       });
       map.addLayer({
         id: "states-outline", type: "line", source: "states",
         paint: { "line-color": "hsl(220, 13%, 70%)", "line-width": 1 },
       });
+      map.addLayer({
+        id: "states-hover", type: "fill", source: "states",
+        paint: { "fill-color": "hsl(224, 76%, 33%)", "fill-opacity": 0.15 },
+        filter: ["==", "uf_code", ""],
+      });
 
-      // Labels
+      // Labels with UF (eventos)
       const labelFeatures = enriched.features.map((f: any) => {
         const coords = f.geometry.type === "Polygon" ? f.geometry.coordinates[0] : f.geometry.coordinates.flat(2);
         const lngs = coords.map((c: number[]) => c[0]); const lats = coords.map((c: number[]) => c[1]);
-        return { type: "Feature", geometry: { type: "Point", coordinates: [(Math.min(...lngs) + Math.max(...lngs)) / 2, (Math.min(...lats) + Math.max(...lats)) / 2] }, properties: { uf_code: f.properties.uf_code, usuarios: f.properties.usuarios || 0, online: f.properties.online || 0 } };
+        return {
+          type: "Feature",
+          geometry: { type: "Point", coordinates: [(Math.min(...lngs) + Math.max(...lngs)) / 2, (Math.min(...lats) + Math.max(...lats)) / 2] },
+          properties: { uf_code: f.properties.uf_code, eventos: f.properties.eventos || 0 },
+        };
       });
       map.addSource("state-labels", { type: "geojson", data: { type: "FeatureCollection", features: labelFeatures } });
       map.addLayer({
         id: "state-labels-layer", type: "symbol", source: "state-labels",
-        layout: { "text-field": ["case", [">", ["get", "usuarios"], 0], ["concat", ["get", "uf_code"], "\n", ["to-string", ["get", "usuarios"]], "u · ", ["to-string", ["get", "online"]], "on"], ["get", "uf_code"]], "text-size": 10, "text-font": ["DIN Pro Bold", "Arial Unicode MS Bold"], "text-allow-overlap": false },
+        layout: {
+          "text-field": ["case", [">", ["get", "eventos"], 0], ["concat", ["get", "uf_code"], " (", ["to-string", ["get", "eventos"]], ")"], ["get", "uf_code"]],
+          "text-size": 11, "text-font": ["DIN Pro Bold", "Arial Unicode MS Bold"], "text-allow-overlap": false, "text-anchor": "center",
+        },
         paint: { "text-color": "hsl(220, 13%, 25%)", "text-halo-color": "hsl(0, 0%, 100%)", "text-halo-width": 1.5 },
       });
 
@@ -218,41 +264,96 @@ export default function DashboardMapCard() {
         if (e.features?.length) {
           const p = e.features[0].properties;
           const uf = p.uf_code;
-          setSelected({ type: "uf", uf, stats: { usuarios: p.usuarios || 0, online: p.online || 0, alertas: p.alertas || 0, monitorando: p.monitorando || 0 } });
+          setSelected({
+            type: "uf", uf,
+            stats: {
+              usuarios: p.usuarios || 0, online: p.online || 0, alertas: p.alertas || 0,
+              monitorando: p.monitorando || 0, eventos: p.eventos || 0, emergencias: p.emergencias || 0,
+              baixo: p.baixo || 0, medio: p.medio || 0, alto: p.alto || 0, critico: p.critico || 0,
+            },
+          });
         }
       });
+
+      // Hover tooltip with severity breakdown (same as TransparenciaMapa)
       map.on("mouseenter", "states-fill", () => { map.getCanvas().style.cursor = "pointer"; });
       map.on("mousemove", "states-fill", (e: any) => {
         if (!e.features?.length || !mapboxglInstance) return;
         const p = e.features[0].properties;
         const uf = p.uf_code;
         const name = UF_TO_STATE_NAME[uf] || uf;
-        const html = `<div style="font-family:Inter,Roboto,sans-serif;font-size:11px;line-height:1.5;min-width:130px">
-          <div style="font-weight:700;font-size:12px;margin-bottom:4px;color:hsl(220,13%,18%)">${name} (${uf})</div>
-          <div style="color:hsl(220,9%,46%)">Usuárias: <b style="color:hsl(220,13%,18%)">${p.usuarios || 0}</b></div>
-          <div style="color:hsl(220,9%,46%)">Online: <b style="color:hsl(142,71%,35%)">${p.online || 0}</b></div>
-          <div style="color:hsl(220,9%,46%)">Monitorando: <b style="color:hsl(224,76%,48%)">${p.monitorando || 0}</b></div>
-          <div style="color:hsl(220,9%,46%)">Alertas: <b style="color:hsl(0,72%,51%)">${p.alertas || 0}</b></div>
+        const total = Number(p.eventos) || 0;
+        const baixo = Number(p.baixo) || 0;
+        const medio = Number(p.medio) || 0;
+        const alto = Number(p.alto) || 0;
+        const critico = Number(p.critico) || 0;
+        const pctPais = Number(p.pct_pais) || 0;
+        const pct = (v: number) => total > 0 ? Math.round((v / total) * 100) : 0;
+
+        map.setFilter("states-hover", ["==", "uf_code", uf]);
+
+        const html = `<div style="font-family:Inter,Roboto,sans-serif;font-size:11px;line-height:1.5;color:hsl(220,13%,18%)">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
+            <strong style="font-size:13px">${name}</strong>
+            <span style="font-size:10px;color:hsl(220,9%,46%);margin-left:8px">${pctPais}% do país</span>
+          </div>
+          <div style="display:flex;justify-content:space-between">
+            <span style="color:hsl(220,9%,46%)">Monitoradas</span>
+            <strong>${p.usuarios || 0}</strong>
+          </div>
+          <div style="display:flex;justify-content:space-between">
+            <span style="color:hsl(220,9%,46%)">Total de eventos</span>
+            <strong>${total}</strong>
+          </div>
+          <div style="margin:6px 0 4px;border-top:1px solid hsl(220,13%,91%);padding-top:6px">
+            <span style="color:hsl(220,9%,46%);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px">Gravidade</span>
+          </div>
+          <div style="display:flex;justify-content:space-between">
+            <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#4ade80;margin-right:4px"></span>Baixo</span>
+            <span>${baixo} <span style="color:hsl(220,9%,46%)">(${pct(baixo)}%)</span></span>
+          </div>
+          <div style="display:flex;justify-content:space-between">
+            <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#facc15;margin-right:4px"></span>Médio</span>
+            <span>${medio} <span style="color:hsl(220,9%,46%)">(${pct(medio)}%)</span></span>
+          </div>
+          <div style="display:flex;justify-content:space-between">
+            <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#f97316;margin-right:4px"></span>Alto</span>
+            <span>${alto} <span style="color:hsl(220,9%,46%)">(${pct(alto)}%)</span></span>
+          </div>
+          <div style="display:flex;justify-content:space-between">
+            <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#dc2626;margin-right:4px"></span>Crítico</span>
+            <span>${critico} <span style="color:hsl(220,9%,46%)">(${pct(critico)}%)</span></span>
+          </div>
+          <div style="margin-top:6px;border-top:1px solid hsl(220,13%,91%);padding-top:4px">
+            <div style="display:flex;justify-content:space-between">
+              <span style="color:hsl(220,9%,46%)">Emergências</span>
+              <strong style="color:hsl(0,72%,51%)">${p.emergencias || 0}</strong>
+            </div>
+            <div style="display:flex;justify-content:space-between">
+              <span style="color:hsl(220,9%,46%)">Online</span>
+              <strong style="color:hsl(142,71%,35%)">${p.online || 0}</strong>
+            </div>
+          </div>
         </div>`;
+
         if (!popupRef.current) {
-          popupRef.current = new mapboxglInstance.Popup({ closeButton: false, closeOnClick: false, offset: 10, className: "dashboard-map-tooltip" });
+          popupRef.current = new mapboxglInstance.Popup({ closeButton: false, closeOnClick: false, offset: 10, className: "dashboard-map-tooltip", maxWidth: "280px" });
         }
         popupRef.current.setLngLat(e.lngLat).setHTML(html).addTo(map);
       });
       map.on("mouseleave", "states-fill", () => {
         map.getCanvas().style.cursor = "";
+        map.setFilter("states-hover", ["==", "uf_code", ""]);
         popupRef.current?.remove();
       });
     }
-  }, [geojson, stats, mapLoaded]);
+  }, [geojson, stats, mapLoaded, totalEventos]);
 
   // Markers
   useEffect(() => {
     const map = mapRef.current; const mbgl = mapboxglInstance;
     if (!map || !mbgl || !mapLoaded) return;
     markersRef.current.forEach((m) => m.remove()); markersRef.current = [];
-
-    // Alert markers removed — no need to show active alert details on map
 
     devices.forEach((d) => {
       const isOnline = d.status === "online";
@@ -262,7 +363,7 @@ export default function DashboardMapCard() {
       const marker = new mbgl.Marker({ element: el }).setLngLat([d.lng, d.lat]).addTo(map);
       markersRef.current.push(marker);
     });
-  }, [alerts, devices, mapLoaded, mapboxglInstance]);
+  }, [devices, mapLoaded, mapboxglInstance]);
 
   return (
     <div className="rounded-md border relative overflow-hidden" style={cardStyle}>
@@ -270,7 +371,7 @@ export default function DashboardMapCard() {
       <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: "hsl(220 13% 91%)" }}>
         <div>
           <h2 className="text-sm font-semibold" style={titleStyle}>Mapa Operacional</h2>
-          <p className="text-xs" style={subtitleStyle}>Últimos 7 dias — clique para detalhes</p>
+          <p className="text-xs" style={subtitleStyle}>Últimos 30 dias — clique para detalhes</p>
         </div>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1.5 text-[10px]" style={subtitleStyle}>
@@ -281,12 +382,11 @@ export default function DashboardMapCard() {
             <span className="w-2 h-2 rounded-full inline-block" style={{ background: "hsl(224 76% 48%)" }} />
             <span>{totalMonitorando} monit.</span>
           </div>
-          <button
-            onClick={fetchData}
-            disabled={loading}
-            className="p-1.5 rounded hover:bg-gray-100 transition-colors"
-            title="Atualizar"
-          >
+          <div className="flex items-center gap-1.5 text-[10px]" style={subtitleStyle}>
+            <span className="w-2 h-2 rounded-full inline-block" style={{ background: "hsl(0 72% 51%)" }} />
+            <span>{totalEventos} eventos</span>
+          </div>
+          <button onClick={fetchData} disabled={loading} className="p-1.5 rounded hover:bg-gray-100 transition-colors" title="Atualizar">
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} style={subtitleStyle} />
           </button>
         </div>
@@ -323,23 +423,39 @@ export default function DashboardMapCard() {
           </div>
 
           {selected.type === "uf" && (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {[
-                { label: "Usuárias ativas", value: selected.stats.usuarios, color: "hsl(220 13% 18%)" },
-                { label: "Dispositivos online", value: selected.stats.online, color: "hsl(142 71% 35%)" },
-                { label: "Em monitoramento", value: selected.stats.monitorando, color: "hsl(224 76% 48%)" },
-                { label: "Alertas no período", value: selected.stats.alertas, color: "hsl(0 72% 51%)" },
-              ].map((item) => (
-                <div key={item.label} className="rounded-md border px-3 py-2" style={{ borderColor: "hsl(220 13% 91%)" }}>
-                  <p className="text-[10px] mb-0.5" style={subtitleStyle}>{item.label}</p>
-                  <p className="text-lg font-bold" style={{ color: item.color }}>{item.value}</p>
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
+                {[
+                  { label: "Monitoradas", value: selected.stats.usuarios, color: "hsl(220 13% 18%)" },
+                  { label: "Eventos", value: selected.stats.eventos, color: "hsl(224 76% 48%)" },
+                  { label: "Emergências", value: selected.stats.emergencias, color: "hsl(0 72% 51%)" },
+                  { label: "Online", value: selected.stats.online, color: "hsl(142 71% 35%)" },
+                ].map((item) => (
+                  <div key={item.label} className="rounded-md border px-3 py-2" style={{ borderColor: "hsl(220 13% 91%)" }}>
+                    <p className="text-[10px] mb-0.5" style={subtitleStyle}>{item.label}</p>
+                    <p className="text-lg font-bold" style={{ color: item.color }}>{item.value}</p>
+                  </div>
+                ))}
+              </div>
+              {/* Severity breakdown */}
+              {selected.stats.eventos > 0 && (
+                <div className="flex items-center gap-3 text-[10px]" style={subtitleStyle}>
+                  <span className="font-semibold uppercase tracking-wider">Gravidade:</span>
+                  {[
+                    { label: "Baixo", value: selected.stats.baixo, bg: "#4ade80" },
+                    { label: "Médio", value: selected.stats.medio, bg: "#facc15" },
+                    { label: "Alto", value: selected.stats.alto, bg: "#f97316" },
+                    { label: "Crítico", value: selected.stats.critico, bg: "#dc2626" },
+                  ].map((s) => (
+                    <span key={s.label} className="flex items-center gap-1">
+                      <span className="inline-block w-2 h-2 rounded-sm" style={{ background: s.bg }} />
+                      {s.label}: <b style={titleStyle}>{s.value}</b>
+                    </span>
+                  ))}
                 </div>
-              ))}
-            </div>
+              )}
+            </>
           )}
-
-
-
 
           {selected.type === "device" && (
             <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
