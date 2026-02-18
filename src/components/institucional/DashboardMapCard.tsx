@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMapbox } from "@/hooks/useMapbox";
-import { X, MapPin, AlertTriangle, Smartphone, RefreshCw } from "lucide-react";
+import { X, MapPin, Smartphone, RefreshCw } from "lucide-react";
 
 const fontStyle = { fontFamily: "Inter, Roboto, sans-serif" };
 
@@ -231,13 +231,7 @@ export default function DashboardMapCard() {
     if (!map || !mbgl || !mapLoaded) return;
     markersRef.current.forEach((m) => m.remove()); markersRef.current = [];
 
-    alerts.forEach((a) => {
-      const el = document.createElement("div");
-      el.style.cssText = "width:22px;height:22px;border-radius:50%;background:hsl(0,72%,51%);border:2px solid white;box-shadow:0 1px 6px rgba(0,0,0,0.3);cursor:pointer;animation:pulse 2s infinite";
-      el.addEventListener("click", (e) => { e.stopPropagation(); setSelected({ type: "alert", data: a }); });
-      const marker = new mbgl.Marker({ element: el }).setLngLat([a.lng, a.lat]).addTo(map);
-      markersRef.current.push(marker);
-    });
+    // Alert markers removed — no need to show active alert details on map
 
     devices.forEach((d) => {
       const isOnline = d.status === "online";
@@ -258,10 +252,6 @@ export default function DashboardMapCard() {
           <p className="text-xs" style={subtitleStyle}>Últimos 7 dias — clique para detalhes</p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5 text-[10px]" style={subtitleStyle}>
-            <span className="w-2 h-2 rounded-full inline-block" style={{ background: "hsl(0 72% 51%)" }} />
-            <span>{totalAlertas} alertas</span>
-          </div>
           <div className="flex items-center gap-1.5 text-[10px]" style={subtitleStyle}>
             <span className="w-2 h-2 rounded-full inline-block" style={{ background: "hsl(142 71% 35%)" }} />
             <span>{totalOnline} online</span>
@@ -300,11 +290,9 @@ export default function DashboardMapCard() {
           <div className="flex items-start justify-between mb-3">
             <div className="flex items-center gap-2">
               {selected.type === "uf" && <MapPin className="w-4 h-4" style={{ color: "hsl(224 76% 48%)" }} />}
-              {selected.type === "alert" && <AlertTriangle className="w-4 h-4" style={{ color: "hsl(0 72% 51%)" }} />}
               {selected.type === "device" && <Smartphone className="w-4 h-4" style={{ color: "hsl(142 71% 35%)" }} />}
               <span className="text-sm font-semibold" style={titleStyle}>
                 {selected.type === "uf" && `${UF_TO_STATE_NAME[selected.uf] || selected.uf} (${selected.uf})`}
-                {selected.type === "alert" && "Alerta de Emergência"}
                 {selected.type === "device" && selected.data.userName}
               </span>
             </div>
@@ -329,23 +317,8 @@ export default function DashboardMapCard() {
             </div>
           )}
 
-          {selected.type === "alert" && (
-            <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
-              {[
-                { label: "Usuária", value: selected.data.userName },
-                { label: "Status", value: selected.data.status === "ativo" ? "🔴 Ativo" : selected.data.status },
-                { label: "Protocolo", value: selected.data.protocolo || "—" },
-                { label: "Tipo acionamento", value: selected.data.tipo_acionamento || "—" },
-                { label: "Data/hora", value: new Date(selected.data.criado_em).toLocaleString("pt-BR") },
-                { label: "Coordenadas", value: `${selected.data.lat.toFixed(4)}, ${selected.data.lng.toFixed(4)}` },
-              ].map((f) => (
-                <div key={f.label}>
-                  <p className="text-[10px] font-medium" style={subtitleStyle}>{f.label}</p>
-                  <p className="text-xs font-medium" style={titleStyle}>{f.value}</p>
-                </div>
-              ))}
-            </div>
-          )}
+
+
 
           {selected.type === "device" && (
             <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
