@@ -65,7 +65,7 @@ export default function AdminLayout() {
           <img src={amparaLogo} alt="AMPARA" className="h-7 object-contain" />
           <div className="hidden sm:flex items-center gap-2">
             <span className="text-sm font-semibold" style={{ color: "hsl(224 76% 33%)" }}>
-              Admin Governamental — AMPARA
+              Painel de Administração — AMPARA
             </span>
             <span
               className="text-xs px-2 py-0.5 rounded"
