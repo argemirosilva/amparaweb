@@ -46,6 +46,10 @@ export default function AdminUsuarios() {
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError] = useState("");
 
+  // Block user state
+  const [blockConfirm, setBlockConfirm] = useState(false);
+  const [blockLoading, setBlockLoading] = useState(false);
+
   // Create user dialog state
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [createForm, setCreateForm] = useState({ nome_completo: "", email: "", tenant_id: "", role: "operador" });
@@ -414,7 +418,7 @@ export default function AdminUsuarios() {
       {/* Details Drawer */}
       {drawerUser && (
         <>
-          <div className="fixed inset-0 bg-black/20 z-40" onClick={() => { setDrawerUser(null); setEditMode(false); }} />
+          <div className="fixed inset-0 bg-black/20 z-40" onClick={() => { setDrawerUser(null); setEditMode(false); setBlockConfirm(false); }} />
           <div
             className="fixed right-0 top-0 h-full w-full max-w-md z-50 border-l overflow-y-auto p-6"
             style={{ background: "hsl(0 0% 100%)", borderColor: "hsl(220 13% 91%)" }}
@@ -423,7 +427,7 @@ export default function AdminUsuarios() {
               <h2 className="text-base font-semibold" style={{ color: "hsl(220 13% 18%)" }}>
                 {editMode ? "Editar Usuário" : "Detalhes do Usuário"}
               </h2>
-              <button onClick={() => { setDrawerUser(null); setEditMode(false); }}>
+              <button onClick={() => { setDrawerUser(null); setEditMode(false); setBlockConfirm(false); }}>
                 <X className="w-5 h-5" style={{ color: "hsl(220 9% 46%)" }} />
               </button>
             </div>
@@ -572,12 +576,62 @@ export default function AdminUsuarios() {
                   >
                     Editar
                   </button>
-                  <button
-                    className="px-4 py-2 rounded text-xs font-semibold border transition-colors hover:bg-gray-50"
-                    style={{ borderColor: "hsl(0 73% 42%)", color: "hsl(0 73% 42%)" }}
-                  >
-                    Bloquear
-                  </button>
+                  {!blockConfirm ? (
+                    <button
+                      onClick={() => setBlockConfirm(true)}
+                      className="px-4 py-2 rounded text-xs font-semibold border transition-colors hover:bg-gray-50"
+                      style={{
+                        borderColor: drawerUser.status === "bloqueado" ? "hsl(142 71% 35%)" : "hsl(0 73% 42%)",
+                        color: drawerUser.status === "bloqueado" ? "hsl(142 71% 35%)" : "hsl(0 73% 42%)",
+                      }}
+                    >
+                      {drawerUser.status === "bloqueado" ? "Desbloquear" : "Bloquear"}
+                    </button>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs" style={{ color: "hsl(0 73% 42%)" }}>
+                        {drawerUser.status === "bloqueado" ? "Confirmar desbloqueio?" : "Confirmar bloqueio?"}
+                      </span>
+                      <button
+                        onClick={async () => {
+                          setBlockLoading(true);
+                          try {
+                            const newStatus = drawerUser.status === "bloqueado" ? "ativo" : "bloqueado";
+                            const res = await fetch(`${SUPABASE_URL}/functions/v1/admin-api`, {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json", apikey: SUPABASE_KEY },
+                              body: JSON.stringify({
+                                action: "updateUserStatus",
+                                session_token: sessionToken,
+                                user_id: drawerUser.id,
+                                status: newStatus,
+                              }),
+                            });
+                            const data = await res.json();
+                            if (res.ok && data.success) {
+                              setDrawerUser(null);
+                              setBlockConfirm(false);
+                              loadUsers();
+                            }
+                          } catch {}
+                          setBlockLoading(false);
+                        }}
+                        disabled={blockLoading}
+                        className="flex items-center gap-1 px-3 py-1.5 rounded text-xs font-semibold text-white disabled:opacity-60"
+                        style={{ background: drawerUser.status === "bloqueado" ? "hsl(142 71% 35%)" : "hsl(0 73% 42%)" }}
+                      >
+                        {blockLoading && <Loader2 className="w-3 h-3 animate-spin" />}
+                        Sim
+                      </button>
+                      <button
+                        onClick={() => setBlockConfirm(false)}
+                        className="px-3 py-1.5 rounded text-xs border"
+                        style={{ borderColor: "hsl(220 13% 87%)", color: "hsl(220 9% 46%)" }}
+                      >
+                        Não
+                      </button>
+                    </div>
+                  )}
                 </div>
               </>
             )}
