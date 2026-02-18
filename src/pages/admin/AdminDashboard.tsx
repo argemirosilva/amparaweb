@@ -207,17 +207,16 @@ export default function AdminDashboard() {
         ))}
       </div>
 
-      {/* Map */}
-      <div className="mb-6">
+      {/* Visão Geral: Map + KPIs */}
+      <div className="rounded-md border p-4 mb-8" style={cardStyle}>
+        <h2 className="text-sm font-semibold mb-4" style={titleStyle}>Visão Geral</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+          <GovKpiCard title="Monitoradas Ativas" value={kpis.monitoradas} icon={Users} />
+          <GovKpiCard title="Eventos no Período" value={kpis.eventos} icon={BarChart3} />
+          <GovKpiCard title="Emergências" value={kpis.emergencias} icon={AlertTriangle} />
+          <GovKpiCard title="Dispositivos Online" value={kpis.dispositivosOnline} icon={Smartphone} />
+        </div>
         <DashboardMapCard />
-      </div>
-
-      {/* KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <GovKpiCard title="Monitoradas Ativas" value={kpis.monitoradas} icon={Users} />
-        <GovKpiCard title="Eventos no Período" value={kpis.eventos} icon={BarChart3} />
-        <GovKpiCard title="Emergências" value={kpis.emergencias} icon={AlertTriangle} />
-        <GovKpiCard title="Dispositivos Online" value={kpis.dispositivosOnline} icon={Smartphone} />
       </div>
 
       {/* Row 1: Timeline + Risk Pie */}
