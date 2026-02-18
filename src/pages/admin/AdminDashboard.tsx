@@ -44,7 +44,7 @@ const RISK_LABELS: Record<string, string> = {
 
 
 const ACIONAMENTO_LABELS: Record<string, string> = {
-  app: "Aplicativo", botao_fisico: "Botão", botao_manual: "Botão", botao: "Botão", voz: "Comando de Voz", automatico: "Automático",
+  app: "Aplicativo", botao_fisico: "Botão", botao_manual: "Botão", botao: "Botão", automatico: "Automático",
 };
 
 const cardStyle = {
