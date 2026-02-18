@@ -4,7 +4,7 @@ import GovStatusBadge from "@/components/institucional/GovStatusBadge";
 import { Plus, X, Search, ChevronLeft, ChevronRight } from "lucide-react";
 
 const fontStyle = { fontFamily: "Inter, Roboto, sans-serif" };
-const PAGE_SIZE = 50;
+const PAGE_SIZE_OPTIONS = [25, 50, 100] as const;
 
 interface UserRow {
   id: string;
@@ -23,6 +23,7 @@ export default function AdminUsuarios() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("todos");
   const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(50);
   const [totalCount, setTotalCount] = useState(0);
 
   // Debounce search
@@ -34,8 +35,8 @@ export default function AdminUsuarios() {
   useEffect(() => {
     async function load() {
       setLoading(true);
-      const from = page * PAGE_SIZE;
-      const to = from + PAGE_SIZE - 1;
+      const from = page * pageSize;
+      const to = from + pageSize - 1;
 
       let query = supabase
         .from("usuarios")
@@ -56,9 +57,9 @@ export default function AdminUsuarios() {
       setLoading(false);
     }
     load();
-  }, [debouncedSearch, statusFilter, page]);
+  }, [debouncedSearch, statusFilter, page, pageSize]);
 
-  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
   const statusMap: Record<string, "verde" | "amarelo" | "laranja" | "vermelho"> = {
     ativo: "verde",
@@ -186,11 +187,31 @@ export default function AdminUsuarios() {
       </div>
 
       {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between mt-4">
+      <div className="flex items-center justify-between mt-4 flex-wrap gap-3">
+        <div className="flex items-center gap-3">
           <p className="text-xs" style={{ color: "hsl(220 9% 46%)" }}>
-            {totalCount} registro{totalCount !== 1 ? "s" : ""} · Página {page + 1} de {totalPages}
+            {totalCount} registro{totalCount !== 1 ? "s" : ""}
+            {totalPages > 1 && <> · Página {page + 1} de {totalPages}</>}
           </p>
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs" style={{ color: "hsl(220 9% 46%)" }}>Exibir</span>
+            {PAGE_SIZE_OPTIONS.map((size) => (
+              <button
+                key={size}
+                onClick={() => { setPageSize(size); setPage(0); }}
+                className="px-2 py-1 rounded border text-xs font-medium transition-colors"
+                style={{
+                  borderColor: pageSize === size ? "hsl(224 76% 33%)" : "hsl(220 13% 87%)",
+                  background: pageSize === size ? "hsl(224 76% 33%)" : "transparent",
+                  color: pageSize === size ? "#fff" : "hsl(220 9% 46%)",
+                }}
+              >
+                {size}
+              </button>
+            ))}
+          </div>
+        </div>
+        {totalPages > 1 && (
           <div className="flex items-center gap-1">
             <button
               onClick={() => setPage((p) => Math.max(0, p - 1))}
@@ -235,8 +256,8 @@ export default function AdminUsuarios() {
               <ChevronRight className="w-4 h-4" style={{ color: "hsl(220 9% 46%)" }} />
             </button>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Drawer */}
       {drawerUser && (
