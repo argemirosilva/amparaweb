@@ -88,12 +88,17 @@ export default function LoginPage() {
           {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : "Acessar"}
         </button>
 
-        <p className="text-center text-sm text-muted-foreground pt-2 opacity-0 animate-fade-in" style={{ animationDelay: "400ms" }}>
-          Não está cadastrada?{" "}
-          <Link to="/cadastro" className="text-primary font-medium hover:underline">
-            Proteja-se
+        <div className="flex items-center justify-between pt-2 opacity-0 animate-fade-in" style={{ animationDelay: "400ms" }}>
+          <Link to="/esqueci-senha" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+            Esqueceu a senha?
           </Link>
-        </p>
+          <p className="text-sm text-muted-foreground">
+            Não está cadastrada?{" "}
+            <Link to="/cadastro" className="text-primary font-medium hover:underline">
+              Proteja-se
+            </Link>
+          </p>
+        </div>
       </form>
     </AuthLayout>
   );

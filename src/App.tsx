@@ -38,6 +38,8 @@ import AdminOrgaos from "./pages/admin/AdminOrgaos";
 import AdminConfiguracoes from "./pages/admin/AdminConfiguracoes";
 import AdminIntegracoes from "./pages/admin/AdminIntegracoes";
 import AdminLogin from "./pages/admin/AdminLogin";
+import ConfigurarConta from "./pages/ConfigurarConta";
+import EsqueciSenha from "./pages/EsqueciSenha";
 
 const queryClient = new QueryClient();
 
@@ -54,6 +56,9 @@ const App = () => (
             <Route path="/cadastro" element={<Cadastro />} />
             <Route path="/validar-email" element={<ValidarEmail />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/esqueci-senha" element={<EsqueciSenha />} />
+            <Route path="/configurar-conta" element={<ConfigurarConta />} />
+            <Route path="/redefinir-senha" element={<ConfigurarConta />} />
             <Route path="/onboarding" element={<Onboarding />} />
             <Route element={<AppLayout />}>
               <Route path="/home" element={<Home />} />

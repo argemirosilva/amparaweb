@@ -1,10 +1,14 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import GovStatusBadge from "@/components/institucional/GovStatusBadge";
-import { Plus, X, Search, ChevronLeft, ChevronRight, Building2 } from "lucide-react";
+import { Plus, X, Search, ChevronLeft, ChevronRight, Building2, Loader2 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const fontStyle = { fontFamily: "Inter, Roboto, sans-serif" };
 const PAGE_SIZE_OPTIONS = [25, 50, 100] as const;
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 interface UserRow {
   id: string;
@@ -23,6 +27,7 @@ interface TenantOption {
 }
 
 export default function AdminUsuarios() {
+  const { sessionToken } = useAuth();
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [drawerUser, setDrawerUser] = useState<UserRow | null>(null);
@@ -34,6 +39,13 @@ export default function AdminUsuarios() {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(50);
   const [totalCount, setTotalCount] = useState(0);
+
+  // Create user dialog state
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [createForm, setCreateForm] = useState({ nome_completo: "", email: "", tenant_id: "", role: "operador" });
+  const [createLoading, setCreateLoading] = useState(false);
+  const [createError, setCreateError] = useState("");
+  const [createSuccess, setCreateSuccess] = useState(false);
 
   // Load tenants for filter
   useEffect(() => {
@@ -50,91 +62,87 @@ export default function AdminUsuarios() {
     return () => clearTimeout(t);
   }, [search]);
 
-  useEffect(() => {
-    async function load() {
-      setLoading(true);
-      const from = page * pageSize;
-      const to = from + pageSize - 1;
+  const loadUsers = async () => {
+    setLoading(true);
+    const from = page * pageSize;
+    const to = from + pageSize - 1;
 
-      // If filtering by tenant, first get user_ids that belong to that tenant
-      let filteredUserIds: string[] | null = null;
-      if (tenantFilter !== "todos") {
-        const { data: roleRows } = await supabase
-          .from("user_roles")
-          .select("user_id")
-          .eq("tenant_id", tenantFilter);
-        filteredUserIds = (roleRows || []).map((r) => r.user_id);
-        if (filteredUserIds.length === 0) {
-          setUsers([]);
-          setTotalCount(0);
-          setLoading(false);
-          return;
+    let filteredUserIds: string[] | null = null;
+    if (tenantFilter !== "todos") {
+      const { data: roleRows } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .eq("tenant_id", tenantFilter);
+      filteredUserIds = (roleRows || []).map((r) => r.user_id);
+      if (filteredUserIds.length === 0) {
+        setUsers([]);
+        setTotalCount(0);
+        setLoading(false);
+        return;
+      }
+    }
+
+    let query = supabase
+      .from("usuarios")
+      .select("id, nome_completo, email, status, ultimo_acesso, created_at", { count: "exact" })
+      .order("created_at", { ascending: false })
+      .range(from, to);
+
+    if (debouncedSearch) {
+      query = query.or(`nome_completo.ilike.%${debouncedSearch}%,email.ilike.%${debouncedSearch}%`);
+    }
+    if (statusFilter !== "todos") {
+      query = query.eq("status", statusFilter as "ativo" | "pendente" | "inativo" | "bloqueado");
+    }
+    if (filteredUserIds) {
+      query = query.in("id", filteredUserIds);
+    }
+
+    const { data, count } = await query;
+    const userRows = (data || []) as UserRow[];
+
+    if (userRows.length > 0) {
+      const userIds = userRows.map((u) => u.id);
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("user_id, tenant_id")
+        .in("user_id", userIds);
+
+      if (roles && roles.length > 0) {
+        const tenantMap: Record<string, string> = {};
+        for (const t of tenants) {
+          tenantMap[t.id] = t.sigla;
         }
-      }
-
-      let query = supabase
-        .from("usuarios")
-        .select("id, nome_completo, email, status, ultimo_acesso, created_at", { count: "exact" })
-        .order("created_at", { ascending: false })
-        .range(from, to);
-
-      if (debouncedSearch) {
-        query = query.or(`nome_completo.ilike.%${debouncedSearch}%,email.ilike.%${debouncedSearch}%`);
-      }
-      if (statusFilter !== "todos") {
-        query = query.eq("status", statusFilter as "ativo" | "pendente" | "inativo" | "bloqueado");
-      }
-      if (filteredUserIds) {
-        query = query.in("id", filteredUserIds);
-      }
-
-      const { data, count } = await query;
-      const userRows = (data || []) as UserRow[];
-
-      // Fetch tenant associations for these users
-      if (userRows.length > 0) {
-        const userIds = userRows.map((u) => u.id);
-        const { data: roles } = await supabase
-          .from("user_roles")
-          .select("user_id, tenant_id")
-          .in("user_id", userIds);
-
-        if (roles && roles.length > 0) {
-          const tenantIds = [...new Set(roles.map((r) => r.tenant_id).filter(Boolean))] as string[];
-          // Build tenant map from already-loaded tenants list
-          const tenantMap: Record<string, string> = {};
-          for (const t of tenants) {
+        const tenantIds = [...new Set(roles.map((r) => r.tenant_id).filter(Boolean))] as string[];
+        const missingIds = tenantIds.filter((tid) => !tenantMap[tid]);
+        if (missingIds.length > 0) {
+          const { data: extraTenants } = await supabase
+            .from("tenants")
+            .select("id, sigla")
+            .in("id", missingIds);
+          for (const t of extraTenants || []) {
             tenantMap[t.id] = t.sigla;
           }
-          // If some tenants aren't loaded yet, fetch them
-          const missingIds = tenantIds.filter((tid) => !tenantMap[tid]);
-          if (missingIds.length > 0) {
-            const { data: extraTenants } = await supabase
-              .from("tenants")
-              .select("id, sigla")
-              .in("id", missingIds);
-            for (const t of extraTenants || []) {
-              tenantMap[t.id] = t.sigla;
-            }
-          }
-
-          const userTenantMap: Record<string, string> = {};
-          for (const r of roles) {
-            if (r.tenant_id && tenantMap[r.tenant_id]) {
-              userTenantMap[r.user_id] = tenantMap[r.tenant_id];
-            }
-          }
-          for (const u of userRows) {
-            u.orgao = userTenantMap[u.id] || null;
+        }
+        const userTenantMap: Record<string, string> = {};
+        for (const r of roles) {
+          if (r.tenant_id && tenantMap[r.tenant_id]) {
+            userTenantMap[r.user_id] = tenantMap[r.tenant_id];
           }
         }
+        for (const u of userRows) {
+          u.orgao = userTenantMap[u.id] || null;
+        }
       }
-
-      setUsers(userRows);
-      setTotalCount(count || 0);
-      setLoading(false);
     }
-    load();
+
+    setUsers(userRows);
+    setTotalCount(count || 0);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    loadUsers();
   }, [debouncedSearch, statusFilter, tenantFilter, page, pageSize, tenants]);
 
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
@@ -144,6 +152,49 @@ export default function AdminUsuarios() {
     pendente: "amarelo",
     inativo: "laranja",
     bloqueado: "vermelho",
+  };
+
+  const openCreateDialog = () => {
+    setCreateForm({ nome_completo: "", email: "", tenant_id: "", role: "operador" });
+    setCreateError("");
+    setCreateSuccess(false);
+    setShowCreateDialog(true);
+  };
+
+  const handleCreateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCreateError("");
+
+    if (!createForm.nome_completo.trim()) { setCreateError("Nome é obrigatório"); return; }
+    if (!createForm.email.trim()) { setCreateError("Email é obrigatório"); return; }
+    if (!createForm.tenant_id) { setCreateError("Selecione um órgão"); return; }
+
+    setCreateLoading(true);
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/admin-api`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", apikey: SUPABASE_KEY },
+        body: JSON.stringify({
+          action: "createUser",
+          session_token: sessionToken,
+          nome_completo: createForm.nome_completo.trim(),
+          email: createForm.email.trim(),
+          tenant_id: createForm.tenant_id,
+          role: createForm.role,
+          app_url: window.location.origin,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setCreateSuccess(true);
+        loadUsers();
+      } else {
+        setCreateError(data.error || "Erro ao criar usuário");
+      }
+    } catch {
+      setCreateError("Erro de conexão");
+    }
+    setCreateLoading(false);
   };
 
   return (
@@ -175,6 +226,7 @@ export default function AdminUsuarios() {
             )}
           </div>
           <button
+            onClick={openCreateDialog}
             className="flex items-center gap-1.5 px-4 py-2 rounded text-sm font-semibold transition-colors shrink-0"
             style={{ background: "hsl(224 76% 33%)", color: "#fff" }}
           >
@@ -185,7 +237,6 @@ export default function AdminUsuarios() {
 
       {/* Filters row */}
       <div className="flex items-center gap-4 mb-4 flex-wrap">
-        {/* Status filters */}
         <div className="flex items-center gap-2 flex-wrap">
           {[
             { value: "todos", label: "Todos" },
@@ -208,8 +259,6 @@ export default function AdminUsuarios() {
             </button>
           ))}
         </div>
-
-        {/* Tenant filter */}
         {tenants.length > 0 && (
           <div className="flex items-center gap-1.5">
             <Building2 className="w-3.5 h-3.5" style={{ color: "hsl(220 9% 46%)" }} />
@@ -325,15 +374,10 @@ export default function AdminUsuarios() {
             </button>
             {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
               let pageNum: number;
-              if (totalPages <= 5) {
-                pageNum = i;
-              } else if (page < 3) {
-                pageNum = i;
-              } else if (page > totalPages - 4) {
-                pageNum = totalPages - 5 + i;
-              } else {
-                pageNum = page - 2 + i;
-              }
+              if (totalPages <= 5) pageNum = i;
+              else if (page < 3) pageNum = i;
+              else if (page > totalPages - 4) pageNum = totalPages - 5 + i;
+              else pageNum = page - 2 + i;
               return (
                 <button
                   key={pageNum}
@@ -361,7 +405,7 @@ export default function AdminUsuarios() {
         )}
       </div>
 
-      {/* Drawer */}
+      {/* Details Drawer */}
       {drawerUser && (
         <>
           <div className="fixed inset-0 bg-black/20 z-40" onClick={() => setDrawerUser(null)} />
@@ -377,7 +421,6 @@ export default function AdminUsuarios() {
                 <X className="w-5 h-5" style={{ color: "hsl(220 9% 46%)" }} />
               </button>
             </div>
-
             <div className="space-y-4 text-sm">
               {[
                 { label: "Nome", value: drawerUser.nome_completo },
@@ -393,7 +436,6 @@ export default function AdminUsuarios() {
                 </div>
               ))}
             </div>
-
             <div className="mt-6 flex gap-2">
               <button
                 className="px-4 py-2 rounded text-xs font-semibold border transition-colors hover:bg-gray-50"
@@ -408,6 +450,129 @@ export default function AdminUsuarios() {
                 Bloquear
               </button>
             </div>
+          </div>
+        </>
+      )}
+
+      {/* Create User Dialog */}
+      {showCreateDialog && (
+        <>
+          <div className="fixed inset-0 bg-black/30 z-40" onClick={() => setShowCreateDialog(false)} />
+          <div
+            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-lg rounded-lg border p-6"
+            style={{ background: "hsl(0 0% 100%)", borderColor: "hsl(220 13% 91%)" }}
+          >
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-base font-semibold" style={{ color: "hsl(220 13% 18%)" }}>
+                Novo Usuário
+              </h2>
+              <button onClick={() => setShowCreateDialog(false)}>
+                <X className="w-5 h-5" style={{ color: "hsl(220 9% 46%)" }} />
+              </button>
+            </div>
+
+            {createSuccess ? (
+              <div className="text-center py-6 space-y-3">
+                <div className="w-12 h-12 rounded-full mx-auto flex items-center justify-center" style={{ background: "hsl(142 71% 45% / 0.1)" }}>
+                  <svg className="w-6 h-6" style={{ color: "hsl(142 71% 45%)" }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <p className="text-sm font-medium" style={{ color: "hsl(220 13% 18%)" }}>Usuário criado com sucesso!</p>
+                <p className="text-xs" style={{ color: "hsl(220 9% 46%)" }}>
+                  Um email de convite foi enviado para <strong>{createForm.email}</strong> com instruções para configurar a senha.
+                </p>
+                <button
+                  onClick={() => setShowCreateDialog(false)}
+                  className="px-4 py-2 rounded text-sm font-semibold mt-2"
+                  style={{ background: "hsl(224 76% 33%)", color: "#fff" }}
+                >
+                  Fechar
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleCreateUser} className="space-y-4">
+                {createError && (
+                  <div className="rounded-md border p-3 text-xs" style={{ background: "hsl(0 73% 42% / 0.06)", borderColor: "hsl(0 73% 42% / 0.2)", color: "hsl(0 73% 42%)" }}>
+                    {createError}
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-xs font-medium mb-1" style={{ color: "hsl(220 9% 46%)" }}>Nome completo *</label>
+                  <input
+                    type="text"
+                    value={createForm.nome_completo}
+                    onChange={(e) => setCreateForm((f) => ({ ...f, nome_completo: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-md border text-sm outline-none focus:ring-1"
+                    style={{ borderColor: "hsl(220 13% 87%)", color: "hsl(220 13% 18%)" }}
+                    placeholder="Nome do usuário"
+                    maxLength={200}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium mb-1" style={{ color: "hsl(220 9% 46%)" }}>Email *</label>
+                  <input
+                    type="email"
+                    value={createForm.email}
+                    onChange={(e) => setCreateForm((f) => ({ ...f, email: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-md border text-sm outline-none focus:ring-1"
+                    style={{ borderColor: "hsl(220 13% 87%)", color: "hsl(220 13% 18%)" }}
+                    placeholder="email@orgao.gov.br"
+                    maxLength={255}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium mb-1" style={{ color: "hsl(220 9% 46%)" }}>Órgão *</label>
+                  <select
+                    value={createForm.tenant_id}
+                    onChange={(e) => setCreateForm((f) => ({ ...f, tenant_id: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-md border text-sm outline-none cursor-pointer"
+                    style={{ borderColor: "hsl(220 13% 87%)", color: "hsl(220 13% 18%)" }}
+                  >
+                    <option value="">Selecione o órgão</option>
+                    {tenants.map((t) => (
+                      <option key={t.id} value={t.id}>{t.sigla} — {t.nome}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium mb-1" style={{ color: "hsl(220 9% 46%)" }}>Papel</label>
+                  <select
+                    value={createForm.role}
+                    onChange={(e) => setCreateForm((f) => ({ ...f, role: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-md border text-sm outline-none cursor-pointer"
+                    style={{ borderColor: "hsl(220 13% 87%)", color: "hsl(220 13% 18%)" }}
+                  >
+                    <option value="operador">Operador</option>
+                    <option value="admin_tenant">Administrador do Órgão</option>
+                  </select>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowCreateDialog(false)}
+                    className="px-4 py-2 rounded text-sm border transition-colors hover:bg-gray-50"
+                    style={{ borderColor: "hsl(220 13% 87%)", color: "hsl(220 9% 46%)" }}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={createLoading}
+                    className="flex items-center gap-2 px-4 py-2 rounded text-sm font-semibold transition-colors disabled:opacity-60"
+                    style={{ background: "hsl(224 76% 33%)", color: "#fff" }}
+                  >
+                    {createLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+                    Criar e enviar convite
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </>
       )}
