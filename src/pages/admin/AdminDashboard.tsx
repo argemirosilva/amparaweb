@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Users, AlertTriangle, Clock, BarChart3, TrendingUp, Shield, Smartphone } from "lucide-react";
 import GovKpiCard from "@/components/institucional/GovKpiCard";
 import GovStatusBadge from "@/components/institucional/GovStatusBadge";
+import DashboardMapCard from "@/components/institucional/DashboardMapCard";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
@@ -277,6 +278,11 @@ export default function AdminDashboard() {
             )}
           </div>
         </div>
+      </div>
+
+      {/* Map */}
+      <div className="mb-6">
+        <DashboardMapCard />
       </div>
 
       {/* Row 2: Users by UF + User Status + Alert Type */}
