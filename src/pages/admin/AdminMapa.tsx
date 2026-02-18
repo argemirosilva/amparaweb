@@ -648,30 +648,6 @@ export default function AdminMapa() {
                 </div>
               )}
 
-              {/* Active alerts list */}
-              {alerts.length > 0 && (
-                <>
-                  <hr className="my-4" style={{ borderColor: "hsl(220 13% 91%)" }} />
-                  <h3 className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "hsl(0 72% 51%)" }}>
-                    Alertas Ativos ({alerts.length})
-                  </h3>
-                  <div className="space-y-1.5">
-                    {alerts.slice(0, 5).map((a) => (
-                      <div
-                        key={a.id}
-                        className="rounded-lg px-3 py-2 text-xs"
-                        style={{ background: "hsl(0 72% 51% / 0.06)" }}
-                      >
-                        <div className="font-medium" style={{ color: "hsl(220 13% 18%)" }}>{a.userName}</div>
-                        <div style={{ color: "hsl(220 9% 46%)" }}>
-                          {new Date(a.criado_em).toLocaleString("pt-BR")}
-                          {a.protocolo && ` · ${a.protocolo}`}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              )}
             </>
           )}
 
