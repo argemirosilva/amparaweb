@@ -310,6 +310,31 @@ serve(async (req) => {
       return json({ success: true });
     }
 
+    // ========== UPDATE USER STATUS (Block/Unblock) ==========
+    if (action === "updateUserStatus") {
+      const { user_id: targetUserId, status } = params;
+      if (!targetUserId) return json({ error: "ID do usuário não informado" }, 400);
+
+      const validStatuses = ["ativo", "pendente", "inativo", "bloqueado"];
+      if (!validStatuses.includes(status)) return json({ error: "Status inválido" }, 400);
+
+      const { error: updateError } = await supabase
+        .from("usuarios")
+        .update({ status, updated_at: new Date().toISOString() })
+        .eq("id", targetUserId);
+
+      if (updateError) return json({ error: "Erro ao atualizar status: " + updateError.message }, 500);
+
+      await supabase.from("audit_logs").insert({
+        user_id: userId,
+        action_type: status === "bloqueado" ? "admin_block_user" : "admin_unblock_user",
+        success: true,
+        details: { target_user_id: targetUserId, new_status: status },
+      });
+
+      return json({ success: true });
+    }
+
     return json({ error: `Ação desconhecida: ${action}` }, 400);
   } catch (err) {
     return json({ error: err.message || "Erro interno" }, 500);
