@@ -66,6 +66,7 @@ export default function DashboardMapCard() {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
+  const popupRef = useRef<any>(null);
   const { mapboxgl: mapboxglInstance, loading: mbLoading } = useMapbox();
   const [mapLoaded, setMapLoaded] = useState(false);
   const [geojson, setGeojson] = useState<any>(null);
@@ -221,7 +222,27 @@ export default function DashboardMapCard() {
         }
       });
       map.on("mouseenter", "states-fill", () => { map.getCanvas().style.cursor = "pointer"; });
-      map.on("mouseleave", "states-fill", () => { map.getCanvas().style.cursor = ""; });
+      map.on("mousemove", "states-fill", (e: any) => {
+        if (!e.features?.length || !mapboxglInstance) return;
+        const p = e.features[0].properties;
+        const uf = p.uf_code;
+        const name = UF_TO_STATE_NAME[uf] || uf;
+        const html = `<div style="font-family:Inter,Roboto,sans-serif;font-size:11px;line-height:1.5;min-width:130px">
+          <div style="font-weight:700;font-size:12px;margin-bottom:4px;color:hsl(220,13%,18%)">${name} (${uf})</div>
+          <div style="color:hsl(220,9%,46%)">Usuárias: <b style="color:hsl(220,13%,18%)">${p.usuarios || 0}</b></div>
+          <div style="color:hsl(220,9%,46%)">Online: <b style="color:hsl(142,71%,35%)">${p.online || 0}</b></div>
+          <div style="color:hsl(220,9%,46%)">Monitorando: <b style="color:hsl(224,76%,48%)">${p.monitorando || 0}</b></div>
+          <div style="color:hsl(220,9%,46%)">Alertas: <b style="color:hsl(0,72%,51%)">${p.alertas || 0}</b></div>
+        </div>`;
+        if (!popupRef.current) {
+          popupRef.current = new mapboxglInstance.Popup({ closeButton: false, closeOnClick: false, offset: 10, className: "dashboard-map-tooltip" });
+        }
+        popupRef.current.setLngLat(e.lngLat).setHTML(html).addTo(map);
+      });
+      map.on("mouseleave", "states-fill", () => {
+        map.getCanvas().style.cursor = "";
+        popupRef.current?.remove();
+      });
     }
   }, [geojson, stats, mapLoaded]);
 
