@@ -42,16 +42,9 @@ const RISK_LABELS: Record<string, string> = {
   baixo: "Baixo", moderado: "Moderado", alto: "Alto", critico: "Crítico", sem_risco: "Sem risco",
 };
 
-const STATUS_LABELS: Record<string, string> = {
-  ativo: "Ativas", pendente: "Pendentes", inativo: "Inativas", bloqueado: "Bloqueadas",
-};
-
-const STATUS_COLORS: Record<string, string> = {
-  ativo: "hsl(142 64% 34%)", pendente: "hsl(45 93% 47%)", inativo: "hsl(220 9% 70%)", bloqueado: "hsl(0 73% 42%)",
-};
 
 const ACIONAMENTO_LABELS: Record<string, string> = {
-  app: "Aplicativo", botao_fisico: "Botão Físico", voz: "Comando de Voz", automatico: "Automático",
+  app: "Aplicativo", botao_fisico: "Botão", botao_manual: "Botão", botao: "Botão", voz: "Comando de Voz", automatico: "Automático",
 };
 
 const cardStyle = {
@@ -78,10 +71,10 @@ export default function AdminDashboard() {
   const [timelineData, setTimelineData] = useState<{ date: string; eventos: number; emergencias: number }[]>([]);
   const [riskDistribution, setRiskDistribution] = useState<{ name: string; value: number }[]>([]);
   const [ufData, setUfData] = useState<{ uf: string; total: number }[]>([]);
-  const [statusData, setStatusData] = useState<{ name: string; value: number; fill: string }[]>([]);
+  
   const [acionamentoData, setAcionamentoData] = useState<{ name: string; value: number }[]>([]);
   const [hourlyData, setHourlyData] = useState<{ hora: string; alertas: number; logins: number }[]>([]);
-  const [auditSummary, setAuditSummary] = useState<{ action: string; total: number; success: number; fail: number }[]>([]);
+  
 
   useEffect(() => {
     const periodDays = { "7d": 7, "30d": 30, "90d": 90, "12m": 365 }[period] || 30;
@@ -157,18 +150,16 @@ export default function AdminDashboard() {
         Object.entries(ufCounts).map(([uf, total]) => ({ uf, total })).sort((a, b) => b.total - a.total).slice(0, 12)
       );
 
-      // User status
-      const stCounts: Record<string, number> = {};
-      (usersData || []).forEach(u => { stCounts[u.status] = (stCounts[u.status] || 0) + 1; });
-      setStatusData(
-        Object.entries(stCounts).map(([k, v]) => ({ name: STATUS_LABELS[k] || k, value: v, fill: STATUS_COLORS[k] || "hsl(220 9% 70%)" }))
-      );
 
-      // Acionamento type
+      // Acionamento type (group botao_fisico + botao_manual as "Botão")
       const acCounts: Record<string, number> = {};
-      (panicData || []).forEach(a => { const t = a.tipo_acionamento || "desconhecido"; acCounts[t] = (acCounts[t] || 0) + 1; });
+      (panicData || []).forEach(a => {
+        const t = a.tipo_acionamento || "desconhecido";
+        const label = ACIONAMENTO_LABELS[t] || t;
+        acCounts[label] = (acCounts[label] || 0) + 1;
+      });
       setAcionamentoData(
-        Object.entries(acCounts).map(([k, v]) => ({ name: ACIONAMENTO_LABELS[k] || k, value: v }))
+        Object.entries(acCounts).map(([name, value]) => ({ name, value }))
       );
 
       // Hourly activity
@@ -182,16 +173,6 @@ export default function AdminDashboard() {
         Object.entries(hourBuckets).map(([h, v]) => ({ hora: `${h.padStart(2, "0")}h`, ...v }))
       );
 
-      // Audit summary
-      const auditMap: Record<string, { total: number; success: number; fail: number }> = {};
-      (auditData || []).forEach(a => {
-        if (!auditMap[a.action_type]) auditMap[a.action_type] = { total: 0, success: 0, fail: 0 };
-        auditMap[a.action_type].total++;
-        if (a.success) auditMap[a.action_type].success++; else auditMap[a.action_type].fail++;
-      });
-      setAuditSummary(
-        Object.entries(auditMap).map(([action, v]) => ({ action, ...v })).sort((a, b) => b.total - a.total).slice(0, 10)
-      );
     }
 
     loadAll();
@@ -285,8 +266,8 @@ export default function AdminDashboard() {
         <DashboardMapCard />
       </div>
 
-      {/* Row 2: Users by UF + User Status + Alert Type */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+      {/* Row 2: Users by UF + Alert Type */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
         {/* Users by UF */}
         <div className="rounded-md border p-4" style={cardStyle}>
           <h2 className="text-sm font-semibold mb-4" style={titleStyle}>Usuárias por Estado (UF)</h2>
@@ -302,27 +283,6 @@ export default function AdminDashboard() {
                     {ufData.map((_, i) => <Cell key={i} fill={BAR_COLORS[i % BAR_COLORS.length]} />)}
                   </Bar>
                 </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="h-full flex items-center justify-center"><p className="text-xs" style={subtitleStyle}>Nenhum dado</p></div>
-            )}
-          </div>
-        </div>
-
-        {/* User status */}
-        <div className="rounded-md border p-4" style={cardStyle}>
-          <h2 className="text-sm font-semibold mb-4" style={titleStyle}>Status das Usuárias</h2>
-          <div className="h-64">
-            {statusData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={statusData} cx="50%" cy="45%" innerRadius={40} outerRadius={70} paddingAngle={4} dataKey="value"
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false} style={{ fontSize: 11 }}>
-                    {statusData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
-                  </Pie>
-                  <Tooltip contentStyle={tooltipStyle} />
-                  <Legend wrapperStyle={{ fontSize: 11, fontFamily: "Inter, sans-serif" }} />
-                </PieChart>
               </ResponsiveContainer>
             ) : (
               <div className="h-full flex items-center justify-center"><p className="text-xs" style={subtitleStyle}>Nenhum dado</p></div>
@@ -352,8 +312,8 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Row 3: Hourly Activity + Audit Summary */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+      {/* Row 3: Hourly Activity */}
+      <div className="grid grid-cols-1 gap-4 mb-6">
         {/* Hourly activity */}
         <div className="rounded-md border p-4" style={cardStyle}>
           <h2 className="text-sm font-semibold mb-1" style={titleStyle}>Atividade por Hora do Dia</h2>
@@ -370,45 +330,6 @@ export default function AdminDashboard() {
                 <Legend wrapperStyle={{ fontSize: 11, fontFamily: "Inter, sans-serif" }} />
               </AreaChart>
             </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Audit summary table */}
-        <div className="rounded-md border overflow-hidden" style={cardStyle}>
-          <div className="px-4 py-3 border-b" style={{ borderColor: "hsl(220 13% 91%)" }}>
-            <h2 className="text-sm font-semibold" style={titleStyle}>Resumo de Auditoria</h2>
-            <p className="text-xs" style={subtitleStyle}>Ações mais frequentes no período</p>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr style={{ background: "hsl(210 17% 96%)" }}>
-                  {["Ação", "Total", "Sucesso", "Falha", "Taxa"].map(h => (
-                    <th key={h} className="px-4 py-2 text-left text-xs font-semibold" style={subtitleStyle}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {auditSummary.map(a => (
-                  <tr key={a.action} className="border-t" style={{ borderColor: "hsl(220 13% 91%)" }}>
-                    <td className="px-4 py-2.5 text-xs font-medium" style={titleStyle}>
-                      <span className="px-2 py-0.5 rounded" style={{ background: "hsl(224 76% 33% / 0.08)", color: "hsl(224 76% 33%)" }}>
-                        {a.action.replace(/_/g, " ")}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2.5 text-xs" style={titleStyle}>{a.total}</td>
-                    <td className="px-4 py-2.5 text-xs" style={{ color: "hsl(142 64% 34%)" }}>{a.success}</td>
-                    <td className="px-4 py-2.5 text-xs" style={{ color: a.fail > 0 ? "hsl(0 73% 42%)" : "hsl(220 9% 70%)" }}>{a.fail}</td>
-                    <td className="px-4 py-2.5 text-xs" style={titleStyle}>
-                      {a.total > 0 ? `${Math.round((a.success / a.total) * 100)}%` : "—"}
-                    </td>
-                  </tr>
-                ))}
-                {auditSummary.length === 0 && (
-                  <tr><td colSpan={5} className="px-4 py-6 text-center text-xs" style={subtitleStyle}>Nenhum registro de auditoria</td></tr>
-                )}
-              </tbody>
-            </table>
           </div>
         </div>
       </div>
