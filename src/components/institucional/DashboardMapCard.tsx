@@ -293,7 +293,7 @@ export default function DashboardMapCard() {
       </div>
 
       {/* Map */}
-      <div className="relative" style={{ height: 340 }}>
+      <div className="relative" style={{ height: 480 }}>
         {mbLoading && (
           <div className="absolute inset-0 flex items-center justify-center" style={{ background: "hsl(210 17% 96%)" }}>
             <p className="text-xs" style={subtitleStyle}>Carregando mapa…</p>
