@@ -40,6 +40,12 @@ export default function AdminUsuarios() {
   const [pageSize, setPageSize] = useState(50);
   const [totalCount, setTotalCount] = useState(0);
 
+  // Edit user state
+  const [editMode, setEditMode] = useState(false);
+  const [editForm, setEditForm] = useState({ nome_completo: "", email: "", status: "", tenant_id: "" });
+  const [editLoading, setEditLoading] = useState(false);
+  const [editError, setEditError] = useState("");
+
   // Create user dialog state
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [createForm, setCreateForm] = useState({ nome_completo: "", email: "", tenant_id: "", role: "operador" });
@@ -408,48 +414,173 @@ export default function AdminUsuarios() {
       {/* Details Drawer */}
       {drawerUser && (
         <>
-          <div className="fixed inset-0 bg-black/20 z-40" onClick={() => setDrawerUser(null)} />
+          <div className="fixed inset-0 bg-black/20 z-40" onClick={() => { setDrawerUser(null); setEditMode(false); }} />
           <div
             className="fixed right-0 top-0 h-full w-full max-w-md z-50 border-l overflow-y-auto p-6"
             style={{ background: "hsl(0 0% 100%)", borderColor: "hsl(220 13% 91%)" }}
           >
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-base font-semibold" style={{ color: "hsl(220 13% 18%)" }}>
-                Detalhes do Usuário
+                {editMode ? "Editar Usuário" : "Detalhes do Usuário"}
               </h2>
-              <button onClick={() => setDrawerUser(null)}>
+              <button onClick={() => { setDrawerUser(null); setEditMode(false); }}>
                 <X className="w-5 h-5" style={{ color: "hsl(220 9% 46%)" }} />
               </button>
             </div>
-            <div className="space-y-4 text-sm">
-              {[
-                { label: "Nome", value: drawerUser.nome_completo },
-                { label: "Email", value: drawerUser.email },
-                { label: "Órgão", value: drawerUser.orgao || "—" },
-                { label: "Status", value: drawerUser.status },
-                { label: "Cadastro", value: new Date(drawerUser.created_at).toLocaleDateString("pt-BR") },
-                { label: "Último acesso", value: drawerUser.ultimo_acesso ? new Date(drawerUser.ultimo_acesso).toLocaleDateString("pt-BR") : "—" },
-              ].map((f) => (
-                <div key={f.label}>
-                  <p className="text-xs font-medium" style={{ color: "hsl(220 9% 46%)" }}>{f.label}</p>
-                  <p style={{ color: "hsl(220 13% 18%)" }}>{f.value}</p>
+
+            {editMode ? (
+              <div className="space-y-4 text-sm">
+                {editError && (
+                  <div className="rounded-md border p-3 text-xs" style={{ background: "hsl(0 73% 42% / 0.06)", borderColor: "hsl(0 73% 42% / 0.2)", color: "hsl(0 73% 42%)" }}>
+                    {editError}
+                  </div>
+                )}
+                <div>
+                  <label className="block text-xs font-medium mb-1" style={{ color: "hsl(220 9% 46%)" }}>Nome completo</label>
+                  <input
+                    type="text"
+                    value={editForm.nome_completo}
+                    onChange={(e) => setEditForm((f) => ({ ...f, nome_completo: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-md border text-sm outline-none focus:ring-1"
+                    style={{ borderColor: "hsl(220 13% 87%)", color: "hsl(220 13% 18%)" }}
+                  />
                 </div>
-              ))}
-            </div>
-            <div className="mt-6 flex gap-2">
-              <button
-                className="px-4 py-2 rounded text-xs font-semibold border transition-colors hover:bg-gray-50"
-                style={{ borderColor: "hsl(224 76% 33%)", color: "hsl(224 76% 33%)" }}
-              >
-                Editar
-              </button>
-              <button
-                className="px-4 py-2 rounded text-xs font-semibold border transition-colors hover:bg-gray-50"
-                style={{ borderColor: "hsl(0 73% 42%)", color: "hsl(0 73% 42%)" }}
-              >
-                Bloquear
-              </button>
-            </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1" style={{ color: "hsl(220 9% 46%)" }}>Email</label>
+                  <input
+                    type="email"
+                    value={editForm.email}
+                    onChange={(e) => setEditForm((f) => ({ ...f, email: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-md border text-sm outline-none focus:ring-1"
+                    style={{ borderColor: "hsl(220 13% 87%)", color: "hsl(220 13% 18%)" }}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1" style={{ color: "hsl(220 9% 46%)" }}>Órgão</label>
+                  <select
+                    value={editForm.tenant_id}
+                    onChange={(e) => setEditForm((f) => ({ ...f, tenant_id: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-md border text-sm outline-none cursor-pointer"
+                    style={{ borderColor: "hsl(220 13% 87%)", color: "hsl(220 13% 18%)" }}
+                  >
+                    <option value="">Sem órgão</option>
+                    {tenants.map((t) => (
+                      <option key={t.id} value={t.id}>{t.sigla} — {t.nome}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1" style={{ color: "hsl(220 9% 46%)" }}>Status</label>
+                  <select
+                    value={editForm.status}
+                    onChange={(e) => setEditForm((f) => ({ ...f, status: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-md border text-sm outline-none cursor-pointer"
+                    style={{ borderColor: "hsl(220 13% 87%)", color: "hsl(220 13% 18%)" }}
+                  >
+                    <option value="ativo">Ativo</option>
+                    <option value="pendente">Pendente</option>
+                    <option value="inativo">Inativo</option>
+                    <option value="bloqueado">Bloqueado</option>
+                  </select>
+                </div>
+                <div className="flex gap-2 pt-2">
+                  <button
+                    onClick={() => setEditMode(false)}
+                    className="px-4 py-2 rounded text-xs font-semibold border transition-colors hover:bg-gray-50"
+                    style={{ borderColor: "hsl(220 13% 87%)", color: "hsl(220 9% 46%)" }}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={async () => {
+                      setEditError("");
+                      if (!editForm.nome_completo.trim()) { setEditError("Nome é obrigatório"); return; }
+                      if (!editForm.email.trim()) { setEditError("Email é obrigatório"); return; }
+                      setEditLoading(true);
+                      try {
+                        const res = await fetch(`${SUPABASE_URL}/functions/v1/admin-api`, {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json", apikey: SUPABASE_KEY },
+                          body: JSON.stringify({
+                            action: "updateUser",
+                            session_token: sessionToken,
+                            user_id: drawerUser.id,
+                            nome_completo: editForm.nome_completo.trim(),
+                            email: editForm.email.trim(),
+                            status: editForm.status,
+                            tenant_id: editForm.tenant_id || null,
+                          }),
+                        });
+                        const data = await res.json();
+                        if (res.ok && data.success) {
+                          setEditMode(false);
+                          setDrawerUser(null);
+                          loadUsers();
+                        } else {
+                          setEditError(data.error || "Erro ao atualizar usuário");
+                        }
+                      } catch {
+                        setEditError("Erro de conexão");
+                      }
+                      setEditLoading(false);
+                    }}
+                    disabled={editLoading}
+                    className="flex items-center gap-2 px-4 py-2 rounded text-xs font-semibold transition-colors disabled:opacity-60"
+                    style={{ background: "hsl(224 76% 33%)", color: "#fff" }}
+                  >
+                    {editLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+                    Salvar
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-4 text-sm">
+                  {[
+                    { label: "Nome", value: drawerUser.nome_completo },
+                    { label: "Email", value: drawerUser.email },
+                    { label: "Órgão", value: drawerUser.orgao || "—" },
+                    { label: "Status", value: drawerUser.status },
+                    { label: "Cadastro", value: new Date(drawerUser.created_at).toLocaleDateString("pt-BR") },
+                    { label: "Último acesso", value: drawerUser.ultimo_acesso ? new Date(drawerUser.ultimo_acesso).toLocaleDateString("pt-BR") : "—" },
+                  ].map((f) => (
+                    <div key={f.label}>
+                      <p className="text-xs font-medium" style={{ color: "hsl(220 9% 46%)" }}>{f.label}</p>
+                      <p style={{ color: "hsl(220 13% 18%)" }}>{f.value}</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-6 flex gap-2">
+                  <button
+                    onClick={() => {
+                      const userTenantId = (() => {
+                        // find tenant_id from user_roles for this user
+                        const t = tenants.find((t) => t.sigla === drawerUser.orgao);
+                        return t?.id || "";
+                      })();
+                      setEditForm({
+                        nome_completo: drawerUser.nome_completo,
+                        email: drawerUser.email,
+                        status: drawerUser.status,
+                        tenant_id: userTenantId,
+                      });
+                      setEditError("");
+                      setEditMode(true);
+                    }}
+                    className="px-4 py-2 rounded text-xs font-semibold border transition-colors hover:bg-gray-50"
+                    style={{ borderColor: "hsl(224 76% 33%)", color: "hsl(224 76% 33%)" }}
+                  >
+                    Editar
+                  </button>
+                  <button
+                    className="px-4 py-2 rounded text-xs font-semibold border transition-colors hover:bg-gray-50"
+                    style={{ borderColor: "hsl(0 73% 42%)", color: "hsl(0 73% 42%)" }}
+                  >
+                    Bloquear
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </>
       )}
