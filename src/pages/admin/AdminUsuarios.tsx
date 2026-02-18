@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import GovStatusBadge from "@/components/institucional/GovStatusBadge";
-import { Plus, X, Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, X, Search, ChevronLeft, ChevronRight, Building2 } from "lucide-react";
 
 const fontStyle = { fontFamily: "Inter, Roboto, sans-serif" };
 const PAGE_SIZE_OPTIONS = [25, 50, 100] as const;
@@ -13,6 +13,13 @@ interface UserRow {
   status: string;
   ultimo_acesso: string | null;
   created_at: string;
+  orgao?: string | null;
+}
+
+interface TenantOption {
+  id: string;
+  nome: string;
+  sigla: string;
 }
 
 export default function AdminUsuarios() {
@@ -22,9 +29,20 @@ export default function AdminUsuarios() {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("todos");
+  const [tenantFilter, setTenantFilter] = useState<string>("todos");
+  const [tenants, setTenants] = useState<TenantOption[]>([]);
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(50);
   const [totalCount, setTotalCount] = useState(0);
+
+  // Load tenants for filter
+  useEffect(() => {
+    supabase
+      .from("tenants")
+      .select("id, nome, sigla")
+      .order("nome")
+      .then(({ data }) => setTenants((data as TenantOption[]) || []));
+  }, []);
 
   // Debounce search
   useEffect(() => {
@@ -38,6 +56,22 @@ export default function AdminUsuarios() {
       const from = page * pageSize;
       const to = from + pageSize - 1;
 
+      // If filtering by tenant, first get user_ids that belong to that tenant
+      let filteredUserIds: string[] | null = null;
+      if (tenantFilter !== "todos") {
+        const { data: roleRows } = await supabase
+          .from("user_roles")
+          .select("user_id")
+          .eq("tenant_id", tenantFilter);
+        filteredUserIds = (roleRows || []).map((r) => r.user_id);
+        if (filteredUserIds.length === 0) {
+          setUsers([]);
+          setTotalCount(0);
+          setLoading(false);
+          return;
+        }
+      }
+
       let query = supabase
         .from("usuarios")
         .select("id, nome_completo, email, status, ultimo_acesso, created_at", { count: "exact" })
@@ -50,14 +84,58 @@ export default function AdminUsuarios() {
       if (statusFilter !== "todos") {
         query = query.eq("status", statusFilter as "ativo" | "pendente" | "inativo" | "bloqueado");
       }
+      if (filteredUserIds) {
+        query = query.in("id", filteredUserIds);
+      }
 
       const { data, count } = await query;
-      setUsers((data as UserRow[]) || []);
+      const userRows = (data || []) as UserRow[];
+
+      // Fetch tenant associations for these users
+      if (userRows.length > 0) {
+        const userIds = userRows.map((u) => u.id);
+        const { data: roles } = await supabase
+          .from("user_roles")
+          .select("user_id, tenant_id")
+          .in("user_id", userIds);
+
+        if (roles && roles.length > 0) {
+          const tenantIds = [...new Set(roles.map((r) => r.tenant_id).filter(Boolean))] as string[];
+          // Build tenant map from already-loaded tenants list
+          const tenantMap: Record<string, string> = {};
+          for (const t of tenants) {
+            tenantMap[t.id] = t.sigla;
+          }
+          // If some tenants aren't loaded yet, fetch them
+          const missingIds = tenantIds.filter((tid) => !tenantMap[tid]);
+          if (missingIds.length > 0) {
+            const { data: extraTenants } = await supabase
+              .from("tenants")
+              .select("id, sigla")
+              .in("id", missingIds);
+            for (const t of extraTenants || []) {
+              tenantMap[t.id] = t.sigla;
+            }
+          }
+
+          const userTenantMap: Record<string, string> = {};
+          for (const r of roles) {
+            if (r.tenant_id && tenantMap[r.tenant_id]) {
+              userTenantMap[r.user_id] = tenantMap[r.tenant_id];
+            }
+          }
+          for (const u of userRows) {
+            u.orgao = userTenantMap[u.id] || null;
+          }
+        }
+      }
+
+      setUsers(userRows);
       setTotalCount(count || 0);
       setLoading(false);
     }
     load();
-  }, [debouncedSearch, statusFilter, page, pageSize]);
+  }, [debouncedSearch, statusFilter, tenantFilter, page, pageSize, tenants]);
 
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
@@ -105,28 +183,49 @@ export default function AdminUsuarios() {
         </div>
       </div>
 
-      {/* Status filters */}
-      <div className="flex items-center gap-2 mb-4 flex-wrap">
-        {[
-          { value: "todos", label: "Todos" },
-          { value: "ativo", label: "Ativo" },
-          { value: "pendente", label: "Pendente" },
-          { value: "inativo", label: "Inativo" },
-          { value: "bloqueado", label: "Bloqueado" },
-        ].map((f) => (
-          <button
-            key={f.value}
-            onClick={() => { setStatusFilter(f.value); setPage(0); }}
-            className="px-3 py-1.5 rounded-full text-xs font-medium border transition-colors"
-            style={{
-              borderColor: statusFilter === f.value ? "hsl(224 76% 33%)" : "hsl(220 13% 87%)",
-              background: statusFilter === f.value ? "hsl(224 76% 33%)" : "transparent",
-              color: statusFilter === f.value ? "#fff" : "hsl(220 9% 46%)",
-            }}
-          >
-            {f.label}
-          </button>
-        ))}
+      {/* Filters row */}
+      <div className="flex items-center gap-4 mb-4 flex-wrap">
+        {/* Status filters */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {[
+            { value: "todos", label: "Todos" },
+            { value: "ativo", label: "Ativo" },
+            { value: "pendente", label: "Pendente" },
+            { value: "inativo", label: "Inativo" },
+            { value: "bloqueado", label: "Bloqueado" },
+          ].map((f) => (
+            <button
+              key={f.value}
+              onClick={() => { setStatusFilter(f.value); setPage(0); }}
+              className="px-3 py-1.5 rounded-full text-xs font-medium border transition-colors"
+              style={{
+                borderColor: statusFilter === f.value ? "hsl(224 76% 33%)" : "hsl(220 13% 87%)",
+                background: statusFilter === f.value ? "hsl(224 76% 33%)" : "transparent",
+                color: statusFilter === f.value ? "#fff" : "hsl(220 9% 46%)",
+              }}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Tenant filter */}
+        {tenants.length > 0 && (
+          <div className="flex items-center gap-1.5">
+            <Building2 className="w-3.5 h-3.5" style={{ color: "hsl(220 9% 46%)" }} />
+            <select
+              value={tenantFilter}
+              onChange={(e) => { setTenantFilter(e.target.value); setPage(0); }}
+              className="text-xs rounded border px-2 py-1.5 bg-transparent outline-none cursor-pointer"
+              style={{ borderColor: "hsl(220 13% 87%)", color: "hsl(220 13% 18%)" }}
+            >
+              <option value="todos">Todos os órgãos</option>
+              {tenants.map((t) => (
+                <option key={t.id} value={t.id}>{t.sigla} — {t.nome}</option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       {/* Table */}
@@ -138,7 +237,7 @@ export default function AdminUsuarios() {
           <table className="w-full text-sm">
             <thead>
               <tr style={{ background: "hsl(210 17% 96%)" }}>
-                {["Nome", "Email", "Status", "Último login", "Ações"].map((h) => (
+                {["Nome", "Email", "Órgão", "Status", "Último login", "Ações"].map((h) => (
                   <th key={h} className="px-4 py-2.5 text-left text-xs font-semibold" style={{ color: "hsl(220 9% 46%)" }}>
                     {h}
                   </th>
@@ -148,13 +247,13 @@ export default function AdminUsuarios() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-sm" style={{ color: "hsl(220 9% 46%)" }}>
+                  <td colSpan={6} className="px-4 py-8 text-center text-sm" style={{ color: "hsl(220 9% 46%)" }}>
                     Carregando…
                   </td>
                 </tr>
               ) : users.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-sm" style={{ color: "hsl(220 9% 46%)" }}>
+                  <td colSpan={6} className="px-4 py-8 text-center text-sm" style={{ color: "hsl(220 9% 46%)" }}>
                     Nenhum usuário encontrado.
                   </td>
                 </tr>
@@ -163,6 +262,9 @@ export default function AdminUsuarios() {
                   <tr key={u.id} className="border-t" style={{ borderColor: "hsl(220 13% 91%)" }}>
                     <td className="px-4 py-3 font-medium" style={{ color: "hsl(220 13% 18%)" }}>{u.nome_completo}</td>
                     <td className="px-4 py-3" style={{ color: "hsl(220 9% 46%)" }}>{u.email}</td>
+                    <td className="px-4 py-3 text-xs" style={{ color: "hsl(220 9% 46%)" }}>
+                      {u.orgao || <span style={{ opacity: 0.4 }}>—</span>}
+                    </td>
                     <td className="px-4 py-3">
                       <GovStatusBadge status={statusMap[u.status] || "amarelo"} label={u.status} />
                     </td>
@@ -280,6 +382,7 @@ export default function AdminUsuarios() {
               {[
                 { label: "Nome", value: drawerUser.nome_completo },
                 { label: "Email", value: drawerUser.email },
+                { label: "Órgão", value: drawerUser.orgao || "—" },
                 { label: "Status", value: drawerUser.status },
                 { label: "Cadastro", value: new Date(drawerUser.created_at).toLocaleDateString("pt-BR") },
                 { label: "Último acesso", value: drawerUser.ultimo_acesso ? new Date(drawerUser.ultimo_acesso).toLocaleDateString("pt-BR") : "—" },
