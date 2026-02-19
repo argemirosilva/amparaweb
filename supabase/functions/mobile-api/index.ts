@@ -419,6 +419,34 @@ async function handlePing(
     }
   }
 
+  // Optional GPS: if latitude & longitude are present, insert into localizacoes
+  const pingLat = body.latitude as number | undefined;
+  const pingLon = body.longitude as number | undefined;
+  if (pingLat !== undefined && pingLon !== undefined) {
+    const locData: Record<string, unknown> = {
+      user_id: userId,
+      device_id: deviceId || null,
+      latitude: pingLat,
+      longitude: pingLon,
+    };
+    if (body.location_accuracy != null) locData.precisao_metros = Number(body.location_accuracy);
+    if (body.location_timestamp) locData.timestamp_gps = body.location_timestamp as string;
+    if (body.speed != null) locData.speed = Number(body.speed);
+    if (body.heading != null) locData.heading = Number(body.heading);
+    if (body.bateria_percentual != null) locData.bateria_percentual = Number(body.bateria_percentual);
+
+    // Link to active panic alert if any
+    const { data: activePanic } = await supabase
+      .from("alertas_panico")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("status", "ativo")
+      .maybeSingle();
+    if (activePanic) locData.alerta_id = activePanic.id;
+
+    await supabase.from("localizacoes").insert(locData);
+  }
+
   return jsonResponse({
     success: true,
     status: "online",
