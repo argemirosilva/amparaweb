@@ -90,7 +90,7 @@ export default function ChangePasswordCard() {
         </div>
         <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
       </CollapsibleTrigger>
-      <CollapsibleContent>
+      <CollapsibleContent className="overflow-hidden data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
         <div className="rounded-lg border bg-card text-card-foreground shadow-sm px-3 py-3 mt-1.5">
           <Tabs defaultValue="principal" className="w-full">
             <TabsList className="w-full grid grid-cols-2 h-8">
