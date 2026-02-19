@@ -31,7 +31,7 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    const { email, senha } = await req.json();
+    const { email, senha, latitude, longitude } = await req.json();
     const ip = req.headers.get("x-forwarded-for") || "unknown";
     const emailClean = email?.trim().toLowerCase();
 
@@ -125,6 +125,15 @@ serve(async (req) => {
     await supabase.from("audit_logs").insert({
       user_id: user.id, action_type: "session_created", success: true, ip_address: ip,
     });
+
+    // Save GPS if provided
+    if (typeof latitude === "number" && typeof longitude === "number") {
+      await supabase.from("localizacoes").insert({
+        user_id: user.id,
+        latitude,
+        longitude,
+      });
+    }
 
     // Get onboarding status
     const { data: fullUser } = await supabase
