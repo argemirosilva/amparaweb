@@ -1,17 +1,18 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { ShieldAlert, Loader2 } from "lucide-react";
+import { ShieldAlert, Loader2, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 export default function ChangeCoercionPasswordCard() {
   const { sessionToken } = useAuth();
+  const [open, setOpen] = useState(false);
   const [senhaAtual, setSenhaAtual] = useState("");
   const [novaSenha, setNovaSenha] = useState("");
   const [confirmarSenha, setConfirmarSenha] = useState("");
@@ -66,14 +67,16 @@ export default function ChangeCoercionPasswordCard() {
   if (!sessionToken) return null;
 
   return (
-    <div className="space-y-1.5">
-      <div className="flex items-center gap-1.5">
-        <ShieldAlert className="w-4 h-4 text-primary" />
-        <h2 className="text-sm font-semibold text-foreground">Senha de segurança</h2>
-      </div>
-
-      <Card>
-        <CardContent className="px-3 py-2">
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <CollapsibleTrigger className="flex items-center justify-between w-full py-1.5 group">
+        <div className="flex items-center gap-1.5">
+          <ShieldAlert className="w-4 h-4 text-primary" />
+          <h2 className="text-sm font-semibold text-foreground">Senha de segurança</h2>
+        </div>
+        <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <div className="rounded-lg border bg-card text-card-foreground shadow-sm px-3 py-2 mt-1.5">
           <p className="text-[11px] text-muted-foreground mb-2">
             A senha de segurança é usada em situações de coação. Ao usá-la para login, o sistema aparenta funcionar normalmente mas aciona silenciosamente seus guardiões.
           </p>
@@ -97,8 +100,8 @@ export default function ChangeCoercionPasswordCard() {
               Alterar senha de segurança
             </Button>
           </form>
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
   );
 }

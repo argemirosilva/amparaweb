@@ -1,17 +1,19 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Lock, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ChevronDown } from "lucide-react";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 export default function ChangePasswordCard() {
   const { sessionToken } = useAuth();
+  const [open, setOpen] = useState(false);
   const [senhaAtual, setSenhaAtual] = useState("");
   const [novaSenha, setNovaSenha] = useState("");
   const [confirmarSenha, setConfirmarSenha] = useState("");
@@ -63,14 +65,16 @@ export default function ChangePasswordCard() {
   if (!sessionToken) return null;
 
   return (
-    <div className="space-y-1.5">
-      <div className="flex items-center gap-1.5">
-        <Lock className="w-4 h-4 text-primary" />
-        <h2 className="text-sm font-semibold text-foreground">Trocar senha</h2>
-      </div>
-
-      <Card>
-        <CardContent className="px-3 py-2">
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <CollapsibleTrigger className="flex items-center justify-between w-full py-1.5 group">
+        <div className="flex items-center gap-1.5">
+          <Lock className="w-4 h-4 text-primary" />
+          <h2 className="text-sm font-semibold text-foreground">Trocar senha</h2>
+        </div>
+        <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <div className="rounded-lg border bg-card text-card-foreground shadow-sm px-3 py-2 mt-1.5">
           <form onSubmit={handleSubmit} className="space-y-2">
             <div className="space-y-1">
               <Label htmlFor="senha-atual" className="text-xs">Senha atual</Label>
@@ -91,8 +95,8 @@ export default function ChangePasswordCard() {
               Alterar senha
             </Button>
           </form>
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
   );
 }
