@@ -1,5 +1,6 @@
 import MonitoringScheduleEditor from "@/components/configuracoes/MonitoringScheduleEditor";
 import ChangePasswordCard from "@/components/configuracoes/ChangePasswordCard";
+import ChangeCoercionPasswordCard from "@/components/configuracoes/ChangeCoercionPasswordCard";
 import RetentionSettingCard from "@/components/configuracoes/RetentionSettingCard";
 import GpsSharingCard from "@/components/configuracoes/GpsSharingCard";
 import AcionamentosCard from "@/components/configuracoes/AcionamentosCard";
@@ -11,6 +12,7 @@ export default function ConfiguracoesPage() {
       <h1 className="text-2xl font-display font-bold text-foreground">Configurações</h1>
       <div className="max-w-lg space-y-6">
         <ChangePasswordCard />
+        <ChangeCoercionPasswordCard />
         <MonitoringScheduleEditor />
         <NiveisAlertaLegenda />
         <AcionamentosCard />
