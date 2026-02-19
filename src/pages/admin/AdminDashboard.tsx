@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Users, AlertTriangle, BarChart3, Smartphone } from "lucide-react";
 import GovKpiCard from "@/components/institucional/GovKpiCard";
 import GovStatusBadge from "@/components/institucional/GovStatusBadge";
-import DashboardMapCard from "@/components/institucional/DashboardMapCard";
+
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
@@ -216,7 +216,7 @@ export default function AdminDashboard() {
           <GovKpiCard title="Emergências" value={kpis.emergencias} icon={AlertTriangle} />
           <GovKpiCard title="Dispositivos Online" value={kpis.dispositivosOnline} icon={Smartphone} />
         </div>
-        <DashboardMapCard />
+        
       </div>
 
       {/* Row 1: Timeline + Risk Pie */}
