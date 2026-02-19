@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import AudioRecorderCard from "@/components/dashboard/AudioRecorderCard";
 import GravacaoExpandedContent from "@/components/gravacoes/GravacaoExpandedContent";
 import GradientIcon from "@/components/ui/gradient-icon";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   Mic,
   Clock,
@@ -344,12 +345,21 @@ export default function GravacoesPage() {
                         const remainingHours = (expireAt - Date.now()) / (1000 * 60 * 60);
                         const isUrgent = remainingHours < 24;
                         return (
-                          <div className="flex items-center gap-1 px-3 -mt-1 pb-1">
-                            <Trash2 className={`w-2.5 h-2.5 ${isUrgent ? "text-destructive/70" : "text-muted-foreground/50"}`} />
-                            <span className={`text-[9px] ${isUrgent ? "text-destructive/70 font-medium" : "text-muted-foreground/50"}`}>
-                              {countdown}
-                            </span>
-                          </div>
+                          <TooltipProvider delayDuration={300}>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="flex items-center gap-1 px-3 -mt-1 pb-1 cursor-help">
+                                  <Trash2 className={`w-2.5 h-2.5 ${isUrgent ? "text-destructive/70" : "text-muted-foreground/50"}`} />
+                                  <span className={`text-[9px] ${isUrgent ? "text-destructive/70 font-medium" : "text-muted-foreground/50"}`}>
+                                    {countdown}
+                                  </span>
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent side="bottom" className="max-w-[220px] text-center">
+                                <p className="text-xs">Gravações sem risco são excluídas automaticamente após <strong>{retencaoDias} dias</strong>. Você pode alterar isso em Configurações.</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                         );
                       })()}
                     </button>
