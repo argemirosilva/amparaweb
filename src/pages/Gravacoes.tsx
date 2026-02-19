@@ -292,10 +292,11 @@ export default function GravacoesPage() {
                           <div className="flex items-center gap-1 shrink-0">
                             {g.nivel_risco && (
                               <span
-                                className="text-[8px] font-semibold px-1.5 py-0 rounded-full leading-4"
+                                className="text-[9px] font-bold px-2 py-0.5 rounded-full leading-4 border"
                                 style={{
-                                  backgroundColor: `${RISCO_COLORS[g.nivel_risco]}20`,
+                                  backgroundColor: `${RISCO_COLORS[g.nivel_risco]}30`,
                                   color: RISCO_COLORS[g.nivel_risco],
+                                  borderColor: `${RISCO_COLORS[g.nivel_risco]}50`,
                                 }}
                               >
                                 {RISCO_LABELS[g.nivel_risco] || g.nivel_risco}
