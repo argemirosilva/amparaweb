@@ -825,6 +825,104 @@ async function handleChangePassword(
   return errorResponse("Senha atual incorreta", 401);
 }
 
+async function handleChangeCoercionPassword(
+  body: Record<string, unknown>,
+  supabase: ReturnType<typeof createClient>,
+  ip: string
+): Promise<Response> {
+  const sessionToken = body.session_token as string;
+  const senhaAtual = body.senha_atual as string;
+  const novaSenhaCoacao = body.nova_senha_coacao as string;
+
+  if (!sessionToken) return errorResponse("session_token obrigatório", 400);
+  if (!senhaAtual || !novaSenhaCoacao) return errorResponse("senha_atual e nova_senha_coacao obrigatórios", 400);
+  if (novaSenhaCoacao.length < 6) return errorResponse("Nova senha de coação inválida", 400);
+
+  const { user, error } = await validateSession(supabase, sessionToken);
+  if (error || !user) return errorResponse(error || "Sessão inválida ou expirada", 401);
+
+  const userId = (user as Record<string, unknown>).id as string;
+  const userEmail = (user as Record<string, unknown>).email as string;
+
+  const identifier = `${userEmail}:${ip}`;
+  const limited = await checkRateLimit(supabase, identifier, "change_coercion_password", 5, 15);
+  if (limited) return errorResponse("Muitas tentativas. Aguarde 15 minutos.", 429);
+
+  const { data: fullUser } = await supabase
+    .from("usuarios")
+    .select("senha_hash, senha_coacao_hash")
+    .eq("id", userId)
+    .single();
+
+  if (!fullUser) return errorResponse("Usuário não encontrado", 404);
+
+  // Must authenticate with NORMAL password to change coercion password
+  const comunOk = bcrypt.compareSync(senhaAtual, fullUser.senha_hash);
+  const coercaoOk = fullUser.senha_coacao_hash
+    ? bcrypt.compareSync(senhaAtual, fullUser.senha_coacao_hash)
+    : false;
+
+  // If coercion password was used, fake success (anti-coercion pattern)
+  if (coercaoOk && !comunOk) {
+    await supabase.from("audit_logs").insert({
+      user_id: userId,
+      action_type: "change_coercion_password",
+      success: true,
+      ip_address: ip,
+      details: { mode: "coercion_fake_success" },
+    });
+
+    await supabase.from("audit_logs").insert({
+      user_id: userId,
+      action_type: "coercion_event",
+      success: true,
+      ip_address: ip,
+      details: { event: "COERCION_PASSWORD_CHANGE", source: "change_coercion_password" },
+    });
+
+    return jsonResponse({ success: true, message: "Senha de segurança alterada com sucesso" });
+  }
+
+  if (comunOk) {
+    // Ensure coercion password is different from normal password
+    if (bcrypt.compareSync(novaSenhaCoacao, fullUser.senha_hash)) {
+      return errorResponse("A senha de segurança deve ser diferente da senha principal", 400);
+    }
+
+    const novaSenhaCoacaoHash = bcrypt.hashSync(novaSenhaCoacao);
+    await supabase
+      .from("usuarios")
+      .update({ senha_coacao_hash: novaSenhaCoacaoHash, updated_at: new Date().toISOString() })
+      .eq("id", userId);
+
+    await supabase.from("audit_logs").insert({
+      user_id: userId,
+      action_type: "change_coercion_password",
+      success: true,
+      ip_address: ip,
+      details: { mode: "real_change" },
+    });
+
+    return jsonResponse({ success: true, message: "Senha de segurança alterada com sucesso" });
+  }
+
+  // Wrong password
+  await supabase.from("rate_limit_attempts").insert({
+    identifier,
+    action_type: "change_coercion_password",
+  });
+
+  await supabase.from("audit_logs").insert({
+    user_id: userId,
+    action_type: "change_coercion_password",
+    success: false,
+    ip_address: ip,
+    details: { reason: "invalid_current_password" },
+  });
+
+  return errorResponse("Senha atual incorreta", 401);
+}
+
 async function handleUpdateSchedules(
   body: Record<string, unknown>,
   supabase: ReturnType<typeof createClient>,
@@ -1905,6 +2003,8 @@ serve(async (req) => {
         return await handleValidatePassword(body, supabase, ip);
       case "change_password":
         return await handleChangePassword(body, supabase, ip);
+      case "change_coercion_password":
+        return await handleChangeCoercionPassword(body, supabase, ip);
       case "update_schedules":
         return await handleUpdateSchedules(body, supabase, ip);
 
