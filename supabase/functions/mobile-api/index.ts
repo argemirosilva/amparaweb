@@ -430,7 +430,12 @@ async function handlePing(
       longitude: pingLon,
     };
     if (body.location_accuracy != null) locData.precisao_metros = Number(body.location_accuracy);
-    if (body.location_timestamp) locData.timestamp_gps = body.location_timestamp as string;
+    if (body.location_timestamp) {
+      const raw = body.location_timestamp;
+      // Accept both ISO string and Unix millis
+      const ts = typeof raw === "number" ? new Date(raw).toISOString() : typeof raw === "string" && /^\d+$/.test(raw) ? new Date(Number(raw)).toISOString() : raw as string;
+      locData.timestamp_gps = ts;
+    }
     if (body.speed != null) locData.speed = Number(body.speed);
     if (body.heading != null) locData.heading = Number(body.heading);
     if (body.bateria_percentual != null) locData.bateria_percentual = Number(body.bateria_percentual);
@@ -444,7 +449,8 @@ async function handlePing(
       .maybeSingle();
     if (activePanic) locData.alerta_id = activePanic.id;
 
-    await supabase.from("localizacoes").insert(locData);
+    const { error: locError } = await supabase.from("localizacoes").insert(locData);
+    if (locError) console.error(`[handlePing] loc insert error: ${locError.message}`);
   }
 
   return jsonResponse({
