@@ -36,7 +36,6 @@ interface Gravacao {
 
 const RISCO_COLORS: Record<string, string> = {
   sem_risco: "#22c55e",
-  baixo: "#84cc16",
   moderado: "#eab308",
   alto: "#f97316",
   critico: "#ef4444",
@@ -44,7 +43,6 @@ const RISCO_COLORS: Record<string, string> = {
 
 const RISCO_LABELS: Record<string, string> = {
   sem_risco: "Sem Risco",
-  baixo: "Baixo",
   moderado: "Moderado",
   alto: "Alto",
   critico: "Crítico",
@@ -210,7 +208,7 @@ export default function GravacoesPage() {
 
       {/* Filters */}
       <div className="flex items-center gap-2 flex-wrap">
-        {["", "sem_risco", "baixo", "moderado", "alto", "critico"].map((r) => {
+        {["", "sem_risco", "moderado", "alto", "critico"].map((r) => {
           const isActive = filterRisco === r;
           const color = r ? RISCO_COLORS[r] : undefined;
           return (
