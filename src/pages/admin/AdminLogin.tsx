@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Eye, EyeOff, Loader2, ShieldCheck } from "lucide-react";
+import amparaLogo from "@/assets/ampara-logo.png";
 import amparaIcon from "@/assets/ampara-icon-transparent.png";
 
 const fontStyle = { fontFamily: "Inter, Roboto, sans-serif" };
@@ -92,12 +93,7 @@ export default function AdminLogin() {
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-6">
-          <div
-            className="inline-flex items-center justify-center w-16 h-16 rounded-xl mb-4"
-            style={{ background: "hsl(224 76% 33%)" }}
-          >
-            <img src={amparaIcon} alt="AMPARA" className="w-10 h-10 object-contain brightness-0 invert" />
-          </div>
+          <img src={amparaLogo} alt="AMPARA" className="h-12 object-contain mx-auto mb-4" />
           <h1
             className="text-xl font-semibold tracking-tight"
             style={{ color: "hsl(220 13% 18%)" }}
