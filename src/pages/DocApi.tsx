@@ -28,8 +28,6 @@ const ENDPOINTS: Endpoint[] = [
       { name: "email", type: "string", required: true, description: "Email do usuário" },
       { name: "senha", type: "string", required: true, description: "Senha do usuário" },
       { name: "tipo_acao", type: "string", required: false, description: "Ex: 'desinstalacao' para registrar evento" },
-      { name: "latitude", type: "number", required: false, description: "Latitude do dispositivo no momento do login" },
-      { name: "longitude", type: "number", required: false, description: "Longitude do dispositivo no momento do login" },
     ],
     response: {
       success: true,
