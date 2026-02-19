@@ -49,11 +49,20 @@ serve(async (req) => {
 
     const { data: user } = await supabase
       .from("usuarios")
-      .select("id, email, nome_completo, onboarding_completo, avatar_url")
+      .select("id, email, nome_completo, onboarding_completo, avatar_url, senha_coacao_hash")
       .eq("id", session.user_id)
       .single();
 
-    return new Response(JSON.stringify({ valid: true, usuario: user }), {
+    const usuario = {
+      id: user.id,
+      email: user.email,
+      nome_completo: user.nome_completo,
+      onboarding_completo: user.onboarding_completo,
+      avatar_url: user.avatar_url,
+      has_coercion_password: !!user.senha_coacao_hash,
+    };
+
+    return new Response(JSON.stringify({ valid: true, usuario }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
