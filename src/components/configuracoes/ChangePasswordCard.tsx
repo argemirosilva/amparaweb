@@ -111,7 +111,7 @@ export default function ChangePasswordCard() {
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="principal" className="mt-3">
+            <TabsContent value="principal" className="mt-3 animate-fade-in">
               <form onSubmit={handleSubmit} className="space-y-2">
                 <div className="space-y-1">
                   <Label htmlFor="senha-atual" className="text-xs">Senha atual</Label>
@@ -134,7 +134,7 @@ export default function ChangePasswordCard() {
               </form>
             </TabsContent>
 
-            <TabsContent value="seguranca" className="mt-3">
+            <TabsContent value="seguranca" className="mt-3 animate-fade-in">
               <p className="text-[11px] text-muted-foreground mb-2">
                 A senha de segurança é usada em situações de coação. Ao usá-la para login, o sistema aparenta funcionar normalmente mas aciona silenciosamente seus guardiões.
               </p>
