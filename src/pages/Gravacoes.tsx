@@ -19,6 +19,7 @@ import {
   Smartphone,
   Monitor,
   HardDrive,
+  Trash2,
 } from "lucide-react";
 
 interface Gravacao {
@@ -134,6 +135,20 @@ const STATUS_MAP: Record<string, { label: string; variant: "default" | "secondar
   erro: { label: "Erro", variant: "destructive" },
 };
 
+function getRetentionCountdown(createdAt: string, retencaoDias: number): string | null {
+  const expireAt = new Date(createdAt).getTime() + retencaoDias * 24 * 60 * 60 * 1000;
+  const now = Date.now();
+  const remainingMs = expireAt - now;
+  if (remainingMs <= 0) return "Será excluída em breve";
+  const remainingHours = remainingMs / (1000 * 60 * 60);
+  if (remainingHours < 24) {
+    const h = Math.ceil(remainingHours);
+    return `${h}h para exclusão`;
+  }
+  const days = Math.ceil(remainingMs / (1000 * 60 * 60 * 24));
+  return `${days}d para exclusão`;
+}
+
 export default function GravacoesPage() {
   const { sessionToken, usuario } = useAuth();
   const isMobile = useIsMobile();
@@ -143,8 +158,19 @@ export default function GravacoesPage() {
   const [page, setPage] = useState(1);
   const [filterRisco, setFilterRisco] = useState<string>("");
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [retencaoDias, setRetencaoDias] = useState<number>(7);
   const perPage = 15;
   const loadDataRef = useRef<() => Promise<void>>();
+
+  // Fetch user retention setting
+  useEffect(() => {
+    if (!sessionToken) return;
+    callWebApi("getMe", sessionToken).then((res) => {
+      if (res.ok && res.data?.usuario) {
+        setRetencaoDias(res.data.usuario.retencao_dias_sem_risco ?? 7);
+      }
+    });
+  }, [sessionToken]);
 
   const loadData = useCallback(async () => {
     if (!sessionToken) return;
@@ -310,6 +336,22 @@ export default function GravacoesPage() {
                           </div>
                         </div>
                       </div>
+                      {/* Retention countdown for sem_risco */}
+                      {g.nivel_risco === "sem_risco" && (() => {
+                        const countdown = getRetentionCountdown(g.created_at, retencaoDias);
+                        if (!countdown) return null;
+                        const expireAt = new Date(g.created_at).getTime() + retencaoDias * 24 * 60 * 60 * 1000;
+                        const remainingHours = (expireAt - Date.now()) / (1000 * 60 * 60);
+                        const isUrgent = remainingHours < 24;
+                        return (
+                          <div className="flex items-center gap-1 px-3 -mt-1 pb-1">
+                            <Trash2 className={`w-2.5 h-2.5 ${isUrgent ? "text-destructive/70" : "text-muted-foreground/50"}`} />
+                            <span className={`text-[9px] ${isUrgent ? "text-destructive/70 font-medium" : "text-muted-foreground/50"}`}>
+                              {countdown}
+                            </span>
+                          </div>
+                        );
+                      })()}
                     </button>
 
                     {isExpanded && (
