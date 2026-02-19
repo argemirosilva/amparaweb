@@ -21,7 +21,7 @@ export default function BottomNav() {
 
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border safe-area-bottom">
-      <div className="flex items-end justify-around h-14">
+      <div className="flex items-end justify-evenly h-14 px-2">
         {items.map((item) => {
           const active = location.pathname === item.url;
           const isCenter = (item as any).center;
