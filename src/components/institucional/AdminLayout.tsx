@@ -4,7 +4,7 @@ import { useAdminRole } from "@/hooks/useAdminRole";
 import ProtectedAdminRoute from "./ProtectedAdminRoute";
 import {
   LayoutDashboard,
-  Map,
+  
   Users,
   Building2,
   Shield,
@@ -21,8 +21,7 @@ import { useState } from "react";
 const TECNICO_PATHS = ["/admin/configuracoes", "/admin/integracoes"];
 
 const sidebarItems = [
-  { label: "Dashboard", path: "/admin", icon: LayoutDashboard },
-  { label: "Mapa Agregado", path: "/admin/mapa", icon: Map },
+  { label: "Mapa Agregado", path: "/admin", icon: LayoutDashboard },
   { label: "Usuários", path: "/admin/usuarios", icon: Users },
   { label: "Órgãos/Tenants", path: "/admin/orgaos", icon: Building2 },
   { label: "Auditoria", path: "/admin/auditoria", icon: Shield },
