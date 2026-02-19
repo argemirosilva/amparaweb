@@ -86,7 +86,7 @@ export default function ChangePasswordCard() {
       <CollapsibleTrigger className="flex items-center justify-between w-full py-1.5 group">
         <div className="flex items-center gap-1.5">
           <Lock className="w-4 h-4 text-primary" />
-          <h2 className="text-sm font-semibold text-foreground">Senhas</h2>
+          <h2 className="text-sm font-semibold text-foreground">Configuração das senhas</h2>
         </div>
         <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
       </CollapsibleTrigger>
