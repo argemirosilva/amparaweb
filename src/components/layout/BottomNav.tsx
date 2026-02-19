@@ -8,8 +8,8 @@ import {
 } from "lucide-react";
 
 const items = [
-  { title: "Mapa", url: "/mapa", icon: MapPin },
   { title: "Gravações", url: "/gravacoes", icon: Mic },
+  { title: "Mapa", url: "/mapa", icon: MapPin },
   { title: "Início", url: "/home", icon: LayoutDashboard, center: true },
   { title: "Perfil", url: "/perfil", icon: UserCircle },
   { title: "Config", url: "/configuracoes", icon: Settings },
