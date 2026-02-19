@@ -9,6 +9,7 @@ interface Usuario {
   nome_completo: string;
   onboarding_completo?: boolean;
   avatar_url?: string | null;
+  has_coercion_password?: boolean;
 }
 
 interface AuthContextType {

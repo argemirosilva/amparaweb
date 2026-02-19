@@ -3,7 +3,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { ShieldAlert, Loader2, ChevronDown } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { ShieldAlert, Loader2, ChevronDown, ShieldCheck, ShieldX } from "lucide-react";
 import { toast } from "sonner";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
@@ -11,13 +12,15 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 export default function ChangeCoercionPasswordCard() {
-  const { sessionToken } = useAuth();
+  const { sessionToken, usuario } = useAuth();
   const [open, setOpen] = useState(false);
   const [senhaAtual, setSenhaAtual] = useState("");
   const [novaSenha, setNovaSenha] = useState("");
   const [confirmarSenha, setConfirmarSenha] = useState("");
   const [loading, setLoading] = useState(false);
+  const [justConfigured, setJustConfigured] = useState(false);
 
+  const hasCoercion = usuario?.has_coercion_password || justConfigured;
   const novaSenhaValida = novaSenha.length >= 6;
   const senhasConferem = novaSenha === confirmarSenha;
   const formValido = senhaAtual.length > 0 && novaSenhaValida && senhasConferem;
@@ -47,6 +50,7 @@ export default function ChangeCoercionPasswordCard() {
         setSenhaAtual("");
         setNovaSenha("");
         setConfirmarSenha("");
+        setJustConfigured(true);
       } else if (res.status === 400) {
         const data = await res.json().catch(() => ({}));
         toast.error(data.error || "Dados inválidos");
@@ -72,6 +76,17 @@ export default function ChangeCoercionPasswordCard() {
         <div className="flex items-center gap-1.5">
           <ShieldAlert className="w-4 h-4 text-primary" />
           <h2 className="text-sm font-semibold text-foreground">Senha de segurança</h2>
+          {hasCoercion ? (
+            <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 border-green-500/40 text-green-600 bg-green-50 dark:bg-green-950/30 dark:text-green-400 gap-0.5">
+              <ShieldCheck className="w-2.5 h-2.5" />
+              Ativa
+            </Badge>
+          ) : (
+            <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 border-amber-500/40 text-amber-600 bg-amber-50 dark:bg-amber-950/30 dark:text-amber-400 gap-0.5">
+              <ShieldX className="w-2.5 h-2.5" />
+              Não configurada
+            </Badge>
+          )}
         </div>
         <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
       </CollapsibleTrigger>
@@ -86,7 +101,7 @@ export default function ChangeCoercionPasswordCard() {
               <Input id="coacao-senha-atual" type="password" autoComplete="current-password" value={senhaAtual} onChange={(e) => setSenhaAtual(e.target.value)} disabled={loading} className="h-8 text-sm" />
             </div>
             <div className="space-y-1">
-              <Label htmlFor="coacao-nova-senha" className="text-xs">Nova senha de segurança</Label>
+              <Label htmlFor="coacao-nova-senha" className="text-xs">{hasCoercion ? "Nova senha de segurança" : "Criar senha de segurança"}</Label>
               <Input id="coacao-nova-senha" type="password" autoComplete="new-password" value={novaSenha} onChange={(e) => setNovaSenha(e.target.value)} disabled={loading} className="h-8 text-sm" />
               {novaSenha.length > 0 && !novaSenhaValida && <p className="text-[10px] text-destructive">Mínimo de 6 caracteres</p>}
             </div>
@@ -97,7 +112,7 @@ export default function ChangeCoercionPasswordCard() {
             </div>
             <Button type="submit" disabled={!formValido || loading} size="sm" className="w-full">
               {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : null}
-              Alterar senha de segurança
+              {hasCoercion ? "Alterar senha de segurança" : "Configurar senha de segurança"}
             </Button>
           </form>
         </div>
