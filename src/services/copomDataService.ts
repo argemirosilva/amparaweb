@@ -32,7 +32,6 @@ export interface CopomContextPayload {
   aggressor: {
     name: string | null;
     name_masked: string | null;
-    description: string | null;
     vehicle: {
       model: string | null;
       color: string | null;
@@ -212,16 +211,6 @@ export async function collectCopomData(
   const vehicles = agressorData?.vehicles;
   const firstVehicle = Array.isArray(vehicles) && vehicles.length > 0 ? vehicles[0] : null;
 
-  // 10. Build description for aggressor
-  let agressorDesc: string | null = null;
-  if (vinculo) {
-    const parts: string[] = [];
-    if (vinculo.tipo_vinculo) parts.push(vinculo.tipo_vinculo);
-    if (vinculo.status_relacao) parts.push(vinculo.status_relacao);
-    if (agressorData?.risk_level) parts.push(`risco: ${agressorData.risk_level}`);
-    agressorDesc = parts.length > 0 ? parts.join(", ") : null;
-  }
-
   // ── Validation ──
 
   if (!protocolId) errors.push("protocol_id ausente");
@@ -263,7 +252,6 @@ export async function collectCopomData(
     aggressor: {
       name: agressorData?.nome ?? null,
       name_masked: agressorData?.display_name_masked ?? null,
-      description: agressorDesc,
       vehicle: {
         model: firstVehicle?.model_hint ?? null,
         color: firstVehicle?.color ?? null,

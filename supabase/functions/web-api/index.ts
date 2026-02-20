@@ -583,7 +583,7 @@ serve(async (req) => {
           aliases, approx_age_min, approx_age_max,
           primary_city_uf, neighborhoods, reference_points, geo_area_tags,
           profession, sector, company_public,
-          vehicles, appearance_notes, appearance_tags,
+          vehicles, appearance_tags,
           phone_clues, email_clues,
           // Incident data (optional first report)
           incident,
@@ -614,7 +614,7 @@ serve(async (req) => {
         if (sector) insertData.sector = sector.trim();
         if (company_public) insertData.company_public = company_public.trim();
         if (vehicles?.length) insertData.vehicles = vehicles;
-        if (appearance_notes) insertData.appearance_notes = appearance_notes.trim();
+        
         if (appearance_tags?.length) insertData.appearance_tags = appearance_tags;
         if (phone_clues?.length) insertData.phone_clues = phone_clues;
         if (email_clues?.length) insertData.email_clues = email_clues;
@@ -760,7 +760,7 @@ serve(async (req) => {
         const enriched = await Promise.all((data || []).map(async (v: any) => {
           const { data: ag } = await supabase
             .from("agressores")
-            .select("nome, data_nascimento, telefone, forca_seguranca, tem_arma_em_casa, aliases, nome_pai_parcial, nome_mae_parcial, primary_city_uf, neighborhoods, profession, vehicles, appearance_notes, risk_level, risk_score, display_name_masked")
+            .select("nome, data_nascimento, telefone, forca_seguranca, tem_arma_em_casa, aliases, nome_pai_parcial, nome_mae_parcial, primary_city_uf, neighborhoods, profession, vehicles, risk_level, risk_score, display_name_masked")
             .eq("id", v.agressor_id)
             .single();
           return { ...v, agressor: ag };
@@ -787,7 +787,7 @@ serve(async (req) => {
           "forca_seguranca", "tem_arma_em_casa", "aliases", "approx_age_min", "approx_age_max",
           "primary_city_uf", "neighborhoods", "reference_points", "geo_area_tags",
           "profession", "sector", "company_public", "vehicles",
-          "appearance_notes", "appearance_tags", "phone_clues", "email_clues",
+          "appearance_tags", "phone_clues", "email_clues",
         ];
         const upd: Record<string, any> = {};
         for (const key of allowedFields) {

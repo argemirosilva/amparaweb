@@ -62,7 +62,7 @@ interface VinculoData {
     neighborhoods: string[] | null;
     profession: string | null;
     vehicles: any[] | null;
-    appearance_notes: string | null;
+    
     risk_level: string | null;
     risk_score: number | null;
     display_name_masked: string | null;
@@ -85,7 +85,7 @@ interface AgressorEditForm {
   placa_parcial: string;
   veiculo_modelo: string;
   veiculo_cor: string;
-  appearance_notes: string;
+  
 }
 
 export default function PerfilPage() {
@@ -235,7 +235,7 @@ export default function PerfilPage() {
       placa_parcial: firstVehicle?.plate_partial || firstVehicle?.plate_prefix || "",
       veiculo_modelo: firstVehicle?.model || "",
       veiculo_cor: firstVehicle?.color || "",
-      appearance_notes: ag.appearance_notes || "",
+      
     });
   };
 
@@ -258,7 +258,7 @@ export default function PerfilPage() {
       nome_mae_parcial: agressorForm.nome_mae_parcial || null,
       forca_seguranca: agressorForm.forca_seguranca,
       tem_arma_em_casa: agressorForm.tem_arma_em_casa,
-      appearance_notes: agressorForm.appearance_notes || null,
+      
     };
 
     if (agressorForm.apelido.trim()) payload.aliases = [agressorForm.apelido.trim()];
@@ -633,11 +633,6 @@ export default function PerfilPage() {
                         </div>
                       </div>
 
-                      <div>
-                        <label className="block text-xs font-medium text-muted-foreground mb-1">Observações de aparência</label>
-                        <textarea className="ampara-input text-sm min-h-[60px]" placeholder="Tatuagens, cicatrizes, porte físico, etc." value={agressorForm.appearance_notes}
-                          onChange={e => setAgressorForm({ ...agressorForm, appearance_notes: e.target.value })} />
-                      </div>
 
                       <label className="flex items-center gap-3 cursor-pointer">
                         <input type="checkbox" checked={agressorForm.forca_seguranca}

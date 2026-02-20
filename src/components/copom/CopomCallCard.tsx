@@ -178,10 +178,10 @@ export default function CopomCallCard({ panicAlertId, testMode }: { panicAlertId
                   <span className="text-foreground">{(displayContext as any).victim_aggressor_relation}</span>
                 </div>
               )}
-              {displayContext.aggressor && (
+              {displayContext.aggressor?.name_masked && (
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <span className="font-medium">Agressor:</span>
-                  <span className="text-foreground">{displayContext.aggressor.name_masked} — {displayContext.aggressor.description}</span>
+                  <span className="text-foreground">{displayContext.aggressor.name_masked}</span>
                 </div>
               )}
               {displayContext.aggressor?.vehicle && (

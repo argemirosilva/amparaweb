@@ -257,7 +257,6 @@ export function useCopomSession() {
       aggressor: {
         name: "João Santos",
         name_masked: "J*** S***",
-        description: "Ex-marido, ativo, risco: alto",
         vehicle: {
           model: "Onix",
           color: "Prata",
