@@ -56,3 +56,6 @@ verify_jwt = false
 
 [functions.auth-request-reset]
 verify_jwt = false
+
+[functions.admin-audio-auto]
+verify_jwt = false
