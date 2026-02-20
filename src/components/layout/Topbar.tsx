@@ -9,7 +9,9 @@ export default function Topbar() {
   return (
     <header className="h-14 border-b border-border bg-card flex items-center justify-between px-4 shrink-0">
       {/* Icon only on mobile, no menu button */}
-      <img src={amparaIcon} alt="Ampara" className="h-8 w-8 md:hidden" />
+      <div className="h-8 w-8 rounded-md bg-white flex items-center justify-center md:hidden">
+        <img src={amparaIcon} alt="Ampara" className="h-7 w-7 object-contain" />
+      </div>
       <SidebarTrigger className="hidden" />
       <div className="hidden md:block" />
       <div className="flex items-center gap-3">
