@@ -140,10 +140,10 @@ export async function collectCopomData(
     alertData = data;
   }
 
-  // 2. Fetch user profile (victim data)
+  // 2. Fetch user profile (victim data + home address for proximity check)
   const { data: user } = await supabase
     .from("usuarios")
-    .select("id, nome_completo, telefone")
+    .select("id, nome_completo, telefone, endereco_lat, endereco_lon, endereco_logradouro, endereco_numero, endereco_bairro")
     .eq("id", userId)
     .single();
 
@@ -185,17 +185,42 @@ export async function collectCopomData(
     .limit(1)
     .maybeSingle();
 
-  // 6. Resolve address
+  // 6. Resolve address — use registered home address if within 50m
   let addressResolved: string | null = null;
   const lat = loc?.latitude ?? alertData?.latitude ?? null;
   const lng = loc?.longitude ?? alertData?.longitude ?? null;
 
   if (lat !== null && lng !== null) {
-    try {
-      const geo = await resolveAddress(lat, lng);
-      addressResolved = geo.display_address !== "Endereço indisponível" ? geo.display_address : null;
-    } catch {
-      // fallback: no address
+    // Check if within 50m of registered home
+    const homeLat = user?.endereco_lat;
+    const homeLon = user?.endereco_lon;
+    let isNearHome = false;
+
+    if (homeLat != null && homeLon != null) {
+      const R = 6_371_000;
+      const toRad = (d: number) => (d * Math.PI) / 180;
+      const dLat = toRad(lat - homeLat);
+      const dLon = toRad(lng - homeLon);
+      const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(homeLat)) * Math.cos(toRad(lat)) * Math.sin(dLon / 2) ** 2;
+      const dist = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      isNearHome = dist <= 50;
+    }
+
+    if (isNearHome && user?.endereco_logradouro) {
+      // Build address from registered profile
+      const parts: string[] = [];
+      if (user.endereco_logradouro) {
+        parts.push(user.endereco_numero ? `${user.endereco_logradouro}, ${user.endereco_numero}` : user.endereco_logradouro);
+      }
+      if (user.endereco_bairro) parts.push(user.endereco_bairro);
+      addressResolved = parts.join(" - ");
+    } else {
+      try {
+        const geo = await resolveAddress(lat, lng);
+        addressResolved = geo.display_address !== "Endereço indisponível" ? geo.display_address : null;
+      } catch {
+        // fallback: no address
+      }
     }
   }
 
