@@ -41,6 +41,9 @@ import AdminIntegracoes from "./pages/admin/AdminIntegracoes";
 import AdminLogin from "./pages/admin/AdminLogin";
 import ConfigurarConta from "./pages/ConfigurarConta";
 import EsqueciSenha from "./pages/EsqueciSenha";
+import SuporteTickets from "./pages/suporte/SuporteTickets";
+import SuporteChat from "./pages/suporte/SuporteChat";
+import SuporteAuditoria from "./pages/suporte/SuporteAuditoria";
 
 const queryClient = new QueryClient();
 
@@ -84,6 +87,9 @@ const App = () => (
               <Route path="/admin/auditoria" element={<AdminAuditoria />} />
               <Route path="/admin/relatorios" element={<AdminRelatorios />} />
               
+              <Route path="/admin/suporte" element={<SuporteTickets />} />
+              <Route path="/admin/suporte/:sessionId" element={<SuporteChat />} />
+              <Route path="/admin/suporte-auditoria" element={<SuporteAuditoria />} />
               <Route path="/admin/orgaos" element={<AdminOrgaos />} />
               <Route path="/admin/configuracoes" element={<ProtectedAdminRoute requiredRole="admin_master"><AdminConfiguracoes /></ProtectedAdminRoute>} />
               <Route path="/admin/integracoes" element={<ProtectedAdminRoute requiredRole="admin_master"><AdminIntegracoes /></ProtectedAdminRoute>} />
