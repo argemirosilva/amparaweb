@@ -4,7 +4,6 @@ import { useAdminRole } from "@/hooks/useAdminRole";
 import ProtectedAdminRoute from "./ProtectedAdminRoute";
 import {
   LayoutDashboard,
-  
   Users,
   Building2,
   Shield,
@@ -14,11 +13,12 @@ import {
   Menu,
   X,
   Plug,
+  AudioLines,
 } from "lucide-react";
 import amparaLogo from "@/assets/ampara-logo.png";
 import { useState } from "react";
 
-const TECNICO_PATHS = ["/admin/configuracoes", "/admin/integracoes"];
+const TECNICO_PATHS = ["/admin/configuracoes", "/admin/integracoes", "/admin/gerador-audios-ampara"];
 
 const sidebarItems = [
   { label: "Dashboard", path: "/admin", icon: LayoutDashboard },
@@ -26,6 +26,7 @@ const sidebarItems = [
   { label: "Órgãos/Tenants", path: "/admin/orgaos", icon: Building2 },
   { label: "Auditoria", path: "/admin/auditoria", icon: Shield },
   { label: "Relatórios", path: "/admin/relatorios", icon: FileText },
+  { label: "Gerador Áudios", path: "/admin/gerador-audios-ampara", icon: AudioLines },
   { label: "Configurações", path: "/admin/configuracoes", icon: Settings },
   { label: "Integrações", path: "/admin/integracoes", icon: Plug },
 ];

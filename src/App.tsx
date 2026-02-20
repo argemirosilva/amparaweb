@@ -33,6 +33,7 @@ import AdminUsuarios from "./pages/admin/AdminUsuarios";
 import AdminAuditoria from "./pages/admin/AdminAuditoria";
 import AdminRelatorios from "./pages/admin/AdminRelatorios";
 import AdminPlaceholder from "./pages/admin/AdminPlaceholder";
+import AdminGeradorAudios from "./pages/admin/AdminGeradorAudios";
 import AdminMapa from "./pages/admin/AdminMapa";
 import AdminOrgaos from "./pages/admin/AdminOrgaos";
 import AdminConfiguracoes from "./pages/admin/AdminConfiguracoes";
@@ -86,6 +87,7 @@ const App = () => (
               <Route path="/admin/orgaos" element={<AdminOrgaos />} />
               <Route path="/admin/configuracoes" element={<ProtectedAdminRoute requiredRole="admin_master"><AdminConfiguracoes /></ProtectedAdminRoute>} />
               <Route path="/admin/integracoes" element={<ProtectedAdminRoute requiredRole="admin_master"><AdminIntegracoes /></ProtectedAdminRoute>} />
+              <Route path="/admin/gerador-audios-ampara" element={<ProtectedAdminRoute requiredRole="admin_master"><AdminGeradorAudios /></ProtectedAdminRoute>} />
             </Route>
             <Route path="/suporte" element={<Suporte />} />
             <Route path="/privacidade" element={<Privacidade />} />

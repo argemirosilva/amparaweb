@@ -321,6 +321,101 @@ export type Database = {
           },
         ]
       }
+      audio_generation_items: {
+        Row: {
+          created_at: string
+          duration_sec: number | null
+          gravacao_id: string | null
+          id: string
+          item_index: number
+          job_id: string
+          last_error: string | null
+          script: Json | null
+          status: string
+          storage_url: string | null
+          topic: string | null
+          tries: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          duration_sec?: number | null
+          gravacao_id?: string | null
+          id?: string
+          item_index: number
+          job_id: string
+          last_error?: string | null
+          script?: Json | null
+          status?: string
+          storage_url?: string | null
+          topic?: string | null
+          tries?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          duration_sec?: number | null
+          gravacao_id?: string | null
+          id?: string
+          item_index?: number
+          job_id?: string
+          last_error?: string | null
+          script?: Json | null
+          status?: string
+          storage_url?: string | null
+          topic?: string | null
+          tries?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audio_generation_items_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "audio_generation_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      audio_generation_jobs: {
+        Row: {
+          created_at: string
+          created_by: string
+          done_count: number
+          failed_count: number
+          id: string
+          logs: Json | null
+          settings: Json | null
+          status: string
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          done_count?: number
+          failed_count?: number
+          id?: string
+          logs?: Json | null
+          settings?: Json | null
+          status?: string
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          done_count?: number
+          failed_count?: number
+          id?: string
+          logs?: Json | null
+          settings?: Json | null
+          status?: string
+          total?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       audit_logs: {
         Row: {
           action_type: string
