@@ -105,7 +105,7 @@ serve(async (req) => {
       dynamicVariables.ENDERECO_ULTIMA_LOCALIZACAO = context.location?.address || "";
       dynamicVariables.STATUS_MOVIMENTO = context.location?.movement_status || "";
       dynamicVariables.AGRESSOR_NOME = context.aggressor?.name || context.aggressor?.name_masked || "";
-      dynamicVariables.AGRESSOR_DESCRICAO = context.aggressor?.description || "";
+      
       dynamicVariables.RELACAO = context.victim_aggressor_relation || "";
       // Remove protocol (https://) and www for cleaner speech
       const rawLink = context.monitoring_link || "";
