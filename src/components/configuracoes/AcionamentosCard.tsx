@@ -32,7 +32,13 @@ export default function AcionamentosCard() {
     try {
       const res = await callWebApi("getAlertTriggers", sessionToken);
       if (res.ok && res.data?.configuracao?.acionamentos) {
-        setConfig(res.data.configuracao.acionamentos);
+        const fetched = res.data.configuracao.acionamentos;
+        setConfig({
+          whatsapp_guardioes: { ...DEFAULTS.whatsapp_guardioes, ...fetched.whatsapp_guardioes },
+          autoridades_190_180: { ...DEFAULTS.autoridades_190_180, ...fetched.autoridades_190_180 },
+          senha_coacao: { ...DEFAULTS.senha_coacao, ...fetched.senha_coacao },
+          copom_chamada_automatica: { ...DEFAULTS.copom_chamada_automatica, ...fetched.copom_chamada_automatica },
+        });
       }
     } finally {
       setLoading(false);
