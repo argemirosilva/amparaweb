@@ -48,8 +48,7 @@ export default function AdminAuditoria() {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<AuditRow | null>(null);
   const [filterAction, setFilterAction] = useState<string>("all");
-  const [filterUser, setFilterUser] = useState<string>("all");
-  const [userOptions, setUserOptions] = useState<{ id: string; label: string }[]>([]);
+  const [filterUserText, setFilterUserText] = useState("");
 
   useEffect(() => {
     async function load() {
@@ -64,10 +63,6 @@ export default function AdminAuditoria() {
         query = query.eq("action_type", filterAction);
       } else {
         query = query.in("action_type", ADMIN_ACTION_TYPES);
-      }
-
-      if (filterUser !== "all") {
-        query = query.eq("user_id", filterUser);
       }
 
       const { data } = await query;
@@ -89,20 +84,10 @@ export default function AdminAuditoria() {
       }
 
       setLogs(rows.map((r) => ({ ...r, user_name: r.user_id ? userMap[r.user_id] || "—" : "—" })));
-
-      // Build user options from all seen users (union with previous)
-      setUserOptions((prev) => {
-        const map = new Map(prev.map((o) => [o.id, o.label]));
-        for (const [id, label] of Object.entries(userMap)) {
-          if (!map.has(id)) map.set(id, label);
-        }
-        return Array.from(map.entries()).map(([id, label]) => ({ id, label })).sort((a, b) => a.label.localeCompare(b.label));
-      });
-
       setLoading(false);
     }
     load();
-  }, [filterAction, filterUser]);
+  }, [filterAction]);
 
   return (
     <div style={fontStyle}>
@@ -124,17 +109,14 @@ export default function AdminAuditoria() {
             <option key={a} value={a}>{ACTION_LABELS[a] || a}</option>
           ))}
         </select>
-        <select
-          value={filterUser}
-          onChange={(e) => setFilterUser(e.target.value)}
-          className="text-sm rounded-md border px-3 py-2 outline-none"
+        <input
+          type="text"
+          value={filterUserText}
+          onChange={(e) => setFilterUserText(e.target.value)}
+          placeholder="Filtrar por nome do usuário…"
+          className="text-sm rounded-md border px-3 py-2 outline-none w-64"
           style={{ borderColor: "hsl(220 13% 91%)", color: "hsl(220 13% 18%)", fontFamily: "Inter, Roboto, sans-serif" }}
-        >
-          <option value="all">Todos os usuários</option>
-          {userOptions.map((u) => (
-            <option key={u.id} value={u.id}>{u.label}</option>
-          ))}
-        </select>
+        />
       </div>
 
       <div
@@ -159,14 +141,18 @@ export default function AdminAuditoria() {
                     Carregando…
                   </td>
                 </tr>
-              ) : logs.length === 0 ? (
+              ) : (() => {
+                const filtered = filterUserText.trim()
+                  ? logs.filter((l) => l.user_name?.toLowerCase().includes(filterUserText.toLowerCase()))
+                  : logs;
+                return filtered.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-4 py-8 text-center text-sm" style={{ color: "hsl(220 9% 46%)" }}>
                     Nenhum registro encontrado.
                   </td>
                 </tr>
               ) : (
-                logs.map((l) => (
+                filtered.map((l) => (
                   <tr key={l.id} className="border-t" style={{ borderColor: "hsl(220 13% 91%)" }}>
                     <td className="px-4 py-3 text-xs" style={{ color: "hsl(220 9% 46%)" }}>
                       {new Date(l.created_at).toLocaleString("pt-BR")}
@@ -197,7 +183,7 @@ export default function AdminAuditoria() {
                     </td>
                   </tr>
                 ))
-              )}
+              ); })()}
             </tbody>
           </table>
         </div>
