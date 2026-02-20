@@ -274,7 +274,17 @@ async function processItem(
         .map((t) => `[${t.speaker === "M" ? "Ele" : "Ela"}] ${t.text}`)
         .join("\n");
 
-      // 9) Insert into gravacoes
+      // 9) Generate random date within last 30 days
+      const now = Date.now();
+      const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+      const randomTs = new Date(now - Math.random() * thirtyDaysMs);
+      // Also randomize the time of day for realism
+      randomTs.setHours(Math.floor(Math.random() * 18) + 6); // 06:00–23:59
+      randomTs.setMinutes(Math.floor(Math.random() * 60));
+      randomTs.setSeconds(Math.floor(Math.random() * 60));
+      const randomDate = randomTs.toISOString();
+
+      // 10) Insert into gravacoes with random date
       const { data: gravacao, error: gravErr } = await supabase
         .from("gravacoes")
         .insert({
@@ -286,6 +296,7 @@ async function processItem(
             Math.round((finalMp3.length / 1024 / 1024) * 100) / 100,
           device_id: "admin_autogerado",
           transcricao,
+          created_at: randomDate,
         })
         .select("id")
         .single();
