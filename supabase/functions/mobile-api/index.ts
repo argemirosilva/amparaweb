@@ -205,14 +205,30 @@ function fireCopomCall(userId: string, alertaId: string) {
 
       let agressorNome: string | null = null;
       let agressorMasked: string | null = null;
+      let agressorTemArma = false;
+      let agressorForcaSeguranca = false;
+      let agressorForcaTipo: string | null = null;
+      let agressorVehicle: { model?: string; color?: string; plate_partial?: string } = {};
       if (vinculo?.agressor_id) {
         const { data: agr } = await sb
           .from("agressores")
-          .select("nome, display_name_masked")
+          .select("nome, display_name_masked, tem_arma_em_casa, forca_seguranca, sector, vehicles")
           .eq("id", vinculo.agressor_id)
           .single();
         agressorNome = agr?.nome ?? null;
         agressorMasked = agr?.display_name_masked ?? null;
+        agressorTemArma = agr?.tem_arma_em_casa ?? false;
+        agressorForcaSeguranca = agr?.forca_seguranca ?? false;
+        agressorForcaTipo = agr?.sector ?? null;
+        const vehicles = agr?.vehicles as unknown[];
+        const firstV = Array.isArray(vehicles) && vehicles.length > 0 ? (vehicles[0] as Record<string, string>) : null;
+        if (firstV) {
+          agressorVehicle = {
+            model: firstV.model_hint ?? undefined,
+            color: firstV.color ?? undefined,
+            plate_partial: firstV.plate_partial ?? firstV.plate_prefix ?? undefined,
+          };
+        }
       }
 
       // Fetch GPS sharing link
@@ -270,7 +286,14 @@ function fireCopomCall(userId: string, alertaId: string) {
 
       const context = {
         victim: { name: user.nome_completo, phone_masked: phoneMasked },
-        aggressor: { name: agressorNome, name_masked: agressorMasked },
+        aggressor: {
+          name: agressorNome,
+          name_masked: agressorMasked,
+          tem_arma: agressorTemArma,
+          forca_seguranca: agressorForcaSeguranca,
+          forca_seguranca_tipo: agressorForcaTipo,
+          vehicle: agressorVehicle,
+        },
         location: { address, movement_status: movStatus },
         monitoring_link: monitoringLink,
         victim_aggressor_relation: vinculo?.tipo_vinculo ?? null,
