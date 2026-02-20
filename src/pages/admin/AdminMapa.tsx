@@ -67,6 +67,38 @@ const UF_CENTROID: Record<string, [number, number]> = {
   RS: [-30.17, -53.50], RO: [-10.83, -63.34], RR: [1.99, -61.33], SC: [-27.45, -50.95],
   SP: [-22.19, -48.79], SE: [-10.57, -37.45], TO: [-10.25, -48.25],
 };
+
+// Approximate centroids for major Brazilian cities (fallback when user has no GPS but has city)
+const CITY_CENTROID: Record<string, [number, number]> = {
+  "São Paulo-SP": [-23.55, -46.63], "Campinas-SP": [-22.91, -47.06], "Santos-SP": [-23.96, -46.33],
+  "Ribeirão Preto-SP": [-21.18, -47.81], "Osasco-SP": [-23.53, -46.79], "Guarulhos-SP": [-23.46, -46.53],
+  "São Bernardo do Campo-SP": [-23.69, -46.56], "Sorocaba-SP": [-23.50, -47.46], "Bauru-SP": [-22.31, -49.07],
+  "São José dos Campos-SP": [-23.19, -45.88], "Jundiaí-SP": [-23.19, -46.88], "Piracicaba-SP": [-22.73, -47.65],
+  "Mogi das Cruzes-SP": [-23.52, -46.19], "Santo André-SP": [-23.67, -46.54], "Diadema-SP": [-23.69, -46.62],
+  "Carapicuíba-SP": [-23.52, -46.84], "Itaquaquecetuba-SP": [-23.49, -46.35], "Barueri-SP": [-23.51, -46.88],
+  "Rio de Janeiro-RJ": [-22.91, -43.17], "Niterói-RJ": [-22.88, -43.10], "São Gonçalo-RJ": [-22.83, -43.06],
+  "Duque de Caxias-RJ": [-22.79, -43.31], "Nova Iguaçu-RJ": [-22.76, -43.45], "Petrópolis-RJ": [-22.51, -43.18],
+  "Volta Redonda-RJ": [-22.52, -44.10], "Campos dos Goytacazes-RJ": [-21.76, -41.30],
+  "Belo Horizonte-MG": [-19.92, -43.94], "Uberlândia-MG": [-18.92, -48.28], "Contagem-MG": [-19.93, -44.05],
+  "Juiz de Fora-MG": [-21.76, -43.35], "Betim-MG": [-19.97, -44.20], "Montes Claros-MG": [-16.74, -43.86],
+  "Curitiba-PR": [-25.43, -49.27], "Londrina-PR": [-23.31, -51.16], "Maringá-PR": [-23.42, -51.94],
+  "Ponta Grossa-PR": [-25.09, -50.16], "Cascavel-PR": [-24.96, -53.46], "Foz do Iguaçu-PR": [-25.55, -54.59],
+  "Porto Alegre-RS": [-30.03, -51.23], "Caxias do Sul-RS": [-29.17, -51.18], "Pelotas-RS": [-31.77, -52.34],
+  "Canoas-RS": [-29.92, -51.17], "Santa Maria-RS": [-29.69, -53.81],
+  "Florianópolis-SC": [-27.60, -48.55], "Joinville-SC": [-26.30, -48.85], "Blumenau-SC": [-26.92, -49.07],
+  "Salvador-BA": [-12.97, -38.51], "Feira de Santana-BA": [-12.27, -38.97], "Vitória da Conquista-BA": [-14.86, -40.84],
+  "Recife-PE": [-8.05, -34.87], "Jaboatão dos Guararapes-PE": [-8.11, -35.02], "Olinda-PE": [-8.01, -34.86],
+  "Fortaleza-CE": [-3.72, -38.53], "Caucaia-CE": [-3.74, -38.66],
+  "Manaus-AM": [-3.12, -60.02], "Belém-PA": [-1.46, -48.50], "Ananindeua-PA": [-1.37, -48.39],
+  "São Luís-MA": [-2.53, -44.28], "Teresina-PI": [-5.09, -42.80],
+  "Natal-RN": [-5.79, -35.21], "João Pessoa-PB": [-7.12, -34.84], "Maceió-AL": [-9.67, -35.74],
+  "Aracaju-SE": [-10.91, -37.07], "Vitória-ES": [-20.32, -40.34],
+  "Goiânia-GO": [-16.69, -49.25], "Aparecida de Goiânia-GO": [-16.82, -49.24],
+  "Cuiabá-MT": [-15.60, -56.10], "Campo Grande-MS": [-20.44, -54.65],
+  "Brasília-DF": [-15.79, -47.88], "Porto Velho-RO": [-8.76, -63.90], "Rio Branco-AC": [-9.97, -67.81],
+  "Macapá-AP": [0.03, -51.07], "Boa Vista-RR": [2.82, -60.67], "Palmas-TO": [-10.18, -48.33],
+  "Ji-Paraná-RO": [-10.88, -61.95], "Ariquemes-RO": [-9.91, -63.04], "Vilhena-RO": [-12.74, -60.15],
+};
 const tooltipStyle = {
   fontFamily: "Inter, sans-serif", fontSize: 12, borderRadius: 6,
   border: "1px solid hsl(220 13% 91%)",
@@ -222,9 +254,11 @@ export default function AdminMapa() {
       .map((u) => {
         const device = latestDeviceByUser[u.id];
         const loc = userLastLocation[u.id];
+        const cityKey = u.endereco_cidade && u.endereco_uf ? `${u.endereco_cidade}-${u.endereco_uf}` : null;
+        const cityCenter = cityKey ? CITY_CENTROID[cityKey] : null;
         const ufCenter = u.endereco_uf ? UF_CENTROID[u.endereco_uf] : null;
-        const lat = loc?.lat ?? u.endereco_lat ?? ufCenter?.[0];
-        const lng = loc?.lng ?? u.endereco_lon ?? ufCenter?.[1];
+        const lat = loc?.lat ?? u.endereco_lat ?? cityCenter?.[0] ?? ufCenter?.[0];
+        const lng = loc?.lng ?? u.endereco_lon ?? cityCenter?.[1] ?? ufCenter?.[1];
         if (lat == null || lng == null) return null;
         return {
           id: device?.id || u.id,
