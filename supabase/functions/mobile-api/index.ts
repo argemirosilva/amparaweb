@@ -610,7 +610,7 @@ async function handleSyncConfig(
     }
   }
 
-  return jsonResponse({
+  const syncPayload = {
     success: true,
     gravacao_ativa: gravacaoAtiva,
     gravacao_ativa_config: gravacaoAtivaConfig,
@@ -635,7 +635,9 @@ async function handleSyncConfig(
       periodos_semana: periodosSemana,
     },
     servidor_timestamp: new Date().toISOString(),
-  });
+  };
+  console.log("[SYNC_RESPONSE]", JSON.stringify(syncPayload));
+  return jsonResponse(syncPayload);
 }
 
 // ── Fase 2 Handlers ──
