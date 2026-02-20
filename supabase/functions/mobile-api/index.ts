@@ -143,6 +143,152 @@ function fireWhatsAppResolved(userId: string) {
   }).catch((e) => console.error("fireWhatsAppResolved error:", e));
 }
 
+// ── Fire-and-forget COPOM outbound call ──
+
+function fireCopomCall(userId: string, alertaId: string) {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+  // Build minimal context server-side for the COPOM call
+  (async () => {
+    try {
+      const sb = createClient(supabaseUrl, serviceKey);
+
+      // Fetch user profile
+      const { data: user } = await sb
+        .from("usuarios")
+        .select("id, nome_completo, telefone, configuracao_alertas")
+        .eq("id", userId)
+        .single();
+
+      if (!user) {
+        console.error("fireCopomCall: user not found", userId);
+        return;
+      }
+
+      // Check if COPOM auto-call is enabled in user config
+      const alertConfig = user.configuracao_alertas as Record<string, unknown> || {};
+      const acionamentos = alertConfig.acionamentos as Record<string, unknown> | undefined;
+      if (acionamentos) {
+        const autoridades = acionamentos.autoridades_190_180 as Record<string, boolean> | undefined;
+        if (autoridades && autoridades.critico === false) {
+          console.log("fireCopomCall: user has COPOM auto-call disabled, skipping");
+          return;
+        }
+      }
+
+      // Fetch latest location
+      const { data: loc } = await sb
+        .from("localizacoes")
+        .select("latitude, longitude, precisao_metros, speed")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      // Fetch linked aggressor
+      const { data: vinculo } = await sb
+        .from("vitimas_agressores")
+        .select("agressor_id, tipo_vinculo")
+        .eq("usuario_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      let agressorNome: string | null = null;
+      let agressorMasked: string | null = null;
+      if (vinculo?.agressor_id) {
+        const { data: agr } = await sb
+          .from("agressores")
+          .select("nome, display_name_masked")
+          .eq("id", vinculo.agressor_id)
+          .single();
+        agressorNome = agr?.nome ?? null;
+        agressorMasked = agr?.display_name_masked ?? null;
+      }
+
+      // Fetch GPS sharing link
+      const { data: share } = await sb
+        .from("compartilhamento_gps")
+        .select("codigo")
+        .eq("user_id", userId)
+        .eq("ativo", true)
+        .order("criado_em", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      // Resolve address via Nominatim (best-effort)
+      let address: string | null = null;
+      if (loc?.latitude && loc?.longitude) {
+        try {
+          const geoRes = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${loc.latitude}&lon=${loc.longitude}&format=json&accept-language=pt-BR`,
+            { headers: { "User-Agent": "AMPARA/1.0 (contato@amparamulher.com.br)" } }
+          );
+          const geo = await geoRes.json();
+          if (geo?.display_name) {
+            // Strip city, state, CEP — keep only street + neighborhood
+            let basic = (geo.display_name as string).replace(/\s*-\s*[A-Z]{2}$/, "");
+            const parts = basic.split(",").map((p: string) => p.trim());
+            if (parts.length >= 3) basic = parts.slice(0, -1).join(", ");
+            // Remove country
+            basic = basic.replace(/,\s*Brasil$/i, "");
+            address = basic;
+          }
+        } catch { /* no address */ }
+      }
+
+      // Classify movement
+      const speedKmh = loc?.speed != null ? Math.round((loc.speed as number) * 3.6) : null;
+      let movStatus = "DESCONHECIDO";
+      if (speedKmh !== null) {
+        if (speedKmh < 1) movStatus = "PARADA";
+        else if (speedKmh < 8) movStatus = "CAMINHANDO";
+        else movStatus = "VEICULO";
+      }
+
+      // Mask phone
+      let phoneMasked: string | null = null;
+      if (user.telefone) {
+        const digits = (user.telefone as string).replace(/\D/g, "");
+        if (digits.length >= 8) {
+          phoneMasked = `(${digits.slice(0, 2)}) ****-${digits.slice(-4)}`;
+        }
+      }
+
+      const monitoringLink = share?.codigo
+        ? `ampamamulher.lovable.app/${share.codigo}`
+        : "";
+
+      const context = {
+        victim: { name: user.nome_completo, phone_masked: phoneMasked },
+        aggressor: { name: agressorNome, name_masked: agressorMasked },
+        location: { address, movement_status: movStatus },
+        monitoring_link: monitoringLink,
+        victim_aggressor_relation: vinculo?.tipo_vinculo ?? null,
+        protocol_id: alertaId,
+      };
+
+      // Call the COPOM outbound-call edge function
+      await fetch(`${supabaseUrl}/functions/v1/copom-outbound-call`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${serviceKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          context,
+          user_id: userId,
+        }),
+      });
+
+      console.log("fireCopomCall: COPOM outbound call dispatched for user", userId);
+    } catch (e) {
+      console.error("fireCopomCall error:", e);
+    }
+  })();
+}
+
 // ── Short day keys used throughout the API (doc standard) ──
 const VALID_DAYS = ["seg", "ter", "qua", "qui", "sex", "sab", "dom"];
 // JS getDay() -> short key mapping (0=Sunday)
@@ -1171,6 +1317,9 @@ async function handleAcionarPanico(
 
   // Fire-and-forget: notify guardians via WhatsApp (conditional on config)
   fireWhatsApp(user.id, "panico", latitude, longitude, alerta.id);
+
+  // Fire-and-forget: automatic COPOM emergency call via voice agent
+  fireCopomCall(user.id, alerta.id);
 
   return jsonResponse({
     success: true,
