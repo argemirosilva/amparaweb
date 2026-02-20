@@ -109,6 +109,11 @@ export default function BuscaPerfilPage() {
           com relatos anônimos de outras mulheres. Quanto mais campos você preencher, mais preciso será o resultado.
           Nenhum dado sensível é revelado: apenas indicadores de risco e orientações de segurança.
         </p>
+        <p className="text-xs text-amber-600 dark:text-amber-400 leading-relaxed font-medium">
+          ⚠ Importante: os relatos são inseridos voluntariamente por outras usuárias e não passam por auditoria.
+          Os resultados são indicativos e devem ser interpretados com cautela — não substituem denúncias formais
+          nem investigações oficiais.
+        </p>
       </div>
 
       {error && (
