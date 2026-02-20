@@ -26,6 +26,36 @@ export default function CopomCallCard({ panicAlertId, testMode }: { panicAlertId
   const { usuario } = useAuth();
   const [showLogs, setShowLogs] = useState(false);
   const [isCallingPhone, setIsCallingPhone] = useState(false);
+  const [testLinkCode, setTestLinkCode] = useState<string | null>(null);
+
+  const createTestTrackingLink = async () => {
+    if (!usuario?.id) return null;
+    const code = "a2jb3";
+    const sessionToken = localStorage.getItem("session_token");
+    if (!sessionToken) {
+      console.error("No session token for creating test link");
+      return null;
+    }
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-api", {
+        body: {
+          action: "createTestTrackingLink",
+          session_token: sessionToken,
+          target_user_id: usuario.id,
+          codigo: code,
+        },
+      });
+      if (error) {
+        console.error("Failed to create test tracking link:", error);
+        return null;
+      }
+      setTestLinkCode(code);
+      return code;
+    } catch (err) {
+      console.error("Error creating test tracking link:", err);
+      return null;
+    }
+  };
 
   // Test context for display when in test mode and idle
   const testContext = testMode ? {
@@ -40,7 +70,7 @@ export default function CopomCallCard({ panicAlertId, testMode }: { panicAlertId
       lat: -22.3154, lng: -49.0615, accuracy_m: 12,
       movement_status: "PARADA", speed_kmh: 0,
     },
-    monitoring_link: "https://amparamulher.com.br/a2jb3",
+    monitoring_link: `${window.location.origin}/a2jb3`,
     victim_aggressor_relation: "Ex-marido",
     aggressor: {
       name: "João Santos", name_masked: "J*** S***", description: "Ex-marido, ativo, risco: alto",
@@ -165,7 +195,14 @@ export default function CopomCallCard({ panicAlertId, testMode }: { panicAlertId
             {(state.status === "idle" || state.status === "error" || state.status === "ended") && (
               <>
                 <Button
-                  onClick={() => testMode ? startTestSession() : startSession(panicAlertId)}
+                  onClick={async () => {
+                    if (testMode) {
+                      await createTestTrackingLink();
+                      startTestSession();
+                    } else {
+                      startSession(panicAlertId);
+                    }
+                  }}
                   variant="destructive"
                   size="sm"
                   className="flex-1 gap-2"
@@ -177,6 +214,7 @@ export default function CopomCallCard({ panicAlertId, testMode }: { panicAlertId
                   <Button
                     onClick={async () => {
                       setIsCallingPhone(true);
+                      await createTestTrackingLink();
                       try {
                         const { data, error } = await supabase.functions.invoke("copom-outbound-call", {
                           body: {
