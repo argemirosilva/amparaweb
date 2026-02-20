@@ -64,7 +64,7 @@ Analise a transcrição e retorne APENAS JSON válido com:
 
 // ── Script Generation via Lovable AI Gateway ──
 
-const TOPICS = [
+const TOPICS_VIOLENCIA = [
   "ciúmes e controle do celular",
   "controle financeiro e dinheiro",
   "isolamento de amigos e família",
@@ -87,11 +87,63 @@ const TOPICS = [
   "controle sobre alimentação e saúde",
 ];
 
-async function generateScript(targetDurationHint: string) {
-  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
-  const topic = TOPICS[Math.floor(Math.random() * TOPICS.length)];
+const TOPICS_BRIGA_SAUDAVEL = [
+  "divisão de tarefas domésticas",
+  "onde passar as férias",
+  "gastos e orçamento doméstico",
+  "educação dos filhos e regras de casa",
+  "visita da sogra ou família",
+  "série ou filme pra assistir juntos",
+  "quem esqueceu de pagar a conta",
+  "bagunça no quarto ou banheiro",
+  "horário de chegar em casa",
+  "ciúmes bobos de amizades",
+  "discussão sobre o jantar",
+  "uso excessivo do celular",
+  "quem vai levar o filho na escola",
+  "compra impulsiva no cartão",
+  "reforma ou decoração da casa",
+  "divergência sobre planos de fim de semana",
+  "reclamação sobre ronco ou hábitos noturnos",
+  "escolha do restaurante para sair",
+  "estresse do trabalho trazido pra casa",
+  "animal de estimação e responsabilidades",
+];
 
-  const prompt = `Gere um roteiro de diálogo realista em português brasileiro entre um casal (M = homem agressor, F = mulher vítima) sobre o tema: "${topic}".
+async function generateScript(targetDurationHint: string, audioMode: string = "violencia") {
+  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
+  const topics = audioMode === "briga_saudavel" ? TOPICS_BRIGA_SAUDAVEL : TOPICS_VIOLENCIA;
+  const topic = topics[Math.floor(Math.random() * topics.length)];
+
+  let prompt: string;
+
+  if (audioMode === "briga_saudavel") {
+    prompt = `Gere um roteiro de diálogo realista em português brasileiro entre um casal (M = homem, F = mulher) sobre o tema: "${topic}".
+
+REGRAS OBRIGATÓRIAS:
+- O roteiro deve ter ${targetDurationHint} turnos de fala para resultar em áudio de 1 a 5 minutos.
+- O casal está tendo uma DISCUSSÃO ACALORADA porém SAUDÁVEL. Eles discordam, ficam irritados, levantam a voz, mas NÃO há:
+  * Controle coercitivo, manipulação ou gaslighting
+  * Ameaças veladas ou diretas
+  * Humilhação, depreciação ou xingamentos graves
+  * Intimidação, chantagem emocional ou isolamento
+  * Desigualdade de poder — ambos se expressam livremente
+- A dinâmica deve mostrar que é uma briga de casal NORMAL:
+  * Ambos argumentam com firmeza e defendem seus pontos
+  * Há irritação mútua e talvez sarcasmo leve, mas sem crueldade
+  * Em algum momento um cede parcialmente ou propõe um meio-termo
+  * Pode haver humor involuntário ou uma reconciliação natural no final
+  * Expressões como "ai, lá vem você de novo", "tô cansada disso", "você nunca escuta" são aceitáveis
+- Linguagem natural coloquial brasileira com gírias e expressões regionais variadas.
+- Cada fala deve ter entre 5 e 35 palavras.
+- Inclua falas sobrepostas e interrupções (marcadas com "..." no final).
+- Varie o tom: algumas falas irritadas, outras resignadas, algumas debochadas.
+- O objetivo é treinar um sistema a distinguir brigas normais de violência doméstica.
+
+Responda EXCLUSIVAMENTE com JSON válido (sem markdown, sem texto extra):
+{"topic":"${topic}","turns":[{"speaker":"M","text":"..."},{"speaker":"F","text":"..."}]}`;
+  } else {
+    prompt = `Gere um roteiro de diálogo realista em português brasileiro entre um casal (M = homem agressor, F = mulher vítima) sobre o tema: "${topic}".
 
 REGRAS OBRIGATÓRIAS:
 - O roteiro deve ter ${targetDurationHint} turnos de fala para resultar em áudio de 1 a 5 minutos.
@@ -105,6 +157,7 @@ REGRAS OBRIGATÓRIAS:
 
 Responda EXCLUSIVAMENTE com JSON válido (sem markdown, sem texto extra):
 {"topic":"${topic}","turns":[{"speaker":"M","text":"..."},{"speaker":"F","text":"..."}]}`;
+  }
 
   const res = await fetch(
     "https://ai.gateway.lovable.dev/v1/chat/completions",
@@ -205,7 +258,8 @@ async function processItem(
   supabase: any,
   item: any,
   jobId: string,
-  targetUserId: string
+  targetUserId: string,
+  audioMode: string = "violencia"
 ): Promise<{ success: boolean; topic?: string; duration?: number; error?: string }> {
   const MAX_ATTEMPTS = 3;
 
@@ -226,7 +280,7 @@ async function processItem(
       if (attempt === 3) turnsHint = "entre 30 e 45";
 
       // 2) Generate script
-      const script = await generateScript(turnsHint);
+      const script = await generateScript(turnsHint, audioMode);
 
       await supabase
         .from("audio_generation_items")
@@ -389,6 +443,7 @@ Deno.serve(async (req) => {
     if (!adminUserId) return json({ error: "Não autorizado" }, 401);
 
     const targetUserId = body.target_user_id || adminUserId;
+    const audioMode = body.audio_mode || "violencia";
 
     switch (action) {
       // ── START ──
@@ -401,11 +456,12 @@ Deno.serve(async (req) => {
             status: "processing",
             total: count,
             created_by: adminUserId,
-            settings: {
-              male_voice: MALE_VOICE,
-              female_voice: FEMALE_VOICE,
-              model: "eleven_multilingual_v2",
-            },
+          settings: {
+            male_voice: MALE_VOICE,
+            female_voice: FEMALE_VOICE,
+            model: "eleven_multilingual_v2",
+            audio_mode: audioMode,
+          },
           })
           .select("id")
           .single();
@@ -461,7 +517,8 @@ Deno.serve(async (req) => {
           supabase,
           nextItem,
           job_id,
-          targetUserId
+          targetUserId,
+          audioMode
         );
 
         return json({

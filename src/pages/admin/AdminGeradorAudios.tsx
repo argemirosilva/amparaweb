@@ -105,6 +105,7 @@ export default function AdminGeradorAudios() {
   const [targetUserId, setTargetUserId] = useState<string>("");
   const [usuarios, setUsuarios] = useState<{ id: string; nome_completo: string; email: string }[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
+  const [audioMode, setAudioMode] = useState<string>("violencia");
   const cancelRef = useRef(false);
   const analyzeCancelRef = useRef(false);
   const logsEndRef = useRef<HTMLDivElement>(null);
@@ -165,10 +166,11 @@ export default function AdminGeradorAudios() {
     setStarting(true);
     cancelRef.current = false;
     const selectedUser = usuarios.find(u => u.id === targetUserId);
-    addLog(`Iniciando geração de 100 áudios para ${selectedUser?.nome_completo || targetUserId}...`);
+    const modeLabel = audioMode === "briga_saudavel" ? "brigas saudáveis" : "violência doméstica";
+    addLog(`Iniciando geração de 100 áudios (${modeLabel}) para ${selectedUser?.nome_completo || targetUserId}...`);
 
     try {
-      const res = await callApi("start", sessionToken, { count: 100, target_user_id: targetUserId });
+      const res = await callApi("start", sessionToken, { count: 100, target_user_id: targetUserId, audio_mode: audioMode });
       if (!res.ok) {
         addLog(`❌ Erro ao criar job: ${res.error}`);
         setStarting(false);
@@ -186,7 +188,7 @@ export default function AdminGeradorAudios() {
       // Processing loop
       let finished = false;
       while (!finished && !cancelRef.current) {
-        const r = await callApi("processNext", sessionToken, { job_id: jId, target_user_id: targetUserId });
+        const r = await callApi("processNext", sessionToken, { job_id: jId, target_user_id: targetUserId, audio_mode: audioMode });
 
         if (r.finished) {
           finished = true;
@@ -234,7 +236,7 @@ export default function AdminGeradorAudios() {
     setIsRunning(true);
     let finished = false;
     while (!finished && !cancelRef.current) {
-      const r = await callApi("processNext", sessionToken, { job_id: jobId, target_user_id: targetUserId });
+      const r = await callApi("processNext", sessionToken, { job_id: jobId, target_user_id: targetUserId, audio_mode: audioMode });
       if (r.finished) {
         finished = true;
         addLog(`🏁 Reprocessamento concluído (status: ${r.status})`);
@@ -324,6 +326,34 @@ export default function AdminGeradorAudios() {
               </SelectContent>
             </Select>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Audio mode selector */}
+      <Card className="mb-6" style={{ background: "hsl(0 0% 100%)", borderColor: "hsl(220 13% 91%)" }}>
+        <CardContent className="pt-4 pb-4">
+          <div className="flex items-center gap-3 flex-wrap">
+            <Mic className="w-5 h-5" style={{ color: "hsl(224 76% 33%)" }} />
+            <div>
+              <p className="text-sm font-medium" style={{ color: "hsl(220 13% 18%)" }}>
+                Tipo de áudio:
+              </p>
+            </div>
+            <Select value={audioMode} onValueChange={setAudioMode} disabled={isRunning}>
+              <SelectTrigger className="w-72">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="violencia">🔴 Violência doméstica (controle/manipulação)</SelectItem>
+                <SelectItem value="briga_saudavel">🟢 Briga saudável (discussão sem violência)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <p className="text-xs mt-2 ml-8" style={{ color: "hsl(220 9% 46%)" }}>
+            {audioMode === "briga_saudavel"
+              ? "Gera discussões acaloradas porém saudáveis — sem controle, manipulação ou escalada de violência. Útil para treinar o sistema a distinguir brigas normais."
+              : "Gera diálogos com padrões de abuso psicológico e controle coercitivo para treinamento de detecção."}
+          </p>
         </CardContent>
       </Card>
 
