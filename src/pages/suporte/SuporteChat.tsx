@@ -16,10 +16,10 @@ import {
   ArrowLeft, Send, ShieldCheck, ShieldOff, Lock, Clock, Eye, X,
 } from "lucide-react";
 
-const SENDER_STYLES: Record<string, { bg: string; align: string; label: string }> = {
-  agent: { bg: "hsl(224 76% 33% / 0.08)", align: "ml-auto", label: "Agente" },
-  user: { bg: "hsl(142 76% 36% / 0.08)", align: "mr-auto", label: "Usuária" },
-  system: { bg: "hsl(45 93% 47% / 0.08)", align: "mx-auto", label: "Sistema" },
+const SENDER_STYLES: Record<string, { bg: string; text: string; align: string; label: string }> = {
+  agent: { bg: "hsl(217 91% 60% / 0.12)", text: "hsl(217 91% 30%)", align: "ml-auto", label: "Agente" },
+  user: { bg: "hsl(270 60% 70% / 0.15)", text: "hsl(270 60% 30%)", align: "mr-auto", label: "Usuária" },
+  system: { bg: "hsl(142 76% 36% / 0.10)", text: "hsl(142 76% 25%)", align: "mx-auto", label: "Sistema" },
 };
 
 export default function SuporteChat() {
@@ -211,8 +211,8 @@ export default function SuporteChat() {
               return (
                 <div key={m.id} className={`max-w-[80%] ${style.align}`}>
                   <div className="rounded-lg px-3 py-2" style={{ background: style.bg }}>
-                    <p className="text-xs font-medium text-muted-foreground mb-1">{style.label}</p>
-                    <p className="text-sm whitespace-pre-wrap" style={{ color: "hsl(220 13% 18%)" }}>{m.message_text}</p>
+                    <p className="text-xs font-medium mb-1" style={{ color: style.text }}>{style.label}</p>
+                    <p className="text-sm whitespace-pre-wrap" style={{ color: style.text }}>{m.message_text}</p>
                     <p className="text-[10px] text-muted-foreground mt-1 text-right">
                       {format(new Date(m.created_at), "HH:mm", { locale: ptBR })}
                     </p>
