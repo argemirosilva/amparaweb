@@ -102,6 +102,15 @@ export default function BuscaPerfilPage() {
         </div>
       </div>
 
+      <div className="rounded-xl bg-muted/50 border border-border p-4 space-y-2">
+        <h2 className="text-sm font-semibold text-foreground">O que já sabemos sobre seu parceiro</h2>
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          Este recurso cruza informações parciais que você conhece — como nome, apelido, bairro ou profissão —
+          com relatos anônimos de outras mulheres. Quanto mais campos você preencher, mais preciso será o resultado.
+          Nenhum dado sensível é revelado: apenas indicadores de risco e orientações de segurança.
+        </p>
+      </div>
+
       {error && (
         <div className="rounded-xl bg-destructive/10 border border-destructive/20 p-3 text-sm text-destructive">
           {error}
