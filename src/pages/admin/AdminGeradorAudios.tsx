@@ -167,10 +167,10 @@ export default function AdminGeradorAudios() {
     cancelRef.current = false;
     const selectedUser = usuarios.find(u => u.id === targetUserId);
     const modeLabel = audioMode === "briga_saudavel" ? "brigas saudáveis" : "violência doméstica";
-    addLog(`Iniciando geração de 100 áudios (${modeLabel}) para ${selectedUser?.nome_completo || targetUserId}...`);
+    addLog(`Iniciando geração de 20 áudios (${modeLabel}) para ${selectedUser?.nome_completo || targetUserId}...`);
 
     try {
-      const res = await callApi("start", sessionToken, { count: 100, target_user_id: targetUserId, audio_mode: audioMode });
+      const res = await callApi("start", sessionToken, { count: 20, target_user_id: targetUserId, audio_mode: audioMode });
       if (!res.ok) {
         addLog(`❌ Erro ao criar job: ${res.error}`);
         setStarting(false);
@@ -374,7 +374,7 @@ export default function AdminGeradorAudios() {
           ) : (
             <Play className="w-5 h-5" />
           )}
-          Gerar 100 áudios agora
+          Gerar 20 áudios agora
         </Button>
 
         {isRunning && (
