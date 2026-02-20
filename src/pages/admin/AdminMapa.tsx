@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMapbox } from "@/hooks/useMapbox";
-import { MapPin, AlertTriangle, Smartphone, Users, RefreshCw, BarChart3 } from "lucide-react";
+import { MapPin, AlertTriangle, Smartphone, Users, RefreshCw, BarChart3, Mic, Clock } from "lucide-react";
 import GovKpiCard from "@/components/institucional/GovKpiCard";
 import GovStatusBadge from "@/components/institucional/GovStatusBadge";
 import {
@@ -93,7 +93,7 @@ export default function AdminMapa() {
 
   // Dashboard analytics state
   const [analyticsPeriod, setAnalyticsPeriod] = useState("30d");
-  const [kpis, setKpis] = useState({ monitoradas: 0, eventos: 0, emergencias: 0, dispositivosOnline: 0 });
+  const [kpis, setKpis] = useState({ monitoradas: 0, eventos: 0, emergencias: 0, dispositivosOnline: 0, totalGravacoes: 0, totalHorasGravacao: 0 });
   const [timelineData, setTimelineData] = useState<{ date: string; eventos: number; emergencias: number }[]>([]);
   const [riskDistribution, setRiskDistribution] = useState<{ name: string; value: number }[]>([]);
   const [ufData, setUfData] = useState<{ uf: string; total: number }[]>([]);
@@ -197,6 +197,7 @@ export default function AdminMapa() {
       const [
         { count: monitoradas }, { count: eventos }, { count: emergencias }, { data: deviceData },
         { data: eventosData }, { data: panicData }, { data: riskData }, { data: usersData }, { data: auditData },
+        { data: gravacoesData, count: totalGravacoes },
       ] = await Promise.all([
         supabase.from("usuarios").select("*", { count: "exact", head: true }).eq("status", "ativo"),
         supabase.from("gravacoes_analises").select("*", { count: "exact", head: true }).gte("created_at", since),
@@ -207,10 +208,13 @@ export default function AdminMapa() {
         supabase.from("gravacoes_analises").select("nivel_risco").gte("created_at", since),
         supabase.from("usuarios").select("endereco_uf, status"),
         supabase.from("audit_logs").select("action_type, success, created_at").gte("created_at", since),
+        supabase.from("gravacoes").select("duracao_segundos", { count: "exact" }).gte("created_at", since),
       ]);
 
       const onlineCount = (deviceData || []).filter(d => d.status === "online").length;
-      setKpis({ monitoradas: monitoradas || 0, eventos: eventos || 0, emergencias: emergencias || 0, dispositivosOnline: onlineCount });
+      const totalSegundos = (gravacoesData || []).reduce((sum, g) => sum + (g.duracao_segundos || 0), 0);
+      const totalHoras = Math.round((totalSegundos / 3600) * 10) / 10;
+      setKpis({ monitoradas: monitoradas || 0, eventos: eventos || 0, emergencias: emergencias || 0, dispositivosOnline: onlineCount, totalGravacoes: totalGravacoes || 0, totalHorasGravacao: totalHoras });
 
       const buckets: Record<string, { eventos: number; emergencias: number }> = {};
       for (let i = 0; i < periodDays; i++) buckets[format(subDays(new Date(), i), "yyyy-MM-dd")] = { eventos: 0, emergencias: 0 };
@@ -512,11 +516,13 @@ export default function AdminMapa() {
         </div>
 
         {/* KPIs */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
           <GovKpiCard title="Monitoradas Ativas" value={kpis.monitoradas} icon={Users} />
           <GovKpiCard title="Eventos no Período" value={kpis.eventos} icon={BarChart3} />
           <GovKpiCard title="Emergências" value={kpis.emergencias} icon={AlertTriangle} />
           <GovKpiCard title="Dispositivos Online" value={kpis.dispositivosOnline} icon={Smartphone} />
+          <GovKpiCard title="Gravações" value={kpis.totalGravacoes} icon={Mic} subtitle="no período" />
+          <GovKpiCard title="Tempo de Áudio" value={`${kpis.totalHorasGravacao}h`} icon={Clock} subtitle="total gravado" />
         </div>
 
         {/* Timeline + Risk Pie */}
