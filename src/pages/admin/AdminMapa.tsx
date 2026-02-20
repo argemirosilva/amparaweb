@@ -149,7 +149,7 @@ export default function AdminMapa() {
     ] = await Promise.all([
       supabase.from("usuarios").select("id, nome_completo, endereco_uf, endereco_lat, endereco_lon, status"),
       supabase.from("device_status").select("*").order("updated_at", { ascending: false }),
-      supabase.from("alertas_panico").select("*").gte("criado_em", since).order("criado_em", { ascending: false }).limit(50),
+      supabase.from("alertas_panico").select("*").eq("status", "ativo").order("criado_em", { ascending: false }).limit(50),
       supabase.from("localizacoes").select("user_id, latitude, longitude, created_at").gte("created_at", since).order("created_at", { ascending: false }).limit(200),
     ]);
 
