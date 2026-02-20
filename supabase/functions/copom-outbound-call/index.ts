@@ -9,7 +9,6 @@ const corsHeaders = {
 const ELEVENLABS_API_KEY = Deno.env.get("ELEVENLABS_API_KEY")!;
 const PHONE_NUMBER_ID = Deno.env.get("ELEVENLABS_PHONE_NUMBER_ID")!;
 const AGENT_ID = "agent_5901khfc47ksfg0ay6h66vxrz0j3";
-const TEST_PHONE_NUMBER = "+5514997406686";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -19,9 +18,33 @@ serve(async (req) => {
   try {
     const body = await req.json();
     const context = body.context; // CopomContextPayload
-    const phoneNumber = body.phone_number || TEST_PHONE_NUMBER;
     const userId = body.user_id;
     const skipCooldown = body.skip_cooldown === true; // for test mode
+
+    // Resolve destination phone: explicit > admin_settings > fallback
+    let phoneNumber = body.phone_number as string | undefined;
+
+    if (!phoneNumber) {
+      // Read from admin_settings
+      const { createClient: createSbClient } = await import("https://esm.sh/@supabase/supabase-js@2");
+      const sbUrl = Deno.env.get("SUPABASE_URL")!;
+      const sbKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const sbAdmin = createSbClient(sbUrl, sbKey);
+      const { data: phoneSetting } = await sbAdmin
+        .from("admin_settings")
+        .select("valor")
+        .eq("chave", "elevenlabs_copom_telefone")
+        .maybeSingle();
+      phoneNumber = phoneSetting?.valor || undefined;
+    }
+
+    if (!phoneNumber) {
+      console.error("No COPOM phone number configured");
+      return new Response(
+        JSON.stringify({ error: "Telefone COPOM não configurado no painel administrativo" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // ── Cooldown de 60 minutos ──
     if (userId && !skipCooldown) {
