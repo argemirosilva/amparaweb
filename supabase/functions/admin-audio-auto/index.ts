@@ -197,7 +197,7 @@ async function processItem(
   supabase: any,
   item: any,
   jobId: string,
-  adminUserId: string
+  targetUserId: string
 ): Promise<{ success: boolean; topic?: string; duration?: number; error?: string }> {
   const MAX_ATTEMPTS = 3;
 
@@ -278,7 +278,7 @@ async function processItem(
       const { data: gravacao, error: gravErr } = await supabase
         .from("gravacoes")
         .insert({
-          user_id: adminUserId,
+          user_id: targetUserId,
           status: "processado",
           storage_path: storagePath,
           duracao_segundos: durationSec,
@@ -369,6 +369,8 @@ Deno.serve(async (req) => {
     const adminUserId = await authenticateAdmin(supabase, session_token);
     if (!adminUserId) return json({ error: "Não autorizado" }, 401);
 
+    const targetUserId = body.target_user_id || adminUserId;
+
     switch (action) {
       // ── START ──
       case "start": {
@@ -440,7 +442,7 @@ Deno.serve(async (req) => {
           supabase,
           nextItem,
           job_id,
-          adminUserId
+          targetUserId
         );
 
         return json({

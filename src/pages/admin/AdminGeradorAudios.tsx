@@ -1,10 +1,18 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -23,6 +31,7 @@ import {
   Clock,
   Mic,
   AlertTriangle,
+  User,
 } from "lucide-react";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
@@ -92,8 +101,31 @@ export default function AdminGeradorAudios() {
   const [logs, setLogs] = useState<string[]>([]);
   const [isRunning, setIsRunning] = useState(false);
   const [starting, setStarting] = useState(false);
+  const [targetUserId, setTargetUserId] = useState<string>("");
+  const [usuarios, setUsuarios] = useState<{ id: string; nome_completo: string; email: string }[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(true);
   const cancelRef = useRef(false);
   const logsEndRef = useRef<HTMLDivElement>(null);
+
+  // Load users for selector
+  useEffect(() => {
+    async function loadUsers() {
+      const { data } = await supabase
+        .from("usuarios")
+        .select("id, nome_completo, email")
+        .eq("status", "ativo")
+        .order("nome_completo");
+      if (data) {
+        setUsuarios(data);
+        // Auto-select first user
+        if (data.length > 0 && !targetUserId) {
+          setTargetUserId(data[0].id);
+        }
+      }
+      setLoadingUsers(false);
+    }
+    loadUsers();
+  }, []);
 
   const addLog = useCallback((msg: string) => {
     const ts = new Date().toLocaleTimeString("pt-BR");
@@ -127,13 +159,14 @@ export default function AdminGeradorAudios() {
 
   // Start generation
   const handleStart = async () => {
-    if (!sessionToken) return;
+    if (!sessionToken || !targetUserId) return;
     setStarting(true);
     cancelRef.current = false;
-    addLog("Iniciando geração de 100 áudios...");
+    const selectedUser = usuarios.find(u => u.id === targetUserId);
+    addLog(`Iniciando geração de 100 áudios para ${selectedUser?.nome_completo || targetUserId}...`);
 
     try {
-      const res = await callApi("start", sessionToken, { count: 100 });
+      const res = await callApi("start", sessionToken, { count: 100, target_user_id: targetUserId });
       if (!res.ok) {
         addLog(`❌ Erro ao criar job: ${res.error}`);
         setStarting(false);
@@ -151,7 +184,7 @@ export default function AdminGeradorAudios() {
       // Processing loop
       let finished = false;
       while (!finished && !cancelRef.current) {
-        const r = await callApi("processNext", sessionToken, { job_id: jId });
+        const r = await callApi("processNext", sessionToken, { job_id: jId, target_user_id: targetUserId });
 
         if (r.finished) {
           finished = true;
@@ -199,7 +232,7 @@ export default function AdminGeradorAudios() {
     setIsRunning(true);
     let finished = false;
     while (!finished && !cancelRef.current) {
-      const r = await callApi("processNext", sessionToken, { job_id: jobId });
+      const r = await callApi("processNext", sessionToken, { job_id: jobId, target_user_id: targetUserId });
       if (r.finished) {
         finished = true;
         addLog(`🏁 Reprocessamento concluído (status: ${r.status})`);
@@ -233,11 +266,37 @@ export default function AdminGeradorAudios() {
         </p>
       </div>
 
+      {/* User selector */}
+      <Card className="mb-6" style={{ background: "hsl(0 0% 100%)", borderColor: "hsl(220 13% 91%)" }}>
+        <CardContent className="pt-4 pb-4">
+          <div className="flex items-center gap-3 flex-wrap">
+            <User className="w-5 h-5" style={{ color: "hsl(224 76% 33%)" }} />
+            <div>
+              <p className="text-sm font-medium" style={{ color: "hsl(220 13% 18%)" }}>
+                Vincular gravações à usuária:
+              </p>
+            </div>
+            <Select value={targetUserId} onValueChange={setTargetUserId} disabled={isRunning || loadingUsers}>
+              <SelectTrigger className="w-72">
+                <SelectValue placeholder={loadingUsers ? "Carregando..." : "Selecione a usuária"} />
+              </SelectTrigger>
+              <SelectContent>
+                {usuarios.map((u) => (
+                  <SelectItem key={u.id} value={u.id}>
+                    {u.nome_completo} ({u.email})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Controls */}
       <div className="flex flex-wrap gap-3 mb-6">
         <Button
           onClick={handleStart}
-          disabled={isRunning || starting}
+          disabled={isRunning || starting || !targetUserId}
           size="lg"
           className="gap-2"
           style={{
