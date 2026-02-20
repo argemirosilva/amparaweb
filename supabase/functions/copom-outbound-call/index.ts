@@ -110,6 +110,12 @@ serve(async (req) => {
       // Remove protocol (https://) and www for cleaner speech
       const rawLink = context.monitoring_link || "";
       dynamicVariables.LINK_MONITORAMENTO = rawLink.replace(/^https?:\/\/(www\.)?/, "");
+
+      // Security info about aggressor
+      dynamicVariables.AGRESSOR_TEM_ARMA = context.aggressor?.tem_arma ? "sim" : "não";
+      dynamicVariables.AGRESSOR_FORCA_SEGURANCA = context.aggressor?.forca_seguranca
+        ? (context.aggressor?.forca_seguranca_tipo || "sim, tipo não especificado")
+        : "não";
     }
 
     // Parse multiple phone numbers (comma-separated)
