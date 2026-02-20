@@ -48,6 +48,8 @@ export default function AdminAuditoria() {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<AuditRow | null>(null);
   const [filterAction, setFilterAction] = useState<string>("all");
+  const [filterUser, setFilterUser] = useState<string>("all");
+  const [userOptions, setUserOptions] = useState<{ id: string; label: string }[]>([]);
 
   useEffect(() => {
     async function load() {
@@ -55,17 +57,17 @@ export default function AdminAuditoria() {
       let query = supabase
         .from("audit_logs")
         .select("*")
-        .in("action_type", ADMIN_ACTION_TYPES)
         .order("created_at", { ascending: false })
         .limit(200);
 
       if (filterAction !== "all") {
-        query = supabase
-          .from("audit_logs")
-          .select("*")
-          .eq("action_type", filterAction)
-          .order("created_at", { ascending: false })
-          .limit(200);
+        query = query.eq("action_type", filterAction);
+      } else {
+        query = query.in("action_type", ADMIN_ACTION_TYPES);
+      }
+
+      if (filterUser !== "all") {
+        query = query.eq("user_id", filterUser);
       }
 
       const { data } = await query;
@@ -87,10 +89,20 @@ export default function AdminAuditoria() {
       }
 
       setLogs(rows.map((r) => ({ ...r, user_name: r.user_id ? userMap[r.user_id] || "—" : "—" })));
+
+      // Build user options from all seen users (union with previous)
+      setUserOptions((prev) => {
+        const map = new Map(prev.map((o) => [o.id, o.label]));
+        for (const [id, label] of Object.entries(userMap)) {
+          if (!map.has(id)) map.set(id, label);
+        }
+        return Array.from(map.entries()).map(([id, label]) => ({ id, label })).sort((a, b) => a.label.localeCompare(b.label));
+      });
+
       setLoading(false);
     }
     load();
-  }, [filterAction]);
+  }, [filterAction, filterUser]);
 
   return (
     <div style={fontStyle}>
@@ -100,16 +112,27 @@ export default function AdminAuditoria() {
         <p className="text-sm mt-1" style={{ color: "hsl(220 9% 46%)" }}>Registros de ações realizadas por administradores</p>
       </div>
 
-      <div className="mb-4">
+      <div className="mb-4 flex flex-wrap gap-3">
         <select
           value={filterAction}
           onChange={(e) => setFilterAction(e.target.value)}
           className="text-sm rounded-md border px-3 py-2 outline-none"
           style={{ borderColor: "hsl(220 13% 91%)", color: "hsl(220 13% 18%)", fontFamily: "Inter, Roboto, sans-serif" }}
         >
-          <option value="all">Todas as ações admin</option>
+          <option value="all">Todas as ações</option>
           {ADMIN_ACTION_TYPES.map((a) => (
             <option key={a} value={a}>{ACTION_LABELS[a] || a}</option>
+          ))}
+        </select>
+        <select
+          value={filterUser}
+          onChange={(e) => setFilterUser(e.target.value)}
+          className="text-sm rounded-md border px-3 py-2 outline-none"
+          style={{ borderColor: "hsl(220 13% 91%)", color: "hsl(220 13% 18%)", fontFamily: "Inter, Roboto, sans-serif" }}
+        >
+          <option value="all">Todos os usuários</option>
+          {userOptions.map((u) => (
+            <option key={u.id} value={u.id}>{u.label}</option>
           ))}
         </select>
       </div>
