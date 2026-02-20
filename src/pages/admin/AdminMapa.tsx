@@ -93,6 +93,7 @@ export default function AdminMapa() {
   const [mapLoaded, setMapLoaded] = useState(false);
   const [geojson, setGeojson] = useState<any>(null);
   const [stats, setStats] = useState<StatsMap>({});
+  const [municipioStats, setMunicipioStats] = useState<Record<string, StatsMap>>({});
   const [alerts, setAlerts] = useState<AlertMarker[]>([]);
   const [devices, setDevices] = useState<DeviceMarker[]>([]);
   const [selectedUf, setSelectedUf] = useState<string | null>(null);
@@ -147,30 +148,55 @@ export default function AdminMapa() {
     const [
       { data: users }, { data: deviceData }, { data: alertData }, { data: locations },
     ] = await Promise.all([
-      supabase.from("usuarios").select("id, nome_completo, endereco_uf, endereco_lat, endereco_lon, status"),
+      supabase.from("usuarios").select("id, nome_completo, endereco_uf, endereco_cidade, endereco_lat, endereco_lon, status"),
       supabase.from("device_status").select("*").order("updated_at", { ascending: false }),
       supabase.from("alertas_panico").select("*").eq("status", "ativo").order("criado_em", { ascending: false }).limit(50),
       supabase.from("localizacoes").select("user_id, latitude, longitude, created_at").gte("created_at", since).order("created_at", { ascending: false }).limit(200),
     ]);
 
-    const userMap: Record<string, { nome: string; uf: string; lat: number | null; lng: number | null }> = {};
-    (users || []).forEach((u) => { userMap[u.id] = { nome: u.nome_completo, uf: u.endereco_uf || "", lat: u.endereco_lat, lng: u.endereco_lon }; });
+    const userMap: Record<string, { nome: string; uf: string; cidade: string; lat: number | null; lng: number | null }> = {};
+    (users || []).forEach((u) => { userMap[u.id] = { nome: u.nome_completo, uf: u.endereco_uf || "", cidade: u.endereco_cidade || "", lat: u.endereco_lat, lng: u.endereco_lon }; });
 
     const ufStats: StatsMap = {};
+    const munStats: Record<string, StatsMap> = {};
     const ensureUf = (uf: string) => { if (!ufStats[uf]) ufStats[uf] = { usuarios: 0, online: 0, alertas: 0, monitorando: 0 }; };
+    const ensureMun = (uf: string, cidade: string) => {
+      if (!cidade) return;
+      if (!munStats[uf]) munStats[uf] = {};
+      if (!munStats[uf][cidade]) munStats[uf][cidade] = { usuarios: 0, online: 0, alertas: 0, monitorando: 0 };
+    };
 
-    (users || []).forEach((u) => { if (u.endereco_uf && u.status === "ativo") { ensureUf(u.endereco_uf); ufStats[u.endereco_uf].usuarios++; } });
+    (users || []).forEach((u) => {
+      if (u.endereco_uf && u.status === "ativo") {
+        ensureUf(u.endereco_uf); ufStats[u.endereco_uf].usuarios++;
+        const cidade = u.endereco_cidade || "";
+        if (cidade) { ensureMun(u.endereco_uf, cidade); munStats[u.endereco_uf][cidade].usuarios++; }
+      }
+    });
 
     const latestDeviceByUser: Record<string, any> = {};
     (deviceData || []).forEach((d) => { if (!latestDeviceByUser[d.user_id]) latestDeviceByUser[d.user_id] = d; });
 
     Object.values(latestDeviceByUser).forEach((d: any) => {
-      const uf = userMap[d.user_id]?.uf;
-      if (uf) { ensureUf(uf); if (d.status === "online") ufStats[uf].online++; if (d.is_monitoring) ufStats[uf].monitorando++; }
+      const u = userMap[d.user_id];
+      if (u?.uf) {
+        ensureUf(u.uf);
+        if (d.status === "online") ufStats[u.uf].online++;
+        if (d.is_monitoring) ufStats[u.uf].monitorando++;
+        if (u.cidade) {
+          ensureMun(u.uf, u.cidade);
+          if (d.status === "online") munStats[u.uf][u.cidade].online++;
+          if (d.is_monitoring) munStats[u.uf][u.cidade].monitorando++;
+        }
+      }
     });
 
-    (alertData || []).forEach((a) => { const uf = userMap[a.user_id]?.uf; if (uf) { ensureUf(uf); ufStats[uf].alertas++; } });
+    (alertData || []).forEach((a) => {
+      const u = userMap[a.user_id];
+      if (u?.uf) { ensureUf(u.uf); ufStats[u.uf].alertas++; if (u.cidade) { ensureMun(u.uf, u.cidade); munStats[u.uf][u.cidade].alertas++; } }
+    });
     setStats(ufStats);
+    setMunicipioStats(munStats);
 
     const userLastLocation: Record<string, { lat: number; lng: number; created_at: string }> = {};
     (locations || []).forEach((l) => { if (!userLastLocation[l.user_id]) userLastLocation[l.user_id] = { lat: l.latitude, lng: l.longitude, created_at: l.created_at }; });
@@ -483,8 +509,28 @@ export default function AdminMapa() {
                 </div>
               ) : (
                 <p className="text-xs py-3 text-center rounded-lg mb-4" style={{ ...subtitleStyle, background: "hsl(210 17% 96%)" }}>Sem dados para este estado</p>
+               )}
+              {/* Ranking por município */}
+              {selectedUf && municipioStats[selectedUf] && Object.keys(municipioStats[selectedUf]).length > 0 && (
+                <>
+                  <h4 className="text-[10px] font-semibold uppercase tracking-wider mt-4 mb-2" style={subtitleStyle}>Ranking por Município</h4>
+                  <div className="space-y-1">
+                    {Object.entries(municipioStats[selectedUf])
+                      .sort((a, b) => b[1].usuarios - a[1].usuarios)
+                      .map(([cidade, s]) => (
+                        <div key={cidade} className="flex items-center justify-between px-2 py-2 rounded-lg text-xs" style={{ background: "hsl(210 17% 96%)" }}>
+                          <span className="font-medium truncate mr-2" style={titleStyle}>{cidade}</span>
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <span style={{ color: "hsl(224 76% 33%)" }}>{s.usuarios}</span>
+                            <span style={{ color: "hsl(142 71% 35%)" }}>{s.online} on</span>
+                            {s.alertas > 0 && <span className="font-bold" style={{ color: "hsl(0 72% 51%)" }}>{s.alertas} ⚠</span>}
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </>
               )}
-              <button onClick={() => setSelectedUf(null)} className="w-full text-xs font-medium px-3 py-2 rounded-lg border transition-colors hover:bg-gray-50" style={{ borderColor: "hsl(224 76% 33%)", color: "hsl(224 76% 33%)" }}>← Voltar para Brasil</button>
+              <button onClick={() => setSelectedUf(null)} className="w-full text-xs font-medium px-3 py-2 rounded-lg border transition-colors hover:bg-gray-50 mt-4" style={{ borderColor: "hsl(224 76% 33%)", color: "hsl(224 76% 33%)" }}>← Voltar para Brasil</button>
             </>
           ) : (
             <>
