@@ -70,7 +70,6 @@ async function addTimeline(supabase: any, userId: string, sessionId: string, eve
 }
 
 async function revokeAllGrantsForSession(supabase: any, sessionId: string) {
-  // Get all active grants for this session
   const { data: requests } = await supabase
     .from("support_access_requests")
     .select("id")
@@ -144,7 +143,6 @@ serve(async (req) => {
         .eq("session_id", session_id)
         .order("created_at", { ascending: true });
 
-      // Get active grants
       const { data: requests } = await supabase
         .from("support_access_requests")
         .select("*, support_access_grants(*)")
@@ -161,7 +159,6 @@ serve(async (req) => {
       const { target_user_id, category = "other", sensitivity_level = "normal" } = params;
       if (!target_user_id) return json({ error: "target_user_id obrigatório" }, 400);
 
-      // Verify user exists
       const { data: targetUser } = await supabase
         .from("usuarios")
         .select("id")
@@ -187,7 +184,6 @@ serve(async (req) => {
       await addTimeline(supabase, target_user_id, session.id, "agent_assigned",
         "Agente de suporte atribuído à sessão.");
 
-      // System message
       await supabase.from("support_messages").insert({
         session_id: session.id,
         sender_type: "system",
@@ -216,7 +212,6 @@ serve(async (req) => {
         .single();
       if (error) return json({ error: error.message }, 500);
 
-      // Update last_activity
       await supabase
         .from("support_sessions")
         .update({ last_activity_at: new Date().toISOString(), status: "active" })
@@ -239,7 +234,6 @@ serve(async (req) => {
         .eq("id", session_id);
       if (error) return json({ error: error.message }, 500);
 
-      // Get user_id for timeline
       const { data: sess } = await supabase
         .from("support_sessions")
         .select("user_id")
@@ -260,7 +254,6 @@ serve(async (req) => {
       const { session_id } = params;
       if (!session_id) return json({ error: "session_id obrigatório" }, 400);
 
-      // Revoke all active grants
       await revokeAllGrantsForSession(supabase, session_id);
 
       const now = new Date().toISOString();
@@ -270,7 +263,6 @@ serve(async (req) => {
         .eq("id", session_id);
       if (error) return json({ error: error.message }, 500);
 
-      // System message
       await supabase.from("support_messages").insert({
         session_id,
         sender_type: "system",
@@ -301,7 +293,6 @@ serve(async (req) => {
         return json({ error: "Todos os campos são obrigatórios: session_id, resource_type, resource_id, requested_scope, justification_text" }, 400);
       }
 
-      // Get session & user_id
       const { data: sess } = await supabase
         .from("support_sessions")
         .select("user_id, status")
@@ -310,10 +301,9 @@ serve(async (req) => {
       if (!sess) return json({ error: "Sessão não encontrada" }, 404);
       if (sess.status === "closed") return json({ error: "Sessão já encerrada" }, 400);
 
-      // Generate 6-digit code
       const code = generateCode6();
       const codeHash = await hashCode(code);
-      const expiresAt = new Date(Date.now() + 2 * 60 * 1000).toISOString(); // 2 min
+      const expiresAt = new Date(Date.now() + 2 * 60 * 1000).toISOString();
 
       const { data: request, error } = await supabase
         .from("support_access_requests")
@@ -333,30 +323,24 @@ serve(async (req) => {
         .single();
       if (error) return json({ error: error.message }, 500);
 
-      // Update session status
       await supabase
         .from("support_sessions")
         .update({ status: "waiting_consent", last_activity_at: new Date().toISOString() })
         .eq("id", session_id);
 
-      // Timeline
       await addTimeline(supabase, sess.user_id, session_id, "access_requested",
         `Agente solicitou acesso a ${resource_type}. Justificativa: ${justification_text.trim().substring(0, 100)}`);
 
-      // System message
       await supabase.from("support_messages").insert({
         session_id,
         sender_type: "system",
         message_text: `Solicitação de acesso enviada. Aguardando código de consentimento da usuária. Recurso: ${resource_type}, Escopo: ${requested_scope}`,
       });
 
-      // Return the CODE to be shown on the user's app (in real production this would be pushed via realtime)
-      // For now the agent doesn't see the code — only the user does via getPendingConsent
       return json({ request_id: request.id, code, expires_at: expiresAt }, 201);
     }
 
     if (action === "confirmAccess") {
-      // This can be called by either the user or the agent (with the code the user gave them)
       const { request_id, code } = params;
       if (!request_id || !code) return json({ error: "request_id e code obrigatórios" }, 400);
 
@@ -367,10 +351,13 @@ serve(async (req) => {
         .single();
       if (!request) return json({ error: "Solicitação não encontrada" }, 404);
 
+      // Verify user owns this request (if not admin)
+      const isAdmin = await requireAdmin(supabase, userId);
+      if (!isAdmin && request.user_id !== userId) return json({ error: "Acesso negado" }, 403);
+
       if (request.status === "blocked") return json({ error: "Solicitação bloqueada por excesso de tentativas" }, 403);
       if (request.status !== "pending") return json({ error: `Solicitação já processada: ${request.status}` }, 400);
 
-      // Check expiration
       if (new Date(request.code_expires_at) < new Date()) {
         await supabase
           .from("support_access_requests")
@@ -379,7 +366,6 @@ serve(async (req) => {
         return json({ error: "Código expirado" }, 410);
       }
 
-      // Check code
       const inputHash = await hashCode(code);
       if (inputHash !== request.code_hash) {
         const newAttempts = request.attempts + 1;
@@ -396,7 +382,6 @@ serve(async (req) => {
         return json({ error: `Código incorreto. Tentativa ${newAttempts}/3.` }, 401);
       }
 
-      // SUCCESS — create grant (10 min)
       const grantExpiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
       const { data: grant, error: grantErr } = await supabase
         .from("support_access_grants")
@@ -422,7 +407,6 @@ serve(async (req) => {
       await addTimeline(supabase, request.user_id, request.session_id, "access_granted",
         `Acesso concedido a ${request.resource_type} (${request.requested_scope}). Expira em 10 minutos.`);
 
-      // System message
       await supabase.from("support_messages").insert({
         session_id: request.session_id,
         sender_type: "system",
@@ -472,7 +456,6 @@ serve(async (req) => {
         return json({ error: "grant_id, resource_type e resource_id obrigatórios" }, 400);
       }
 
-      // Validate grant is active and not expired
       const { data: grant } = await supabase
         .from("support_access_grants")
         .select("*, support_access_requests(session_id, user_id, agent_id, resource_type, resource_id, requested_scope)")
@@ -489,36 +472,34 @@ serve(async (req) => {
         return json({ error: "Grant expirado" }, 410);
       }
 
-      const req = grant.support_access_requests;
-      if (req.resource_type !== resource_type || req.resource_id !== resource_id) {
+      const accessReq = grant.support_access_requests;
+      if (accessReq.resource_type !== resource_type || accessReq.resource_id !== resource_id) {
         return json({ error: "Grant não corresponde ao recurso solicitado" }, 403);
       }
 
-      // Log the access
       await supabase.from("support_data_access_log").insert({
-        session_id: req.session_id,
+        session_id: accessReq.session_id,
         agent_id: userId,
-        user_id: req.user_id,
+        user_id: accessReq.user_id,
         resource_type,
         resource_id,
-        action: `view_${req.requested_scope.replace("read_", "")}`,
+        action: `view_${accessReq.requested_scope.replace("read_", "")}`,
         grant_id,
       });
 
-      await addTimeline(supabase, req.user_id, req.session_id, "data_accessed",
-        `Agente acessou ${resource_type} (${req.requested_scope}).`);
+      await addTimeline(supabase, accessReq.user_id, accessReq.session_id, "data_accessed",
+        `Agente acessou ${resource_type} (${accessReq.requested_scope}).`);
 
-      // Fetch the actual resource data
       let resourceData: any = null;
 
       if (resource_type === "recording") {
-        const scope = req.requested_scope;
+        const scope = accessReq.requested_scope;
         if (scope === "read_metadata") {
           const { data } = await supabase
             .from("gravacoes")
             .select("id, created_at, duracao_segundos, tamanho_mb, status, device_id, timezone")
             .eq("id", resource_id)
-            .eq("user_id", req.user_id)
+            .eq("user_id", accessReq.user_id)
             .single();
           resourceData = data;
         } else if (scope === "read_transcription") {
@@ -526,16 +507,15 @@ serve(async (req) => {
             .from("gravacoes")
             .select("id, transcricao")
             .eq("id", resource_id)
-            .eq("user_id", req.user_id)
+            .eq("user_id", accessReq.user_id)
             .single();
           resourceData = data;
         } else if (scope === "read_audio_stream") {
-          // Return a temporary signed URL proxy info
           const { data: rec } = await supabase
             .from("gravacoes")
             .select("storage_path")
             .eq("id", resource_id)
-            .eq("user_id", req.user_id)
+            .eq("user_id", accessReq.user_id)
             .single();
           if (rec?.storage_path) {
             resourceData = { storage_path: rec.storage_path, stream_hint: "Use proxyAudio via web-api with this path" };
@@ -546,7 +526,7 @@ serve(async (req) => {
           .from("gravacoes_analises")
           .select("id, resumo, nivel_risco, sentimento, categorias, palavras_chave, created_at")
           .eq("id", resource_id)
-          .eq("user_id", req.user_id)
+          .eq("user_id", accessReq.user_id)
           .single();
         resourceData = data;
       } else if (resource_type === "transcription") {
@@ -554,7 +534,7 @@ serve(async (req) => {
           .from("gravacoes")
           .select("id, transcricao")
           .eq("id", resource_id)
-          .eq("user_id", req.user_id)
+          .eq("user_id", accessReq.user_id)
           .single();
         resourceData = data;
       } else if (resource_type === "metadata") {
@@ -562,15 +542,14 @@ serve(async (req) => {
           .from("gravacoes")
           .select("id, created_at, duracao_segundos, tamanho_mb, status, device_id")
           .eq("id", resource_id)
-          .eq("user_id", req.user_id)
+          .eq("user_id", accessReq.user_id)
           .single();
         resourceData = data;
       } else if (resource_type === "logs") {
-        // Return device status logs
         const { data } = await supabase
           .from("device_status")
           .select("*")
-          .eq("user_id", req.user_id)
+          .eq("user_id", accessReq.user_id)
           .order("updated_at", { ascending: false })
           .limit(20);
         resourceData = data;
@@ -587,7 +566,6 @@ serve(async (req) => {
       const { session_id, target_user_id } = params;
       if (!session_id || !target_user_id) return json({ error: "session_id e target_user_id obrigatórios" }, 400);
 
-      // Get user email
       const { data: user } = await supabase
         .from("usuarios")
         .select("email, nome_completo")
@@ -595,7 +573,6 @@ serve(async (req) => {
         .single();
       if (!user) return json({ error: "Usuária não encontrada" }, 404);
 
-      // Trigger password reset via auth-request-reset
       try {
         await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/auth-request-reset`, {
           method: "POST",
@@ -627,13 +604,91 @@ serve(async (req) => {
     // ================================================================
 
     if (action === "myTickets") {
+      const { limit = 20 } = params;
+
+      // Also check for active grants per session
       const { data, error } = await supabase
         .from("support_sessions")
         .select("id, status, category, sensitivity_level, created_at, closed_at, last_activity_at")
         .eq("user_id", userId)
-        .order("last_activity_at", { ascending: false });
+        .order("last_activity_at", { ascending: false })
+        .limit(limit);
       if (error) return json({ error: error.message }, 500);
-      return json({ sessions: data || [] });
+
+      // Check active grants for each session
+      const sessionsWithGrants = [];
+      for (const sess of (data || [])) {
+        const { data: reqs } = await supabase
+          .from("support_access_requests")
+          .select("id, support_access_grants(id, active, expires_at)")
+          .eq("session_id", sess.id);
+        
+        const hasActiveGrant = (reqs || []).some((r: any) =>
+          (r.support_access_grants || []).some((g: any) => g.active && new Date(g.expires_at) > new Date())
+        );
+
+        sessionsWithGrants.push({ ...sess, has_active_grant: hasActiveGrant });
+      }
+
+      return json({ success: true, data: { items: sessionsWithGrants } });
+    }
+
+    if (action === "createUserSession") {
+      const { category = "other", message_text, linked_resource } = params;
+      if (!message_text?.trim() || message_text.trim().length < 10) {
+        return json({ error: "Mensagem deve ter pelo menos 10 caracteres" }, 400);
+      }
+
+      const validCategories = [
+        "app_issue", "playback", "upload", "gps", "notifications", 
+        "account", "recording_question", "transcription_question", 
+        "analysis_question", "other"
+      ];
+      if (!validCategories.includes(category)) {
+        return json({ error: "Categoria inválida" }, 400);
+      }
+
+      // Determine sensitivity
+      const sensitiveCategories = ["recording_question", "transcription_question", "analysis_question"];
+      const sensitivity_level = sensitiveCategories.includes(category) || linked_resource ? "sensitive" : "normal";
+
+      const { data: session, error } = await supabase
+        .from("support_sessions")
+        .insert({
+          user_id: userId,
+          status: "open",
+          category,
+          sensitivity_level,
+        })
+        .select()
+        .single();
+      if (error) return json({ error: error.message }, 500);
+
+      await addTimeline(supabase, userId, session.id, "session_created",
+        "Chamado de suporte técnico aberto.");
+
+      // Send initial message
+      await supabase.from("support_messages").insert({
+        session_id: session.id,
+        sender_type: "system",
+        message_text: "Chamado aberto. Um agente será atribuído em breve.",
+      });
+
+      // User's message
+      let userMsgText = message_text.trim();
+      if (linked_resource?.resource_type && linked_resource?.resource_id) {
+        const label = linked_resource.resource_label || linked_resource.resource_id;
+        userMsgText += `\n\n📎 Recurso vinculado: ${linked_resource.resource_type} — ${label}`;
+      }
+
+      await supabase.from("support_messages").insert({
+        session_id: session.id,
+        sender_type: "user",
+        sender_id: userId,
+        message_text: userMsgText,
+      });
+
+      return json({ success: true, data: { session_id: session.id } }, 201);
     }
 
     if (action === "getMySession") {
@@ -654,21 +709,44 @@ serve(async (req) => {
         .eq("session_id", session_id)
         .order("created_at", { ascending: true });
 
-      // Active grants for this session
       const { data: grants } = await supabase
         .from("support_access_requests")
-        .select("id, resource_type, requested_scope, status, support_access_grants(id, active, expires_at, revoked_at)")
+        .select("id, resource_type, resource_id, requested_scope, justification_text, status, code_expires_at, created_at, support_access_grants(id, active, expires_at, revoked_at)")
         .eq("session_id", session_id)
-        .eq("user_id", userId);
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
 
-      return json({ session, messages: messages || [], access_requests: grants || [] });
+      return json({ success: true, data: { session, messages: messages || [], access_requests: grants || [] } });
+    }
+
+    if (action === "listMessages") {
+      const { session_id, limit = 50 } = params;
+      if (!session_id) return json({ error: "session_id obrigatório" }, 400);
+
+      // Verify session belongs to user
+      const { data: sess } = await supabase
+        .from("support_sessions")
+        .select("id")
+        .eq("id", session_id)
+        .eq("user_id", userId)
+        .single();
+      if (!sess) return json({ error: "Sessão não encontrada" }, 404);
+
+      const { data, error } = await supabase
+        .from("support_messages")
+        .select("id, sender_type, message_text, created_at")
+        .eq("session_id", session_id)
+        .order("created_at", { ascending: true })
+        .limit(limit);
+      if (error) return json({ error: error.message }, 500);
+
+      return json({ success: true, data: { items: data || [] } });
     }
 
     if (action === "sendUserMessage") {
       const { session_id, message_text } = params;
       if (!session_id || !message_text?.trim()) return json({ error: "session_id e message_text obrigatórios" }, 400);
 
-      // Verify session belongs to user
       const { data: sess } = await supabase
         .from("support_sessions")
         .select("id, status")
@@ -695,7 +773,117 @@ serve(async (req) => {
         .update({ last_activity_at: new Date().toISOString() })
         .eq("id", session_id);
 
-      return json({ message: msg }, 201);
+      return json({ success: true, data: { message: msg } }, 201);
+    }
+
+    if (action === "listAccessRequests") {
+      const { session_id } = params;
+      if (!session_id) return json({ error: "session_id obrigatório" }, 400);
+
+      const { data: sess } = await supabase
+        .from("support_sessions")
+        .select("id")
+        .eq("id", session_id)
+        .eq("user_id", userId)
+        .single();
+      if (!sess) return json({ error: "Sessão não encontrada" }, 404);
+
+      const { data, error } = await supabase
+        .from("support_access_requests")
+        .select("id, resource_type, resource_id, requested_scope, justification_text, status, code_expires_at, created_at, support_access_grants(id, active, expires_at, revoked_at)")
+        .eq("session_id", session_id)
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
+      if (error) return json({ error: error.message }, 500);
+
+      return json({ success: true, data: { items: data || [] } });
+    }
+
+    if (action === "showCode") {
+      const { request_id } = params;
+      if (!request_id) return json({ error: "request_id obrigatório" }, 400);
+
+      const { data: request } = await supabase
+        .from("support_access_requests")
+        .select("*")
+        .eq("id", request_id)
+        .eq("user_id", userId)
+        .single();
+      if (!request) return json({ error: "Solicitação não encontrada" }, 404);
+
+      if (request.status !== "pending") {
+        return json({ error: `Solicitação já processada: ${request.status}` }, 400);
+      }
+
+      // If code expired, generate a new one
+      if (new Date(request.code_expires_at) < new Date()) {
+        const newCode = generateCode6();
+        const newHash = await hashCode(newCode);
+        const newExpires = new Date(Date.now() + 2 * 60 * 1000).toISOString();
+
+        await supabase
+          .from("support_access_requests")
+          .update({ code_hash: newHash, code_expires_at: newExpires, attempts: 0 })
+          .eq("id", request_id);
+
+        await addTimeline(supabase, userId, request.session_id, "code_shown",
+          `Novo código de consentimento gerado para acesso a ${request.resource_type}.`);
+
+        return json({ success: true, data: { code: newCode, expires_at: newExpires } });
+      }
+
+      // Code still valid — regenerate (since we can't retrieve the original from hash)
+      const newCode = generateCode6();
+      const newHash = await hashCode(newCode);
+      const newExpires = new Date(Date.now() + 2 * 60 * 1000).toISOString();
+
+      await supabase
+        .from("support_access_requests")
+        .update({ code_hash: newHash, code_expires_at: newExpires, attempts: 0 })
+        .eq("id", request_id);
+
+      await addTimeline(supabase, userId, request.session_id, "code_shown",
+        `Código de consentimento exibido para acesso a ${request.resource_type}.`);
+
+      return json({ success: true, data: { code: newCode, expires_at: newExpires } });
+    }
+
+    if (action === "denyAccess") {
+      const { request_id } = params;
+      if (!request_id) return json({ error: "request_id obrigatório" }, 400);
+
+      const { data: request } = await supabase
+        .from("support_access_requests")
+        .select("*")
+        .eq("id", request_id)
+        .eq("user_id", userId)
+        .single();
+      if (!request) return json({ error: "Solicitação não encontrada" }, 404);
+
+      if (request.status !== "pending") {
+        return json({ error: `Solicitação já processada: ${request.status}` }, 400);
+      }
+
+      await supabase
+        .from("support_access_requests")
+        .update({ status: "denied" })
+        .eq("id", request_id);
+
+      await supabase
+        .from("support_sessions")
+        .update({ status: "active", last_activity_at: new Date().toISOString() })
+        .eq("id", request.session_id);
+
+      await addTimeline(supabase, userId, request.session_id, "access_revoked",
+        `Acesso a ${request.resource_type} recusado pela usuária.`);
+
+      await supabase.from("support_messages").insert({
+        session_id: request.session_id,
+        sender_type: "system",
+        message_text: `❌ Acesso a ${request.resource_type} recusado pela usuária.`,
+      });
+
+      return json({ success: true });
     }
 
     if (action === "getAuditTimeline") {
@@ -710,7 +898,7 @@ serve(async (req) => {
 
       const { data, error } = await query.limit(100);
       if (error) return json({ error: error.message }, 500);
-      return json({ timeline: data || [] });
+      return json({ success: true, data: { items: data || [] } });
     }
 
     if (action === "getPendingConsent") {
@@ -722,20 +910,13 @@ serve(async (req) => {
         .order("created_at", { ascending: false });
       if (error) return json({ error: error.message }, 500);
 
-      // Also mark as code_shown in timeline for each
-      for (const req of (data || [])) {
-        await addTimeline(supabase, userId, req.session_id, "code_shown",
-          `Código de consentimento exibido para acesso a ${req.resource_type}.`);
-      }
-
-      return json({ pending: data || [] });
+      return json({ success: true, data: { pending: data || [] } });
     }
 
     if (action === "revokeAllAccess") {
       const { session_id } = params;
       if (!session_id) return json({ error: "session_id obrigatório" }, 400);
 
-      // Verify session belongs to user
       const { data: sess } = await supabase
         .from("support_sessions")
         .select("id")

@@ -44,6 +44,10 @@ import EsqueciSenha from "./pages/EsqueciSenha";
 import SuporteTickets from "./pages/suporte/SuporteTickets";
 import SuporteChat from "./pages/suporte/SuporteChat";
 import SuporteAuditoria from "./pages/suporte/SuporteAuditoria";
+import SupportHome from "./pages/support/SupportHome";
+import SupportNew from "./pages/support/SupportNew";
+import SupportTicketDetail from "./pages/support/SupportTicketDetail";
+import SupportAudit from "./pages/support/SupportAudit";
 
 const queryClient = new QueryClient();
 
@@ -71,7 +75,10 @@ const App = () => (
               <Route path="/perfil" element={<Perfil />} />
               <Route path="/configuracoes" element={<Configuracoes />} />
               <Route path="/busca-perfil" element={<BuscaPerfil />} />
-              
+              <Route path="/support" element={<SupportHome />} />
+              <Route path="/support/new" element={<SupportNew />} />
+              <Route path="/support/tickets/:sessionId" element={<SupportTicketDetail />} />
+              <Route path="/support/audit" element={<SupportAudit />} />
             </Route>
             {/* Portal Público de Transparência */}
             <Route element={<PortalLayout />}>

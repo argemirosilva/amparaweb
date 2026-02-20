@@ -2,7 +2,8 @@ import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { toast } from "@/hooks/use-toast";
 import { callWebApi } from "@/services/webApiService";
 import { Button } from "@/components/ui/button";
-import { FileText, Trash2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { FileText, Trash2, Headset } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -281,6 +282,7 @@ export default function GravacaoExpandedContent({
             </AlertDialogContent>
           </AlertDialog>
         )}
+        <SupportShortcut gravacao={gravacao} />
         <span className="text-[10px] text-muted-foreground ml-auto">
           ID: {gravacao.id.slice(0, 8)}
         </span>
@@ -295,5 +297,25 @@ export default function GravacaoExpandedContent({
         onActiveChange={handleAnaliseActiveChange}
       />
     </div>
+  );
+}
+
+function SupportShortcut({ gravacao }: { gravacao: Gravacao }) {
+  const navigate = useNavigate();
+  const label = `Gravação ${new Date(gravacao.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })} ${new Date(gravacao.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`;
+
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      className="text-xs gap-1 text-muted-foreground hover:text-primary"
+      onClick={(e) => {
+        e.stopPropagation();
+        navigate(`/support/new?category=recording_question&resource_type=recording&resource_id=${gravacao.id}&resource_label=${encodeURIComponent(label)}`);
+      }}
+    >
+      <Headset className="w-3.5 h-3.5" />
+      Pedir ajuda
+    </Button>
   );
 }
