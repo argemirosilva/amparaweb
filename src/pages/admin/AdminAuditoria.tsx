@@ -40,6 +40,7 @@ interface AuditRow {
   ip_address: string | null;
   details: any;
   success: boolean;
+  user_name?: string;
 }
 
 export default function AdminAuditoria() {
@@ -50,6 +51,7 @@ export default function AdminAuditoria() {
 
   useEffect(() => {
     async function load() {
+      setLoading(true);
       let query = supabase
         .from("audit_logs")
         .select("*")
@@ -67,7 +69,24 @@ export default function AdminAuditoria() {
       }
 
       const { data } = await query;
-      setLogs((data as AuditRow[]) || []);
+      const rows = (data as AuditRow[]) || [];
+
+      // Fetch user names for all unique user_ids
+      const userIds = [...new Set(rows.map((r) => r.user_id).filter(Boolean))] as string[];
+      let userMap: Record<string, string> = {};
+      if (userIds.length > 0) {
+        const { data: users } = await supabase
+          .from("usuarios")
+          .select("id, nome_completo, email")
+          .in("id", userIds);
+        if (users) {
+          for (const u of users) {
+            userMap[u.id] = u.nome_completo || u.email;
+          }
+        }
+      }
+
+      setLogs(rows.map((r) => ({ ...r, user_name: r.user_id ? userMap[r.user_id] || "—" : "—" })));
       setLoading(false);
     }
     load();
@@ -103,7 +122,7 @@ export default function AdminAuditoria() {
           <table className="w-full text-sm">
             <thead>
               <tr style={{ background: "hsl(210 17% 96%)" }}>
-                {["Data/hora", "Ação", "IP", "Status", ""].map((h) => (
+                {["Data/hora", "Usuário", "Ação", "IP", "Status", ""].map((h) => (
                   <th key={h} className="px-4 py-2.5 text-left text-xs font-semibold" style={{ color: "hsl(220 9% 46%)" }}>
                     {h}
                   </th>
@@ -113,13 +132,13 @@ export default function AdminAuditoria() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-sm" style={{ color: "hsl(220 9% 46%)" }}>
+                  <td colSpan={6} className="px-4 py-8 text-center text-sm" style={{ color: "hsl(220 9% 46%)" }}>
                     Carregando…
                   </td>
                 </tr>
               ) : logs.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-sm" style={{ color: "hsl(220 9% 46%)" }}>
+                  <td colSpan={6} className="px-4 py-8 text-center text-sm" style={{ color: "hsl(220 9% 46%)" }}>
                     Nenhum registro encontrado.
                   </td>
                 </tr>
@@ -128,6 +147,9 @@ export default function AdminAuditoria() {
                   <tr key={l.id} className="border-t" style={{ borderColor: "hsl(220 13% 91%)" }}>
                     <td className="px-4 py-3 text-xs" style={{ color: "hsl(220 9% 46%)" }}>
                       {new Date(l.created_at).toLocaleString("pt-BR")}
+                    </td>
+                    <td className="px-4 py-3 text-sm" style={{ color: "hsl(220 13% 18%)" }}>
+                      {l.user_name || "—"}
                     </td>
                     <td className="px-4 py-3 font-medium" style={{ color: "hsl(220 13% 18%)" }}>
                       {ACTION_LABELS[l.action_type] || l.action_type}
