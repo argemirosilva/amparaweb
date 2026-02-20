@@ -4,7 +4,7 @@ import { callWebApi } from "@/services/webApiService";
 import AppLayout from "@/components/layout/AppLayout";
 import { BuscaPerfilForm } from "@/components/busca-perfil/BuscaPerfilForm";
 import { BuscaPerfilResults } from "@/components/busca-perfil/BuscaPerfilResults";
-import { Loader2, Search, ArrowLeft } from "lucide-react";
+import { Loader2, UserSearch, ArrowLeft } from "lucide-react";
 
 export interface SearchResult {
   profile_id: string;
@@ -94,7 +94,7 @@ export default function BuscaPerfilPage() {
     <div className="p-4 pb-24 max-w-2xl mx-auto space-y-4">
       <div className="flex items-center gap-3 mb-2">
         <div className="ampara-icon-circle">
-          <Search className="w-5 h-5" />
+          <UserSearch className="w-5 h-5" />
         </div>
         <div>
           <h1 className="text-lg font-bold text-foreground">Pesquisar Parceiro</h1>
