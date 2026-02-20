@@ -101,10 +101,12 @@ export default function AdminGeradorAudios() {
   const [logs, setLogs] = useState<string[]>([]);
   const [isRunning, setIsRunning] = useState(false);
   const [starting, setStarting] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
   const [targetUserId, setTargetUserId] = useState<string>("");
   const [usuarios, setUsuarios] = useState<{ id: string; nome_completo: string; email: string }[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
   const cancelRef = useRef(false);
+  const analyzeCancelRef = useRef(false);
   const logsEndRef = useRef<HTMLDivElement>(null);
 
   // Load users for selector
@@ -246,6 +248,39 @@ export default function AdminGeradorAudios() {
     setIsRunning(false);
   };
 
+  // Batch analyze
+  const handleBatchAnalyze = async () => {
+    if (!sessionToken) return;
+    setAnalyzing(true);
+    analyzeCancelRef.current = false;
+    addLog("🧠 Iniciando análise de risco em lote...");
+
+    let totalAnalyzed = 0;
+    let remaining = 1; // start loop
+
+    while (remaining > 0 && !analyzeCancelRef.current) {
+      try {
+        const res = await callApi("batchAnalyze", sessionToken, { batch_size: 5 });
+        if (!res.ok) {
+          addLog(`❌ Erro: ${res.error}`);
+          break;
+        }
+        totalAnalyzed += res.analyzed || 0;
+        remaining = res.remaining || 0;
+        addLog(`🧠 Analisadas: ${res.analyzed} | Restantes: ${remaining} | Total: ${totalAnalyzed}`);
+        if (res.errors?.length) {
+          res.errors.forEach((e: string) => addLog(`  ⚠️ ${e}`));
+        }
+      } catch (err: any) {
+        addLog(`❌ Erro: ${err.message}`);
+        break;
+      }
+    }
+
+    addLog(`🏁 Análise concluída. ${totalAnalyzed} gravações analisadas.`);
+    setAnalyzing(false);
+  };
+
   const progress = job ? ((job.done_count + job.failed_count) / job.total) * 100 : 0;
 
   return (
@@ -335,6 +370,26 @@ export default function AdminGeradorAudios() {
             Reprocessar falhas ({job.failed_count})
           </Button>
         )}
+
+        <Button
+          onClick={analyzing ? () => { analyzeCancelRef.current = true; } : handleBatchAnalyze}
+          disabled={isRunning || starting}
+          variant={analyzing ? "destructive" : "outline"}
+          size="lg"
+          className="gap-2"
+        >
+          {analyzing ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Parar Análise
+            </>
+          ) : (
+            <>
+              <AlertTriangle className="w-4 h-4" />
+              Analisar Gravações
+            </>
+          )}
+        </Button>
       </div>
 
       {/* Progress */}
