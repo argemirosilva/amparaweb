@@ -358,7 +358,7 @@ export default function DashboardMapCard() {
     devices.forEach((d) => {
       const isOnline = d.status === "online";
       const el = document.createElement("div");
-      el.style.cssText = `width:16px;height:16px;border-radius:50%;background:${isOnline ? "hsl(142,71%,35%)" : "hsl(220,9%,60%)"};border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.2);cursor:pointer`;
+      el.style.cssText = `width:8px;height:8px;border-radius:50%;background:${isOnline ? "hsl(142,71%,35%)" : "hsl(220,9%,60%)"};border:1px solid white;box-shadow:0 0 2px rgba(0,0,0,0.15);cursor:pointer`;
       el.addEventListener("click", (e) => { e.stopPropagation(); setSelected({ type: "device", data: d }); });
       const marker = new mbgl.Marker({ element: el }).setLngLat([d.lng, d.lat]).addTo(map);
       markersRef.current.push(marker);

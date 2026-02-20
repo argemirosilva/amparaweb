@@ -360,7 +360,7 @@ export default function AdminMapa() {
       devices.forEach((d) => {
         const isOnline = d.status === "online";
         const el = document.createElement("div");
-        el.style.cssText = `width:20px;height:20px;border-radius:50%;background:${isOnline ? "hsl(142,71%,35%)" : "hsl(220,9%,60%)"};border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.2);cursor:pointer`;
+        el.style.cssText = `width:8px;height:8px;border-radius:50%;background:${isOnline ? "hsl(142,71%,35%)" : "hsl(220,9%,60%)"};border:1px solid white;box-shadow:0 0 2px rgba(0,0,0,0.15);cursor:pointer`;
         const popup = new mbgl.Popup({ offset: 12, maxWidth: "220px" }).setHTML(`<div style="font-family:Inter,sans-serif;font-size:11px;line-height:1.5"><strong>${d.userName}</strong><div style="margin-top:4px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${isOnline ? "hsl(142,71%,35%)" : "hsl(220,9%,60%)"};margin-right:4px"></span>${isOnline ? "Online" : "Offline"}${d.isMonitoring ? ' · <span style="color:hsl(224,76%,33%)">Monitorando</span>' : ""}</div>${d.bateria != null ? `<div><span style="color:hsl(220,9%,46%)">Bateria:</span> ${d.bateria}%</div>` : ""}${d.lastPing ? `<div><span style="color:hsl(220,9%,46%)">Último ping:</span> ${new Date(d.lastPing).toLocaleString("pt-BR")}</div>` : ""}</div>`);
         const marker = new mbgl.Marker({ element: el }).setLngLat([d.lng, d.lat]).setPopup(popup).addTo(map);
         markersRef.current.push(marker);
