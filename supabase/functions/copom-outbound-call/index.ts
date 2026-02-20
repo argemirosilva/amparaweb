@@ -89,9 +89,12 @@ serve(async (req) => {
     // Build first_message matching the official AMPARA agent opening script
     const victimName = context?.victim?.name || "nome não disponível";
     const aggressorName = context?.aggressor?.name || context?.aggressor?.name_masked || "";
+    const relacao = context?.victim_aggressor_relation || "";
 
     let firstMessage: string;
-    if (aggressorName) {
+    if (aggressorName && relacao) {
+      firstMessage = `Aqui é do AMPARA, sistema de proteção à mulher. Monitoramos a vítima ${victimName}. Há indícios de possível situação de risco envolvendo seu ${relacao}, ${aggressorName}. Solicito atendimento com urgência.`;
+    } else if (aggressorName) {
       firstMessage = `Aqui é do AMPARA, sistema de proteção à mulher. Monitoramos a vítima ${victimName}. Há indícios de possível situação de risco envolvendo ${aggressorName}. Solicito atendimento com urgência.`;
     } else {
       firstMessage = `Aqui é do AMPARA, sistema de proteção à mulher. Monitoramos a vítima ${victimName}. Há indícios de possível situação de risco envolvendo um possível agressor. Não temos o nome do possível agressor no momento. Solicito atendimento com urgência.`;
