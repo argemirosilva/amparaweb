@@ -115,28 +115,14 @@ export default function AcionamentosCard() {
         </CardContent>
       </Card>
 
-      {/* Autoridades */}
+      {/* Chamada de emergência 190/180 */}
       <Card>
         <CardContent className="px-3 py-2 space-y-2">
-          <p className="text-xs font-semibold text-foreground">Autoridades (190 / 180)</p>
+          <p className="text-xs font-semibold text-foreground">Chamada de emergência 190/180</p>
 
           <div className="flex items-center justify-between gap-2">
             <div className="flex-1 min-w-0">
-              <p className="text-xs text-foreground">Acionar em alerta crítico</p>
-            </div>
-            <Switch checked={config.autoridades_190_180.critico} onCheckedChange={(v) => toggle("au_critico", v)} disabled={saving} className="scale-90" />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* COPOM Chamada Automática */}
-      <Card>
-        <CardContent className="px-3 py-2 space-y-2">
-          <p className="text-xs font-semibold text-foreground">Chamada COPOM Automática</p>
-
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex-1 min-w-0">
-              <p className="text-xs text-foreground">Ligar automaticamente ao COPOM em caso de pânico</p>
+              <p className="text-xs text-foreground">Ligar automaticamente em caso de pânico</p>
               <p className="text-[10px] text-muted-foreground">Um agente de voz transmitirá seus dados de localização e risco às autoridades.</p>
             </div>
             <Switch checked={config.copom_chamada_automatica.ativo} onCheckedChange={(v) => toggle("copom_ativo", v)} disabled={saving} className="scale-90" />
