@@ -559,6 +559,46 @@ serve(async (req) => {
       return json({ resource: resourceData });
     }
 
+    if (action === "listUserResources") {
+      const isAdmin = await requireAdmin(supabase, userId);
+      if (!isAdmin) return json({ error: "Acesso negado" }, 403);
+
+      const { target_user_id, resource_type = "recording" } = params;
+      if (!target_user_id) return json({ error: "target_user_id obrigatório" }, 400);
+
+      let items: any[] = [];
+
+      if (resource_type === "recording" || resource_type === "transcription" || resource_type === "metadata") {
+        const { data } = await supabase
+          .from("gravacoes")
+          .select("id, created_at, duracao_segundos, status, transcricao")
+          .eq("user_id", target_user_id)
+          .order("created_at", { ascending: false })
+          .limit(50);
+        items = (data || []).map((r: any) => ({
+          id: r.id,
+          label: `Gravação ${new Date(r.created_at).toLocaleDateString("pt-BR")} ${new Date(r.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} (${r.duracao_segundos ? Math.round(r.duracao_segundos) + "s" : "?"}) — ${r.status}`,
+          has_transcription: !!r.transcricao,
+        }));
+      } else if (resource_type === "analysis") {
+        const { data } = await supabase
+          .from("gravacoes_analises")
+          .select("id, created_at, nivel_risco, resumo, gravacao_id")
+          .eq("user_id", target_user_id)
+          .order("created_at", { ascending: false })
+          .limit(50);
+        items = (data || []).map((a: any) => ({
+          id: a.id,
+          label: `Análise ${new Date(a.created_at).toLocaleDateString("pt-BR")} — Risco: ${a.nivel_risco || "?"}`,
+        }));
+      } else if (resource_type === "logs") {
+        // For logs, just return a single virtual resource
+        items = [{ id: target_user_id, label: "Logs do dispositivo (últimos 20)" }];
+      }
+
+      return json({ success: true, data: { items } });
+    }
+
     if (action === "initiatePasswordReset") {
       const isAdmin = await requireAdmin(supabase, userId);
       if (!isAdmin) return json({ error: "Acesso negado" }, 403);
