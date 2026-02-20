@@ -310,6 +310,7 @@ function fireCopomCall(userId: string, alertaId: string) {
         body: JSON.stringify({
           context,
           user_id: userId,
+          skip_cooldown: true,
         }),
       });
 
