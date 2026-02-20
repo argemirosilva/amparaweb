@@ -79,7 +79,9 @@ function formatAddress(data: any): { display: string; full: string } {
   const addr = data.address || {};
 
   const parts: string[] = [];
-  if (addr.road) parts.push(addr.road);
+  if (addr.road) {
+    parts.push(addr.house_number ? `${addr.road}, ${addr.house_number}` : addr.road);
+  }
   if (addr.suburb) parts.push(addr.suburb);
   const city = addr.city || addr.town || addr.village || addr.municipality || "";
   if (city) parts.push(city);
