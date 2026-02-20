@@ -105,7 +105,9 @@ serve(async (req) => {
     if (context) {
       dynamicVariables.VITIMA_NOME = context.victim?.name || "";
       dynamicVariables.VITIMA_TELEFONE = context.victim?.phone_masked || "";
-      dynamicVariables.ENDERECO_ULTIMA_LOCALIZACAO = context.location?.address || "";
+      const rawAddr = context.location?.address || "";
+      const addrParts = rawAddr.split(",").map((s: string) => s.trim());
+      dynamicVariables.ENDERECO_ULTIMA_LOCALIZACAO = addrParts.slice(0, 2).join(", ");
       dynamicVariables.STATUS_MOVIMENTO = context.location?.movement_status || "";
       dynamicVariables.AGRESSOR_NOME = context.aggressor?.name || context.aggressor?.name_masked || "";
       
@@ -116,8 +118,9 @@ serve(async (req) => {
 
       // Security info about aggressor
       dynamicVariables.AGRESSOR_TEM_ARMA = context.aggressor?.tem_arma ? "sim" : "não";
+      const rawForca = context.aggressor?.forca_seguranca_tipo || "sim, tipo não especificado";
       dynamicVariables.AGRESSOR_FORCA_SEGURANCA = context.aggressor?.forca_seguranca
-        ? (context.aggressor?.forca_seguranca_tipo || "sim, tipo não especificado")
+        ? rawForca.replace(/\s*\(.*?\)/g, "").trim()
         : "não";
 
       // Build vehicle description string
