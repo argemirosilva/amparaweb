@@ -11,14 +11,12 @@ interface AcionamentosConfig {
   whatsapp_guardioes: { grave: boolean; critico: boolean };
   autoridades_190_180: { critico: boolean };
   senha_coacao: { notificar_guardioes: boolean };
-  copom_chamada_automatica: { ativo: boolean };
 }
 
 const DEFAULTS: AcionamentosConfig = {
   whatsapp_guardioes: { grave: true, critico: true },
   autoridades_190_180: { critico: false },
   senha_coacao: { notificar_guardioes: true },
-  copom_chamada_automatica: { ativo: false },
 };
 
 export default function AcionamentosCard() {
@@ -37,7 +35,6 @@ export default function AcionamentosCard() {
           whatsapp_guardioes: { ...DEFAULTS.whatsapp_guardioes, ...fetched.whatsapp_guardioes },
           autoridades_190_180: { ...DEFAULTS.autoridades_190_180, ...fetched.autoridades_190_180 },
           senha_coacao: { ...DEFAULTS.senha_coacao, ...fetched.senha_coacao },
-          copom_chamada_automatica: { ...DEFAULTS.copom_chamada_automatica, ...fetched.copom_chamada_automatica },
         });
       }
     } finally {
@@ -72,8 +69,6 @@ export default function AcionamentosCard() {
       next.autoridades_190_180 = { ...next.autoridades_190_180, critico: value };
     } else if (path === "sc_guardioes") {
       next.senha_coacao = { ...next.senha_coacao, notificar_guardioes: value };
-    } else if (path === "copom_ativo") {
-      next.copom_chamada_automatica = { ...next.copom_chamada_automatica, ativo: value };
     }
     setConfig(next);
     save(next);
@@ -125,7 +120,7 @@ export default function AcionamentosCard() {
               <p className="text-xs text-foreground">Ligar automaticamente em caso de pânico</p>
               <p className="text-[10px] text-muted-foreground">Um agente de voz transmitirá seus dados de localização e risco às autoridades.</p>
             </div>
-            <Switch checked={config.copom_chamada_automatica.ativo} onCheckedChange={(v) => toggle("copom_ativo", v)} disabled={saving} className="scale-90" />
+            <Switch checked={config.autoridades_190_180.critico} onCheckedChange={(v) => toggle("au_critico", v)} disabled={saving} className="scale-90" />
           </div>
         </CardContent>
       </Card>
