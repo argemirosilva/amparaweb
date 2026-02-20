@@ -216,11 +216,25 @@ export default function AdminMapa() {
     setAlerts(alertMarkers);
 
 
-    const deviceMarkers: DeviceMarker[] = Object.entries(latestDeviceByUser)
-      .map(([userId, d]: [string, any]) => {
-        const loc = userLastLocation[userId]; const user = userMap[userId];
-        if (!loc && !user?.lat) return null;
-        return { id: d.id, lat: loc?.lat || user?.lat || 0, lng: loc?.lng || user?.lng || 0, status: d.status, userName: user?.nome || "—", bateria: d.bateria_percentual, lastPing: d.last_ping_at, isMonitoring: d.is_monitoring };
+    // Build device markers for ALL active users (not just those with device_status)
+    const deviceMarkers: DeviceMarker[] = (users || [])
+      .filter((u) => u.status === "ativo")
+      .map((u) => {
+        const device = latestDeviceByUser[u.id];
+        const loc = userLastLocation[u.id];
+        const ufCenter = u.endereco_uf ? UF_CENTROID[u.endereco_uf] : null;
+        const lat = loc?.lat ?? u.endereco_lat ?? ufCenter?.[0];
+        const lng = loc?.lng ?? u.endereco_lon ?? ufCenter?.[1];
+        if (lat == null || lng == null) return null;
+        return {
+          id: device?.id || u.id,
+          lat, lng,
+          status: device?.status || "offline",
+          userName: u.nome_completo || "—",
+          bateria: device?.bateria_percentual ?? null,
+          lastPing: device?.last_ping_at ?? null,
+          isMonitoring: device?.is_monitoring ?? false,
+        };
       }).filter(Boolean) as DeviceMarker[];
     setDevices(deviceMarkers);
     setLastRefresh(new Date());
