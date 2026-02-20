@@ -37,26 +37,43 @@ export default function CopomCallCard({ panicAlertId, testMode }: { panicAlertId
   const createTestTrackingLink = async () => {
     if (!usuario?.id) return null;
     const code = "a2jb3";
-    const sessionToken = localStorage.getItem("session_token");
-    if (!sessionToken) {
-      console.error("No session token for creating test link");
-      return null;
-    }
     try {
-      const { data, error } = await supabase.functions.invoke("admin-api", {
-        body: {
-          action: "createTestTrackingLink",
-          session_token: sessionToken,
-          target_user_id: usuario.id,
-          codigo: code,
-        },
-      });
-      if (error) {
-        console.error("Failed to create test tracking link:", error);
-        return null;
+      // Check if already exists and is active
+      const { data: existing } = await supabase
+        .from("compartilhamento_gps")
+        .select("id, codigo, expira_em")
+        .eq("codigo", code)
+        .eq("ativo", true)
+        .maybeSingle();
+
+      if (existing && new Date(existing.expira_em) > new Date()) {
+        setTestLinkCode(code);
+        return code;
       }
-      setTestLinkCode(code);
-      return code;
+
+      // Create via mobile-api (uses service role, no admin auth needed)
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/mobile-api`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({
+            action: "createTestTrackingLink",
+            user_id: usuario.id,
+            codigo: code,
+          }),
+        }
+      );
+      const data = await res.json();
+      if (data.success) {
+        setTestLinkCode(code);
+        return code;
+      }
+      console.error("Failed to create test link:", data);
+      return null;
     } catch (err) {
       console.error("Error creating test tracking link:", err);
       return null;

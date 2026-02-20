@@ -1942,8 +1942,43 @@ async function handleReportarStatusGravacao(
   });
 }
 
-// ── Main Router ──
+// ── Test: Create tracking link (no auth) ──
+async function handleCreateTestTrackingLink(body: Record<string, unknown>, supabase: any) {
+  const userId = body.user_id as string;
+  const codigo = body.codigo as string;
+  if (!userId || !codigo) {
+    return errorResponse("user_id e codigo são obrigatórios", 400);
+  }
 
+  // Deactivate existing test links with same code
+  await supabase
+    .from("compartilhamento_gps")
+    .update({ ativo: false })
+    .eq("codigo", codigo)
+    .eq("tipo", "teste");
+
+  // Create new test tracking link (24h expiry)
+  const { data: link, error } = await supabase
+    .from("compartilhamento_gps")
+    .insert({
+      user_id: userId,
+      codigo,
+      tipo: "teste",
+      ativo: true,
+      expira_em: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+    })
+    .select("id, codigo")
+    .single();
+
+  if (error) {
+    console.error("createTestTrackingLink error:", error);
+    return errorResponse("Erro ao criar link de teste: " + error.message, 500);
+  }
+
+  return jsonResponse({ success: true, link });
+}
+
+// ── Main Router ──
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -2051,6 +2086,10 @@ serve(async (req) => {
       case "pararGravacao":
       case "finalizarGravacao":
         return await handleReportarStatusGravacao(body, supabase, ip);
+
+      // ── Test utilities (no auth required) ──
+      case "createTestTrackingLink":
+        return await handleCreateTestTrackingLink(body, supabase);
 
       default:
         return errorResponse("Action desconhecida", 400);
