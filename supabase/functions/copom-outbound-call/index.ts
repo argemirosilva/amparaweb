@@ -112,46 +112,67 @@ serve(async (req) => {
       dynamicVariables.LINK_MONITORAMENTO = rawLink.replace(/^https?:\/\/(www\.)?/, "");
     }
 
-    // Call ElevenLabs Outbound Call API
-    const response = await fetch("https://api.elevenlabs.io/v1/convai/twilio/outbound_call", {
-      method: "POST",
-      headers: {
-        "xi-api-key": ELEVENLABS_API_KEY,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        agent_id: AGENT_ID,
-        agent_phone_number_id: PHONE_NUMBER_ID,
-        to_number: phoneNumber,
-        conversation_initiation_client_data: {
-          dynamic_variables: dynamicVariables,
-        },
-        first_message: firstMessage,
-      }),
-    });
+    // Parse multiple phone numbers (comma-separated)
+    const phoneNumbers = phoneNumber
+      .split(",")
+      .map((p: string) => p.trim())
+      .filter((p: string) => p.length > 0);
 
-    const responseText = await response.text();
-
-    if (!response.ok) {
-      console.error("ElevenLabs API error:", response.status, responseText);
+    if (phoneNumbers.length === 0) {
       return new Response(
-        JSON.stringify({
-          error: "ElevenLabs API error",
-          status: response.status,
-          details: responseText,
-        }),
-        { status: response.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: "Nenhum telefone válido configurado" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    let result;
-    try {
-      result = JSON.parse(responseText);
-    } catch {
-      result = { raw: responseText };
+    // Call ElevenLabs Outbound Call API for ALL numbers simultaneously
+    const callPromises = phoneNumbers.map(async (num: string) => {
+      try {
+        const response = await fetch("https://api.elevenlabs.io/v1/convai/twilio/outbound_call", {
+          method: "POST",
+          headers: {
+            "xi-api-key": ELEVENLABS_API_KEY,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            agent_id: AGENT_ID,
+            agent_phone_number_id: PHONE_NUMBER_ID,
+            to_number: num,
+            conversation_initiation_client_data: {
+              dynamic_variables: dynamicVariables,
+            },
+            first_message: firstMessage,
+          }),
+        });
+
+        const responseText = await response.text();
+
+        if (!response.ok) {
+          console.error(`ElevenLabs API error for ${num}:`, response.status, responseText);
+          return { phone: num, success: false, status: response.status, error: responseText };
+        }
+
+        let result;
+        try { result = JSON.parse(responseText); } catch { result = { raw: responseText }; }
+        console.log(`Outbound call initiated to ${num}:`, result);
+        return { phone: num, success: true, call: result };
+      } catch (e) {
+        console.error(`Call failed for ${num}:`, e);
+        return { phone: num, success: false, error: String(e) };
+      }
+    });
+
+    const results = await Promise.all(callPromises);
+    const anySuccess = results.some((r) => r.success);
+
+    if (!anySuccess) {
+      return new Response(
+        JSON.stringify({ error: "Todas as ligações falharam", details: results }),
+        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
-    console.log("Outbound call initiated:", result);
+    console.log("Outbound calls initiated:", results);
 
     // Log successful call for cooldown tracking
     if (userId) {
@@ -163,8 +184,12 @@ serve(async (req) => {
         await sb.from("audit_logs").insert({
           action_type: "copom_outbound_call",
           user_id: userId,
-          details: { protocol_id: context?.protocol_id, phone_number: phoneNumber },
-          success: true,
+          details: {
+            protocol_id: context?.protocol_id,
+            phone_numbers: phoneNumbers,
+            results: results.map((r) => ({ phone: r.phone, success: r.success })),
+          },
+          success: anySuccess,
         });
       } catch (logErr) {
         console.error("Failed to log COPOM call:", logErr);
@@ -172,7 +197,7 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ success: true, call: result }),
+      JSON.stringify({ success: true, calls: results }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
