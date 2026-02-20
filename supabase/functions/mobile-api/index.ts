@@ -1282,8 +1282,10 @@ async function handleAcionarPanico(
 
   const protocolo = generateProtocolo();
   const tipoAcionamento = (body.tipo_acionamento as string) || "botao_panico";
-  const latitude = body.latitude as number | undefined;
-  const longitude = body.longitude as number | undefined;
+  // Accept coordinates from body.latitude/longitude OR body.localizacao.latitude/longitude
+  const loc = body.localizacao as Record<string, unknown> | undefined;
+  const latitude = (body.latitude ?? loc?.latitude) as number | undefined;
+  const longitude = (body.longitude ?? loc?.longitude) as number | undefined;
 
   const { data: alerta } = await supabase
     .from("alertas_panico")
@@ -1293,8 +1295,8 @@ async function handleAcionarPanico(
       status: "ativo",
       protocolo,
       tipo_acionamento: tipoAcionamento,
-      latitude: latitude || null,
-      longitude: longitude || null,
+      latitude: latitude ?? null,
+      longitude: longitude ?? null,
     })
     .select("id")
     .single();
