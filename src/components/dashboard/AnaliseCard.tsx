@@ -169,7 +169,7 @@ export default function AnaliseCard({
               </Badge>
             )}
           </div>
-          <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+          <p className="text-xs text-muted-foreground mt-0.5">
             {completa?.resumo_contexto || analise.resumo}
           </p>
         </div>
