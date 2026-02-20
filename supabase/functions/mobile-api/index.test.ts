@@ -110,26 +110,29 @@ Deno.test("pingMobile returns 401 with invalid session_token", async () => {
   assertEquals(data.success, false);
 });
 
-// ── syncConfigMobile: missing email ──
+// ── syncConfigMobile: missing session_token ──
 
-Deno.test("syncConfigMobile returns 400 without email_usuario", async () => {
+Deno.test("syncConfigMobile returns 401 without session_token", async () => {
   const res = await callApi({
     action: "syncConfigMobile",
   });
   const data = await res.json();
-  assertEquals(res.status, 400);
+  assertEquals(res.status, 401);
   assertEquals(data.success, false);
 });
 
-// ── syncConfigMobile: unknown user ──
+// ── syncConfigMobile: invalid session_token ──
 
-Deno.test("syncConfigMobile returns 404 for unknown user", async () => {
+Deno.test("syncConfigMobile returns 401 with invalid session_token", async () => {
   const res = await callApi({
     action: "syncConfigMobile",
-    email_usuario: "no_such_user_xyz@test.com",
+    session_token: "invalid_token_here",
+    device_id: "test_device",
+    timezone: "America/Sao_Paulo",
+    timezone_offset_minutes: -180,
   });
   const data = await res.json();
-  assertEquals(res.status, 404);
+  assertEquals(res.status, 401);
   assertEquals(data.success, false);
 });
 

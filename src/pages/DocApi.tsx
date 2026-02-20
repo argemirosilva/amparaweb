@@ -74,10 +74,11 @@ const ENDPOINTS: Endpoint[] = [
   {
     action: "syncConfigMobile",
     fase: 1,
-    description: "Sincroniza configurações do servidor para o app. Retorna agendamentos, palavras de comando de voz, contatos de rede de apoio e estado da gravação.",
-    auth: "email_usuario",
+    description: "Sincroniza configurações do servidor para o app. Retorna agendamentos e estado da gravação. Requer sessão autenticada.",
+    auth: "session_token",
     params: [
-      { name: "email_usuario", type: "string", required: true, description: "Email do usuário" },
+      { name: "session_token", type: "string", required: true, description: "Token de sessão" },
+      { name: "email_usuario", type: "string", required: false, description: "Email do usuário (ignorado, identificação via sessão)" },
       { name: "device_id", type: "string", required: false, description: "ID do dispositivo (para criar sessão de monitoramento)" },
       { name: "timezone", type: "string", required: false, description: "Timezone do cliente" },
       { name: "timezone_offset_minutes", type: "number", required: false, description: "Offset em minutos" },

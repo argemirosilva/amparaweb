@@ -464,16 +464,24 @@ async function handleSyncConfig(
   body: Record<string, unknown>,
   supabase: ReturnType<typeof createClient>
 ): Promise<Response> {
-  const emailUsuario = (body.email_usuario as string)?.trim().toLowerCase();
-  if (!emailUsuario) {
-    return errorResponse("email_usuario obrigatório", 400);
+  const sessionToken = body.session_token as string;
+  if (!sessionToken) {
+    return errorResponse("session_token obrigatório", 401);
   }
 
+  const { user: sessionUser, error: sessionError } = await validateSession(supabase, sessionToken);
+  if (sessionError || !sessionUser) {
+    return errorResponse(sessionError || "Sessão inválida", 401);
+  }
+
+  const userId = (sessionUser as Record<string, unknown>).id as string;
+
+  // Fetch full user data including status and configuracao_alertas
   const { data: user } = await supabase
     .from("usuarios")
     .select("id, email, nome_completo, telefone, tipo_interesse, status, configuracao_alertas")
-    .eq("email", emailUsuario)
-    .maybeSingle();
+    .eq("id", userId)
+    .single();
 
   if (!user) {
     return errorResponse("Usuário não encontrado", 404);
