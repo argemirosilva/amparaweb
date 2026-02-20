@@ -144,10 +144,10 @@ function getRetentionCountdown(createdAt: string, retencaoDias: number): string 
   const remainingHours = remainingMs / (1000 * 60 * 60);
   if (remainingHours < 24) {
     const h = Math.ceil(remainingHours);
-    return `${h}h para exclusão`;
+    return `${h}h para exclusão automática`;
   }
   const days = Math.ceil(remainingMs / (1000 * 60 * 60 * 24));
-  return `${days}d para exclusão`;
+  return `${days}d para exclusão automática`;
 }
 
 export default function GravacoesPage() {
