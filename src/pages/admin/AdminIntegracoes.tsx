@@ -61,6 +61,7 @@ const FRIENDLY_LABELS: Record<string, string> = {
   elevenlabs_agent_id: "Agent ID",
   elevenlabs_ativa: "Integração ativa",
   elevenlabs_telefonia_ativa: "Telefonia ativa",
+  elevenlabs_copom_telefone: "Telefone COPOM (destino)",
 };
 
 const TEXTAREA_KEYS = new Set(["ia_prompt_analise"]);
