@@ -37,8 +37,14 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 const FRIENDLY_LABELS: Record<string, string> = {
-  elevenlabs_copom_telefone: "Telefone chamada de emergência 190/180",
+  elevenlabs_copom_telefone: "Telefones chamada de emergência 190/180",
 };
+
+const FIELD_HINTS: Record<string, string> = {
+  elevenlabs_copom_telefone: "Separe múltiplos telefones por vírgula. Ex: 11999998888, 21988887777",
+};
+
+const TEXTAREA_KEYS = new Set(["elevenlabs_copom_telefone"]);
 
 const CATEGORY_ORDER = ["sistema", "panico", "gps", "notificacoes", "dados", "limites"];
 
@@ -140,21 +146,36 @@ export default function AdminConfiguracoes() {
       );
     }
 
-    const isNumber = !isNaN(Number(s.valor));
+    const isTextarea = TEXTAREA_KEYS.has(s.chave);
+    const isNumber = !isTextarea && !isNaN(Number(s.valor));
+    const hint = FIELD_HINTS[s.chave];
+
     return (
-      <div className="flex items-center gap-2">
-        <input
-          type={isNumber ? "number" : "text"}
-          style={{ ...inputStyle, width: isNumber ? 120 : "100%", maxWidth: 300 }}
-          value={currentValue}
-          onChange={(e) => handleChange(s.id, e.target.value)}
-        />
-        {isModified && (
-          <div className="flex gap-1">
-            <button onClick={() => resetField(s.id)} className="p-1.5 rounded hover:bg-gray-100" title="Desfazer"><RotateCcw className="w-3.5 h-3.5" style={{ color: "hsl(220 9% 46%)" }} /></button>
-            <button onClick={() => handleSave(s)} disabled={saving === s.id} className="p-1.5 rounded hover:bg-gray-100" title="Salvar"><Save className="w-3.5 h-3.5" style={{ color: "hsl(224 76% 33%)" }} /></button>
-          </div>
-        )}
+      <div className="flex flex-col gap-1">
+        <div className="flex items-center gap-2">
+          {isTextarea ? (
+            <textarea
+              style={{ ...inputStyle, width: "100%", maxWidth: 340, minHeight: 56, resize: "vertical", fontSize: 13 }}
+              value={currentValue}
+              onChange={(e) => handleChange(s.id, e.target.value)}
+              placeholder="11999998888, 21988887777"
+            />
+          ) : (
+            <input
+              type={isNumber ? "number" : "text"}
+              style={{ ...inputStyle, width: isNumber ? 120 : "100%", maxWidth: 300 }}
+              value={currentValue}
+              onChange={(e) => handleChange(s.id, e.target.value)}
+            />
+          )}
+          {isModified && (
+            <div className="flex gap-1">
+              <button onClick={() => resetField(s.id)} className="p-1.5 rounded hover:bg-gray-100" title="Desfazer"><RotateCcw className="w-3.5 h-3.5" style={{ color: "hsl(220 9% 46%)" }} /></button>
+              <button onClick={() => handleSave(s)} disabled={saving === s.id} className="p-1.5 rounded hover:bg-gray-100" title="Salvar"><Save className="w-3.5 h-3.5" style={{ color: "hsl(224 76% 33%)" }} /></button>
+            </div>
+          )}
+        </div>
+        {hint && <p className="text-xs" style={{ color: "hsl(220 9% 46%)" }}>{hint}</p>}
       </div>
     );
   }
