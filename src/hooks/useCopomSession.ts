@@ -257,6 +257,9 @@ export function useCopomSession() {
       aggressor: {
         name: "João Santos",
         name_masked: "J*** S***",
+        tem_arma: true,
+        forca_seguranca: true,
+        forca_seguranca_tipo: "Polícia Militar (PM)",
         vehicle: {
           model: "Onix",
           color: "Prata",

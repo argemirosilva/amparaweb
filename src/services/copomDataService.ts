@@ -32,6 +32,9 @@ export interface CopomContextPayload {
   aggressor: {
     name: string | null;
     name_masked: string | null;
+    tem_arma: boolean;
+    forca_seguranca: boolean;
+    forca_seguranca_tipo: string | null;
     vehicle: {
       model: string | null;
       color: string | null;
@@ -166,7 +169,7 @@ export async function collectCopomData(
   if (vinculo?.agressor_id) {
     const { data } = await supabase
       .from("agressores")
-      .select("nome, display_name_masked, vehicles, risk_level")
+      .select("nome, display_name_masked, vehicles, risk_level, tem_arma_em_casa, forca_seguranca, sector")
       .eq("id", vinculo.agressor_id)
       .single();
     agressorData = data;
@@ -252,6 +255,9 @@ export async function collectCopomData(
     aggressor: {
       name: agressorData?.nome ?? null,
       name_masked: agressorData?.display_name_masked ?? null,
+      tem_arma: agressorData?.tem_arma_em_casa ?? false,
+      forca_seguranca: agressorData?.forca_seguranca ?? false,
+      forca_seguranca_tipo: agressorData?.sector ?? null,
       vehicle: {
         model: firstVehicle?.model_hint ?? null,
         color: firstVehicle?.color ?? null,
