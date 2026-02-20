@@ -89,7 +89,7 @@ export default function CopomCallCard({ panicAlertId, testMode }: { panicAlertId
     trigger_reason: "panico_manual",
     victim: { name: "Maria da Silva", internal_id: "test-user-001", phone_masked: "(14) ****-6686" },
     location: {
-      address: "Rua José Gonçalves de Oliveira Filho, 67 - Residencial Estoril Premium, Bauru/SP",
+      address: "Rua José Gonçalves de Oliveira Filho, 67 - Residencial Estoril Premium",
       lat: -22.3154, lng: -49.0615, accuracy_m: 12,
       movement_status: "PARADA", speed_kmh: 0,
     },

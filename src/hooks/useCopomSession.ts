@@ -245,7 +245,7 @@ export function useCopomSession() {
         phone_masked: "(14) ****-6686",
       },
       location: {
-        address: "Rua José Gonçalves de Oliveira Filho, 67 - Residencial Estoril Premium, Bauru/SP",
+        address: "Rua José Gonçalves de Oliveira Filho, 67 - Residencial Estoril Premium",
         lat: -22.3154,
         lng: -49.0615,
         accuracy_m: 12,
