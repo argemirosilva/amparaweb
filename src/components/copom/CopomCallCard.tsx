@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useCopomSession } from "@/hooks/useCopomSession";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -27,6 +28,11 @@ export default function CopomCallCard({ panicAlertId, testMode }: { panicAlertId
   const [showLogs, setShowLogs] = useState(false);
   const [isCallingPhone, setIsCallingPhone] = useState(false);
   const [testLinkCode, setTestLinkCode] = useState<string | null>(null);
+  const [testPhone, setTestPhone] = useState(() => localStorage.getItem("copom_test_phone") || "+5514997406686");
+
+  useEffect(() => {
+    if (testMode) localStorage.setItem("copom_test_phone", testPhone);
+  }, [testPhone, testMode]);
 
   const createTestTrackingLink = async () => {
     if (!usuario?.id) return null;
@@ -190,6 +196,19 @@ export default function CopomCallCard({ panicAlertId, testMode }: { panicAlertId
             </div>
           )}
 
+          {/* Test phone config */}
+          {testMode && (state.status === "idle" || state.status === "error" || state.status === "ended") && (
+            <div className="flex items-center gap-2">
+              <label className="text-xs text-muted-foreground whitespace-nowrap font-medium">Tel. teste:</label>
+              <Input
+                value={testPhone}
+                onChange={(e) => setTestPhone(e.target.value)}
+                placeholder="+5511999999999"
+                className="h-8 text-xs font-mono"
+              />
+            </div>
+          )}
+
           {/* Actions */}
           <div className="flex gap-2">
             {(state.status === "idle" || state.status === "error" || state.status === "ended") && (
@@ -221,6 +240,7 @@ export default function CopomCallCard({ panicAlertId, testMode }: { panicAlertId
                             context: state.context || testContext,
                             user_id: usuario?.id,
                             skip_cooldown: testMode,
+                            phone_number: testPhone,
                           },
                         });
                         if (error) {
@@ -237,7 +257,7 @@ export default function CopomCallCard({ panicAlertId, testMode }: { panicAlertId
                           throw error;
                         }
                         toast.success("Ligação telefônica iniciada!", {
-                          description: `Chamando +5514997406686...`,
+                          description: `Chamando ${testPhone}...`,
                         });
                       } catch (err: any) {
                         toast.error("Erro ao iniciar ligação", {
