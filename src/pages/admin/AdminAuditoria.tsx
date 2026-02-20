@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
+import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
-import { X } from "lucide-react";
+import { X, CalendarIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 const fontStyle = { fontFamily: "Inter, Roboto, sans-serif" };
 
@@ -49,6 +54,8 @@ export default function AdminAuditoria() {
   const [selected, setSelected] = useState<AuditRow | null>(null);
   const [filterAction, setFilterAction] = useState<string>("all");
   const [filterUserText, setFilterUserText] = useState("");
+  const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
+  const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
 
   useEffect(() => {
     async function load() {
@@ -63,6 +70,15 @@ export default function AdminAuditoria() {
         query = query.eq("action_type", filterAction);
       } else {
         query = query.in("action_type", ADMIN_ACTION_TYPES);
+      }
+
+      if (dateFrom) {
+        query = query.gte("created_at", dateFrom.toISOString());
+      }
+      if (dateTo) {
+        const end = new Date(dateTo);
+        end.setHours(23, 59, 59, 999);
+        query = query.lte("created_at", end.toISOString());
       }
 
       const { data } = await query;
@@ -87,7 +103,7 @@ export default function AdminAuditoria() {
       setLoading(false);
     }
     load();
-  }, [filterAction]);
+  }, [filterAction, dateFrom, dateTo]);
 
   return (
     <div style={fontStyle}>
@@ -117,6 +133,33 @@ export default function AdminAuditoria() {
           className="text-sm rounded-md border px-3 py-2 outline-none w-64"
           style={{ borderColor: "hsl(220 13% 91%)", color: "hsl(220 13% 18%)", fontFamily: "Inter, Roboto, sans-serif" }}
         />
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className={cn("text-sm h-9 px-3 justify-start font-normal", !dateFrom && "text-muted-foreground")}>
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {dateFrom ? format(dateFrom, "dd/MM/yyyy") : "Data inicial"}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar mode="single" selected={dateFrom} onSelect={setDateFrom} initialFocus className={cn("p-3 pointer-events-auto")} />
+          </PopoverContent>
+        </Popover>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className={cn("text-sm h-9 px-3 justify-start font-normal", !dateTo && "text-muted-foreground")}>
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {dateTo ? format(dateTo, "dd/MM/yyyy") : "Data final"}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar mode="single" selected={dateTo} onSelect={setDateTo} initialFocus className={cn("p-3 pointer-events-auto")} />
+          </PopoverContent>
+        </Popover>
+        {(dateFrom || dateTo) && (
+          <button onClick={() => { setDateFrom(undefined); setDateTo(undefined); }} className="text-xs font-medium px-2 py-1 rounded" style={{ color: "hsl(0 72% 51%)" }}>
+            Limpar datas
+          </button>
+        )}
       </div>
 
       <div
