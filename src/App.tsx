@@ -20,7 +20,7 @@ import DocApi from "./pages/DocApi";
 import Rastreamento from "./pages/Rastreamento";
 import Suporte from "./pages/Suporte";
 import Privacidade from "./pages/Privacidade";
-import Copom from "./pages/Copom";
+
 import PortalLayout from "./components/institucional/PortalLayout";
 import TransparenciaHome from "./pages/transparencia/TransparenciaHome";
 import TransparenciaMapa from "./pages/transparencia/TransparenciaMapa";
@@ -67,7 +67,7 @@ const App = () => (
               <Route path="/perfil" element={<Perfil />} />
               <Route path="/configuracoes" element={<Configuracoes />} />
               <Route path="/busca-perfil" element={<BuscaPerfil />} />
-              <Route path="/copom" element={<Copom />} />
+              
             </Route>
             {/* Portal Público de Transparência */}
             <Route element={<PortalLayout />}>
