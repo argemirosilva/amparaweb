@@ -22,6 +22,471 @@ function r2Url(key: string) {
 
 const R2_PUBLIC_URL = () => Deno.env.get("R2_PUBLIC_URL") || "";
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+};
+
+// ── Utility functions ──
+
+function generateToken(length = 64): string {
+  const array = new Uint8Array(length);
+  crypto.getRandomValues(array);
+  return Array.from(array, (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function hashToken(token: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(token);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(hashBuffer), (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+function jsonResponse(data: Record<string, unknown>, status = 200): Response {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
+function errorResponse(error: string, status = 400): Response {
+  return jsonResponse({ success: false, error }, status);
+}
+
+async function checkRateLimit(
+  supabase: ReturnType<typeof createClient>,
+  identifier: string,
+  actionType: string,
+  limit: number,
+  windowMinutes: number
+): Promise<boolean> {
+  const since = new Date(Date.now() - windowMinutes * 60 * 1000).toISOString();
+  const { count } = await supabase
+    .from("rate_limit_attempts")
+    .select("*", { count: "exact", head: true })
+    .eq("identifier", identifier)
+    .eq("action_type", actionType)
+    .gte("attempted_at", since);
+  return (count || 0) >= limit;
+}
+
+async function validateSession(
+  supabase: ReturnType<typeof createClient>,
+  sessionToken: string
+): Promise<{ user: Record<string, unknown> | null; error: string | null }> {
+  if (!sessionToken) return { user: null, error: "session_token obrigatório" };
+
+  const tokenHash = await hashToken(sessionToken);
+  const { data: session } = await supabase
+    .from("user_sessions")
+    .select("id, user_id, expires_at, revoked_at")
+    .eq("token_hash", tokenHash)
+    .is("revoked_at", null)
+    .maybeSingle();
+
+  if (!session || new Date(session.expires_at) < new Date()) {
+    return { user: null, error: "Sessão inválida ou expirada" };
+  }
+
+  const { data: user } = await supabase
+    .from("usuarios")
+    .select("id, email, nome_completo, telefone, tipo_interesse")
+    .eq("id", session.user_id)
+    .single();
+
+  return { user, error: null };
+}
+
+async function findUserByEmail(
+  supabase: ReturnType<typeof createClient>,
+  email: string
+): Promise<Record<string, unknown> | null> {
+  const { data } = await supabase
+    .from("usuarios")
+    .select("id, email, nome_completo, telefone, tipo_interesse")
+    .eq("email", email.trim().toLowerCase())
+    .maybeSingle();
+  return data;
+}
+
+// ── Fire-and-forget WhatsApp notification ──
+
+function fireWhatsApp(userId: string, tipo: string, lat?: number | null, lon?: number | null, alertaId?: string | null) {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const body: Record<string, unknown> = { action: "notify_alert", user_id: userId, tipo };
+  if (lat != null) body.lat = lat;
+  if (lon != null) body.lon = lon;
+  if (alertaId) body.alerta_id = alertaId;
+
+  fetch(`${supabaseUrl}/functions/v1/send-whatsapp`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${serviceKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  }).catch((e) => console.error("fireWhatsApp error:", e));
+}
+
+function fireWhatsAppResolved(userId: string) {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+  fetch(`${supabaseUrl}/functions/v1/send-whatsapp`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${serviceKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ action: "notify_resolved", user_id: userId }),
+  }).catch((e) => console.error("fireWhatsAppResolved error:", e));
+}
+
+// ── Short day keys used throughout the API (doc standard) ──
+const VALID_DAYS = ["seg", "ter", "qua", "qui", "sex", "sab", "dom"];
+// JS getDay() -> short key mapping (0=Sunday)
+const DAY_INDEX_TO_KEY = ["dom", "seg", "ter", "qua", "qui", "sex", "sab"];
+
+// ── Action Handlers ──
+
+async function handleLogin(
+  body: Record<string, unknown>,
+  supabase: ReturnType<typeof createClient>,
+  ip: string
+): Promise<Response> {
+  const email = (body.email as string)?.trim().toLowerCase();
+  const senha = body.senha as string;
+  const tipoAcao = body.tipo_acao as string | undefined;
+
+  if (!email || !senha) {
+    return errorResponse("Email e senha são obrigatórios", 400);
+  }
+
+  // Rate limit
+  const identifier = `${email}:${ip}`;
+  const limited = await checkRateLimit(supabase, identifier, "login_mobile", 5, 15);
+  if (limited) {
+    return errorResponse("Muitas tentativas. Aguarde 15 minutos", 429);
+  }
+
+  await supabase.from("rate_limit_attempts").insert({
+    identifier,
+    action_type: "login_mobile",
+  });
+
+  // Find user
+  const { data: user } = await supabase
+    .from("usuarios")
+    .select("id, email, nome_completo, telefone, tipo_interesse, senha_hash, senha_coacao_hash, status")
+    .eq("email", email)
+    .maybeSingle();
+
+  if (!user) {
+    return errorResponse("Email ou senha incorretos", 401);
+  }
+
+  // Check password (normal + coercion)
+  let loginTipo = "normal";
+  const normalMatch = bcrypt.compareSync(senha, user.senha_hash);
+  const coercaoMatch = user.senha_coacao_hash
+    ? bcrypt.compareSync(senha, user.senha_coacao_hash)
+    : false;
+
+  if (!normalMatch && !coercaoMatch) {
+    await supabase.from("audit_logs").insert({
+      user_id: user.id,
+      action_type: "login_mobile_failed",
+      success: false,
+      ip_address: ip,
+      details: { reason: "wrong_password" },
+    });
+    return errorResponse("Email ou senha incorretos", 401);
+  }
+
+  if (coercaoMatch && !normalMatch) {
+    loginTipo = "coacao";
+    await supabase.from("audit_logs").insert({
+      user_id: user.id,
+      action_type: "coacao_login",
+      success: true,
+      ip_address: ip,
+      details: { silent: true },
+    });
+
+    // Fire-and-forget: notify guardians about coercion login
+    fireWhatsApp(user.id, "coacao");
+  }
+
+  // Desinstalação event
+  if (tipoAcao === "desinstalacao") {
+    await supabase.from("audit_logs").insert({
+      user_id: user.id,
+      action_type: "app_desinstalacao",
+      success: true,
+      ip_address: ip,
+    });
+  }
+
+  // Generate access_token (session)
+  const accessToken = generateToken(64);
+  const accessTokenHash = await hashToken(accessToken);
+  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+
+  await supabase.from("user_sessions").insert({
+    user_id: user.id,
+    token_hash: accessTokenHash,
+    expires_at: expiresAt,
+    ip_address: ip,
+  });
+
+  // Generate refresh_token
+  const refreshToken = generateToken(64);
+  const refreshTokenHash = await hashToken(refreshToken);
+  const refreshExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+
+  await supabase.from("refresh_tokens").insert({
+    user_id: user.id,
+    token_hash: refreshTokenHash,
+    expires_at: refreshExpiresAt,
+    ip_address: ip,
+  });
+
+  // Update last access
+  await supabase.from("usuarios").update({ ultimo_acesso: new Date().toISOString() }).eq("id", user.id);
+
+  // Audit
+  await supabase.from("audit_logs").insert({
+    user_id: user.id,
+    action_type: "login_mobile_success",
+    success: true,
+    ip_address: ip,
+  });
+
+  return jsonResponse({
+    success: true,
+    usuario: {
+      id: user.id,
+      email: user.email,
+      nome_completo: user.nome_completo,
+      telefone: user.telefone,
+      tipo_interesse: user.tipo_interesse,
+    },
+    loginTipo,
+    session: {
+      token: accessToken,
+      expires_at: expiresAt,
+    },
+    refresh_token: refreshToken,
+  });
+}
+
+async function handleRefreshToken(
+  body: Record<string, unknown>,
+  supabase: ReturnType<typeof createClient>,
+  ip: string
+): Promise<Response> {
+  const refreshTokenRaw = body.refresh_token as string;
+
+  if (!refreshTokenRaw || refreshTokenRaw.length !== 128) {
+    return errorResponse("refresh_token inválido", 401);
+  }
+
+  const tokenHash = await hashToken(refreshTokenRaw);
+
+  const { data: existing } = await supabase
+    .from("refresh_tokens")
+    .select("id, user_id, expires_at, revoked_at")
+    .eq("token_hash", tokenHash)
+    .is("revoked_at", null)
+    .maybeSingle();
+
+  if (!existing || new Date(existing.expires_at) < new Date()) {
+    return errorResponse("Refresh token inválido ou expirado", 401);
+  }
+
+  // Revoke current
+  await supabase
+    .from("refresh_tokens")
+    .update({ revoked_at: new Date().toISOString() })
+    .eq("id", existing.id);
+
+  // Generate new access_token
+  const newAccessToken = generateToken(64);
+  const newAccessTokenHash = await hashToken(newAccessToken);
+  const accessExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+
+  await supabase.from("user_sessions").insert({
+    user_id: existing.user_id,
+    token_hash: newAccessTokenHash,
+    expires_at: accessExpiresAt,
+    ip_address: ip,
+  });
+
+  // Generate new refresh_token
+  const newRefreshToken = generateToken(64);
+  const newRefreshTokenHash = await hashToken(newRefreshToken);
+  const refreshExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+
+  const { data: newRefresh } = await supabase
+    .from("refresh_tokens")
+    .insert({
+      user_id: existing.user_id,
+      token_hash: newRefreshTokenHash,
+      expires_at: refreshExpiresAt,
+      ip_address: ip,
+    })
+    .select("id")
+    .single();
+
+  if (newRefresh) {
+    await supabase
+      .from("refresh_tokens")
+      .update({ replaced_by: newRefresh.id })
+      .eq("id", existing.id);
+  }
+
+  const { data: user } = await supabase
+    .from("usuarios")
+    .select("id, email, nome_completo, telefone, tipo_interesse")
+    .eq("id", existing.user_id)
+    .single();
+
+  return jsonResponse({
+    success: true,
+    access_token: newAccessToken,
+    refresh_token: newRefreshToken,
+    user,
+  });
+}
+
+async function handlePing(
+  body: Record<string, unknown>,
+  supabase: ReturnType<typeof createClient>
+): Promise<Response> {
+  const sessionToken = body.session_token as string;
+  const { user, error } = await validateSession(supabase, sessionToken);
+  if (error || !user) {
+    return errorResponse(error || "Sessão inválida", 401);
+  }
+
+  const deviceId = body.device_id as string | undefined;
+  const userId = (user as Record<string, unknown>).id as string;
+
+  if (deviceId) {
+    const { data: existing } = await supabase
+      .from("device_status")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("device_id", deviceId)
+      .maybeSingle();
+
+    const deviceData: Record<string, unknown> = {
+      last_ping_at: new Date().toISOString(),
+      status: "online",
+    };
+
+    if (body.bateria_percentual !== undefined) deviceData.bateria_percentual = body.bateria_percentual;
+    if (body.is_charging !== undefined) deviceData.is_charging = body.is_charging;
+    if (body.dispositivo_info !== undefined) deviceData.dispositivo_info = body.dispositivo_info;
+    else if (body.device_model !== undefined) deviceData.dispositivo_info = body.device_model;
+    if (body.versao_app !== undefined) deviceData.versao_app = body.versao_app;
+    if (body.is_recording !== undefined) deviceData.is_recording = body.is_recording;
+    if (body.is_monitoring !== undefined) deviceData.is_monitoring = body.is_monitoring;
+    if (body.timezone !== undefined) deviceData.timezone = body.timezone;
+    if (body.timezone_offset_minutes !== undefined) deviceData.timezone_offset_minutes = body.timezone_offset_minutes;
+
+    if (existing) {
+      await supabase
+        .from("device_status")
+        .update(deviceData)
+        .eq("id", existing.id);
+    } else {
+      // New device — remove all previous devices for this user
+      await supabase
+        .from("device_status")
+        .delete()
+        .eq("user_id", userId)
+        .neq("device_id", deviceId);
+
+      console.log(`Replaced old device(s) for user ${userId}, new device: ${deviceId}`);
+
+      await supabase.from("device_status").insert({
+        user_id: userId,
+        device_id: deviceId,
+        ...deviceData,
+      });
+    }
+  }
+
+  // Optional GPS: if latitude & longitude are present, insert into localizacoes
+  const pingLat = body.latitude as number | undefined;
+  const pingLon = body.longitude as number | undefined;
+  if (pingLat !== undefined && pingLon !== undefined) {
+    const locData: Record<string, unknown> = {
+      user_id: userId,
+      device_id: deviceId || null,
+      latitude: pingLat,
+      longitude: pingLon,
+    };
+    if (body.location_accuracy != null) locData.precisao_metros = Number(body.location_accuracy);
+    if (body.location_timestamp) {
+      const raw = body.location_timestamp;
+      // Accept both ISO string and Unix millis
+      const ts = typeof raw === "number" ? new Date(raw).toISOString() : typeof raw === "string" && /^\d+$/.test(raw) ? new Date(Number(raw)).toISOString() : raw as string;
+      locData.timestamp_gps = ts;
+    }
+    if (body.speed != null) locData.speed = Number(body.speed);
+    if (body.heading != null) locData.heading = Number(body.heading);
+    if (body.bateria_percentual != null) locData.bateria_percentual = Number(body.bateria_percentual);
+
+    // Link to active panic alert if any
+    const { data: activePanic } = await supabase
+      .from("alertas_panico")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("status", "ativo")
+      .maybeSingle();
+    if (activePanic) locData.alerta_id = activePanic.id;
+
+    const { error: locError } = await supabase.from("localizacoes").insert(locData);
+    if (locError) console.error(`[handlePing] loc insert error: ${locError.message}`);
+  }
+
+  return jsonResponse({
+    success: true,
+    status: "online",
+    servidor_timestamp: new Date().toISOString(),
+  });
+}
+
+async function handleSyncConfig(
+  body: Record<string, unknown>,
+  supabase: ReturnType<typeof createClient>
+): Promise<Response> {
+  const emailUsuario = (body.email_usuario as string)?.trim().toLowerCase();
+  if (!emailUsuario) {
+    return errorResponse("email_usuario obrigatório", 400);
+  }
+
+  const { data: user } = await supabase
+    .from("usuarios")
+    .select("id, email, nome_completo, telefone, tipo_interesse, status, configuracao_alertas")
+    .eq("email", emailUsuario)
+    .maybeSingle();
+
+  if (!user) {
+    return errorResponse("Usuário não encontrado", 404);
+  }
+
+  // Get schedules
+  const { data: agendamento } = await supabase
+    .from("agendamentos_monitoramento")
+    .select("periodos_semana, updated_at")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  const periodosSemana = (agendamento?.periodos_semana || {}) as Record<string, Array<{ inicio: string; fim: string }>>;
 
 
   // Check if within scheduled window
@@ -169,7 +634,7 @@ const R2_PUBLIC_URL = () => Deno.env.get("R2_PUBLIC_URL") || "";
       sessao_id: sessaoId,
       periodos_semana: periodosSemana,
     },
-    servidor_timestamp: localTimestamp(),
+    servidor_timestamp: new Date().toISOString(),
   };
   console.log("[SYNC_RESPONSE]", JSON.stringify(syncPayload));
   return jsonResponse(syncPayload);
@@ -637,7 +1102,7 @@ async function handleEnviarLocalizacaoGPS(
     success: true,
     message: "Localização registrada",
     alerta_id: finalAlertaId,
-    servidor_timestamp: localTimestamp(),
+    servidor_timestamp: new Date().toISOString(),
   });
 }
 
@@ -1213,7 +1678,7 @@ async function handleReportarStatusMonitoramento(
   return jsonResponse({
     success: true,
     message: "Status de monitoramento atualizado",
-    servidor_timestamp: localTimestamp(),
+    servidor_timestamp: new Date().toISOString(),
   });
 }
 
@@ -1289,7 +1754,7 @@ async function handleReportarStatusGravacao(
         message: "Sessão de gravação iniciada",
         sessao_id: newSession?.id,
         origem_gravacao: origemGravacao,
-        servidor_timestamp: localTimestamp(),
+        servidor_timestamp: new Date().toISOString(),
       });
     }
 
@@ -1298,7 +1763,7 @@ async function handleReportarStatusGravacao(
       success: true,
       message: "Sessão de gravação já ativa",
       sessao_id: existingSession.id,
-      servidor_timestamp: localTimestamp(),
+      servidor_timestamp: new Date().toISOString(),
     });
   }
 
@@ -1346,7 +1811,7 @@ async function handleReportarStatusGravacao(
           status: "ativa",
           total_segmentos: totalSegmentos ?? null,
           motivo_parada: motivoParada ?? null,
-          servidor_timestamp: localTimestamp(),
+          servidor_timestamp: new Date().toISOString(),
         });
       }
 
@@ -1397,7 +1862,7 @@ async function handleReportarStatusGravacao(
           status: "descartada",
           total_segmentos: 0,
           motivo_parada: motivoParada ?? null,
-          servidor_timestamp: localTimestamp(),
+          servidor_timestamp: new Date().toISOString(),
         });
       }
 
@@ -1428,7 +1893,7 @@ async function handleReportarStatusGravacao(
         status: "aguardando_finalizacao",
         total_segmentos: totalSegmentos ?? null,
         motivo_parada: motivoParada ?? null,
-        servidor_timestamp: localTimestamp(),
+        servidor_timestamp: new Date().toISOString(),
       });
     }
 
@@ -1438,7 +1903,7 @@ async function handleReportarStatusGravacao(
       message: "Status da gravação atualizado",
       total_segmentos: totalSegmentos ?? null,
       motivo_parada: motivoParada ?? null,
-      servidor_timestamp: localTimestamp(),
+      servidor_timestamp: new Date().toISOString(),
     });
   }
 
@@ -1465,7 +1930,7 @@ async function handleReportarStatusGravacao(
     message: "Status da gravação atualizado",
     total_segmentos: totalSegmentos ?? null,
     motivo_parada: motivoParada ?? null,
-    servidor_timestamp: localTimestamp(),
+    servidor_timestamp: new Date().toISOString(),
   });
 }
 
