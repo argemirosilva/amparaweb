@@ -61,7 +61,7 @@ export default function AdminLayout() {
           >
             {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
-          <img src={amparaLogo} alt="AMPARA" className="h-7 object-contain" />
+          <img src={amparaLogo} alt="AMPARA" className="h-10 object-contain" />
           <div className="hidden sm:flex items-center gap-2">
             <span className="text-sm font-semibold" style={{ color: "hsl(224 76% 33%)" }}>
               Painel de Administração — AMPARA
