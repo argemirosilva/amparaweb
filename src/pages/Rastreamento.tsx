@@ -414,7 +414,7 @@ export default function Rastreamento() {
         <div className="rounded-2xl bg-card border border-border shadow-sm p-8 flex flex-col items-center gap-4 max-w-sm w-full">
           <img src={amparaIcon} alt="Ampara" className="w-14 h-14 opacity-50" />
           <h1 className="text-lg font-bold text-foreground">Link não encontrado</h1>
-          <p className="text-sm text-muted-foreground text-center">Este código de rastreamento não existe ou foi removido.</p>
+          <p className="text-sm text-muted-foreground text-center">Este código de rastreamento não existe ou expirou.</p>
         </div>
       </div>
     );
