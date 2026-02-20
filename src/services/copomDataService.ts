@@ -167,7 +167,7 @@ export async function collectCopomData(
   if (vinculo?.agressor_id) {
     const { data } = await supabase
       .from("agressores")
-      .select("display_name_masked, vehicles, risk_level")
+      .select("nome, display_name_masked, vehicles, risk_level")
       .eq("id", vinculo.agressor_id)
       .single();
     agressorData = data;
