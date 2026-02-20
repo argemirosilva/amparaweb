@@ -14,6 +14,7 @@ export function enhancePOILayers(map: mapboxgl.Map) {
     const id = layer.id;
     const isPoi = id.includes("poi");
     const isLabel = id.includes("label");
+    const isRoadLabel = id.includes("road") && isLabel;
 
     if (!isPoi && !isLabel) continue;
 
@@ -35,18 +36,32 @@ export function enhancePOILayers(map: mapboxgl.Map) {
           map.setLayoutProperty(id, "icon-allow-overlap", true);
         }
 
-        // Larger, bolder text
-        map.setLayoutProperty(id, "text-size", [
-          "interpolate", ["linear"], ["zoom"],
-          10, 10,
-          13, 12,
-          16, 14,
-        ]);
-
-        // Text halo for contrast
-        map.setPaintProperty(id, "text-halo-width", 1.5);
-        map.setPaintProperty(id, "text-halo-color", "rgba(255,255,255,0.9)");
-        map.setPaintProperty(id, "text-halo-blur", 0.5);
+        // Force road/street labels visible with larger text
+        if (isRoadLabel) {
+          map.setLayoutProperty(id, "visibility", "visible");
+          map.setLayoutProperty(id, "text-size", [
+            "interpolate", ["linear"], ["zoom"],
+            10, 9,
+            13, 11,
+            15, 13,
+            18, 15,
+          ]);
+          map.setPaintProperty(id, "text-halo-width", 2);
+          map.setPaintProperty(id, "text-halo-color", "rgba(255,255,255,0.95)");
+          map.setPaintProperty(id, "text-halo-blur", 0.5);
+          map.setPaintProperty(id, "text-opacity", 1);
+        } else {
+          // Larger, bolder text for other labels
+          map.setLayoutProperty(id, "text-size", [
+            "interpolate", ["linear"], ["zoom"],
+            10, 10,
+            13, 12,
+            16, 14,
+          ]);
+          map.setPaintProperty(id, "text-halo-width", 1.5);
+          map.setPaintProperty(id, "text-halo-color", "rgba(255,255,255,0.9)");
+          map.setPaintProperty(id, "text-halo-blur", 0.5);
+        }
       } catch {}
     }
   }
