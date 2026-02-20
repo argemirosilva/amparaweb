@@ -18,16 +18,16 @@ interface Endpoint {
 }
 
 const ENDPOINTS: Endpoint[] = [
-  // Fase 1
+  // ── Fase 1: Autenticação & Sincronização ──
   {
     action: "loginCustomizado",
     fase: 1,
-    description: "Autentica o usuário e retorna access_token + refresh_token. Detecta senha de coação silenciosamente.",
+    description: "Autentica a usuária e retorna access_token + refresh_token. Detecta senha de coação silenciosamente. Rate limit: 5 tentativas / 15 min por email+IP.",
     auth: "nenhuma",
     params: [
-      { name: "email", type: "string", required: true, description: "Email do usuário" },
-      { name: "senha", type: "string", required: true, description: "Senha do usuário" },
-      { name: "tipo_acao", type: "string", required: false, description: "Ex: 'desinstalacao' para registrar evento" },
+      { name: "email", type: "string", required: true, description: "Email da usuária" },
+      { name: "senha", type: "string", required: true, description: "Senha da usuária" },
+      { name: "tipo_acao", type: "string", required: false, description: "Ex: 'desinstalacao' para registrar evento no audit" },
     ],
     response: {
       success: true,
@@ -55,7 +55,7 @@ const ENDPOINTS: Endpoint[] = [
   {
     action: "pingMobile",
     fase: 1,
-    description: "Heartbeat do dispositivo. Atualiza status de bateria, gravação, monitoramento etc.",
+    description: "Heartbeat do dispositivo (30s normal / 10s pânico). Atualiza status de bateria, gravação, monitoramento. Se latitude/longitude estiverem presentes, registra localização automaticamente (vincula a alerta de pânico ativo se existir). Device único por usuária — novo device_id substitui o anterior.",
     auth: "session_token",
     params: [
       { name: "session_token", type: "string", required: true, description: "Token de sessão" },
@@ -68,20 +68,25 @@ const ENDPOINTS: Endpoint[] = [
       { name: "versao_app", type: "string", required: false, description: "Versão do app. Ex: '1.2.3'" },
       { name: "timezone", type: "string", required: false, description: "Ex: 'America/Sao_Paulo'" },
       { name: "timezone_offset_minutes", type: "number", required: false, description: "Offset em minutos. Ex: -180" },
+      { name: "latitude", type: "number", required: false, description: "Latitude GPS (se presente, registra localização)" },
+      { name: "longitude", type: "number", required: false, description: "Longitude GPS (se presente, registra localização)" },
+      { name: "location_accuracy", type: "number", required: false, description: "Precisão GPS em metros" },
+      { name: "location_timestamp", type: "string|number", required: false, description: "Timestamp ISO ou Unix millis do GPS" },
+      { name: "speed", type: "number", required: false, description: "Velocidade m/s" },
+      { name: "heading", type: "number", required: false, description: "Direção em graus" },
     ],
     response: { success: true, status: "online", servidor_timestamp: "ISO8601" },
   },
   {
     action: "syncConfigMobile",
     fase: 1,
-    description: "Sincroniza configurações do servidor para o app. Retorna agendamentos e estado da gravação. Requer sessão autenticada.",
+    description: "Sincroniza configurações do servidor para o app. Retorna agendamentos e estado da gravação. Cria sessão de monitoramento automaticamente se dentro de janela agendada.",
     auth: "session_token",
     params: [
       { name: "session_token", type: "string", required: true, description: "Token de sessão" },
-      { name: "email_usuario", type: "string", required: false, description: "Email do usuário (ignorado, identificação via sessão)" },
       { name: "device_id", type: "string", required: false, description: "ID do dispositivo (para criar sessão de monitoramento)" },
-      { name: "timezone", type: "string", required: false, description: "Timezone do cliente" },
-      { name: "timezone_offset_minutes", type: "number", required: false, description: "Offset em minutos" },
+      { name: "timezone", type: "string", required: false, description: "Timezone do cliente. Ex: 'America/Sao_Paulo'" },
+      { name: "timezone_offset_minutes", type: "number", required: false, description: "Offset em minutos. Ex: -180" },
     ],
     response: {
       success: true,
@@ -91,19 +96,20 @@ const ENDPOINTS: Endpoint[] = [
       periodo_atual_index: null,
       gravacao_inicio: null,
       gravacao_fim: null,
-      periodos_hoje: [],
+      periodos_hoje: [{ inicio: "17:00", fim: "20:00" }],
       sessao_id: null,
       dias_gravacao: ["Segunda", "Terça"],
       usuario: { id: "uuid", email: "...", nome_completo: "...", telefone: "...", tipo_interesse: "...", status: "ativo" },
-      monitoramento: { ativo: false, sessao_id: null, periodos_semana: {} },
+      monitoramento: { ativo: false, sessao_id: null, periodos_semana: { seg: [{ inicio: "20:00", fim: "23:00" }] } },
       servidor_timestamp: "ISO8601",
     },
   },
-  // Fase 2
+
+  // ── Fase 2: Sessão & Configuração ──
   {
     action: "logoutMobile",
     fase: 2,
-    description: "Encerra a sessão do dispositivo. Bloqueia logout se houver pânico ativo.",
+    description: "Encerra a sessão do dispositivo. Bloqueia logout se houver pânico ativo (retorna 403 PANIC_ACTIVE_CANNOT_LOGOUT).",
     auth: "session_token",
     params: [
       { name: "session_token", type: "string", required: true, description: "Token de sessão" },
@@ -114,11 +120,11 @@ const ENDPOINTS: Endpoint[] = [
   {
     action: "validate_password",
     fase: 2,
-    description: "Valida a senha do usuário e retorna se é normal ou de coação. Rate limit: 5 tentativas / 15 min.",
+    description: "Valida a senha da usuária e retorna se é normal ou de coação. Rate limit: 5 tentativas / 15 min.",
     auth: "session_token",
     params: [
       { name: "session_token", type: "string", required: true, description: "Token de sessão" },
-      { name: "email_usuario", type: "string", required: true, description: "Email do usuário" },
+      { name: "email_usuario", type: "string", required: true, description: "Email da usuária" },
       { name: "senha", type: "string", required: true, description: "Senha a validar" },
     ],
     response: { success: true, loginTipo: "normal | coacao" },
@@ -126,7 +132,7 @@ const ENDPOINTS: Endpoint[] = [
   {
     action: "change_password",
     fase: 2,
-    description: "Altera a senha do usuário. Se a senha atual for a de coação, retorna sucesso falso (anti-coerção) sem alterar nada.",
+    description: "Altera a senha principal. Se a senha atual for a de coação, retorna success: true mas NÃO altera nada (anti-coerção). Rate limit: 5/15min.",
     auth: "session_token",
     params: [
       { name: "session_token", type: "string", required: true, description: "Token de sessão" },
@@ -136,9 +142,21 @@ const ENDPOINTS: Endpoint[] = [
     response: { success: true, message: "Senha alterada com sucesso" },
   },
   {
+    action: "change_coercion_password",
+    fase: 2,
+    description: "Altera a senha de coação (segurança). Requer autenticação com senha NORMAL. Se autenticada com senha de coação, retorna success: true sem alterar (anti-coerção). A senha de coação deve ser diferente da senha principal. Rate limit: 5/15min.",
+    auth: "session_token",
+    params: [
+      { name: "session_token", type: "string", required: true, description: "Token de sessão" },
+      { name: "senha_atual", type: "string", required: true, description: "Senha atual (deve ser a normal)" },
+      { name: "nova_senha_coacao", type: "string", required: true, description: "Nova senha de coação (mín. 6 caracteres, diferente da principal)" },
+    ],
+    response: { success: true, message: "Senha de segurança alterada com sucesso" },
+  },
+  {
     action: "update_schedules",
     fase: 2,
-    description: "Atualiza os períodos de monitoramento semanal. Máx 8h/dia. Dias: seg, ter, qua, qui, sex, sab, dom.",
+    description: "Atualiza os períodos de monitoramento semanal. Máx 8h/dia. Valida formato HH:MM e que inicio < fim. Dias: seg, ter, qua, qui, sex, sab, dom.",
     auth: "session_token",
     params: [
       { name: "session_token", type: "string", required: true, description: "Token de sessão" },
@@ -146,18 +164,19 @@ const ENDPOINTS: Endpoint[] = [
     ],
     response: { success: true, message: "Horários atualizados com sucesso", periodos_atualizados: {} },
   },
-  // Fase 3
+
+  // ── Fase 3: GPS & Pânico ──
   {
     action: "enviarLocalizacaoGPS",
     fase: 3,
-    description: "Registra localização GPS do usuário. Vincula automaticamente ao alerta de pânico ativo se existir.",
+    description: "Registra localização GPS. Vincula automaticamente ao alerta de pânico ativo se existir. Validação de device_id quando há pânico/monitoramento ativo.",
     auth: "email_usuario",
     params: [
-      { name: "email_usuario", type: "string", required: true, description: "Email do usuário" },
+      { name: "email_usuario", type: "string", required: true, description: "Email da usuária" },
       { name: "latitude", type: "number", required: true, description: "Latitude" },
       { name: "longitude", type: "number", required: true, description: "Longitude" },
-      { name: "device_id", type: "string", required: false, description: "ID do dispositivo" },
-      { name: "alerta_id", type: "string", required: false, description: "ID do alerta de pânico" },
+      { name: "device_id", type: "string", required: false, description: "ID do dispositivo (obrigatório se houver pânico/monitoramento ativo)" },
+      { name: "alerta_id", type: "string", required: false, description: "ID do alerta de pânico (requer device_id)" },
       { name: "precisao_metros", type: "number", required: false, description: "Precisão do GPS em metros" },
       { name: "bateria_percentual", type: "number", required: false, description: "Nível da bateria" },
       { name: "speed", type: "number", required: false, description: "Velocidade m/s" },
@@ -169,12 +188,12 @@ const ENDPOINTS: Endpoint[] = [
   {
     action: "acionarPanicoMobile",
     fase: 3,
-    description: "Aciona o botão de pânico. Gera protocolo único. Registra localização se fornecida.",
+    description: "Aciona o botão de pânico. Gera protocolo único (AMP-YYYYMMDD-XXXXXX). Registra localização se fornecida. Notifica rede de apoio via WhatsApp (fire-and-forget).",
     auth: "email_usuario",
     params: [
-      { name: "email_usuario", type: "string", required: true, description: "Email do usuário" },
+      { name: "email_usuario", type: "string", required: true, description: "Email da usuária" },
       { name: "device_id", type: "string", required: false, description: "ID do dispositivo" },
-      { name: "tipo_acionamento", type: "string", required: false, description: "Ex: 'botao_panico', 'comando_voz'. Default: 'botao_panico'" },
+      { name: "tipo_acionamento", type: "string", required: false, description: "botao_panico | comando_voz. Default: 'botao_panico'" },
       { name: "latitude", type: "number", required: false, description: "Latitude" },
       { name: "longitude", type: "number", required: false, description: "Longitude" },
     ],
@@ -183,15 +202,16 @@ const ENDPOINTS: Endpoint[] = [
   {
     action: "cancelarPanicoMobile",
     fase: 3,
-    description: "Cancela um alerta de pânico ativo. Cancela em <60s = dentro da janela (autoridades NÃO acionadas). Sela sessão de monitoramento ativa.",
+    description: "Cancela alerta de pânico ativo. Se cancelado em <60s = dentro da janela (autoridades NÃO acionadas). Sela sessão de monitoramento ativa. Desativa compartilhamento GPS vinculado. Notifica rede de apoio que pânico foi resolvido.",
     auth: "email_usuario",
     params: [
-      { name: "email_usuario", type: "string", required: true, description: "Email do usuário" },
-      { name: "tipo_cancelamento", type: "string", required: false, description: "Ex: 'manual', 'automatico'. Default: 'manual'" },
+      { name: "email_usuario", type: "string", required: true, description: "Email da usuária" },
+      { name: "tipo_cancelamento", type: "string", required: false, description: "manual | automatico. Default: 'manual'" },
       { name: "motivo_cancelamento", type: "string", required: false, description: "Motivo do cancelamento" },
     ],
     response: {
       success: true,
+      message: "Alerta cancelado com sucesso",
       alerta_id: "uuid",
       protocolo: "AMP-...",
       tipo_cancelamento: "manual",
@@ -203,15 +223,30 @@ const ENDPOINTS: Endpoint[] = [
       window_id: "uuid | null",
     },
   },
-  // Fase 4
+
+  // ── Fase 4: Áudio & Monitoramento ──
+  {
+    action: "iniciarGravacao",
+    fase: 4,
+    description: "Inicia uma sessão de gravação. Cria sessão em monitoramento_sessoes com status 'ativa'. Se já existir sessão ativa para o device, retorna a existente. Alias de reportarStatusGravacao com status_gravacao='iniciada'.",
+    auth: "email_usuario",
+    params: [
+      { name: "email_usuario", type: "string", required: true, description: "Email da usuária" },
+      { name: "device_id", type: "string", required: true, description: "ID do dispositivo" },
+      { name: "status_gravacao", type: "string", required: true, description: "Fixo: 'iniciada'" },
+      { name: "origem_gravacao", type: "string", required: false, description: "automatico | botao_panico | agendado | comando_voz | botao_manual" },
+    ],
+    response: { success: true, message: "Sessão de gravação iniciada", sessao_id: "uuid", origem_gravacao: "automatico", servidor_timestamp: "ISO8601" },
+  },
   {
     action: "receberAudioMobile",
     fase: 4,
-    description: "Recebe áudio (segmento ou gravação completa). Se houver sessão de monitoramento ativa, salva como segmento (idempotente via segmento_idx). Caso contrário, cria gravação para pipeline de processamento.",
-    auth: "email_usuario",
+    description: "Recebe segmento de áudio. Requer sessão de monitoramento ativa (enviar iniciarGravacao antes). Suporta JSON com file_url OU multipart/form-data com upload binário direto para R2. Idempotente via segmento_idx.",
+    auth: "session_token ou email_usuario",
     params: [
-      { name: "email_usuario", type: "string", required: true, description: "Email do usuário" },
-      { name: "file_url", type: "string", required: true, description: "URL do arquivo de áudio" },
+      { name: "session_token", type: "string", required: false, description: "Token de sessão (alternativa a email_usuario)" },
+      { name: "email_usuario", type: "string", required: false, description: "Email da usuária (alternativa a session_token)" },
+      { name: "file_url", type: "string", required: false, description: "URL do arquivo (se JSON). Dispensável se multipart com arquivo binário." },
       { name: "device_id", type: "string", required: false, description: "ID do dispositivo" },
       { name: "duracao_segundos", type: "number", required: false, description: "Duração em segundos" },
       { name: "tamanho_mb", type: "number", required: false, description: "Tamanho em MB" },
@@ -219,16 +254,16 @@ const ENDPOINTS: Endpoint[] = [
       { name: "timezone", type: "string", required: false, description: "Timezone" },
       { name: "timezone_offset_minutes", type: "number", required: false, description: "Offset em minutos" },
     ],
-    response: { success: true, segmento_id: "uuid", monitor_session_id: "uuid", storage_path: "...", message: "..." },
+    response: { success: true, segmento_id: "uuid", monitor_session_id: "uuid", storage_path: "user_id/date/file.mp4", message: "Segmento de monitoramento salvo." },
   },
   {
     action: "getAudioSignedUrl",
     fase: 4,
-    description: "Gera URL assinada para download de áudio. Expira em 15 minutos (900s).",
+    description: "Gera URL assinada para download de áudio. Verifica propriedade via gravacoes ou gravacoes_segmentos. Expira em 15 minutos (900s).",
     auth: "session_token ou email_usuario",
     params: [
       { name: "session_token", type: "string", required: false, description: "Token de sessão (alternativa a email_usuario)" },
-      { name: "email_usuario", type: "string", required: false, description: "Email do usuário (alternativa a session_token)" },
+      { name: "email_usuario", type: "string", required: false, description: "Email da usuária (alternativa a session_token)" },
       { name: "file_path", type: "string", required: false, description: "Caminho do arquivo no storage (preferido)" },
       { name: "gravacao_id", type: "string", required: false, description: "ID da gravação (legacy)" },
     ],
@@ -237,7 +272,7 @@ const ENDPOINTS: Endpoint[] = [
   {
     action: "reprocessarGravacao",
     fase: 4,
-    description: "Reenvia gravação para pipeline de processamento (transcrição + análise). Sem autenticação.",
+    description: "Reenvia gravação para pipeline de processamento (transcrição + análise). Sem autenticação. Reseta status para 'pendente'.",
     auth: "nenhuma",
     params: [
       { name: "gravacao_id", type: "string", required: true, description: "ID da gravação" },
@@ -247,7 +282,7 @@ const ENDPOINTS: Endpoint[] = [
   {
     action: "reprocess_recording",
     fase: 4,
-    description: "Versão autenticada do reprocessamento de gravação.",
+    description: "Versão autenticada do reprocessamento. Verifica que a gravação pertence ao usuário da sessão.",
     auth: "session_token",
     params: [
       { name: "session_token", type: "string", required: true, description: "Token de sessão" },
@@ -258,10 +293,10 @@ const ENDPOINTS: Endpoint[] = [
   {
     action: "reportarStatusMonitoramento",
     fase: 4,
-    description: "Reporta mudança de estado do monitoramento. Sela sessão ativa quando status é de finalização.",
+    description: "Reporta mudança de estado do monitoramento. Atualiza is_monitoring no device_status. Se status for de finalização (janela_finalizada, desativado, erro), sela a sessão ativa.",
     auth: "email_usuario",
     params: [
-      { name: "email_usuario", type: "string", required: true, description: "Email do usuário" },
+      { name: "email_usuario", type: "string", required: true, description: "Email da usuária" },
       { name: "device_id", type: "string", required: true, description: "ID do dispositivo" },
       { name: "status_monitoramento", type: "string", required: true, description: "janela_iniciada | janela_finalizada | ativado | desativado | erro | retomado" },
       { name: "motivo", type: "string", required: false, description: "Motivo da mudança" },
@@ -272,17 +307,17 @@ const ENDPOINTS: Endpoint[] = [
   {
     action: "reportarStatusGravacao",
     fase: 4,
-    description: "Reporta mudança de estado da gravação. Finalização condicional: se motivo_parada for 'botao_manual' ou 'parada_panico', a sessão é selada imediatamente (status 'aguardando_finalizacao'). Para outros motivos (timeout, window_expired, etc.), a sessão permanece 'ativa' e será selada pelo cron de manutenção. O flag is_monitoring persiste até o fim real do período agendado.",
+    description: "Reporta mudança de estado da gravação. Também acessível via aliases: iniciarGravacao, pararGravacao, finalizarGravacao. Finalização condicional: motivo_parada 'botao_manual' ou 'parada_panico' sela imediatamente. Outros motivos mantêm sessão ativa para o cron. Gravações com 0 segmentos são descartadas automaticamente.",
     auth: "email_usuario",
     params: [
-      { name: "email_usuario", type: "string", required: true, description: "Email do usuário" },
+      { name: "email_usuario", type: "string", required: true, description: "Email da usuária" },
       { name: "device_id", type: "string", required: false, description: "ID do dispositivo" },
       { name: "status_gravacao", type: "string", required: true, description: "iniciada | pausada | retomada | finalizada | enviando | erro" },
       { name: "origem_gravacao", type: "string", required: false, description: "automatico | botao_panico | agendado | comando_voz | botao_manual" },
-      { name: "motivo_parada", type: "string", required: false, description: "Motivo da parada. Valores que selam imediatamente: 'botao_manual', 'parada_panico'. Outros valores mantêm a sessão ativa para processamento pelo cron." },
-      { name: "total_segmentos", type: "number", required: false, description: "Total de segmentos enviados" },
+      { name: "motivo_parada", type: "string", required: false, description: "Motivo da parada. Valores que selam imediatamente: 'botao_manual', 'manual', 'parada_panico'." },
+      { name: "total_segmentos", type: "number", required: false, description: "Total de segmentos enviados (0 = descarta sessão)" },
     ],
-    response: { success: true, message: "Status da gravação atualizado", status: "aguardando_finalizacao | ativa", servidor_timestamp: "ISO8601" },
+    response: { success: true, message: "Status da gravação atualizado", sessao_id: "uuid", status: "aguardando_finalizacao | ativa | descartada", servidor_timestamp: "ISO8601" },
   },
 ];
 
