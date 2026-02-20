@@ -170,9 +170,13 @@ function fireCopomCall(userId: string, alertaId: string) {
       const alertConfig = user.configuracao_alertas as Record<string, unknown> || {};
       const acionamentos = alertConfig.acionamentos as Record<string, unknown> | undefined;
       if (acionamentos) {
-        const copomConfig = acionamentos.copom_chamada_automatica as Record<string, boolean> | undefined;
-        if (!copomConfig || copomConfig.ativo !== true) {
-          console.log("fireCopomCall: user has COPOM auto-call disabled, skipping");
+        // Check the correct key: autoridades_190_180.critico (set by the UI)
+        const autoridadesConfig = acionamentos.autoridades_190_180 as Record<string, boolean> | undefined;
+        // Also support legacy key: copom_chamada_automatica.ativo
+        const copomLegacy = acionamentos.copom_chamada_automatica as Record<string, boolean> | undefined;
+        const isEnabled = autoridadesConfig?.critico === true || copomLegacy?.ativo === true;
+        if (!isEnabled) {
+          console.log("fireCopomCall: user has COPOM auto-call disabled, skipping. autoridades_190_180:", JSON.stringify(autoridadesConfig), "copom_legacy:", JSON.stringify(copomLegacy));
           return;
         }
       } else {
