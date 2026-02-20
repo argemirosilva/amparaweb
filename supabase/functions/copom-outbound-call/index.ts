@@ -119,6 +119,16 @@ serve(async (req) => {
       dynamicVariables.AGRESSOR_FORCA_SEGURANCA = context.aggressor?.forca_seguranca
         ? (context.aggressor?.forca_seguranca_tipo || "sim, tipo não especificado")
         : "não";
+
+      // Build vehicle description string
+      const v = context.aggressor?.vehicle;
+      const vParts: string[] = [];
+      if (v?.model) vParts.push(v.model);
+      if (v?.color) vParts.push(`na cor ${v.color}`);
+      if (v?.plate_partial) vParts.push(`de placa ${v.plate_partial}`);
+      dynamicVariables.VEICULO = vParts.length > 0
+        ? `veículo ${vParts.join(", ")}`
+        : "veículo não informado";
     }
 
     // Parse multiple phone numbers (comma-separated) and normalize to E.164
