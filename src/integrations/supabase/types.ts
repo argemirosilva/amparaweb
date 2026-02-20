@@ -1038,6 +1038,351 @@ export type Database = {
           },
         ]
       }
+      support_access_grants: {
+        Row: {
+          active: boolean
+          expires_at: string
+          granted_at: string
+          id: string
+          request_id: string
+          revoked_at: string | null
+          revoked_by: Database["public"]["Enums"]["support_revoked_by"] | null
+        }
+        Insert: {
+          active?: boolean
+          expires_at?: string
+          granted_at?: string
+          id?: string
+          request_id: string
+          revoked_at?: string | null
+          revoked_by?: Database["public"]["Enums"]["support_revoked_by"] | null
+        }
+        Update: {
+          active?: boolean
+          expires_at?: string
+          granted_at?: string
+          id?: string
+          request_id?: string
+          revoked_at?: string | null
+          revoked_by?: Database["public"]["Enums"]["support_revoked_by"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_access_grants_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "support_access_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_access_requests: {
+        Row: {
+          agent_id: string
+          attempts: number
+          code_expires_at: string
+          code_hash: string
+          created_at: string
+          id: string
+          justification_text: string
+          requested_scope: Database["public"]["Enums"]["support_access_scope"]
+          resource_id: string
+          resource_type: Database["public"]["Enums"]["support_resource_type"]
+          session_id: string
+          status: Database["public"]["Enums"]["support_access_status"]
+          user_id: string
+        }
+        Insert: {
+          agent_id: string
+          attempts?: number
+          code_expires_at: string
+          code_hash: string
+          created_at?: string
+          id?: string
+          justification_text: string
+          requested_scope: Database["public"]["Enums"]["support_access_scope"]
+          resource_id: string
+          resource_type: Database["public"]["Enums"]["support_resource_type"]
+          session_id: string
+          status?: Database["public"]["Enums"]["support_access_status"]
+          user_id: string
+        }
+        Update: {
+          agent_id?: string
+          attempts?: number
+          code_expires_at?: string
+          code_hash?: string
+          created_at?: string
+          id?: string
+          justification_text?: string
+          requested_scope?: Database["public"]["Enums"]["support_access_scope"]
+          resource_id?: string
+          resource_type?: Database["public"]["Enums"]["support_resource_type"]
+          session_id?: string
+          status?: Database["public"]["Enums"]["support_access_status"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_access_requests_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_access_requests_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "support_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_access_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_agent_reauth_log: {
+        Row: {
+          agent_id: string
+          id: string
+          method: string
+          mfa_used: boolean
+          reauth_at: string
+          success: boolean
+        }
+        Insert: {
+          agent_id: string
+          id?: string
+          method?: string
+          mfa_used?: boolean
+          reauth_at?: string
+          success?: boolean
+        }
+        Update: {
+          agent_id?: string
+          id?: string
+          method?: string
+          mfa_used?: boolean
+          reauth_at?: string
+          success?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_agent_reauth_log_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_audit_timeline: {
+        Row: {
+          created_at: string
+          description: string
+          event_type: Database["public"]["Enums"]["support_audit_event"]
+          id: string
+          session_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          event_type: Database["public"]["Enums"]["support_audit_event"]
+          id?: string
+          session_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          event_type?: Database["public"]["Enums"]["support_audit_event"]
+          id?: string
+          session_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_audit_timeline_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "support_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_audit_timeline_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_data_access_log: {
+        Row: {
+          action: string
+          agent_device: string | null
+          agent_id: string
+          agent_ip: string | null
+          created_at: string
+          grant_id: string
+          id: string
+          resource_id: string
+          resource_type: Database["public"]["Enums"]["support_resource_type"]
+          session_id: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          agent_device?: string | null
+          agent_id: string
+          agent_ip?: string | null
+          created_at?: string
+          grant_id: string
+          id?: string
+          resource_id: string
+          resource_type: Database["public"]["Enums"]["support_resource_type"]
+          session_id: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          agent_device?: string | null
+          agent_id?: string
+          agent_ip?: string | null
+          created_at?: string
+          grant_id?: string
+          id?: string
+          resource_id?: string
+          resource_type?: Database["public"]["Enums"]["support_resource_type"]
+          session_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_data_access_log_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_data_access_log_grant_id_fkey"
+            columns: ["grant_id"]
+            isOneToOne: false
+            referencedRelation: "support_access_grants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_data_access_log_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "support_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_data_access_log_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_messages: {
+        Row: {
+          created_at: string
+          id: string
+          message_text: string
+          redacted: boolean
+          sender_id: string | null
+          sender_type: Database["public"]["Enums"]["support_sender_type"]
+          session_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message_text: string
+          redacted?: boolean
+          sender_id?: string | null
+          sender_type: Database["public"]["Enums"]["support_sender_type"]
+          session_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message_text?: string
+          redacted?: boolean
+          sender_id?: string | null
+          sender_type?: Database["public"]["Enums"]["support_sender_type"]
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_messages_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "support_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_sessions: {
+        Row: {
+          agent_id: string | null
+          category: Database["public"]["Enums"]["support_category"]
+          closed_at: string | null
+          created_at: string
+          id: string
+          last_activity_at: string
+          sensitivity_level: string
+          status: Database["public"]["Enums"]["support_session_status"]
+          user_id: string
+        }
+        Insert: {
+          agent_id?: string | null
+          category?: Database["public"]["Enums"]["support_category"]
+          closed_at?: string | null
+          created_at?: string
+          id?: string
+          last_activity_at?: string
+          sensitivity_level?: string
+          status?: Database["public"]["Enums"]["support_session_status"]
+          user_id: string
+        }
+        Update: {
+          agent_id?: string | null
+          category?: Database["public"]["Enums"]["support_category"]
+          closed_at?: string | null
+          created_at?: string
+          id?: string
+          last_activity_at?: string
+          sensitivity_level?: string
+          status?: Database["public"]["Enums"]["support_session_status"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_sessions_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_sessions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenants: {
         Row: {
           ativo: boolean
@@ -1396,6 +1741,54 @@ export type Database = {
     }
     Enums: {
       admin_role: "admin_master" | "admin_tenant" | "operador"
+      support_access_scope:
+        | "read_metadata"
+        | "read_transcription"
+        | "read_audio_stream"
+        | "read_analysis"
+        | "read_logs"
+      support_access_status:
+        | "pending"
+        | "granted"
+        | "denied"
+        | "expired"
+        | "blocked"
+      support_audit_event:
+        | "session_created"
+        | "agent_assigned"
+        | "access_requested"
+        | "code_shown"
+        | "access_granted"
+        | "data_accessed"
+        | "access_revoked"
+        | "access_expired"
+        | "session_closed"
+        | "password_reset_initiated"
+      support_category:
+        | "app_issue"
+        | "playback"
+        | "upload"
+        | "gps"
+        | "notifications"
+        | "account"
+        | "recording_question"
+        | "transcription_question"
+        | "analysis_question"
+        | "other"
+      support_resource_type:
+        | "recording"
+        | "transcription"
+        | "analysis"
+        | "metadata"
+        | "logs"
+      support_revoked_by: "system" | "user" | "agent"
+      support_sender_type: "user" | "agent" | "system"
+      support_session_status:
+        | "open"
+        | "waiting_user"
+        | "waiting_consent"
+        | "active"
+        | "closed"
       user_status: "pendente" | "ativo" | "inativo" | "bloqueado"
     }
     CompositeTypes: {
@@ -1525,6 +1918,60 @@ export const Constants = {
   public: {
     Enums: {
       admin_role: ["admin_master", "admin_tenant", "operador"],
+      support_access_scope: [
+        "read_metadata",
+        "read_transcription",
+        "read_audio_stream",
+        "read_analysis",
+        "read_logs",
+      ],
+      support_access_status: [
+        "pending",
+        "granted",
+        "denied",
+        "expired",
+        "blocked",
+      ],
+      support_audit_event: [
+        "session_created",
+        "agent_assigned",
+        "access_requested",
+        "code_shown",
+        "access_granted",
+        "data_accessed",
+        "access_revoked",
+        "access_expired",
+        "session_closed",
+        "password_reset_initiated",
+      ],
+      support_category: [
+        "app_issue",
+        "playback",
+        "upload",
+        "gps",
+        "notifications",
+        "account",
+        "recording_question",
+        "transcription_question",
+        "analysis_question",
+        "other",
+      ],
+      support_resource_type: [
+        "recording",
+        "transcription",
+        "analysis",
+        "metadata",
+        "logs",
+      ],
+      support_revoked_by: ["system", "user", "agent"],
+      support_sender_type: ["user", "agent", "system"],
+      support_session_status: [
+        "open",
+        "waiting_user",
+        "waiting_consent",
+        "active",
+        "closed",
+      ],
       user_status: ["pendente", "ativo", "inativo", "bloqueado"],
     },
   },
