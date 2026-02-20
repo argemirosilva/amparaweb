@@ -241,28 +241,61 @@ serve(async (req) => {
         if (!seg) return json({ error: "Não encontrado" }, 404);
       }
 
-      // Fetch from R2 and stream back with CORS headers
+      // Fetch audio — autogerado paths come from Supabase Storage, others from R2
       try {
-        const r2 = getR2Client();
-        const r2FullUrl = r2Url(storagePath);
-        const signed = await r2.sign(r2FullUrl, { method: "GET" });
-        const r2Resp = await fetch(signed.url, { headers: signed.headers });
-        if (!r2Resp.ok) {
-          return json({ error: "Erro ao buscar áudio do storage" }, 502);
-        }
-        
-        const contentType = storagePath.endsWith(".wav") ? "audio/wav" 
-          : storagePath.endsWith(".ogg") ? "audio/ogg" 
+        const contentType = storagePath.endsWith(".wav") ? "audio/wav"
+          : storagePath.endsWith(".ogg") ? "audio/ogg"
           : "audio/mpeg";
-        
-        return new Response(r2Resp.body, {
-          status: 200,
-          headers: {
-            ...corsHeaders,
-            "Content-Type": contentType,
-            "Cache-Control": "private, max-age=3600",
-          },
-        });
+
+        if (storagePath.startsWith("autogerado/")) {
+          // Serve from Supabase Storage using service-role signed URL
+          const serviceSupabase = createClient(
+            Deno.env.get("SUPABASE_URL")!,
+            Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+          );
+          const { data: signedData, error: signErr } = await serviceSupabase.storage
+            .from("audio-recordings")
+            .createSignedUrl(storagePath, 3600);
+
+          if (signErr || !signedData?.signedUrl) {
+            console.error("Signed URL error:", signErr);
+            return json({ error: "Erro ao gerar URL do áudio" }, 502);
+          }
+
+          const storageResp = await fetch(signedData.signedUrl);
+          if (!storageResp.ok) {
+            console.error("Storage fetch error:", storageResp.status, storageResp.statusText);
+            return json({ error: "Erro ao buscar áudio do storage" }, 502);
+          }
+
+          return new Response(storageResp.body, {
+            status: 200,
+            headers: {
+              ...corsHeaders,
+              "Content-Type": contentType,
+              "Cache-Control": "private, max-age=3600",
+            },
+          });
+        } else {
+          // Serve from R2
+          const r2 = getR2Client();
+          const r2FullUrl = r2Url(storagePath);
+          const signed = await r2.sign(r2FullUrl, { method: "GET" });
+          const r2Resp = await fetch(signed.url, { headers: signed.headers });
+          if (!r2Resp.ok) {
+            console.error("R2 fetch error:", r2Resp.status, storagePath);
+            return json({ error: "Erro ao buscar áudio do storage" }, 502);
+          }
+
+          return new Response(r2Resp.body, {
+            status: 200,
+            headers: {
+              ...corsHeaders,
+              "Content-Type": contentType,
+              "Cache-Control": "private, max-age=3600",
+            },
+          });
+        }
       } catch (e) {
         console.error("Audio proxy error:", e);
         return json({ error: "Erro ao proxy áudio" }, 500);
