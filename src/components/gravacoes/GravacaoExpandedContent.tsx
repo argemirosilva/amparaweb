@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { toast } from "@/hooks/use-toast";
 import { callWebApi } from "@/services/webApiService";
 import { Button } from "@/components/ui/button";
-import { Download, FileText, Trash2 } from "lucide-react";
+import { FileText, Trash2 } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -181,19 +181,6 @@ export default function GravacaoExpandedContent({
     });
   }, [gravacao.transcricao, analise]);
 
-  const downloadAudio = async () => {
-    if (!gravacao.storage_path) return;
-    const res = await callWebApi("getGravacaoSignedUrl", sessionToken, {
-      storage_path: gravacao.storage_path,
-    });
-    if (res.ok && res.data.url) {
-      const a = document.createElement("a");
-      a.href = res.data.url;
-      a.download = `gravacao-${gravacao.id.slice(0, 8)}.mp3`;
-      a.target = "_blank";
-      a.click();
-    }
-  };
 
   const cssVar = riscoCssVar(gravacao.nivel_risco);
 
@@ -260,12 +247,6 @@ export default function GravacaoExpandedContent({
 
       {/* Actions row */}
       <div className="flex items-center gap-2 pt-1 flex-wrap">
-        {gravacao.storage_path && (
-          <Button variant="outline" size="sm" onClick={downloadAudio} className="text-xs">
-            <Download className="w-3 h-3 mr-1" />
-            Baixar
-          </Button>
-        )}
         {(!gravacao.nivel_risco || gravacao.nivel_risco === "sem_risco") && (
           <AlertDialog>
             <AlertDialogTrigger asChild>
