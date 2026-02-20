@@ -335,6 +335,45 @@ serve(async (req) => {
       return json({ success: true });
     }
 
+    // ========== CREATE TEST TRACKING LINK ==========
+    if (action === "createTestTrackingLink") {
+      const { target_user_id, codigo } = params;
+      if (!target_user_id || !codigo) {
+        return json({ error: "target_user_id e codigo são obrigatórios" }, 400);
+      }
+
+      // Deactivate existing test links with same code
+      await supabase
+        .from("compartilhamento_gps")
+        .update({ ativo: false })
+        .eq("codigo", codigo)
+        .eq("tipo", "teste");
+
+      // Create new test tracking link (24h expiry)
+      const { data: link, error: insertErr } = await supabase
+        .from("compartilhamento_gps")
+        .insert({
+          user_id: target_user_id,
+          codigo,
+          tipo: "teste",
+          ativo: true,
+          expira_em: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        })
+        .select("id, codigo")
+        .single();
+
+      if (insertErr) return json({ error: "Erro ao criar link: " + insertErr.message }, 500);
+
+      await supabase.from("audit_logs").insert({
+        user_id: userId,
+        action_type: "admin_create_test_tracking_link",
+        success: true,
+        details: { target_user_id, codigo },
+      });
+
+      return json({ success: true, link });
+    }
+
     return json({ error: `Ação desconhecida: ${action}` }, 400);
   } catch (err) {
     return json({ error: err.message || "Erro interno" }, 500);
