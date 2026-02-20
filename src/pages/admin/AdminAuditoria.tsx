@@ -4,6 +4,34 @@ import { X } from "lucide-react";
 
 const fontStyle = { fontFamily: "Inter, Roboto, sans-serif" };
 
+const ADMIN_ACTION_TYPES = [
+  "admin_login",
+  "admin_atualizar_setting",
+  "admin_criar_orgao",
+  "admin_gerar_relatorio",
+  "admin_update_user",
+  "admin_visualizar_usuarios",
+  "alterar_configuracao",
+  "login_success",
+  "session_created",
+  "login_failed",
+  "logout",
+];
+
+const ACTION_LABELS: Record<string, string> = {
+  admin_login: "Login Admin",
+  admin_atualizar_setting: "Alterou Configuração",
+  admin_criar_orgao: "Criou Órgão",
+  admin_gerar_relatorio: "Gerou Relatório",
+  admin_update_user: "Alterou Usuário",
+  admin_visualizar_usuarios: "Visualizou Usuários",
+  alterar_configuracao: "Alterou Configuração",
+  login_success: "Login",
+  session_created: "Sessão Criada",
+  login_failed: "Falha de Login",
+  logout: "Logout",
+};
+
 interface AuditRow {
   id: string;
   created_at: string;
@@ -18,25 +46,53 @@ export default function AdminAuditoria() {
   const [logs, setLogs] = useState<AuditRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<AuditRow | null>(null);
+  const [filterAction, setFilterAction] = useState<string>("all");
 
   useEffect(() => {
     async function load() {
-      const { data } = await supabase
+      let query = supabase
         .from("audit_logs")
         .select("*")
+        .in("action_type", ADMIN_ACTION_TYPES)
         .order("created_at", { ascending: false })
-        .limit(100);
+        .limit(200);
+
+      if (filterAction !== "all") {
+        query = supabase
+          .from("audit_logs")
+          .select("*")
+          .eq("action_type", filterAction)
+          .order("created_at", { ascending: false })
+          .limit(200);
+      }
+
+      const { data } = await query;
       setLogs((data as AuditRow[]) || []);
       setLoading(false);
     }
     load();
-  }, []);
+  }, [filterAction]);
 
   return (
     <div style={fontStyle}>
       <div className="mb-6">
         <p className="text-xs mb-1" style={{ color: "hsl(220 9% 46%)" }}>Admin &gt; Auditoria</p>
-        <h1 className="text-xl font-semibold" style={{ color: "hsl(220 13% 18%)" }}>Auditoria</h1>
+        <h1 className="text-xl font-semibold" style={{ color: "hsl(220 13% 18%)" }}>Auditoria Administrativa</h1>
+        <p className="text-sm mt-1" style={{ color: "hsl(220 9% 46%)" }}>Registros de ações realizadas por administradores</p>
+      </div>
+
+      <div className="mb-4">
+        <select
+          value={filterAction}
+          onChange={(e) => setFilterAction(e.target.value)}
+          className="text-sm rounded-md border px-3 py-2 outline-none"
+          style={{ borderColor: "hsl(220 13% 91%)", color: "hsl(220 13% 18%)", fontFamily: "Inter, Roboto, sans-serif" }}
+        >
+          <option value="all">Todas as ações admin</option>
+          {ADMIN_ACTION_TYPES.map((a) => (
+            <option key={a} value={a}>{ACTION_LABELS[a] || a}</option>
+          ))}
+        </select>
       </div>
 
       <div
@@ -74,7 +130,7 @@ export default function AdminAuditoria() {
                       {new Date(l.created_at).toLocaleString("pt-BR")}
                     </td>
                     <td className="px-4 py-3 font-medium" style={{ color: "hsl(220 13% 18%)" }}>
-                      {l.action_type}
+                      {ACTION_LABELS[l.action_type] || l.action_type}
                     </td>
                     <td className="px-4 py-3 text-xs font-mono" style={{ color: "hsl(220 9% 46%)" }}>
                       {l.ip_address || "—"}
