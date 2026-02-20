@@ -292,7 +292,13 @@ export default function GravacoesPage() {
                     style={g.nivel_risco ? { borderLeftWidth: "2px", borderLeftStyle: "solid", borderLeftColor: `${RISCO_COLORS[g.nivel_risco] || "transparent"}90` } : undefined}
                   >
                     <button
-                      onClick={() => setExpanded(isExpanded ? null : g.id)}
+                      onClick={() => {
+                        const willExpand = !isExpanded;
+                        if (willExpand) {
+                          window.dispatchEvent(new CustomEvent("waveform-player-stop-all"));
+                        }
+                        setExpanded(isExpanded ? null : g.id);
+                      }}
                       className="w-full px-3 py-3.5 text-left hover:bg-accent/30 transition-colors"
                     >
                       <div className="flex items-center gap-1">

@@ -120,6 +120,8 @@ export default function AudioRecorderCard({ onUploaded }: AudioRecorderCardProps
 
   const startRecording = async () => {
     try {
+      // Stop any playing audio
+      window.dispatchEvent(new CustomEvent("waveform-player-stop-all"));
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       // Prefer OGG/Opus (no conversion needed), fallback to webm
       const mimeType = MediaRecorder.isTypeSupported("audio/ogg;codecs=opus")
