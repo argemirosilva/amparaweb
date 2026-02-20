@@ -36,6 +36,10 @@ const CATEGORY_LABELS: Record<string, string> = {
   sistema: "Sistema",
 };
 
+const FRIENDLY_LABELS: Record<string, string> = {
+  elevenlabs_copom_telefone: "Telefone chamada de emergência 190/180",
+};
+
 const CATEGORY_ORDER = ["sistema", "panico", "gps", "notificacoes", "dados", "limites"];
 
 export default function AdminConfiguracoes() {
@@ -180,7 +184,7 @@ export default function AdminConfiguracoes() {
                   <div key={s.id} className="px-4 py-4 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6">
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium" style={{ color: "hsl(220 13% 18%)" }}>
-                        {s.chave.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
+                        {FRIENDLY_LABELS[s.chave] || s.chave.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
                       </p>
                       {s.descricao && <p className="text-xs mt-0.5" style={{ color: "hsl(220 9% 46%)" }}>{s.descricao}</p>}
                     </div>
