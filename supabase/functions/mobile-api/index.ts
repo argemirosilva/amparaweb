@@ -170,11 +170,15 @@ function fireCopomCall(userId: string, alertaId: string) {
       const alertConfig = user.configuracao_alertas as Record<string, unknown> || {};
       const acionamentos = alertConfig.acionamentos as Record<string, unknown> | undefined;
       if (acionamentos) {
-        const autoridades = acionamentos.autoridades_190_180 as Record<string, boolean> | undefined;
-        if (autoridades && autoridades.critico === false) {
+        const copomConfig = acionamentos.copom_chamada_automatica as Record<string, boolean> | undefined;
+        if (!copomConfig || copomConfig.ativo !== true) {
           console.log("fireCopomCall: user has COPOM auto-call disabled, skipping");
           return;
         }
+      } else {
+        // No acionamentos config at all — default is disabled
+        console.log("fireCopomCall: no acionamentos config, skipping (default off)");
+        return;
       }
 
       // Fetch latest location
