@@ -56,6 +56,17 @@ const ACIONAMENTO_LABELS: Record<string, string> = {
 const cardStyle = { background: "hsl(0 0% 100%)", borderColor: "hsl(220 13% 91%)" };
 const titleStyle = { color: "hsl(220 13% 18%)" };
 const subtitleStyle = { color: "hsl(220 9% 46%)" };
+
+// Approximate centroids for Brazilian states (fallback when no GPS)
+const UF_CENTROID: Record<string, [number, number]> = {
+  AC: [-8.77, -70.55], AL: [-9.57, -36.78], AP: [1.41, -51.77], AM: [-3.47, -65.10],
+  BA: [-12.96, -41.70], CE: [-5.20, -39.53], DF: [-15.83, -47.86], ES: [-19.19, -40.34],
+  GO: [-15.98, -49.86], MA: [-5.42, -45.44], MT: [-12.64, -55.42], MS: [-20.51, -54.54],
+  MG: [-18.10, -44.38], PA: [-3.79, -52.48], PB: [-7.28, -36.72], PR: [-24.89, -51.55],
+  PE: [-8.38, -37.86], PI: [-6.60, -42.28], RJ: [-22.25, -42.66], RN: [-5.81, -36.59],
+  RS: [-30.17, -53.50], RO: [-10.83, -63.34], RR: [1.99, -61.33], SC: [-27.45, -50.95],
+  SP: [-22.19, -48.79], SE: [-10.57, -37.45], TO: [-10.25, -48.25],
+};
 const tooltipStyle = {
   fontFamily: "Inter, sans-serif", fontSize: 12, borderRadius: 6,
   border: "1px solid hsl(220 13% 91%)",
@@ -161,19 +172,23 @@ export default function AdminMapa() {
     (alertData || []).forEach((a) => { const uf = userMap[a.user_id]?.uf; if (uf) { ensureUf(uf); ufStats[uf].alertas++; } });
     setStats(ufStats);
 
+    const userLastLocation: Record<string, { lat: number; lng: number; created_at: string }> = {};
+    (locations || []).forEach((l) => { if (!userLastLocation[l.user_id]) userLastLocation[l.user_id] = { lat: l.latitude, lng: l.longitude, created_at: l.created_at }; });
+
     const alertMarkers: AlertMarker[] = (alertData || []).map((a) => {
-      const lat = a.latitude ?? userMap[a.user_id]?.lat;
-      const lng = a.longitude ?? userMap[a.user_id]?.lng;
+      const user = userMap[a.user_id];
+      const lastLoc = userLastLocation[a.user_id];
+      const ufCenter = user?.uf ? UF_CENTROID[user.uf] : null;
+      const lat = a.latitude ?? user?.lat ?? lastLoc?.lat ?? ufCenter?.[0];
+      const lng = a.longitude ?? user?.lng ?? lastLoc?.lng ?? ufCenter?.[1];
       if (!lat || !lng) return null;
       return {
         id: a.id, lat, lng, status: a.status,
-        protocolo: a.protocolo, criado_em: a.criado_em, userName: userMap[a.user_id]?.nome || "—",
+        protocolo: a.protocolo, criado_em: a.criado_em, userName: user?.nome || "—",
       };
     }).filter(Boolean) as AlertMarker[];
     setAlerts(alertMarkers);
 
-    const userLastLocation: Record<string, { lat: number; lng: number; created_at: string }> = {};
-    (locations || []).forEach((l) => { if (!userLastLocation[l.user_id]) userLastLocation[l.user_id] = { lat: l.latitude, lng: l.longitude, created_at: l.created_at }; });
 
     const deviceMarkers: DeviceMarker[] = Object.entries(latestDeviceByUser)
       .map(([userId, d]: [string, any]) => {
