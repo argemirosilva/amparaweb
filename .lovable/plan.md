@@ -1,31 +1,71 @@
 
 
-## Reduzir marcadores online para pontos pequenos
+# Capturar numero da rua no endereço do GPS
 
-### Problema
-Com grande volume de dispositivos, os marcadores de 20px ficam visualmente poluidos e sobrepostos no mapa.
+## O que muda
 
-### Mudanca
+O serviço de geocodificação reversa (`reverseGeocodeService.ts`) já recebe o campo `house_number` do Nominatim, mas atualmente o ignora. A mudança inclui esse campo na formatação do endereço.
 
-**Arquivo: `src/pages/admin/AdminMapa.tsx` (linha 363)**
+Essa mesma mudança também resolve o filtro de endereço para a ElevenLabs (enviar somente rua, numero e bairro).
 
-Reduzir o marcador de dispositivos online de 20px para 8px, remover a borda branca grossa e reduzir a sombra para manter o visual limpo em escala:
+## Resultado esperado
 
-- **Online**: ponto verde de 8x8px, borda de 1px branca, sombra sutil
-- **Offline**: manter cinza mas tambem reduzir para 8x8px para consistencia
+| Antes | Depois |
+|---|---|
+| Rua José Gonçalves, Residencial Estoril, Bauru - SP | Rua José Gonçalves, 67 - Residencial Estoril, Bauru - SP |
 
-O popup com detalhes continuara funcionando ao clicar no ponto.
+Para a ElevenLabs (filtrado):
+| Antes | Depois |
+|---|---|
+| Rua José Gonçalves, Residencial Estoril, Bauru - SP | Rua José Gonçalves, 67 - Residencial Estoril |
 
-### Detalhe tecnico
+## Limitacoes
 
-Alterar a linha 363 de:
+- A precisao depende do GPS do dispositivo (tipicamente 10-15m em areas urbanas)
+- Em areas rurais ou vias sem numeracao cadastrada no OpenStreetMap, o campo pode vir vazio
+- O sistema ja lida com campos ausentes, entao nao ha risco de erro
+
+## Detalhes tecnicos
+
+### 1. `src/services/reverseGeocodeService.ts` - funcao `formatAddress`
+
+Adicionar `addr.house_number` ao lado de `addr.road`:
+
+```typescript
+// Antes
+if (addr.road) parts.push(addr.road);
+
+// Depois
+if (addr.road) {
+  parts.push(addr.house_number ? `${addr.road}, ${addr.house_number}` : addr.road);
+}
 ```
-width:20px;height:20px;border-radius:50%;...;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.2)
-```
-Para:
-```
-width:8px;height:8px;border-radius:50%;...;border:1px solid white;box-shadow:0 0 2px rgba(0,0,0,0.15)
+
+Isso afeta todas as telas que usam geocodificacao (Mapa, Rastreamento, Dashboard, COPOM).
+
+### 2. `supabase/functions/copom-outbound-call/index.ts` - filtro para ElevenLabs
+
+Duas mudancas no bloco de `dynamicVariables`:
+
+**Endereco** - truncar apos o bairro (remover cidade/estado):
+```typescript
+const rawAddr = context.location?.address || "";
+const addrParts = rawAddr.split(",").map(s => s.trim());
+// Pegar ate 3 partes: rua+numero, bairro (ignorar cidade, estado)
+dynamicVariables.ENDERECO_ULTIMA_LOCALIZACAO = addrParts.slice(0, 2).join(", ");
 ```
 
-Tambem fazer a mesma reducao no `DashboardMapCard.tsx` (linha ~225) que usa marcadores de 16px, para manter consistencia entre os dois mapas.
+Nota: o endereco chega no formato "Rua X, 67 - Bairro, Cidade - UF". O separador " - " entre bairro e rua faz parte do texto, entao a logica de split por virgula ja isola corretamente.
+
+**Forca de seguranca** - remover texto entre parenteses:
+```typescript
+const rawForca = context.aggressor?.forca_seguranca_tipo || "sim, tipo não especificado";
+dynamicVariables.AGRESSOR_FORCA_SEGURANCA = context.aggressor?.forca_seguranca
+  ? rawForca.replace(/\s*\(.*?\)/g, "").trim()
+  : "não";
+```
+
+### 3. Redeploy das edge functions
+
+- `copom-outbound-call`
 
