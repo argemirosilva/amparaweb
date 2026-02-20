@@ -99,7 +99,7 @@ export default function AcionamentosCard() {
 
           <div className="flex items-center justify-between gap-2">
             <div className="flex-1 min-w-0">
-              <p className="text-xs text-foreground">Alerta Grave</p>
+              <p className="text-xs text-foreground">Risco Grave</p>
             </div>
             <Switch checked={config.whatsapp_guardioes.grave} onCheckedChange={(v) => toggle("wg_grave", v)} disabled={saving} className="scale-90" />
           </div>
@@ -108,7 +108,7 @@ export default function AcionamentosCard() {
 
           <div className="flex items-center justify-between gap-2">
             <div className="flex-1 min-w-0">
-              <p className="text-xs text-foreground">Alerta Crítico</p>
+              <p className="text-xs text-foreground">Risco Crítico</p>
             </div>
             <Switch checked={config.whatsapp_guardioes.critico} onCheckedChange={(v) => toggle("wg_critico", v)} disabled={saving} className="scale-90" />
           </div>
