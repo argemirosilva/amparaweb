@@ -161,10 +161,15 @@ export default function AdminMapa() {
     (alertData || []).forEach((a) => { const uf = userMap[a.user_id]?.uf; if (uf) { ensureUf(uf); ufStats[uf].alertas++; } });
     setStats(ufStats);
 
-    const alertMarkers: AlertMarker[] = (alertData || []).filter((a) => a.latitude && a.longitude).map((a) => ({
-      id: a.id, lat: a.latitude!, lng: a.longitude!, status: a.status,
-      protocolo: a.protocolo, criado_em: a.criado_em, userName: userMap[a.user_id]?.nome || "—",
-    }));
+    const alertMarkers: AlertMarker[] = (alertData || []).map((a) => {
+      const lat = a.latitude ?? userMap[a.user_id]?.lat;
+      const lng = a.longitude ?? userMap[a.user_id]?.lng;
+      if (!lat || !lng) return null;
+      return {
+        id: a.id, lat, lng, status: a.status,
+        protocolo: a.protocolo, criado_em: a.criado_em, userName: userMap[a.user_id]?.nome || "—",
+      };
+    }).filter(Boolean) as AlertMarker[];
     setAlerts(alertMarkers);
 
     const userLastLocation: Record<string, { lat: number; lng: number; created_at: string }> = {};
