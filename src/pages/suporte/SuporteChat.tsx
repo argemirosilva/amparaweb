@@ -42,6 +42,8 @@ export default function SuporteChat() {
   const [arScope, setArScope] = useState("read_metadata");
   const [arJustification, setArJustification] = useState("");
   const [requesting, setRequesting] = useState(false);
+  const [userResources, setUserResources] = useState<{ id: string; label: string }[]>([]);
+  const [loadingResources, setLoadingResources] = useState(false);
 
   // Confirm code
   const [showConfirm, setShowConfirm] = useState(false);
@@ -80,6 +82,35 @@ export default function SuporteChat() {
       fetchSession();
     }
     setSending(false);
+  };
+
+  const loadResources = async (type: string) => {
+    if (!sessionToken || !session?.user_id) return;
+    setLoadingResources(true);
+    const { ok, data } = await callSupportApi("listUserResources", sessionToken, {
+      target_user_id: session.user_id,
+      resource_type: type,
+    });
+    if (ok && data?.data?.items) {
+      setUserResources(data.data.items);
+    } else {
+      setUserResources([]);
+    }
+    setLoadingResources(false);
+  };
+
+  const openAccessForm = () => {
+    setShowAccessForm(true);
+    setArResourceType("recording");
+    setArResourceId("");
+    setArJustification("");
+    loadResources("recording");
+  };
+
+  const handleResourceTypeChange = (type: string) => {
+    setArResourceType(type);
+    setArResourceId("");
+    loadResources(type);
   };
 
   const handleRequestAccess = async () => {
@@ -160,7 +191,7 @@ export default function SuporteChat() {
         <div className="flex items-center gap-2">
           {!isClosed && (
             <>
-              <Button size="sm" variant="outline" className="gap-1" onClick={() => setShowAccessForm(true)}>
+              <Button size="sm" variant="outline" className="gap-1" onClick={openAccessForm}>
                 <ShieldCheck className="w-4 h-4" /> Solicitar Acesso
               </Button>
               <Button size="sm" variant="destructive" className="gap-1" onClick={handleClose}>
@@ -268,7 +299,7 @@ export default function SuporteChat() {
           <div className="space-y-4">
             <div>
               <Label>Tipo de Recurso</Label>
-              <Select value={arResourceType} onValueChange={setArResourceType}>
+              <Select value={arResourceType} onValueChange={handleResourceTypeChange}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="recording">Gravação</SelectItem>
@@ -280,8 +311,23 @@ export default function SuporteChat() {
               </Select>
             </div>
             <div>
-              <Label>ID do Recurso</Label>
-              <Input placeholder="UUID do recurso" value={arResourceId} onChange={(e) => setArResourceId(e.target.value)} />
+              <Label>Recurso</Label>
+              {loadingResources ? (
+                <p className="text-xs text-muted-foreground py-2">Carregando itens da usuária...</p>
+              ) : userResources.length === 0 ? (
+                <p className="text-xs text-muted-foreground py-2">Nenhum item encontrado para este tipo.</p>
+              ) : (
+                <Select value={arResourceId} onValueChange={setArResourceId}>
+                  <SelectTrigger><SelectValue placeholder="Selecione um item" /></SelectTrigger>
+                  <SelectContent>
+                    {userResources.map((r) => (
+                      <SelectItem key={r.id} value={r.id}>
+                        {r.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
             <div>
               <Label>Escopo</Label>
