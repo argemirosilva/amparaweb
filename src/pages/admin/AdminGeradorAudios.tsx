@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -32,6 +33,7 @@ import {
   Mic,
   AlertTriangle,
   User,
+  Shuffle,
 } from "lucide-react";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
@@ -107,6 +109,7 @@ export default function AdminGeradorAudios() {
   const [loadingUsers, setLoadingUsers] = useState(true);
   const [audioMode, setAudioMode] = useState<string>("violencia");
   const [batchSize, setBatchSize] = useState<string>("20");
+  const [randomMode, setRandomMode] = useState(false);
   const cancelRef = useRef(false);
   const analyzeCancelRef = useRef(false);
   const logsEndRef = useRef<HTMLDivElement>(null);
@@ -161,18 +164,30 @@ export default function AdminGeradorAudios() {
     return () => clearInterval(interval);
   }, [jobId, isRunning, pollStatus]);
 
+  const pickRandom = <T,>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
+  const AUDIO_MODES = ["violencia", "briga_saudavel"];
+
   // Start generation
   const handleStart = async () => {
-    if (!sessionToken || !targetUserId) return;
+    if (!sessionToken) return;
+    if (!randomMode && !targetUserId) return;
     setStarting(true);
     cancelRef.current = false;
-    const selectedUser = usuarios.find(u => u.id === targetUserId);
-    const modeLabel = audioMode === "briga_saudavel" ? "brigas saudáveis" : "violência doméstica";
     const count = parseInt(batchSize) || 20;
-    addLog(`Iniciando geração de ${count} áudios (${modeLabel}) para ${selectedUser?.nome_completo || targetUserId}...`);
+
+    const initialUserId = randomMode ? usuarios[0]?.id : targetUserId;
+    const initialMode = randomMode ? "violencia" : audioMode;
+
+    if (randomMode) {
+      addLog(`🎲 Iniciando geração ALEATÓRIA de ${count} áudios (usuárias e tipos aleatórios)...`);
+    } else {
+      const selectedUser = usuarios.find(u => u.id === targetUserId);
+      const modeLabel = audioMode === "briga_saudavel" ? "brigas saudáveis" : "violência doméstica";
+      addLog(`Iniciando geração de ${count} áudios (${modeLabel}) para ${selectedUser?.nome_completo || targetUserId}...`);
+    }
 
     try {
-      const res = await callApi("start", sessionToken, { count, target_user_id: targetUserId, audio_mode: audioMode });
+      const res = await callApi("start", sessionToken, { count, target_user_id: initialUserId, audio_mode: initialMode });
       if (!res.ok) {
         addLog(`❌ Erro ao criar job: ${res.error}`);
         setStarting(false);
@@ -190,20 +205,25 @@ export default function AdminGeradorAudios() {
       // Processing loop
       let finished = false;
       while (!finished && !cancelRef.current) {
-        const r = await callApi("processNext", sessionToken, { job_id: jId, target_user_id: targetUserId, audio_mode: audioMode });
+        const itemUserId = randomMode ? pickRandom(usuarios).id : targetUserId;
+        const itemMode = randomMode ? pickRandom(AUDIO_MODES) : audioMode;
+        const userName = usuarios.find(u => u.id === itemUserId)?.nome_completo || "";
+
+        const r = await callApi("processNext", sessionToken, { job_id: jId, target_user_id: itemUserId, audio_mode: itemMode });
 
         if (r.finished) {
           finished = true;
           addLog(`🏁 Job finalizado (status: ${r.status})`);
         } else if (r.result?.success) {
+          const modeEmoji = itemMode === "briga_saudavel" ? "🟢" : "🔴";
+          const userLabel = randomMode ? ` → ${userName}` : "";
           addLog(
-            `✅ #${r.item_index} — ${r.result.topic} — ${formatDuration(r.result.duration)}`
+            `✅ #${r.item_index} ${modeEmoji} ${r.result.topic} — ${formatDuration(r.result.duration)}${userLabel}`
           );
         } else {
           addLog(`❌ #${r.item_index} falhou: ${r.result?.error || "erro desconhecido"}`);
         }
 
-        // Refresh status
         await pollStatus(jId);
       }
     } catch (err: any) {
@@ -238,12 +258,16 @@ export default function AdminGeradorAudios() {
     setIsRunning(true);
     let finished = false;
     while (!finished && !cancelRef.current) {
-      const r = await callApi("processNext", sessionToken, { job_id: jobId, target_user_id: targetUserId, audio_mode: audioMode });
+      const itemUserId = randomMode ? pickRandom(usuarios).id : targetUserId;
+      const itemMode = randomMode ? pickRandom(AUDIO_MODES) : audioMode;
+      const r = await callApi("processNext", sessionToken, { job_id: jobId, target_user_id: itemUserId, audio_mode: itemMode });
       if (r.finished) {
         finished = true;
         addLog(`🏁 Reprocessamento concluído (status: ${r.status})`);
       } else if (r.result?.success) {
-        addLog(`✅ #${r.item_index} — ${r.result.topic} — ${formatDuration(r.result.duration)}`);
+        const userName = usuarios.find(u => u.id === itemUserId)?.nome_completo || "";
+        const modeEmoji = itemMode === "briga_saudavel" ? "🟢" : "🔴";
+        addLog(`✅ #${r.item_index} ${modeEmoji} ${r.result.topic} — ${formatDuration(r.result.duration)}${randomMode ? ` → ${userName}` : ""}`);
       } else {
         addLog(`❌ #${r.item_index} falhou: ${r.result?.error || "erro desconhecido"}`);
       }
@@ -305,61 +329,83 @@ export default function AdminGeradorAudios() {
         </p>
       </div>
 
-      {/* User selector */}
+      {/* Random mode toggle */}
       <Card className="mb-6" style={{ background: "hsl(0 0% 100%)", borderColor: "hsl(220 13% 91%)" }}>
         <CardContent className="pt-4 pb-4">
-          <div className="flex items-center gap-3 flex-wrap">
-            <User className="w-5 h-5" style={{ color: "hsl(224 76% 33%)" }} />
-            <div>
+          <div className="flex items-center gap-3">
+            <Shuffle className="w-5 h-5" style={{ color: "hsl(224 76% 33%)" }} />
+            <div className="flex-1">
               <p className="text-sm font-medium" style={{ color: "hsl(220 13% 18%)" }}>
-                Vincular gravações à usuária:
+                Modo Aleatório
+              </p>
+              <p className="text-xs" style={{ color: "hsl(220 9% 46%)" }}>
+                Distribui áudios entre todas as {usuarios.length} usuárias ativas e alterna tipos (violência / briga saudável) automaticamente.
               </p>
             </div>
-            <Select value={targetUserId} onValueChange={setTargetUserId} disabled={isRunning || loadingUsers}>
-              <SelectTrigger className="w-72">
-                <SelectValue placeholder={loadingUsers ? "Carregando..." : "Selecione a usuária"} />
-              </SelectTrigger>
-              <SelectContent>
-                {usuarios.map((u) => (
-                  <SelectItem key={u.id} value={u.id}>
-                    {u.nome_completo} ({u.email})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Switch checked={randomMode} onCheckedChange={setRandomMode} disabled={isRunning} />
           </div>
         </CardContent>
       </Card>
 
-      {/* Audio mode selector */}
-      <Card className="mb-6" style={{ background: "hsl(0 0% 100%)", borderColor: "hsl(220 13% 91%)" }}>
-        <CardContent className="pt-4 pb-4">
-          <div className="flex items-center gap-3 flex-wrap">
-            <Mic className="w-5 h-5" style={{ color: "hsl(224 76% 33%)" }} />
-            <div>
-              <p className="text-sm font-medium" style={{ color: "hsl(220 13% 18%)" }}>
-                Tipo de áudio:
-              </p>
+      {/* User selector — hidden in random mode */}
+      {!randomMode && (
+        <Card className="mb-6" style={{ background: "hsl(0 0% 100%)", borderColor: "hsl(220 13% 91%)" }}>
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-center gap-3 flex-wrap">
+              <User className="w-5 h-5" style={{ color: "hsl(224 76% 33%)" }} />
+              <div>
+                <p className="text-sm font-medium" style={{ color: "hsl(220 13% 18%)" }}>
+                  Vincular gravações à usuária:
+                </p>
+              </div>
+              <Select value={targetUserId} onValueChange={setTargetUserId} disabled={isRunning || loadingUsers}>
+                <SelectTrigger className="w-72">
+                  <SelectValue placeholder={loadingUsers ? "Carregando..." : "Selecione a usuária"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {usuarios.map((u) => (
+                    <SelectItem key={u.id} value={u.id}>
+                      {u.nome_completo} ({u.email})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-            <Select value={audioMode} onValueChange={setAudioMode} disabled={isRunning}>
-              <SelectTrigger className="w-72">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="violencia">🔴 Violência doméstica (controle/manipulação)</SelectItem>
-                <SelectItem value="briga_saudavel">🟢 Briga saudável (discussão sem violência)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <p className="text-xs mt-2 ml-8" style={{ color: "hsl(220 9% 46%)" }}>
-            {audioMode === "briga_saudavel"
-              ? "Gera discussões acaloradas porém saudáveis — sem controle, manipulação ou escalada de violência. Útil para treinar o sistema a distinguir brigas normais."
-              : "Gera diálogos com padrões de abuso psicológico e controle coercitivo para treinamento de detecção."}
-          </p>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
-      {/* Batch size + Controls */}
+      {/* Audio mode selector — hidden in random mode */}
+      {!randomMode && (
+        <Card className="mb-6" style={{ background: "hsl(0 0% 100%)", borderColor: "hsl(220 13% 91%)" }}>
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-center gap-3 flex-wrap">
+              <Mic className="w-5 h-5" style={{ color: "hsl(224 76% 33%)" }} />
+              <div>
+                <p className="text-sm font-medium" style={{ color: "hsl(220 13% 18%)" }}>
+                  Tipo de áudio:
+                </p>
+              </div>
+              <Select value={audioMode} onValueChange={setAudioMode} disabled={isRunning}>
+                <SelectTrigger className="w-72">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="violencia">🔴 Violência doméstica (controle/manipulação)</SelectItem>
+                  <SelectItem value="briga_saudavel">🟢 Briga saudável (discussão sem violência)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <p className="text-xs mt-2 ml-8" style={{ color: "hsl(220 9% 46%)" }}>
+              {audioMode === "briga_saudavel"
+                ? "Gera discussões acaloradas porém saudáveis — sem controle, manipulação ou escalada de violência. Útil para treinar o sistema a distinguir brigas normais."
+                : "Gera diálogos com padrões de abuso psicológico e controle coercitivo para treinamento de detecção."}
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Batch size */}
       <Card className="mb-6" style={{ background: "hsl(0 0% 100%)", borderColor: "hsl(220 13% 91%)" }}>
         <CardContent className="pt-4 pb-4">
           <div className="flex items-center gap-3 flex-wrap">
@@ -386,7 +432,7 @@ export default function AdminGeradorAudios() {
       <div className="flex flex-wrap gap-3 mb-6">
         <Button
           onClick={handleStart}
-          disabled={isRunning || starting || !targetUserId}
+          disabled={isRunning || starting || (!randomMode && !targetUserId)}
           size="lg"
           className="gap-2"
           style={{
@@ -396,10 +442,12 @@ export default function AdminGeradorAudios() {
         >
           {starting ? (
             <Loader2 className="w-5 h-5 animate-spin" />
+          ) : randomMode ? (
+            <Shuffle className="w-5 h-5" />
           ) : (
             <Play className="w-5 h-5" />
           )}
-          Gerar {batchSize} áudios agora
+          {randomMode ? `🎲 Gerar ${batchSize} aleatórios` : `Gerar ${batchSize} áudios agora`}
         </Button>
 
         {isRunning && (
