@@ -4,10 +4,12 @@ import {
   Mic,
   UserCircle,
   Settings,
+  UserSearch,
 } from "lucide-react";
 
 const items = [
   { title: "Gravações", url: "/gravacoes", icon: Mic },
+  { title: "Pesquisar", url: "/busca-perfil", icon: UserSearch },
   { title: "Início", url: "/home", icon: LayoutDashboard, center: true },
   { title: "Perfil", url: "/perfil", icon: UserCircle },
   { title: "Config", url: "/configuracoes", icon: Settings },
