@@ -488,20 +488,6 @@ async function handleSyncConfig(
 
   const periodosSemana = (agendamento?.periodos_semana || {}) as Record<string, Array<{ inicio: string; fim: string }>>;
 
-  // Get guardians (contatos_rede_apoio)
-  const { data: guardioes } = await supabase
-    .from("guardioes")
-    .select("id, nome, telefone_whatsapp, vinculo")
-    .eq("usuario_id", user.id)
-    .order("created_at", { ascending: true });
-
-  const contatosRedeApoio = (guardioes || []).map((g: any, idx: number) => ({
-    id: g.id,
-    nome: g.nome,
-    telefone_whatsapp: g.telefone_whatsapp,
-    relacao: g.vinculo,
-    is_primary: idx === 0,
-  }));
 
   // Check if within scheduled window
   const deviceId = body.device_id as string | undefined;
@@ -624,12 +610,6 @@ async function handleSyncConfig(
     }
   }
 
-  // Voice command keywords (static defaults — can be expanded to DB later)
-  const palavrasIniciarGravacao = ["Ampara", "Preciso de água"];
-  const palavrasPararGravacao = ["Obrigada", "Descansar"];
-  const palavrasBotaoPanico = ["Me ajuda", "Socorro"];
-  const palavrasCancelarPanico = ["Falso alarme", "Cancelar"];
-
   return jsonResponse({
     success: true,
     gravacao_ativa: gravacaoAtiva,
@@ -641,11 +621,6 @@ async function handleSyncConfig(
     periodos_hoje: periodosHoje,
     sessao_id: sessaoId,
     dias_gravacao: diasGravacao,
-    palavras_iniciar_gravacao: palavrasIniciarGravacao,
-    palavras_parar_gravacao: palavrasPararGravacao,
-    palavras_botao_panico: palavrasBotaoPanico,
-    palavras_cancelar_panico: palavrasCancelarPanico,
-    contatos_rede_apoio: contatosRedeApoio,
     usuario: {
       id: user.id,
       email: user.email,
