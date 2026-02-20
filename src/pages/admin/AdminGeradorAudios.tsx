@@ -106,6 +106,7 @@ export default function AdminGeradorAudios() {
   const [usuarios, setUsuarios] = useState<{ id: string; nome_completo: string; email: string }[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
   const [audioMode, setAudioMode] = useState<string>("violencia");
+  const [batchSize, setBatchSize] = useState<string>("20");
   const cancelRef = useRef(false);
   const analyzeCancelRef = useRef(false);
   const logsEndRef = useRef<HTMLDivElement>(null);
@@ -167,10 +168,11 @@ export default function AdminGeradorAudios() {
     cancelRef.current = false;
     const selectedUser = usuarios.find(u => u.id === targetUserId);
     const modeLabel = audioMode === "briga_saudavel" ? "brigas saudáveis" : "violência doméstica";
-    addLog(`Iniciando geração de 20 áudios (${modeLabel}) para ${selectedUser?.nome_completo || targetUserId}...`);
+    const count = parseInt(batchSize) || 20;
+    addLog(`Iniciando geração de ${count} áudios (${modeLabel}) para ${selectedUser?.nome_completo || targetUserId}...`);
 
     try {
-      const res = await callApi("start", sessionToken, { count: 20, target_user_id: targetUserId, audio_mode: audioMode });
+      const res = await callApi("start", sessionToken, { count, target_user_id: targetUserId, audio_mode: audioMode });
       if (!res.ok) {
         addLog(`❌ Erro ao criar job: ${res.error}`);
         setStarting(false);
@@ -357,7 +359,30 @@ export default function AdminGeradorAudios() {
         </CardContent>
       </Card>
 
-      {/* Controls */}
+      {/* Batch size + Controls */}
+      <Card className="mb-6" style={{ background: "hsl(0 0% 100%)", borderColor: "hsl(220 13% 91%)" }}>
+        <CardContent className="pt-4 pb-4">
+          <div className="flex items-center gap-3 flex-wrap">
+            <div>
+              <p className="text-sm font-medium" style={{ color: "hsl(220 13% 18%)" }}>
+                Quantidade por lote:
+              </p>
+            </div>
+            <Select value={batchSize} onValueChange={setBatchSize} disabled={isRunning}>
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="20">20</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+                <SelectItem value="100">100</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="flex flex-wrap gap-3 mb-6">
         <Button
           onClick={handleStart}
@@ -374,7 +399,7 @@ export default function AdminGeradorAudios() {
           ) : (
             <Play className="w-5 h-5" />
           )}
-          Gerar 20 áudios agora
+          Gerar {batchSize} áudios agora
         </Button>
 
         {isRunning && (
