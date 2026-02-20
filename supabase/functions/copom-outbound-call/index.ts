@@ -121,10 +121,28 @@ serve(async (req) => {
         : "não";
     }
 
-    // Parse multiple phone numbers (comma-separated)
+    // Parse multiple phone numbers (comma-separated) and normalize to E.164
     const phoneNumbers = phoneNumber
       .split(",")
-      .map((p: string) => p.trim())
+      .map((p: string) => {
+        let num = p.trim().replace(/\D/g, ""); // strip non-digits
+        if (!num) return "";
+        // If number doesn't start with country code, assume Brazil (+55)
+        if (!p.trim().startsWith("+")) {
+          // Brazilian numbers: 10-11 digits (DDD + number)
+          if (num.length === 10 || num.length === 11) {
+            num = "+55" + num;
+          } else if (num.length === 12 || num.length === 13) {
+            // Already has country code (55 + DDD + number)
+            num = "+" + num;
+          } else {
+            num = "+55" + num; // fallback: assume Brazil
+          }
+        } else {
+          num = "+" + num; // re-add the + after stripping
+        }
+        return num;
+      })
       .filter((p: string) => p.length > 0);
 
     if (phoneNumbers.length === 0) {
