@@ -62,12 +62,26 @@ interface VinculoData {
     neighborhoods: string[] | null;
     profession: string | null;
     vehicles: any[] | null;
-    
+    sector: string | null;
     risk_level: string | null;
     risk_score: number | null;
     display_name_masked: string | null;
   };
 }
+
+const FORCAS_SEGURANCA = [
+  "Polícia Militar",
+  "Polícia Civil",
+  "Polícia Federal",
+  "Polícia Rodoviária Federal",
+  "Guarda Municipal",
+  "Corpo de Bombeiros",
+  "Forças Armadas (Exército)",
+  "Forças Armadas (Marinha)",
+  "Forças Armadas (Aeronáutica)",
+  "Agente penitenciário",
+  "Outra",
+] as const;
 
 interface AgressorEditForm {
   nome: string;
@@ -77,6 +91,7 @@ interface AgressorEditForm {
   nome_pai_parcial: string;
   nome_mae_parcial: string;
   forca_seguranca: boolean;
+  forca_seguranca_tipo: string;
   tem_arma_em_casa: boolean;
   apelido: string;
   cidade_uf: string;
@@ -227,6 +242,7 @@ export default function PerfilPage() {
       nome_pai_parcial: ag.nome_pai_parcial || "",
       nome_mae_parcial: ag.nome_mae_parcial || "",
       forca_seguranca: ag.forca_seguranca || false,
+      forca_seguranca_tipo: ag.sector || "",
       tem_arma_em_casa: ag.tem_arma_em_casa || false,
       apelido: ag.aliases?.length ? ag.aliases[0] : "",
       cidade_uf: ag.primary_city_uf || "",
@@ -258,7 +274,7 @@ export default function PerfilPage() {
       nome_mae_parcial: agressorForm.nome_mae_parcial || null,
       forca_seguranca: agressorForm.forca_seguranca,
       tem_arma_em_casa: agressorForm.tem_arma_em_casa,
-      
+      sector: agressorForm.forca_seguranca ? (agressorForm.forca_seguranca_tipo || null) : null,
     };
 
     if (agressorForm.apelido.trim()) payload.aliases = [agressorForm.apelido.trim()];
@@ -634,12 +650,30 @@ export default function PerfilPage() {
                       </div>
 
 
-                      <label className="flex items-center gap-3 cursor-pointer">
-                        <input type="checkbox" checked={agressorForm.forca_seguranca}
-                          onChange={e => setAgressorForm({ ...agressorForm, forca_seguranca: e.target.checked })}
-                          className="h-4 w-4 rounded border-input accent-primary" />
-                        <span className="text-xs text-foreground">É de alguma força de segurança?</span>
-                      </label>
+                      <div>
+                        <label className="flex items-center gap-3 cursor-pointer mb-2">
+                          <input type="checkbox" checked={agressorForm.forca_seguranca}
+                            onChange={e => setAgressorForm({ ...agressorForm, forca_seguranca: e.target.checked, forca_seguranca_tipo: e.target.checked ? agressorForm.forca_seguranca_tipo : "" })}
+                            className="h-4 w-4 rounded border-input accent-primary" />
+                          <span className="text-xs text-foreground">É de alguma força de segurança?</span>
+                        </label>
+                        {agressorForm.forca_seguranca && (
+                          <div className="ml-7 space-y-1.5">
+                            {FORCAS_SEGURANCA.map((forca) => (
+                              <label key={forca} className="flex items-center gap-2 cursor-pointer">
+                                <input
+                                  type="radio"
+                                  name="forca_seguranca_tipo"
+                                  checked={agressorForm.forca_seguranca_tipo === forca}
+                                  onChange={() => setAgressorForm({ ...agressorForm, forca_seguranca_tipo: forca })}
+                                  className="h-3.5 w-3.5 accent-primary"
+                                />
+                                <span className="text-xs text-foreground">{forca}</span>
+                              </label>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                       <label className="flex items-center gap-3 cursor-pointer">
                         <input type="checkbox" checked={agressorForm.tem_arma_em_casa}
                           onChange={e => setAgressorForm({ ...agressorForm, tem_arma_em_casa: e.target.checked })}

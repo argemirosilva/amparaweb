@@ -760,7 +760,7 @@ serve(async (req) => {
         const enriched = await Promise.all((data || []).map(async (v: any) => {
           const { data: ag } = await supabase
             .from("agressores")
-            .select("nome, data_nascimento, telefone, forca_seguranca, tem_arma_em_casa, aliases, nome_pai_parcial, nome_mae_parcial, primary_city_uf, neighborhoods, profession, vehicles, risk_level, risk_score, display_name_masked")
+            .select("nome, data_nascimento, telefone, forca_seguranca, tem_arma_em_casa, aliases, nome_pai_parcial, nome_mae_parcial, primary_city_uf, neighborhoods, profession, vehicles, sector, risk_level, risk_score, display_name_masked")
             .eq("id", v.agressor_id)
             .single();
           return { ...v, agressor: ag };
