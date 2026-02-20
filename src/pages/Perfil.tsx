@@ -348,6 +348,7 @@ export default function PerfilPage() {
           <Button variant="outline" size="sm" onClick={() => {
             setEditingPerfil(!editingPerfil);
             setPerfilForm({
+              nome_completo: perfil?.nome_completo || "",
               telefone: perfil?.telefone || "",
               data_nascimento: perfil?.data_nascimento || "",
               tem_filhos: perfil?.tem_filhos || false,
@@ -382,6 +383,8 @@ export default function PerfilPage() {
           </div>
         ) : (
           <div className="space-y-3">
+            <input type="text" className="ampara-input" placeholder="Nome completo" value={perfilForm.nome_completo || ""}
+              onChange={e => setPerfilForm({ ...perfilForm, nome_completo: e.target.value })} />
             <input type="tel" className="ampara-input" placeholder="Telefone" value={formatPhone(perfilForm.telefone || "")}
               onChange={e => setPerfilForm({ ...perfilForm, telefone: e.target.value })} />
             <input type="date" className="ampara-input" value={perfilForm.data_nascimento || ""}
