@@ -41,7 +41,9 @@ export default function AppSidebar() {
   return (
     <Sidebar collapsible="icon">
       <div className="p-4 flex items-center gap-3 border-b border-sidebar-border">
-        <img src={amparaLogo} alt="AMPARA" className="w-8 h-8 object-contain shrink-0" />
+        <div className="w-8 h-8 rounded-md bg-white flex items-center justify-center shrink-0">
+          <img src={amparaLogo} alt="AMPARA" className="w-7 h-7 object-contain" />
+        </div>
         <span className="font-display font-bold text-foreground text-lg group-data-[collapsible=icon]:hidden">
           AMPARA
         </span>
