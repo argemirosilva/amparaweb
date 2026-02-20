@@ -87,6 +87,26 @@ function classifyMovement(speed: number | null): string {
   return "VEICULO";
 }
 
+/**
+ * Strip city, state and CEP from a display address, keeping only
+ * the basic street/neighborhood info for voice synthesis clarity.
+ * Input:  "Rua Augusta, Consolação, São Paulo - SP"
+ * Output: "Rua Augusta, Consolação"
+ */
+function stripCityState(address: string | null): string | null {
+  if (!address) return null;
+  // Remove " - UF" suffix (e.g. " - SP")
+  let basic = address.replace(/\s*-\s*[A-Z]{2}$/, "");
+  // Remove last segment if it looks like a city (after stripping state)
+  // The format is "road, suburb, city" — remove the last comma-separated part
+  const parts = basic.split(",").map(p => p.trim());
+  if (parts.length >= 3) {
+    // Keep all but the last part (city)
+    basic = parts.slice(0, -1).join(", ");
+  }
+  return basic;
+}
+
 // ── Core ───────────────────────────────────────────────
 
 export async function collectCopomData(
@@ -231,7 +251,7 @@ export async function collectCopomData(
       phone_masked: maskPhone(user?.telefone ?? null),
     },
     location: {
-      address: addressResolved,
+      address: stripCityState(addressResolved),
       lat,
       lng,
       accuracy_m: loc?.precisao_metros ?? null,
@@ -294,7 +314,7 @@ export async function collectCopomLocationUpdate(
     protocol_id: protocolId,
     timestamp: new Date().toISOString(),
     location: {
-      address: addressResolved,
+      address: stripCityState(addressResolved),
       lat: loc.latitude,
       lng: loc.longitude,
       accuracy_m: loc.precisao_metros,
