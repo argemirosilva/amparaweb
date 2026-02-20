@@ -367,8 +367,8 @@ export default function AdminMapa() {
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div>
-          <p className="text-xs mb-0.5" style={subtitleStyle}>Admin &gt; Mapa Agregado</p>
-          <h1 className="text-xl font-semibold" style={titleStyle}>Mapa Agregado</h1>
+          <p className="text-xs mb-0.5" style={subtitleStyle}>Admin &gt; Dashboard</p>
+          <h1 className="text-xl font-semibold" style={titleStyle}>Dashboard</h1>
         </div>
         <div className="flex items-center gap-2">
           <div className="flex gap-1">
