@@ -59,3 +59,6 @@ verify_jwt = false
 
 [functions.admin-audio-auto]
 verify_jwt = false
+
+[functions.support-api]
+verify_jwt = false

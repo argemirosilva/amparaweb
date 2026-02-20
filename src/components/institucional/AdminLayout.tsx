@@ -14,6 +14,7 @@ import {
   X,
   Plug,
   AudioLines,
+  Headset,
 } from "lucide-react";
 import amparaLogo from "@/assets/ampara-logo.png";
 import { useState } from "react";
@@ -23,6 +24,7 @@ const TECNICO_PATHS = ["/admin/configuracoes", "/admin/integracoes", "/admin/ger
 const sidebarItems = [
   { label: "Dashboard", path: "/admin", icon: LayoutDashboard },
   { label: "Usuários", path: "/admin/usuarios", icon: Users },
+  { label: "Suporte", path: "/admin/suporte", icon: Headset },
   { label: "Órgãos/Tenants", path: "/admin/orgaos", icon: Building2 },
   { label: "Auditoria", path: "/admin/auditoria", icon: Shield },
   { label: "Relatórios", path: "/admin/relatorios", icon: FileText },
