@@ -22,6 +22,29 @@ function r2Url(key: string) {
 
 const R2_PUBLIC_URL = () => Deno.env.get("R2_PUBLIC_URL") || "";
 
+function localTimestamp(tz = "America/Sao_Paulo"): string {
+  const now = new Date();
+  const parts = new Intl.DateTimeFormat("sv-SE", {
+    timeZone: tz,
+    year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", second: "2-digit",
+    hour12: false,
+  }).formatToParts(now);
+  const get = (t: string) => parts.find(p => p.type === t)?.value ?? "00";
+  const offset = -now.getTimezoneOffset(); // not used; compute real offset
+  const localStr = `${get("year")}-${get("month")}-${get("day")}T${get("hour")}:${get("minute")}:${get("second")}`;
+  // Compute UTC offset for the timezone
+  const utcMs = now.getTime();
+  const localDate = new Date(localStr + "Z");
+  const diffMs = utcMs - localDate.getTime();
+  const diffMin = Math.round(diffMs / 60000);
+  const sign = diffMin <= 0 ? "+" : "-";
+  const absMin = Math.abs(diffMin);
+  const hh = String(Math.floor(absMin / 60)).padStart(2, "0");
+  const mm = String(absMin % 60).padStart(2, "0");
+  return `${localStr}${sign}${hh}:${mm}`;
+}
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
@@ -456,7 +479,7 @@ async function handlePing(
   return jsonResponse({
     success: true,
     status: "online",
-    servidor_timestamp: new Date().toISOString(),
+    servidor_timestamp: localTimestamp(),
   });
 }
 
@@ -634,7 +657,7 @@ async function handleSyncConfig(
       sessao_id: sessaoId,
       periodos_semana: periodosSemana,
     },
-    servidor_timestamp: new Date().toISOString(),
+    servidor_timestamp: localTimestamp(),
   };
   console.log("[SYNC_RESPONSE]", JSON.stringify(syncPayload));
   return jsonResponse(syncPayload);
@@ -1102,7 +1125,7 @@ async function handleEnviarLocalizacaoGPS(
     success: true,
     message: "Localização registrada",
     alerta_id: finalAlertaId,
-    servidor_timestamp: new Date().toISOString(),
+    servidor_timestamp: localTimestamp(),
   });
 }
 
@@ -1678,7 +1701,7 @@ async function handleReportarStatusMonitoramento(
   return jsonResponse({
     success: true,
     message: "Status de monitoramento atualizado",
-    servidor_timestamp: new Date().toISOString(),
+    servidor_timestamp: localTimestamp(),
   });
 }
 
@@ -1754,7 +1777,7 @@ async function handleReportarStatusGravacao(
         message: "Sessão de gravação iniciada",
         sessao_id: newSession?.id,
         origem_gravacao: origemGravacao,
-        servidor_timestamp: new Date().toISOString(),
+        servidor_timestamp: localTimestamp(),
       });
     }
 
@@ -1763,7 +1786,7 @@ async function handleReportarStatusGravacao(
       success: true,
       message: "Sessão de gravação já ativa",
       sessao_id: existingSession.id,
-      servidor_timestamp: new Date().toISOString(),
+      servidor_timestamp: localTimestamp(),
     });
   }
 
@@ -1811,7 +1834,7 @@ async function handleReportarStatusGravacao(
           status: "ativa",
           total_segmentos: totalSegmentos ?? null,
           motivo_parada: motivoParada ?? null,
-          servidor_timestamp: new Date().toISOString(),
+          servidor_timestamp: localTimestamp(),
         });
       }
 
@@ -1862,7 +1885,7 @@ async function handleReportarStatusGravacao(
           status: "descartada",
           total_segmentos: 0,
           motivo_parada: motivoParada ?? null,
-          servidor_timestamp: new Date().toISOString(),
+          servidor_timestamp: localTimestamp(),
         });
       }
 
@@ -1893,7 +1916,7 @@ async function handleReportarStatusGravacao(
         status: "aguardando_finalizacao",
         total_segmentos: totalSegmentos ?? null,
         motivo_parada: motivoParada ?? null,
-        servidor_timestamp: new Date().toISOString(),
+        servidor_timestamp: localTimestamp(),
       });
     }
 
@@ -1903,7 +1926,7 @@ async function handleReportarStatusGravacao(
       message: "Status da gravação atualizado",
       total_segmentos: totalSegmentos ?? null,
       motivo_parada: motivoParada ?? null,
-      servidor_timestamp: new Date().toISOString(),
+      servidor_timestamp: localTimestamp(),
     });
   }
 
@@ -1930,7 +1953,7 @@ async function handleReportarStatusGravacao(
     message: "Status da gravação atualizado",
     total_segmentos: totalSegmentos ?? null,
     motivo_parada: motivoParada ?? null,
-    servidor_timestamp: new Date().toISOString(),
+    servidor_timestamp: localTimestamp(),
   });
 }
 
