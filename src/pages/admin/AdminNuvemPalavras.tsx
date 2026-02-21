@@ -1,6 +1,6 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Cloud, Loader2 } from "lucide-react";
+import { Cloud, Loader2, X } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -32,7 +32,6 @@ const COLORS = [
   "hsl(220 20% 45%)",
 ];
 
-// Excluir: reações, pedidos de ajuda, sentimentos, rótulos genéricos, itens aleatórios
 const EXCLUDED_WORDS = new Set([
   "socorro", "ajuda", "proteger", "abraço", "paz", "saúde",
   "atenção", "prioridade", "preocupado", "sensível", "perigo",
@@ -44,15 +43,19 @@ const EXCLUDED_WORDS = new Set([
 const MAX_WORDS = 30;
 
 type WordFreq = { word: string; count: number };
+type AnalysisRow = { palavras_chave: string[] | null; created_at: string };
 
 export default function AdminNuvemPalavras() {
   const [period, setPeriod] = useState("30");
   const [loading, setLoading] = useState(true);
-  const [words, setWords] = useState<WordFreq[]>([]);
+  const [allData, setAllData] = useState<AnalysisRow[]>([]);
+  const [selectedWord, setSelectedWord] = useState<string | null>(null);
 
+  // Fetch raw data once per period change
   useEffect(() => {
-    async function fetch() {
+    async function fetchData() {
       setLoading(true);
+      setSelectedWord(null);
       let query = supabase
         .from("gravacoes_analises")
         .select("palavras_chave, created_at");
@@ -64,25 +67,36 @@ export default function AdminNuvemPalavras() {
       }
 
       const { data } = await query;
-
-      const freq: Record<string, number> = {};
-      (data || []).forEach((row) => {
-        (row.palavras_chave || []).forEach((w: string) => {
-          const key = w.trim().toLowerCase();
-          if (key && !EXCLUDED_WORDS.has(key)) freq[key] = (freq[key] || 0) + 1;
-        });
-      });
-
-      const sorted = Object.entries(freq)
-        .map(([word, count]) => ({ word, count }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, MAX_WORDS);
-
-      setWords(sorted);
+      setAllData((data || []) as AnalysisRow[]);
       setLoading(false);
     }
-    fetch();
+    fetchData();
   }, [period]);
+
+  // Compute word frequencies, optionally filtered by co-occurrence
+  const words = useMemo(() => {
+    const rows = selectedWord
+      ? allData.filter((r) =>
+          (r.palavras_chave || []).some(
+            (w) => w.trim().toLowerCase() === selectedWord
+          )
+        )
+      : allData;
+
+    const freq: Record<string, number> = {};
+    rows.forEach((row) => {
+      (row.palavras_chave || []).forEach((w) => {
+        const key = w.trim().toLowerCase();
+        if (key && !EXCLUDED_WORDS.has(key) && key !== selectedWord)
+          freq[key] = (freq[key] || 0) + 1;
+      });
+    });
+
+    return Object.entries(freq)
+      .map(([word, count]) => ({ word, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, MAX_WORDS);
+  }, [allData, selectedWord]);
 
   const { minCount, maxCount } = useMemo(() => {
     if (!words.length) return { minCount: 0, maxCount: 1 };
@@ -99,7 +113,6 @@ export default function AdminNuvemPalavras() {
 
   const shuffled = useMemo(() => {
     if (!words.length) return [];
-    // Top word goes to center: shuffle the rest, then insert top at middle
     const [top, ...rest] = words;
     const arr = [...rest];
     for (let i = arr.length - 1; i > 0; i--) {
@@ -110,6 +123,10 @@ export default function AdminNuvemPalavras() {
     arr.splice(mid, 0, top);
     return arr;
   }, [words]);
+
+  const handleWordClick = useCallback((word: string) => {
+    setSelectedWord((prev) => (prev === word ? null : word));
+  }, []);
 
   return (
     <div className="space-y-6" style={{ fontFamily: "Inter, Roboto, sans-serif" }}>
@@ -135,6 +152,23 @@ export default function AdminNuvemPalavras() {
         </Select>
       </div>
 
+      {selectedWord && (
+        <div
+          className="flex items-center gap-2 px-3 py-2 rounded-md text-sm"
+          style={{ background: "hsl(224 76% 33% / 0.08)", color: "hsl(224 76% 33%)" }}
+        >
+          <span>
+            Mostrando palavras associadas a <strong>"{selectedWord}"</strong>
+          </span>
+          <button
+            onClick={() => setSelectedWord(null)}
+            className="ml-auto p-0.5 rounded hover:bg-black/5 transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       <div
         className="rounded-lg border p-6 min-h-[300px] flex items-center justify-center"
         style={{ background: "hsl(0 0% 100%)", borderColor: "hsl(220 13% 91%)" }}
@@ -150,18 +184,21 @@ export default function AdminNuvemPalavras() {
             {shuffled.map((w, i) => (
               <Tooltip key={w.word}>
                 <TooltipTrigger asChild>
-                  <span
-                    className="cursor-default transition-opacity hover:opacity-70 font-semibold leading-none"
+                  <button
+                    onClick={() => handleWordClick(w.word)}
+                    className="cursor-pointer transition-all hover:opacity-70 hover:scale-105 font-semibold leading-none border-none bg-transparent p-0"
                     style={{
                       fontSize: `${fontSize(w.count)}px`,
                       color: COLORS[i % COLORS.length],
                     }}
                   >
                     {w.word}
-                  </span>
+                  </button>
                 </TooltipTrigger>
                 <TooltipContent>
                   <span className="font-medium">{w.word}</span> — {w.count} ocorrência{w.count !== 1 ? "s" : ""}
+                  <br />
+                  <span className="text-xs opacity-70">Clique para ver associadas</span>
                 </TooltipContent>
               </Tooltip>
             ))}
