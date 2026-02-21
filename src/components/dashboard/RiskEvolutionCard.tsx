@@ -149,7 +149,7 @@ export default function RiskEvolutionCard() {
 
   return (
     <div className="ampara-card overflow-hidden !p-0">
-      <div className="flex min-h-[280px]">
+      <div className="flex">
         {/* Left: Emotional avatar image — full height, showing right side of face */}
         {hasEmotionalImage && !loading && (
           <div className="relative w-28 shrink-0 overflow-hidden rounded-l-2xl">
@@ -263,7 +263,7 @@ export default function RiskEvolutionCard() {
               </button>
 
               {expanded && (
-                <div className="pt-2 border-t border-border/50 max-h-[300px] overflow-y-auto">
+                <div className="pt-2 border-t border-border/50 max-h-[60vh] overflow-y-auto">
                   <RelatorioSaudeContent
                     relatorio={relatorio}
                     loading={relatorioLoading}
