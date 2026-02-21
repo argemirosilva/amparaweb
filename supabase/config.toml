@@ -62,3 +62,6 @@ verify_jwt = false
 
 [functions.support-api]
 verify_jwt = false
+
+[functions.seed-recordings-timeline]
+verify_jwt = false
