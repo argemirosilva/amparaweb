@@ -146,7 +146,7 @@ export default function AdminMapa() {
   const [munPanicoStats, setMunPanicoStats] = useState<Record<string, Record<string, number>>>({});
 
   // Dashboard analytics state
-  const [analyticsPeriod, setAnalyticsPeriod] = useState("30d");
+  // analyticsPeriod removed — reuses `period` from map selector
   const [kpis, setKpis] = useState({ monitoradas: 0, eventos: 0, emergencias: 0, dispositivosOnline: 0, totalGravacoes: 0, totalHorasGravacao: 0 });
   const [timelineData, setTimelineData] = useState<{ date: string; eventos: number; emergencias: number }[]>([]);
   const [riskDistribution, setRiskDistribution] = useState<{ name: string; value: number }[]>([]);
@@ -391,7 +391,7 @@ export default function AdminMapa() {
 
   // Fetch dashboard analytics
   useEffect(() => {
-    const periodDays = { "7d": 7, "30d": 30, "90d": 90, "12m": 365 }[analyticsPeriod] || 30;
+    const periodDays = { "24h": 1, "7d": 7, "30d": 30, "6m": 180, "12m": 365 }[period] || 30;
     const since = new Date(Date.now() - periodDays * 24 * 60 * 60 * 1000).toISOString();
 
     async function loadAnalytics() {
@@ -445,7 +445,7 @@ export default function AdminMapa() {
     }
 
     loadAnalytics();
-  }, [analyticsPeriod]);
+  }, [period]);
 
   // Init map
   useEffect(() => {
@@ -887,16 +887,7 @@ export default function AdminMapa() {
       <div className="mt-8">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
           <h2 className="text-lg font-semibold" style={titleStyle}>Análise de Dados</h2>
-          <div className="flex flex-wrap items-center gap-2 p-2 rounded-md border" style={cardStyle}>
-            <span className="text-xs font-medium" style={subtitleStyle}>Período:</span>
-            {["7d", "30d", "90d", "12m"].map((p) => (
-              <button key={p} onClick={() => setAnalyticsPeriod(p)}
-                className="px-3 py-1 text-xs rounded border transition-colors"
-                style={{ borderColor: analyticsPeriod === p ? "hsl(224 76% 33%)" : "hsl(220 13% 91%)", background: analyticsPeriod === p ? "hsl(224 76% 33%)" : "transparent", color: analyticsPeriod === p ? "#fff" : "hsl(220 9% 46%)", fontWeight: analyticsPeriod === p ? 600 : 400 }}>
-                {p}
-              </button>
-            ))}
-          </div>
+          <span className="text-xs" style={subtitleStyle}>Período: {period}</span>
         </div>
 
         {/* KPIs */}
