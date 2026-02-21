@@ -1,25 +1,11 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Cloud, Loader2, X } from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Loader2, X } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-
-const PERIOD_OPTIONS = [
-  { value: "7", label: "Últimos 7 dias" },
-  { value: "30", label: "Últimos 30 dias" },
-  { value: "90", label: "Últimos 90 dias" },
-  { value: "all", label: "Todo o período" },
-];
 
 const COLORS = [
   "hsl(224 76% 33%)",
@@ -45,13 +31,16 @@ const MAX_WORDS = 30;
 type WordFreq = { word: string; count: number };
 type AnalysisRow = { palavras_chave: string[] | null; created_at: string };
 
-export default function AdminNuvemPalavras() {
-  const [period, setPeriod] = useState("30");
+interface WordCloudCardProps {
+  /** ISO date string — only analyses after this date are included */
+  since?: string;
+}
+
+export default function WordCloudCard({ since }: WordCloudCardProps) {
   const [loading, setLoading] = useState(true);
   const [allData, setAllData] = useState<AnalysisRow[]>([]);
   const [selectedWord, setSelectedWord] = useState<string | null>(null);
 
-  // Fetch raw data once per period change
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
@@ -60,10 +49,8 @@ export default function AdminNuvemPalavras() {
         .from("gravacoes_analises")
         .select("palavras_chave, created_at");
 
-      if (period !== "all") {
-        const d = new Date();
-        d.setDate(d.getDate() - Number(period));
-        query = query.gte("created_at", d.toISOString());
+      if (since) {
+        query = query.gte("created_at", since);
       }
 
       const { data } = await query;
@@ -71,9 +58,8 @@ export default function AdminNuvemPalavras() {
       setLoading(false);
     }
     fetchData();
-  }, [period]);
+  }, [since]);
 
-  // Compute word frequencies, optionally filtered by co-occurrence
   const words = useMemo(() => {
     const rows = selectedWord
       ? allData.filter((r) =>
@@ -98,15 +84,6 @@ export default function AdminNuvemPalavras() {
       .slice(0, MAX_WORDS);
   }, [allData, selectedWord]);
 
-  const { minCount, maxCount } = useMemo(() => {
-    if (!words.length) return { minCount: 0, maxCount: 1 };
-    return {
-      minCount: words[words.length - 1].count,
-      maxCount: words[0].count,
-    };
-  }, [words]);
-
-  // Pre-compute font sizes based on rank in sorted order
   const fontSizeMap = useMemo(() => {
     const minFont = selectedWord ? 13 : 11;
     const maxFont = selectedWord ? 34 : 30;
@@ -135,59 +112,44 @@ export default function AdminNuvemPalavras() {
     setSelectedWord((prev) => (prev === word ? null : word));
   }, []);
 
-  return (
-    <div className="space-y-6" style={{ fontFamily: "Inter, Roboto, sans-serif" }}>
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <Cloud className="w-6 h-6" style={{ color: "hsl(224 76% 33%)" }} />
-          <h1 className="text-xl font-bold" style={{ color: "hsl(220 13% 18%)" }}>
-            Nuvem de Palavras
-          </h1>
-        </div>
+  const cardStyle = { background: "hsl(0 0% 100%)", borderColor: "hsl(220 13% 91%)" };
+  const titleStyle = { color: "hsl(220 13% 18%)" };
+  const subtitleStyle = { color: "hsl(220 9% 46%)" };
 
-        <Select value={period} onValueChange={setPeriod}>
-          <SelectTrigger className="w-48">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {PERIOD_OPTIONS.map((o) => (
-              <SelectItem key={o.value} value={o.value}>
-                {o.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+  return (
+    <div className="rounded-md border p-4 space-y-3" style={cardStyle}>
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-semibold" style={titleStyle}>Nuvem de Palavras</h2>
+        {selectedWord && (
+          <button
+            onClick={() => setSelectedWord(null)}
+            className="flex items-center gap-1 text-xs px-2 py-1 rounded-md transition-colors hover:bg-black/5"
+            style={{ color: "hsl(224 76% 33%)" }}
+          >
+            <X className="w-3 h-3" />
+            Limpar filtro
+          </button>
+        )}
       </div>
 
       {selectedWord && (
         <div
-          className="flex items-center gap-2 px-3 py-2 rounded-md text-sm"
+          className="flex items-center gap-2 px-3 py-1.5 rounded text-xs"
           style={{ background: "hsl(224 76% 33% / 0.08)", color: "hsl(224 76% 33%)" }}
         >
-          <span>
-            Mostrando palavras associadas a <strong>"{selectedWord}"</strong>
-          </span>
-          <button
-            onClick={() => setSelectedWord(null)}
-            className="ml-auto p-0.5 rounded hover:bg-black/5 transition-colors"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          Palavras associadas a <strong>"{selectedWord}"</strong>
         </div>
       )}
 
-      <div
-        className="rounded-lg border p-6 min-h-[300px] flex items-center justify-center"
-        style={{ background: "hsl(0 0% 100%)", borderColor: "hsl(220 13% 91%)" }}
-      >
+      <div className="min-h-[180px] flex items-center justify-center">
         {loading ? (
-          <Loader2 className="w-8 h-8 animate-spin" style={{ color: "hsl(224 76% 33%)" }} />
+          <Loader2 className="w-6 h-6 animate-spin" style={{ color: "hsl(224 76% 33%)" }} />
         ) : words.length === 0 ? (
-          <p className="text-sm" style={{ color: "hsl(220 9% 46%)" }}>
-            Nenhuma palavra-chave encontrada neste período.
+          <p className="text-xs" style={subtitleStyle}>
+            Nenhuma palavra-chave encontrada.
           </p>
         ) : (
-          <div className="flex flex-wrap items-center justify-center gap-3 max-w-3xl">
+          <div className="flex flex-wrap items-center justify-center gap-2">
             {shuffled.map((w, i) => (
               <Tooltip key={w.word}>
                 <TooltipTrigger asChild>
@@ -213,8 +175,8 @@ export default function AdminNuvemPalavras() {
         )}
       </div>
 
-      <p className="text-xs text-center" style={{ color: "hsl(220 9% 46%)" }}>
-        Total: {words.length} palavras · {words.reduce((s, w) => s + w.count, 0)} ocorrências
+      <p className="text-xs text-center" style={subtitleStyle}>
+        {words.length} palavras · {words.reduce((s, w) => s + w.count, 0)} ocorrências
       </p>
     </div>
   );

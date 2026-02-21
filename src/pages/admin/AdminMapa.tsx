@@ -4,6 +4,7 @@ import { useMapbox } from "@/hooks/useMapbox";
 import { MapPin, AlertTriangle, Smartphone, Users, RefreshCw, BarChart3, Mic, Clock } from "lucide-react";
 import GovKpiCard from "@/components/institucional/GovKpiCard";
 import GovStatusBadge from "@/components/institucional/GovStatusBadge";
+import WordCloudCard from "@/components/institucional/WordCloudCard";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
@@ -1022,6 +1023,9 @@ export default function AdminMapa() {
             )}
           </div>
         </div>
+
+        {/* Word Cloud */}
+        <WordCloudCard since={new Date(Date.now() - ({ "24h": 24, "7d": 168, "30d": 720, "6m": 4320, "12m": 8760 }[period] || 168) * 60 * 60 * 1000).toISOString()} />
       </div>
     </div>
   );
