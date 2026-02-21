@@ -542,6 +542,7 @@ async function handlePing(
   body: Record<string, unknown>,
   supabase: ReturnType<typeof createClient>
 ): Promise<Response> {
+  console.log("[handlePing] body received:", JSON.stringify({ bateria_percentual: body.bateria_percentual, is_charging: body.is_charging, device_model: body.device_model, device_id: body.device_id, dispositivo_info: body.dispositivo_info }));
   const sessionToken = body.session_token as string;
   const { user, error } = await validateSession(supabase, sessionToken);
   if (error || !user) {
