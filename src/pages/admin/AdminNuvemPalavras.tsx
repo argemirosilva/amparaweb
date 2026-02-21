@@ -41,7 +41,7 @@ const EXCLUDED_WORDS = new Set([
   "sozinha", "drama", "agressor", "violência", "violencia",
 ]);
 
-const MAX_WORDS = 50;
+const MAX_WORDS = 30;
 
 type WordFreq = { word: string; count: number };
 
