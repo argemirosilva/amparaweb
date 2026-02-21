@@ -54,6 +54,9 @@ const avatarKeyMap: Record<string, string> = {
   "Em colapso": "em_colapso",
 };
 
+// Module-level cache so report survives re-renders and re-mounts within the same session
+let cachedRelatorio: RelatorioSaude | null = null;
+
 export default function RiskEvolutionCard() {
   const { sessionToken, usuario } = useAuth();
   const [window, setWindow] = useState<WindowDays>(7);
@@ -62,21 +65,23 @@ export default function RiskEvolutionCard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
-  const [relatorio, setRelatorio] = useState<RelatorioSaude | null>(null);
+  const [relatorio, setRelatorio] = useState<RelatorioSaude | null>(cachedRelatorio);
   const [relatorioLoading, setRelatorioLoading] = useState(false);
   const [relatorioError, setRelatorioError] = useState<string | null>(null);
-  const [emotionalScore, setEmotionalScore] = useState<number | null>(null);
+  const [emotionalScore, setEmotionalScore] = useState<number | null>(() =>
+    cachedRelatorio ? computeEmotionalScore(cachedRelatorio.sentimentos, cachedRelatorio.periodo.total_alertas) : null
+  );
   const [emotionalAvatars, setEmotionalAvatars] = useState<Record<string, string> | null>(null);
 
+  // Fetch risk data only (no report)
   const fetchData = useCallback(async (w: WindowDays) => {
     if (!sessionToken) return;
     setLoading(true);
     setError(null);
     try {
-      const [assessRes, histRes, relRes] = await Promise.all([
+      const [assessRes, histRes] = await Promise.all([
         callWebApi("getRiskAssessment", sessionToken, { window_days: w }),
         callWebApi("getRiskHistory", sessionToken, { window_days: w, limit: 30 }),
-        callWebApi("getRelatorioSaude", sessionToken, { window_days: w <= 30 ? 90 : w }),
       ]);
       if (assessRes.ok && assessRes.data.assessment) {
         setAssessment(assessRes.data.assessment);
@@ -90,15 +95,30 @@ export default function RiskEvolutionCard() {
           }))
         );
       }
-      if (relRes.ok && relRes.data.relatorio) {
-        const rel = relRes.data.relatorio as RelatorioSaude;
-        setRelatorio(rel);
-        setEmotionalScore(computeEmotionalScore(rel.sentimentos, rel.periodo.total_alertas));
-      }
     } catch {
       setError("Erro ao carregar avaliação de risco");
     } finally {
       setLoading(false);
+    }
+  }, [sessionToken]);
+
+  // Fetch report lazily on first expand, cache for entire session
+  const fetchRelatorio = useCallback(async () => {
+    if (cachedRelatorio || !sessionToken) return;
+    setRelatorioLoading(true);
+    setRelatorioError(null);
+    try {
+      const relRes = await callWebApi("getRelatorioSaude", sessionToken, { window_days: 90 });
+      if (relRes.ok && relRes.data.relatorio) {
+        const rel = relRes.data.relatorio as RelatorioSaude;
+        cachedRelatorio = rel;
+        setRelatorio(rel);
+        setEmotionalScore(computeEmotionalScore(rel.sentimentos, rel.periodo.total_alertas));
+      }
+    } catch {
+      setRelatorioError("Erro ao carregar relatório");
+    } finally {
+      setRelatorioLoading(false);
     }
   }, [sessionToken]);
 
@@ -255,7 +275,11 @@ export default function RiskEvolutionCard() {
 
               {/* Expandable report */}
               <button
-                onClick={() => setExpanded(!expanded)}
+                onClick={() => {
+                  const next = !expanded;
+                  setExpanded(next);
+                  if (next) fetchRelatorio();
+                }}
                 className="w-full flex items-center justify-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors py-1"
               >
                 {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
