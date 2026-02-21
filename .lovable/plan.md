@@ -1,71 +1,78 @@
 
 
-# Setas de Tendencia nos Mapas -- Admin e Transparencia
+# Simplificar Fluxo de Suporte -- Remover Codigo de Consentimento
+
+## Resumo
+
+Remover o fluxo de codigo de 6 digitos. O agente continua precisando **solicitar acesso** a cada gravacao/transcricao/log individualmente (com justificativa), mas o acesso e concedido **automaticamente** ao solicitar -- sem necessidade de codigo. A usuaria ainda pode **revogar** o acesso a qualquer momento e toda atividade continua sendo registrada na auditoria.
 
 ## O que muda
 
-Cada estado no mapa passa a exibir, alem da sigla e contagem, uma seta indicando tendencia:
-- **Seta vermelha para cima** -- estado com ocorrencias crescendo
-- **Seta verde para baixo** -- estado com ocorrencias diminuindo
-- Sem seta quando nao ha dados suficientes ou a variacao e insignificante
+| Antes | Depois |
+|-------|--------|
+| Agente solicita acesso -> gera codigo 6 digitos | Agente solicita acesso -> grant criado automaticamente |
+| Usuaria precisa abrir app, ver codigo, informar ao agente | Usuaria ve notificacao de acesso no chat e pode revogar |
+| 3 tentativas de codigo, bloqueio, expiracao 2min | Removido completamente |
+| Status `waiting_consent` na sessao | Removido -- sessao fica `active` |
 
-## Como calcular a tendencia
+## O que permanece igual
 
-Dividir o periodo selecionado ao meio (ex: 90 dias = 45 dias recentes vs 45 dias anteriores). Comparar a contagem de eventos em cada metade por UF:
-- Se a metade recente tem 20%+ a mais de eventos que a anterior: **crescendo**
-- Se a metade recente tem 20%- a menos: **decaindo**
-- Caso contrario: **estavel** (sem seta)
+- Solicitacao de acesso com justificativa obrigatoria (auditoria)
+- Grant temporario de 10 minutos
+- Revogacao instantanea pela usuaria ou agente
+- Registro completo na `support_audit_timeline` e `support_data_access_log`
+- Chat de mensagens diretas
+- ResourceViewerModal para visualizar dados
 
 ## Detalhes Tecnicos
 
-### 1. `src/pages/admin/AdminMapa.tsx`
+### 1. Edge Function `support-api/index.ts`
 
-**No `fetchData`:**
-- Buscar `gravacoes_analises.created_at` e `user_id` para o periodo completo (ja faz isso em `loadAnalytics`)
-- Calcular por UF: `eventosRecentHalf` vs `eventosOlderHalf`
-- Armazenar `ufTrend: Record<string, "up" | "down" | "stable">` em novo state
+**Action `requestAccess` (linhas 287-341):**
+- Remover geracao de codigo (`generateCode6`, `hashCode`)
+- Remover `code_hash`, `code_expires_at` do insert na `support_access_requests`
+- Apos criar o request, criar imediatamente o `support_access_grant` (10 min)
+- Atualizar status do request para `"granted"` direto
+- Manter timeline e mensagem de sistema
+- Remover `code` do retorno, retornar `grant` direto
+- Mudar status da sessao para `"active"` (nao mais `"waiting_consent"`)
 
-**No choropleth/labels `useEffect`:**
-- Enriquecer `labelFeatures` com propriedade `trend` ("up" / "down" / "stable")
-- Alterar o `text-field` do layer `state-labels-layer` para incluir seta Unicode:
-  - Up: `\u2191` (cor vermelha via segundo label layer)
-  - Down: `\u2193` (cor verde via segundo label layer)
-- Como Mapbox symbol layers nao suportam cores diferentes por caracter, adicionar um **segundo symbol layer** (`state-trend-layer`) posicionado logo abaixo do label principal com:
-  - `text-field`: apenas a seta (filtrado por trend != stable)
-  - `text-color`: vermelho para up, verde para down (via expression)
-  - `text-offset`: deslocado para baixo do label principal
+**Remover actions completas:**
+- `confirmAccess` (linhas 343-417) -- nao precisa mais confirmar codigo
+- `showCode` (linhas 860-906) -- nao existe mais codigo
+- `denyAccess` (linhas 909-944) -- substituido por `revokeAccess` que ja existe
 
-### 2. `src/pages/transparencia/TransparenciaMapa.tsx`
+**Manter sem alteracao:**
+- `revokeAccess`, `revokeAllAccess`, `getResource`, `listUserResources`
+- `sendMessage`, `sendUserMessage`, `getSession`, `getMySession`
+- `myTickets`, `createUserSession`, `getAuditTimeline`, `getPendingConsent`
+- `closeSession`, `createSession`, `assignAgent`, `listSessions`
+- `listMessages`, `listAccessRequests`, `initiatePasswordReset`
 
-Mesma logica aplicada:
-- No `loadStats`: dividir os eventos por metade do periodo e calcular trend por UF
-- Novo state `ufTrends`
-- No choropleth `useEffect`: adicionar propriedade `trend` aos `labelFeatures` e criar segundo layer de setas
+### 2. Painel Admin -- `src/pages/suporte/SuporteChat.tsx`
 
-### Novo layer de setas (ambos mapas)
+- No `handleRequestAccess`: apos a resposta, ja usar o grant retornado diretamente (nao exibir codigo)
+- Remover modal "Inserir Codigo de Consentimento" (`showConfirm`, `confirmCode`, `confirmRequestId`)
+- Remover secao "Aguardando codigo de consentimento" dos pending requests
+- Toast de sucesso: "Acesso concedido por 10 minutos" em vez de exibir codigo
 
-```text
-Layer: "state-trend-layer"
-Type: symbol
-Source: "state-labels" (mesma source, ja tem o ponto central)
-Layout:
-  text-field: [case, ["==", ["get","trend"], "up"], "▲", ["==", ["get","trend"], "down"], "▼", ""]
-  text-size: 12
-  text-offset: [0, 1.2]  (abaixo do label principal)
-  text-allow-overlap: true
-Paint:
-  text-color: [case, ["==", ["get","trend"], "up"], "#dc2626", "#16a34a"]
-  text-halo-color: white
-  text-halo-width: 1.5
-Filter: ["!=", ["get","trend"], "stable"]
-```
+### 3. App Usuaria -- `src/pages/support/SupportTicketDetail.tsx`
+
+- Remover secao de pending requests com codigo (`handleShowCode`, `handleConfirmAccess`, `handleDenyAccess`)
+- Remover states `codeData`, `confirmCode`, `confirming`
+- Remover componente `CodeExpiryTimer`
+- Manter secao de grants ativos (com botao "Encerrar acesso agora")
+- Manter aba de auditoria
+
+### 4. Nao requer alteracao
+
+- `ResourceViewerModal` -- funciona igual
+- Tabelas do banco -- nao precisa alterar schema (campos code_hash ficam nullable, sem problema)
+- `SupportHome`, `SupportNew`, `SupportAudit` -- sem mudancas
 
 ### Arquivos afetados
 
-- `src/pages/admin/AdminMapa.tsx` -- novo state `ufTrends`, calculo de tendencia no fetch, novo layer de setas
-- `src/pages/transparencia/TransparenciaMapa.tsx` -- idem
-
-### Nenhuma alteracao no backend
-
-Todos os dados necessarios ja existem nas tabelas `gravacoes_analises` e `alertas_panico`.
+- `supabase/functions/support-api/index.ts` -- simplificar `requestAccess`, remover `confirmAccess`, `showCode`, `denyAccess`
+- `src/pages/suporte/SuporteChat.tsx` -- remover modal de codigo e secao pending
+- `src/pages/support/SupportTicketDetail.tsx` -- remover fluxo de codigo da usuaria
 
