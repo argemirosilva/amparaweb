@@ -44,8 +44,9 @@ interface HistoryPoint {
 }
 
 
-// Module-level cache so report survives re-renders and re-mounts within the same session
+// Module-level cache so report survives re-renders within the same session
 let cachedRelatorio: RelatorioSaude | null = null;
+let cachedForUser: string | null = null;
 
 export default function RiskEvolutionCard() {
   const { sessionToken, usuario } = useAuth();
@@ -92,9 +93,21 @@ export default function RiskEvolutionCard() {
     }
   }, [sessionToken]);
 
-  // Fetch report lazily on first expand, cache for entire session
+  // Reset cache when user changes (logout/login)
+  useEffect(() => {
+    const uid = usuario?.id || null;
+    if (cachedForUser && cachedForUser !== uid) {
+      cachedRelatorio = null;
+      cachedForUser = null;
+      setRelatorio(null);
+      setEmotionalScore(null);
+    }
+  }, [usuario?.id]);
+
+  // Fetch report lazily, cache for entire session
   const fetchRelatorio = useCallback(async () => {
-    if (cachedRelatorio || !sessionToken) return;
+    if (cachedRelatorio && cachedForUser === usuario?.id) return;
+    if (!sessionToken) return;
     setRelatorioLoading(true);
     setRelatorioError(null);
     try {
@@ -102,6 +115,7 @@ export default function RiskEvolutionCard() {
       if (relRes.ok && relRes.data.relatorio) {
         const rel = relRes.data.relatorio as RelatorioSaude;
         cachedRelatorio = rel;
+        cachedForUser = usuario?.id || null;
         setRelatorio(rel);
         setEmotionalScore(computeEmotionalScore(rel.sentimentos, rel.periodo.total_alertas));
       }
@@ -110,7 +124,7 @@ export default function RiskEvolutionCard() {
     } finally {
       setRelatorioLoading(false);
     }
-  }, [sessionToken]);
+  }, [sessionToken, usuario?.id]);
 
 
   useEffect(() => {
