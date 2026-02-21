@@ -98,11 +98,16 @@ export default function AdminNuvemPalavras() {
   };
 
   const shuffled = useMemo(() => {
-    const arr = [...words];
+    if (!words.length) return [];
+    // Top word goes to center: shuffle the rest, then insert top at middle
+    const [top, ...rest] = words;
+    const arr = [...rest];
     for (let i = arr.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [arr[i], arr[j]] = [arr[j], arr[i]];
     }
+    const mid = Math.floor(arr.length / 2);
+    arr.splice(mid, 0, top);
     return arr;
   }, [words]);
 
