@@ -24,6 +24,7 @@ const EXCLUDED_WORDS = new Set([
   "amor", "te amo", "pizza", "salada", "bobagem", "medo",
   "ouvir mais e falar menos", "realista", "cansada", "chateada",
   "sozinha", "drama", "agressor", "violência", "violencia", "copom",
+  "urgencia", "urgência", "informacao", "informação",
 ]);
 
 const MAX_WORDS = 30;
