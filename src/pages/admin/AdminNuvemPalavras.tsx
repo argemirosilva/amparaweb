@@ -107,9 +107,8 @@ export default function AdminNuvemPalavras() {
   }, [words]);
 
   const fontSize = (count: number, index: number, total: number) => {
-    const minFont = selectedWord ? 18 : 14;
-    const maxFont = 52;
-    // Use rank-based sizing for better visual spread
+    const minFont = selectedWord ? 12 : 10;
+    const maxFont = selectedWord ? 32 : 28;
     const ratio = total > 1 ? 1 - index / (total - 1) : 1;
     return minFont + ratio * (maxFont - minFont);
   };
