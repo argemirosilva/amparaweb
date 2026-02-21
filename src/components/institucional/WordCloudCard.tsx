@@ -18,13 +18,20 @@ const COLORS = [
   "hsl(220 20% 45%)",
 ];
 
-const EXCLUDED_WORDS = new Set([
-  "socorro", "ajuda", "proteger", "abraço", "paz", "saúde",
-  "atenção", "prioridade", "preocupado", "sensível", "perigo",
-  "amor", "te amo", "pizza", "salada", "bobagem", "medo",
-  "ouvir mais e falar menos", "realista", "cansada", "chateada",
-  "sozinha", "drama", "agressor", "violência", "violencia", "copom",
-  "urgencia", "urgência", "informacao", "informação",
+// Only show words that are direct offenses/insults against women
+const OFFENSE_WORDS = new Set([
+  "vadia", "vagabunda", "puta", "piranha", "vaca", "cadela",
+  "burra", "inútil", "incompetente", "idiota", "imbecil", "retardada",
+  "louca", "maluca", "histérica", "doida", "perturbada", "desequilibrada",
+  "feia", "gorda", "nojenta", "ridícula", "patética", "insignificante",
+  "imprestável", "desgraçada", "miserável", "sem vergonha", "safada",
+  "ordinária", "oferecida", "vagaba", "lixo", "escória", "verme",
+  "prostituta", "meretriz", "rameira", "galinha", "cachorra",
+  "otária", "trouxa", "besta", "cretina", "imbecil",
+  "ingrata", "interesseira", "mercenária", "aproveitadora",
+  "encosto", "peso morto", "estorvo", "insuportável",
+  "mentirosa", "falsa", "manipuladora", "cobra", "ardilosa",
+  "destruidora", "problema", "culpada", "responsável por tudo",
 ]);
 
 const MAX_WORDS = 30;
@@ -74,7 +81,7 @@ export default function WordCloudCard({ since }: WordCloudCardProps) {
     rows.forEach((row) => {
       (row.palavras_chave || []).forEach((w) => {
         const key = w.trim().toLowerCase();
-        if (key && !EXCLUDED_WORDS.has(key) && key !== selectedWord)
+        if (key && OFFENSE_WORDS.has(key) && key !== selectedWord)
           freq[key] = (freq[key] || 0) + 1;
       });
     });
@@ -120,7 +127,7 @@ export default function WordCloudCard({ since }: WordCloudCardProps) {
   return (
     <div className="rounded-md border p-4 space-y-3" style={cardStyle}>
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold" style={titleStyle}>Nuvem de Palavras</h2>
+        <h2 className="text-sm font-semibold" style={titleStyle}>Ofensas Frequentes</h2>
         {selectedWord && (
           <button
             onClick={() => setSelectedWord(null)}
@@ -138,7 +145,7 @@ export default function WordCloudCard({ since }: WordCloudCardProps) {
           className="flex items-center gap-2 px-3 py-1.5 rounded text-xs"
           style={{ background: "hsl(224 76% 33% / 0.08)", color: "hsl(224 76% 33%)" }}
         >
-          Palavras associadas a <strong>"{selectedWord}"</strong>
+          Ofensas associadas a <strong>"{selectedWord}"</strong>
         </div>
       )}
 
@@ -146,9 +153,9 @@ export default function WordCloudCard({ since }: WordCloudCardProps) {
         {loading ? (
           <Loader2 className="w-6 h-6 animate-spin" style={{ color: "hsl(224 76% 33%)" }} />
         ) : words.length === 0 ? (
-          <p className="text-xs" style={subtitleStyle}>
-            Nenhuma palavra-chave encontrada.
-          </p>
+           <p className="text-xs" style={subtitleStyle}>
+             Nenhuma ofensa encontrada no período.
+           </p>
         ) : (
           <div className="flex flex-wrap items-center justify-center gap-2">
             {shuffled.map((w, i) => (
@@ -176,9 +183,9 @@ export default function WordCloudCard({ since }: WordCloudCardProps) {
         )}
       </div>
 
-      <p className="text-xs text-center" style={subtitleStyle}>
-        {words.length} palavras · {words.reduce((s, w) => s + w.count, 0)} ocorrências
-      </p>
+       <p className="text-xs text-center" style={subtitleStyle}>
+         {words.length} ofensas · {words.reduce((s, w) => s + w.count, 0)} ocorrências
+       </p>
     </div>
   );
 }
