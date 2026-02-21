@@ -24,7 +24,7 @@ interface Assessment {
 }
 
 // Fixed lilac color for chart — never changes based on risk level
-const CHART_COLOR = "hsl(270, 60%, 55%)";
+const CHART_COLOR = "hsl(270, 35%, 62%)";
 
 const levelConfig: Record<string, { icon: typeof Shield; className: string }> = {
   "Sem Risco": { icon: ShieldCheck, className: "bg-green-100 text-green-700 border-green-200" },
