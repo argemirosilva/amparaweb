@@ -4,7 +4,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { callSupportApi } from "@/services/supportApiService";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -13,7 +12,7 @@ import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
-  ArrowLeft, Send, ShieldCheck, ShieldOff, Lock, Clock, Eye, X,
+  ArrowLeft, Send, ShieldCheck, ShieldOff, Clock, Eye, X,
 } from "lucide-react";
 import ResourceViewerModal from "@/components/suporte/ResourceViewerModal";
 
@@ -46,11 +45,6 @@ export default function SuporteChat() {
   const [userResources, setUserResources] = useState<{ id: string; label: string }[]>([]);
   const [loadingResources, setLoadingResources] = useState(false);
 
-  // Confirm code
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [confirmRequestId, setConfirmRequestId] = useState("");
-  const [confirmCode, setConfirmCode] = useState("");
-
   // Resource viewer
   const [viewingGrant, setViewingGrant] = useState<any>(null);
 
@@ -68,7 +62,6 @@ export default function SuporteChat() {
   useEffect(() => { fetchSession(); }, [sessionToken, sessionId]);
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
-  // Poll for new messages every 5s
   useEffect(() => {
     const interval = setInterval(fetchSession, 5000);
     return () => clearInterval(interval);
@@ -128,7 +121,7 @@ export default function SuporteChat() {
       justification_text: arJustification.trim(),
     });
     if (ok) {
-      toast({ title: "Solicitação enviada", description: `Código gerado: ${data.code}. Informe à usuária ou aguarde.` });
+      toast({ title: "Acesso concedido", description: "Grant ativo por 10 minutos." });
       setShowAccessForm(false);
       setArResourceId("");
       setArJustification("");
@@ -137,22 +130,6 @@ export default function SuporteChat() {
       toast({ title: "Erro", description: data.error, variant: "destructive" });
     }
     setRequesting(false);
-  };
-
-  const handleConfirmAccess = async () => {
-    if (!confirmCode || !confirmRequestId) return;
-    const { ok, data } = await callSupportApi("confirmAccess", sessionToken!, {
-      request_id: confirmRequestId,
-      code: confirmCode,
-    });
-    if (ok) {
-      toast({ title: "Acesso concedido", description: "Grant ativo por 10 minutos." });
-      setShowConfirm(false);
-      setConfirmCode("");
-      fetchSession();
-    } else {
-      toast({ title: "Erro", description: data.error, variant: "destructive" });
-    }
   };
 
   const handleRevoke = async (grantId: string) => {
@@ -281,19 +258,6 @@ export default function SuporteChat() {
               ))}
             </div>
           )}
-
-          {/* Pending requests — confirm code */}
-          {accessRequests
-            .filter((r: any) => r.status === "pending")
-            .map((r: any) => (
-              <div key={r.id} className="rounded-lg border p-4" style={{ background: "hsl(45 93% 47% / 0.05)", borderColor: "hsl(45 93% 47% / 0.2)" }}>
-                <p className="text-xs font-medium mb-2">Aguardando código de consentimento</p>
-                <p className="text-xs text-muted-foreground mb-2">{r.resource_type} · {r.requested_scope}</p>
-                <Button size="sm" variant="outline" className="w-full" onClick={() => { setConfirmRequestId(r.id); setShowConfirm(true); }}>
-                  <Lock className="w-3 h-3 mr-1" /> Inserir Código
-                </Button>
-              </div>
-            ))}
         </div>
       </div>
 
@@ -368,30 +332,6 @@ export default function SuporteChat() {
         </DialogContent>
       </Dialog>
 
-      {/* Confirm Code Modal */}
-      <Dialog open={showConfirm} onOpenChange={setShowConfirm}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Inserir Código de Consentimento</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Peça o código de 6 dígitos exibido no app da usuária e insira abaixo.
-            </p>
-            <Input
-              placeholder="000000"
-              value={confirmCode}
-              onChange={(e) => setConfirmCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-              maxLength={6}
-              className="text-center text-2xl tracking-widest font-mono"
-            />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowConfirm(false)}>Cancelar</Button>
-            <Button onClick={handleConfirmAccess} disabled={confirmCode.length !== 6}>Confirmar</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
       {/* Resource Viewer Modal */}
       <ResourceViewerModal
         open={!!viewingGrant}
@@ -418,5 +358,5 @@ function GrantCountdown({ expiresAt }: { expiresAt: string }) {
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
   }, [expiresAt]);
-  return <span className="font-mono">{remaining}</span>;
+  return <span className="text-xs font-mono">{remaining}</span>;
 }
