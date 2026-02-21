@@ -537,7 +537,7 @@ export default function AdminMapa() {
           "text-offset": [0, 2.0], "text-allow-overlap": true, "text-ignore-placement": true,
         },
         paint: {
-          "text-color": ["case", ["==", ["get", "rec_trend"], "up"], "#16a34a", "#dc2626"],
+          "text-color": ["case", ["==", ["get", "rec_trend"], "up"], "#dc2626", "#16a34a"],
           "text-halo-color": "hsl(0, 0%, 100%)", "text-halo-width": 1.5,
         },
       });
@@ -556,7 +556,7 @@ export default function AdminMapa() {
           const horas = Number(p.horasGravacao) || 0;
           const rt = recTrends[uf];
           const trendIcon = rt?.trend === "up" ? "▲" : rt?.trend === "down" ? "▼" : "—";
-          const trendColor = rt?.trend === "up" ? "#16a34a" : rt?.trend === "down" ? "#dc2626" : "hsl(220,9%,46%)";
+          const trendColor = rt?.trend === "up" ? "#dc2626" : rt?.trend === "down" ? "#16a34a" : "hsl(220,9%,46%)";
           const trendPct = rt?.pct || 0;
           popup.setLngLat(e.lngLat).setHTML(`<div style="font-family:Inter,Roboto,sans-serif;font-size:11px;line-height:1.6;color:hsl(220,13%,18%)">
             <strong style="font-size:13px">${stateName}</strong>
@@ -744,8 +744,8 @@ export default function AdminMapa() {
               ))}
             </div>
             <div className="flex items-center gap-2 text-[9px] mb-2" style={subtitleStyle}>
-              <span style={{ color: "#16a34a" }}>▲ Aumento</span>
-              <span style={{ color: "#dc2626" }}>▼ Declínio</span>
+              <span style={{ color: "#dc2626" }}>▲ Aumento</span>
+              <span style={{ color: "#16a34a" }}>▼ Declínio</span>
             </div>
             <div className="space-y-1.5 border-t pt-2" style={{ borderColor: "hsl(220 13% 91%)" }}>
               <label className="flex items-center gap-2 cursor-pointer">
@@ -768,7 +768,7 @@ export default function AdminMapa() {
               <h3 className="text-sm font-bold mb-1" style={titleStyle}>
                 {UF_TO_STATE_NAME[selectedUf] || selectedUf} — {selectedUf}
                 {recTrends[selectedUf] && recTrends[selectedUf].trend !== "stable" && (
-                  <span className="ml-2 text-xs font-bold" style={{ color: recTrends[selectedUf].trend === "up" ? "#16a34a" : "#dc2626" }}>
+                  <span className="ml-2 text-xs font-bold" style={{ color: recTrends[selectedUf].trend === "up" ? "#dc2626" : "#16a34a" }}>
                     {recTrends[selectedUf].trend === "up" ? "▲" : "▼"} {recTrends[selectedUf].pct}%
                   </span>
                 )}
@@ -851,7 +851,7 @@ export default function AdminMapa() {
                             <>
                               <span className="font-bold" style={{ color: "hsl(224 76% 33%)" }}>{s.gravacoes}</span>
                               {rt && rt.trend !== "stable" && (
-                                <span className="font-bold" style={{ color: rt.trend === "up" ? "hsl(160 25% 42%)" : "hsl(0 35% 50%)" }}>
+                                <span className="font-bold" style={{ color: rt.trend === "up" ? "hsl(0 35% 50%)" : "hsl(160 25% 42%)" }}>
                                   {rt.trend === "up" ? "▲" : "▼"}{rt.pct}%
                                 </span>
                               )}
