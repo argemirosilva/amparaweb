@@ -26,10 +26,6 @@ export function BuscaPerfilForm({ onSubmit, loading }: Props) {
           value={form.nome} onChange={e => set("nome", e.target.value)} maxLength={100}
         />
         <input
-          type="text" className="ampara-input" placeholder="Apelido"
-          value={form.apelido} onChange={e => set("apelido", e.target.value)} maxLength={50}
-        />
-        <input
           type="number" className="ampara-input" placeholder="Idade aproximada"
           value={form.idade_aprox} onChange={e => set("idade_aprox", e.target.value)}
           min={15} max={100}
