@@ -1,36 +1,62 @@
 
-# Corrigir Exibicao de Gravacoes no Dashboard Admin
+# Adicionar Seletor de Dados no Ranking do Mapa Admin
 
-## Problema
+## O que muda
 
-A tabela `gravacoes` tem Row-Level Security (RLS) habilitado mas **nenhuma politica SELECT** configurada. Isso faz com que todas as queries do cliente retornem 0 resultados, mesmo havendo 305 gravacoes nos ultimos 30 dias (192 em SP, 27 no RJ, 22 em MG, etc.).
+A sidebar direita do mapa atualmente mostra apenas "Ranking por UF -- Gravacoes". Sera adicionado um seletor com 3 opcoes para alternar os dados exibidos no ranking:
 
-O mesmo ocorre com `gravacoes_analises`, que tem uma politica `ALL` com expressao `false`, bloqueando leitura.
+1. **Gravacoes** (atual) -- ordenado por numero de gravacoes
+2. **Indice de Risco** -- ordenado por quantidade de analises com risco alto/critico
+3. **Acionamento de Panico** -- ordenado por numero de alertas de panico
 
-## O que sera feito
+## Detalhes
 
-### 1. Migracao SQL -- Adicionar politicas de leitura
+### Novo estado e dados
 
-Criar politicas SELECT para permitir leitura anonima (mesmo padrao usado em `alertas_panico`, `device_status`, `localizacoes` e outras tabelas do sistema):
+- Novo state `rankingMode`: `"gravacoes" | "risco" | "panico"` (default: `"gravacoes"`)
+- Novo state `ufRiskStats`: contagem de analises por nivel de risco por UF (agregado de `gravacoes_analises`)
+- Novo state `ufPanicoStats`: contagem de alertas de panico por UF (agregado de `alertas_panico` no periodo)
 
-**Tabela `gravacoes`:**
-- Adicionar politica `Allow anon select gravacoes` com `USING (true)` para comando SELECT
+### Busca de dados adicionais (dentro do `fetchData` existente)
 
-**Tabela `gravacoes_analises`:**
-- Remover a politica restritiva `Block direct access gravacoes_analises` (que bloqueia ALL com `false`)
-- Adicionar politica `Allow anon select gravacoes_analises` com `USING (true)` para comando SELECT
-- Adicionar politica `Block direct write gravacoes_analises` para INSERT/UPDATE/DELETE com `USING (false)`
+- **Risco por UF**: query em `gravacoes_analises` com `nivel_risco` e `user_id`, cruzando com `userMap` para obter a UF. Agrega contagem total e contagem de alto+critico por UF.
+- **Panico por UF**: query em `alertas_panico` (todos no periodo, nao so ativos), cruzando `user_id` com `userMap` para UF. Agrega contagem total por UF.
 
-### 2. Nenhuma alteracao de codigo
+### Seletor visual
 
-O codigo em `AdminMapa.tsx` ja esta correto -- faz as queries, calcula por UF, exibe no mapa e nos KPIs. O unico problema e que as queries retornam vazio por causa do bloqueio de RLS.
+Tres botoes pequenos (estilo similar aos botoes de periodo) logo acima da lista de ranking:
 
-### Resultado esperado
+```text
+  [Gravacoes]  [Risco]  [Panico]
+```
 
-Apos a migracao:
-- Os 6 KPI cards no topo mostrarao Gravacoes (305+) e Horas Gravadas
-- O mapa coropletho ficara colorido por volume de gravacoes (SP em azul escuro)
-- Os labels dos estados mostrarao "SP 192" com o icone de microfone
-- As setas de tendencia (up/down) apareceriao abaixo dos labels
-- O tooltip ao passar o mouse mostrara os dados de gravacao
-- O sidebar lateral mostrara o ranking de UFs por gravacoes
+### Conteudo do ranking por modo
+
+**Gravacoes** (atual, sem mudancas):
+- Ordena por `s.gravacoes`
+- Mostra valor numerico + seta de tendencia
+
+**Risco**:
+- Ordena por contagem de analises alto+critico
+- Mostra: "X alto/critico" com badge colorido
+
+**Panico**:
+- Ordena por total de acionamentos
+- Mostra: "X acionamentos"
+
+### Ranking por municipio (quando UF selecionada)
+
+O mesmo seletor aparece na visao de municipio. Quando risco ou panico estiver selecionado, ordena os municipios pelo criterio correspondente.
+
+### Dados necessarios por modo (municipio)
+
+- Risco por municipio: mesma query de `gravacoes_analises`, agrupando por cidade do usuario
+- Panico por municipio: mesma query de `alertas_panico`, agrupando por cidade do usuario
+
+## Arquivo modificado
+
+- `src/pages/admin/AdminMapa.tsx` -- adicao de states, queries no fetchData, seletor visual e logica de ordenacao no ranking
+
+## Sem alteracoes de banco de dados
+
+Todas as tabelas necessarias (`gravacoes_analises`, `alertas_panico`) ja possuem as politicas de leitura corretas.
