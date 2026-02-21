@@ -156,7 +156,7 @@ export default function RiskEvolutionCard() {
             <img
               src={emotionalAvatarUrl}
               alt={emotionLevel.label}
-              className="absolute inset-0 w-full h-full object-cover object-[30%_20%] sm:object-[center_20%]"
+              className="absolute inset-0 w-full h-full object-cover object-[15%_20%] sm:object-[center_20%]"
             />
             {/* Gradient fade into card */}
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-card/40 to-card" />
