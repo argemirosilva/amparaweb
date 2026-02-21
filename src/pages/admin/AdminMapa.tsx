@@ -485,10 +485,10 @@ export default function AdminMapa() {
 
     // Choose fill color expression based on ranking mode
     const fillColorExpr = rankingMode === "risco"
-      ? ["step", ["get", "risk_alto_critico"], "#e5e7eb", 1, "hsl(0 30% 82%)", 5, "hsl(0 30% 68%)", 15, "hsl(0 30% 55%)", 30, "hsl(0 30% 42%)"]
+      ? ["step", ["get", "risk_alto_critico"], "#e5e7eb", 1, "#fecaca", 5, "#f87171", 15, "#dc2626", 30, "#991b1b"]
       : rankingMode === "panico"
-      ? ["step", ["get", "panico_total"], "#e5e7eb", 1, "hsl(25 35% 80%)", 5, "hsl(25 35% 65%)", 15, "hsl(25 35% 52%)", 30, "hsl(25 35% 40%)"]
-      : ["step", ["get", "gravacoes"], "#e5e7eb", 1, "hsl(215 25% 80%)", 10, "hsl(215 25% 65%)", 30, "hsl(215 25% 50%)", 80, "hsl(215 25% 38%)"];
+      ? ["step", ["get", "panico_total"], "#e5e7eb", 1, "#fed7aa", 5, "#fb923c", 15, "#ea580c", 30, "#9a3412"]
+      : ["step", ["get", "gravacoes"], "#e5e7eb", 1, "#93c5fd", 10, "#3b82f6", 30, "#1d4ed8", 80, "#1e3a5f"];
 
     const labelIcon = rankingMode === "risco" ? " ⚠" : rankingMode === "panico" ? " 🚨" : " 🎙";
     const labelDataKey = rankingMode === "risco" ? "risk_alto_critico" : rankingMode === "panico" ? "panico_total" : "gravacoes";
