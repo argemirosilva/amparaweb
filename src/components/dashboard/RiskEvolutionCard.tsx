@@ -192,9 +192,6 @@ export default function RiskEvolutionCard() {
             <>
               {/* Score + Badge + Trend */}
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-2xl font-bold" style={{ color: level.color }}>
-                  {assessment.risk_score}
-                </span>
                 <Badge className={level.className}>
                   {assessment.risk_level}
                 </Badge>
