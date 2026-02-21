@@ -173,8 +173,7 @@ export default function RiskEvolutionCard() {
         <div className="flex-1 p-4 space-y-3">
           {/* Header */}
           <div className="flex items-center justify-between">
-            <p className="text-base font-semibold flex items-center gap-2">
-              <GradientIcon icon={LevelIcon} size="sm" />
+            <p className="text-base font-semibold">
               Evolução do Risco
             </p>
             <Tabs value={String(window)} onValueChange={handleWindowChange}>
