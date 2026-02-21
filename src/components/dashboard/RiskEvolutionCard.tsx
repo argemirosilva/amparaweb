@@ -152,11 +152,11 @@ export default function RiskEvolutionCard() {
       <div className="flex min-h-[280px]">
         {/* Left: Emotional avatar image — full height, showing right side of face */}
         {hasEmotionalImage && !loading && (
-          <div className="relative w-20 sm:w-28 shrink-0 overflow-hidden rounded-l-2xl">
+          <div className="relative w-28 shrink-0 overflow-hidden rounded-l-2xl">
             <img
               src={emotionalAvatarUrl}
               alt={emotionLevel.label}
-              className="absolute inset-0 w-full h-full object-cover object-[15%_20%] sm:object-[center_20%]"
+              className="absolute inset-0 w-full h-full object-cover object-[center_20%]"
             />
             {/* Gradient fade into card */}
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-card/40 to-card" />
