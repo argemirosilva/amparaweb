@@ -84,10 +84,9 @@ export default function ResourceViewerModal({ open, onClose, grant, sessionToken
     try {
       const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
       const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/web-api`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", apikey: SUPABASE_KEY },
-        body: JSON.stringify({ action: "proxyAudio", session_token: sessionToken, path: storagePath }),
+      const url = `${SUPABASE_URL}/functions/v1/web-api?action=proxyAudio&session_token=${encodeURIComponent(sessionToken)}&storage_path=${encodeURIComponent(storagePath)}`;
+      const res = await fetch(url, {
+        headers: { apikey: SUPABASE_KEY },
       });
       if (res.ok) {
         const blob = await res.blob();
