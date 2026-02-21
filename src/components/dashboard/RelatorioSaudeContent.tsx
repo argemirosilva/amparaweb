@@ -95,12 +95,12 @@ export default function RelatorioSaudeContent({ relatorio, loading, error }: Pro
           {(() => {
             const score = computeEmotionalScore(relatorio.sentimentos, relatorio.periodo.total_alertas);
             const level = getEmotionalLevel(score);
-            return;
-
-
-
-
-
+            return (
+              <div className="flex items-center justify-center gap-2 py-1">
+                <EmotionalFaceIcon score={score} size={28} />
+                <span className="text-sm font-medium text-foreground">{level.label}</span>
+              </div>
+            );
           })()}
           {relatorio.explicacao_emocional &&
           <p className="mt-1 text-[11px] text-foreground/60 italic leading-relaxed text-center">

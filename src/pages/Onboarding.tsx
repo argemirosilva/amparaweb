@@ -18,6 +18,17 @@ const TIPOS_VINCULO = [
   "Noivo", "Ex-noivo", "Companheiro", "Ex-companheiro", "Outro",
 ];
 
+const CORES_RACA = [
+  "Branca", "Preta", "Parda", "Amarela", "Indígena", "Prefiro não informar",
+];
+
+const ESCOLARIDADES = [
+  "Sem escolaridade", "Ensino Fundamental incompleto", "Ensino Fundamental completo",
+  "Ensino Médio incompleto", "Ensino Médio completo",
+  "Ensino Superior incompleto", "Ensino Superior completo",
+  "Pós-graduação", "Prefiro não informar",
+];
+
 interface Guardiao {
   nome: string;
   vinculo: string;
@@ -33,7 +44,6 @@ interface AgressorForm {
   nome_mae_parcial: string;
   forca_seguranca: boolean;
   tem_arma_em_casa: boolean;
-  // Privacy-first fields
   apelido: string;
   cidade_uf: string;
   bairro: string;
@@ -41,6 +51,8 @@ interface AgressorForm {
   placa_parcial: string;
   veiculo_modelo: string;
   veiculo_cor: string;
+  cor_raca: string;
+  escolaridade: string;
 }
 
 interface SearchResult {
@@ -64,6 +76,8 @@ export default function OnboardingPage() {
     data_nascimento: "",
     tem_filhos: false,
     mora_com_agressor: false,
+    cor_raca: "",
+    escolaridade: "",
   });
   const [endereco, setEndereco] = useState<EnderecoFields>(emptyEndereco);
 
@@ -78,6 +92,7 @@ export default function OnboardingPage() {
     forca_seguranca: false, tem_arma_em_casa: false,
     apelido: "", cidade_uf: "", bairro: "", profissao: "", placa_parcial: "",
     veiculo_modelo: "", veiculo_cor: "",
+    cor_raca: "", escolaridade: "",
   });
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
@@ -211,6 +226,22 @@ export default function OnboardingPage() {
             <input type="date" className="ampara-input" value={vitima.data_nascimento}
               onChange={e => setVitima({ ...vitima, data_nascimento: e.target.value })} />
           </div>
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1.5">Cor / Raça</label>
+            <select className="ampara-input" value={vitima.cor_raca}
+              onChange={e => setVitima({ ...vitima, cor_raca: e.target.value })}>
+              <option value="">Selecione...</option>
+              {CORES_RACA.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1.5">Escolaridade</label>
+            <select className="ampara-input" value={vitima.escolaridade}
+              onChange={e => setVitima({ ...vitima, escolaridade: e.target.value })}>
+              <option value="">Selecione...</option>
+              {ESCOLARIDADES.map(e => <option key={e} value={e}>{e}</option>)}
+            </select>
+          </div>
           <EnderecoForm value={endereco} onChange={setEndereco} />
           <label className="flex items-center gap-3 cursor-pointer">
             <input type="checkbox" checked={vitima.tem_filhos}
@@ -339,6 +370,24 @@ export default function OnboardingPage() {
                 <label className="block text-sm font-medium text-foreground mb-1.5">Nome da mãe</label>
                 <input type="text" className="ampara-input" placeholder="Pode ser parcial" value={agressor.nome_mae_parcial} maxLength={100}
                   onChange={e => setAgressor({ ...agressor, nome_mae_parcial: e.target.value })} />
+              </div>
+
+              {/* Cor e escolaridade */}
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1.5">Cor / Raça</label>
+                <select className="ampara-input" value={agressor.cor_raca}
+                  onChange={e => setAgressor({ ...agressor, cor_raca: e.target.value })}>
+                  <option value="">Selecione...</option>
+                  {CORES_RACA.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1.5">Escolaridade</label>
+                <select className="ampara-input" value={agressor.escolaridade}
+                  onChange={e => setAgressor({ ...agressor, escolaridade: e.target.value })}>
+                  <option value="">Selecione...</option>
+                  {ESCOLARIDADES.map(e => <option key={e} value={e}>{e}</option>)}
+                </select>
               </div>
 
               {/* Privacy-first fields */}

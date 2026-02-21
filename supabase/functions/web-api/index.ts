@@ -322,7 +322,7 @@ serve(async (req) => {
       }
 
       case "updateMe": {
-        const allowed = ["nome_completo", "telefone", "data_nascimento", "endereco_fixo", "endereco_cep", "endereco_logradouro", "endereco_numero", "endereco_complemento", "endereco_bairro", "endereco_cidade", "endereco_uf", "endereco_referencia", "tem_filhos", "mora_com_agressor", "onboarding_completo", "avatar_url", "retencao_dias_sem_risco", "compartilhar_gps_panico", "compartilhar_gps_risco_alto", "gps_duracao_minutos"];
+        const allowed = ["nome_completo", "telefone", "data_nascimento", "endereco_fixo", "endereco_cep", "endereco_logradouro", "endereco_numero", "endereco_complemento", "endereco_bairro", "endereco_cidade", "endereco_uf", "endereco_referencia", "tem_filhos", "mora_com_agressor", "onboarding_completo", "avatar_url", "retencao_dias_sem_risco", "compartilhar_gps_panico", "compartilhar_gps_risco_alto", "gps_duracao_minutos", "cor_raca", "escolaridade"];
         const updates: Record<string, any> = {};
         for (const key of allowed) {
           if (params[key] !== undefined) updates[key] = params[key];
@@ -651,6 +651,8 @@ serve(async (req) => {
         if (appearance_tags?.length) insertData.appearance_tags = appearance_tags;
         if (phone_clues?.length) insertData.phone_clues = phone_clues;
         if (email_clues?.length) insertData.email_clues = email_clues;
+        if (params.cor_raca) insertData.cor_raca = params.cor_raca.trim();
+        if (params.escolaridade) insertData.escolaridade = params.escolaridade.trim();
 
         const { data: agressor, error: aErr } = await supabase
           .from("agressores")
