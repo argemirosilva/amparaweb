@@ -160,7 +160,7 @@ export default function RiskEvolutionCard() {
               style={{ objectPosition: "70% center" }}
             />
             {/* Gradient fade into card */}
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-card" />
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-card/40 to-card" />
           </div>
         )}
 
