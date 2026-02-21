@@ -162,7 +162,7 @@ export default function RiskEvolutionCard() {
       <div className="p-4 space-y-3">
           {/* Header */}
           <div className="flex items-center justify-between">
-            <p className="text-base font-semibold">
+            <p className="text-sm font-semibold">
               Evolução do Risco
             </p>
             <Tabs value={String(window)} onValueChange={handleWindowChange}>
