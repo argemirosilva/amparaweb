@@ -241,16 +241,46 @@ serve(async (req) => {
       return json({ error: "Failed to download avatar" }, 500);
     }
     const avatarBytes = new Uint8Array(await avatarRes.arrayBuffer());
-    const baseImageB64 = btoa(String.fromCharCode(...avatarBytes));
+    // Chunk-based base64 to avoid stack overflow on large images
+    let binary = "";
+    const chunkSize = 8192;
+    for (let i = 0; i < avatarBytes.length; i += chunkSize) {
+      const chunk = avatarBytes.subarray(i, i + chunkSize);
+      binary += String.fromCharCode(...chunk);
+    }
+    const baseImageB64 = btoa(binary);
 
     // 3. Get Google access token
-    const sa = JSON.parse(saJson);
+    // Debug: log first chars of secret to diagnose encoding
+    console.log("SA_JSON first 20 chars:", saJson.substring(0, 20));
+    console.log("SA_JSON last 5 chars:", saJson.substring(saJson.length - 5));
+    console.log("SA_JSON char codes [0..3]:", [...saJson.substring(0, 4)].map(c => c.charCodeAt(0)));
+    
+    // Strip wrapping quotes if secret was double-encoded
+    let cleanSaJson = saJson.trim();
+    // Try multiple levels of unwrapping
+    while (cleanSaJson.startsWith('"') || cleanSaJson.startsWith("'")) {
+      try {
+        const unwrapped = JSON.parse(cleanSaJson);
+        if (typeof unwrapped === "string") {
+          cleanSaJson = unwrapped;
+        } else {
+          // It parsed into an object, use it directly
+          break;
+        }
+      } catch {
+        // Remove surrounding quotes manually
+        cleanSaJson = cleanSaJson.slice(1, -1).replace(/\\"/g, '"').replace(/\\\\/g, '\\');
+        break;
+      }
+    }
+    const sa = typeof cleanSaJson === "string" ? JSON.parse(cleanSaJson) : cleanSaJson;
     const gcpProjectId = sa.project_id;
     const location = "us-central1";
 
     console.log("Getting Google access token for project:", gcpProjectId);
     const accessToken = await getGoogleAccessToken(
-      saJson,
+      cleanSaJson,
       "https://www.googleapis.com/auth/cloud-platform"
     );
 
@@ -269,10 +299,12 @@ serve(async (req) => {
           emotion.prompt
         );
 
-        // Decode base64 to bytes
-        const imgBytes = Uint8Array.from(atob(generatedB64), (c) =>
-          c.charCodeAt(0)
-        );
+        // Chunk-based decode to avoid stack overflow
+        const rawBinary = atob(generatedB64);
+        const imgBytes = new Uint8Array(rawBinary.length);
+        for (let i = 0; i < rawBinary.length; i++) {
+          imgBytes[i] = rawBinary.charCodeAt(i);
+        }
 
         // Upload to storage
         const storagePath = `${userId}/${emotion.key}.webp`;
