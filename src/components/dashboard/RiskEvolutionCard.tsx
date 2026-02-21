@@ -211,7 +211,7 @@ export default function RiskEvolutionCard() {
                           <stop offset="100%" stopColor={CHART_STROKE} />
                         </linearGradient>
                       </defs>
-                      <YAxis domain={[100, 150]} hide />
+                      <YAxis domain={[100, 200]} hide />
                       <Tooltip
                         content={({ active, payload }) => {
                           if (!active || !payload?.[0]) return null;
