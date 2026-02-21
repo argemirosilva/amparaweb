@@ -138,6 +138,13 @@ export default function AdminMapa() {
   const [ufTrends, setUfTrends] = useState<Record<string, "up" | "down" | "stable">>({});
   const [recTrends, setRecTrends] = useState<Record<string, RecTrend>>({});
 
+  // Ranking mode selector
+  const [rankingMode, setRankingMode] = useState<"gravacoes" | "risco" | "panico">("gravacoes");
+  const [ufRiskStats, setUfRiskStats] = useState<Record<string, { total: number; altoCritico: number }>>({});
+  const [ufPanicoStats, setUfPanicoStats] = useState<Record<string, number>>({});
+  const [munRiskStats, setMunRiskStats] = useState<Record<string, Record<string, { total: number; altoCritico: number }>>>({});
+  const [munPanicoStats, setMunPanicoStats] = useState<Record<string, Record<string, number>>>({});
+
   // Dashboard analytics state
   const [analyticsPeriod, setAnalyticsPeriod] = useState("30d");
   const [kpis, setKpis] = useState({ monitoradas: 0, eventos: 0, emergencias: 0, dispositivosOnline: 0, totalGravacoes: 0, totalHorasGravacao: 0 });
@@ -308,6 +315,50 @@ export default function AdminMapa() {
       rTrends[uf] = { trend: pct >= 20 ? "up" : pct <= -20 ? "down" : "stable", pct: Math.abs(pct) };
     });
     setRecTrends(rTrends);
+
+    // ── Risk stats per UF/município ──
+    const { data: analisesData } = await supabase
+      .from("gravacoes_analises")
+      .select("user_id, nivel_risco")
+      .gte("created_at", since);
+
+    const riskByUf: Record<string, { total: number; altoCritico: number }> = {};
+    const riskByMun: Record<string, Record<string, { total: number; altoCritico: number }>> = {};
+    (analisesData || []).forEach((a) => {
+      const u = userMap[a.user_id];
+      if (!u?.uf) return;
+      if (!riskByUf[u.uf]) riskByUf[u.uf] = { total: 0, altoCritico: 0 };
+      riskByUf[u.uf].total++;
+      if (a.nivel_risco === "alto" || a.nivel_risco === "critico") riskByUf[u.uf].altoCritico++;
+      if (u.cidade) {
+        if (!riskByMun[u.uf]) riskByMun[u.uf] = {};
+        if (!riskByMun[u.uf][u.cidade]) riskByMun[u.uf][u.cidade] = { total: 0, altoCritico: 0 };
+        riskByMun[u.uf][u.cidade].total++;
+        if (a.nivel_risco === "alto" || a.nivel_risco === "critico") riskByMun[u.uf][u.cidade].altoCritico++;
+      }
+    });
+    setUfRiskStats(riskByUf);
+    setMunRiskStats(riskByMun);
+
+    // ── Panic stats per UF/município ──
+    const { data: allPanicData } = await supabase
+      .from("alertas_panico")
+      .select("user_id")
+      .gte("criado_em", since);
+
+    const panicoByUf: Record<string, number> = {};
+    const panicoByMun: Record<string, Record<string, number>> = {};
+    (allPanicData || []).forEach((p) => {
+      const u = userMap[p.user_id];
+      if (!u?.uf) return;
+      panicoByUf[u.uf] = (panicoByUf[u.uf] || 0) + 1;
+      if (u.cidade) {
+        if (!panicoByMun[u.uf]) panicoByMun[u.uf] = {};
+        panicoByMun[u.uf][u.cidade] = (panicoByMun[u.uf][u.cidade] || 0) + 1;
+      }
+    });
+    setUfPanicoStats(panicoByUf);
+    setMunPanicoStats(panicoByMun);
 
     // Build device markers for ALL active users (not just those with device_status)
     const deviceMarkers: DeviceMarker[] = (users || [])
@@ -571,7 +622,33 @@ export default function AdminMapa() {
     }
   }, [selectedUf, mapLoaded, geojson]);
 
-  const topUfs = Object.entries(stats).filter(([, s]) => s.gravacoes > 0 || s.usuarios > 0).sort(([, a], [, b]) => b.gravacoes - a.gravacoes).slice(0, 10);
+  const topUfs = Object.entries(stats)
+    .filter(([, s]) => s.gravacoes > 0 || s.usuarios > 0)
+    .sort(([ufA, a], [ufB, b]) => {
+      if (rankingMode === "risco") return (ufRiskStats[ufB]?.altoCritico || 0) - (ufRiskStats[ufA]?.altoCritico || 0);
+      if (rankingMode === "panico") return (ufPanicoStats[ufB] || 0) - (ufPanicoStats[ufA] || 0);
+      return b.gravacoes - a.gravacoes;
+    })
+    .slice(0, 10);
+
+  const rankingModeLabel = { gravacoes: "Gravações", risco: "Índice de Risco", panico: "Acionamentos" }[rankingMode];
+
+  const RankingModeSelector = () => (
+    <div className="flex gap-1 mb-3">
+      {([["gravacoes", "Gravações"], ["risco", "Risco"], ["panico", "Pânico"]] as const).map(([key, label]) => (
+        <button key={key} onClick={() => setRankingMode(key)}
+          className="flex-1 px-2 py-1.5 text-[10px] rounded-md border transition-colors"
+          style={{
+            borderColor: rankingMode === key ? "hsl(220 13% 35%)" : "hsl(220 13% 91%)",
+            background: rankingMode === key ? "hsl(220 13% 35%)" : "transparent",
+            color: rankingMode === key ? "#fff" : "hsl(220 9% 46%)",
+            fontWeight: rankingMode === key ? 600 : 400,
+          }}>
+          {label}
+        </button>
+      ))}
+    </div>
+  );
 
   return (
     <div style={fontStyle}>
@@ -699,28 +776,48 @@ export default function AdminMapa() {
               {/* Ranking por município */}
               {selectedUf && municipioStats[selectedUf] && Object.keys(municipioStats[selectedUf]).length > 0 && (
                 <>
-                  <h4 className="text-[10px] font-semibold uppercase tracking-wider mt-4 mb-2" style={subtitleStyle}>Ranking por Município</h4>
+                  <h4 className="text-[10px] font-semibold uppercase tracking-wider mt-4 mb-2" style={subtitleStyle}>Ranking por Município — {rankingModeLabel}</h4>
+                  <RankingModeSelector />
                   <div className="space-y-1">
                     {Object.entries(municipioStats[selectedUf])
-                      .sort((a, b) => b[1].gravacoes - a[1].gravacoes)
+                      .sort(([cidA], [cidB]) => {
+                        if (rankingMode === "risco") return ((munRiskStats[selectedUf]?.[cidB]?.altoCritico || 0) - (munRiskStats[selectedUf]?.[cidA]?.altoCritico || 0));
+                        if (rankingMode === "panico") return ((munPanicoStats[selectedUf]?.[cidB] || 0) - (munPanicoStats[selectedUf]?.[cidA] || 0));
+                        return municipioStats[selectedUf][cidB].gravacoes - municipioStats[selectedUf][cidA].gravacoes;
+                      })
                       .map(([cidade, s]) => (
                         <div key={cidade} className="flex items-center justify-between px-2 py-2 rounded-lg text-xs" style={{ background: "hsl(210 17% 96%)" }}>
                           <span className="font-medium truncate mr-2" style={titleStyle}>{cidade}</span>
                           <div className="flex items-center gap-2 flex-shrink-0">
-                            <span style={{ color: "hsl(224 76% 33%)" }}>{s.gravacoes} 🎙</span>
-                            <span style={{ color: "hsl(262 60% 50%)" }}>{s.horasGravacao}h</span>
-                            {s.alertas > 0 && <span className="font-bold" style={{ color: "hsl(0 72% 51%)" }}>{s.alertas} ⚠</span>}
+                            {rankingMode === "gravacoes" && (
+                              <>
+                                <span style={{ color: "hsl(224 76% 33%)" }}>{s.gravacoes} 🎙</span>
+                                <span style={{ color: "hsl(262 60% 50%)" }}>{s.horasGravacao}h</span>
+                              </>
+                            )}
+                            {rankingMode === "risco" && (
+                              <span className="font-semibold" style={{ color: "hsl(0 45% 48%)" }}>
+                                {munRiskStats[selectedUf]?.[cidade]?.altoCritico || 0} alto/crítico
+                              </span>
+                            )}
+                            {rankingMode === "panico" && (
+                              <span className="font-semibold" style={{ color: "hsl(25 50% 45%)" }}>
+                                {munPanicoStats[selectedUf]?.[cidade] || 0} acionamentos
+                              </span>
+                            )}
+                            {s.alertas > 0 && rankingMode === "gravacoes" && <span className="font-bold" style={{ color: "hsl(0 72% 51%)" }}>{s.alertas} ⚠</span>}
                           </div>
                         </div>
                       ))}
                   </div>
                 </>
               )}
-              <button onClick={() => setSelectedUf(null)} className="w-full text-xs font-medium px-3 py-2 rounded-lg border transition-colors hover:bg-gray-50 mt-4" style={{ borderColor: "hsl(224 76% 33%)", color: "hsl(224 76% 33%)" }}>← Voltar para Brasil</button>
+              <button onClick={() => setSelectedUf(null)} className="w-full text-xs font-medium px-3 py-2 rounded-lg border transition-colors hover:bg-gray-50 mt-4" style={{ borderColor: "hsl(220 13% 35%)", color: "hsl(220 13% 35%)" }}>← Voltar para Brasil</button>
             </>
           ) : (
             <>
-              <h3 className="text-xs font-semibold uppercase tracking-wider mb-3" style={subtitleStyle}>Ranking por UF — Gravações</h3>
+              <h3 className="text-xs font-semibold uppercase tracking-wider mb-3" style={subtitleStyle}>Ranking por UF — {rankingModeLabel}</h3>
+              <RankingModeSelector />
               {topUfs.length === 0 ? (
                 <p className="text-xs py-3 text-center rounded-lg" style={{ ...subtitleStyle, background: "hsl(210 17% 96%)" }}>Nenhum dado disponível</p>
               ) : (
@@ -731,10 +828,24 @@ export default function AdminMapa() {
                       <button key={uf} onClick={() => setSelectedUf(uf)} className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs hover:bg-gray-50 transition-colors text-left" style={{ background: "hsl(210 17% 96%)" }}>
                         <span className="font-medium" style={titleStyle}>{UF_TO_STATE_NAME[uf] || uf}</span>
                         <div className="flex items-center gap-2 flex-shrink-0">
-                          <span className="font-bold" style={{ color: "hsl(224 76% 33%)" }}>{s.gravacoes}</span>
-                          {rt && rt.trend !== "stable" && (
-                            <span className="font-bold" style={{ color: rt.trend === "up" ? "#16a34a" : "#dc2626" }}>
-                              {rt.trend === "up" ? "▲" : "▼"}{rt.pct}%
+                          {rankingMode === "gravacoes" && (
+                            <>
+                              <span className="font-bold" style={{ color: "hsl(224 76% 33%)" }}>{s.gravacoes}</span>
+                              {rt && rt.trend !== "stable" && (
+                                <span className="font-bold" style={{ color: rt.trend === "up" ? "hsl(160 25% 42%)" : "hsl(0 35% 50%)" }}>
+                                  {rt.trend === "up" ? "▲" : "▼"}{rt.pct}%
+                                </span>
+                              )}
+                            </>
+                          )}
+                          {rankingMode === "risco" && (
+                            <span className="font-semibold" style={{ color: "hsl(0 45% 48%)" }}>
+                              {ufRiskStats[uf]?.altoCritico || 0} alto/crítico
+                            </span>
+                          )}
+                          {rankingMode === "panico" && (
+                            <span className="font-semibold" style={{ color: "hsl(25 50% 45%)" }}>
+                              {ufPanicoStats[uf] || 0} acionamentos
                             </span>
                           )}
                         </div>
