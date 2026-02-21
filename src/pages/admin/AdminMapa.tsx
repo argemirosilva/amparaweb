@@ -114,8 +114,9 @@ interface DeviceMarker {
   userName: string; bateria: number | null; lastPing: string | null; isMonitoring: boolean;
 }
 
-interface UfStats { usuarios: number; online: number; alertas: number; monitorando: number; }
+interface UfStats { usuarios: number; online: number; alertas: number; monitorando: number; gravacoes: number; horasGravacao: number; }
 type StatsMap = Record<string, UfStats>;
+interface RecTrend { trend: "up" | "down" | "stable"; pct: number }
 
 export default function AdminMapa() {
   const mapContainer = useRef<HTMLDivElement>(null);
@@ -135,6 +136,7 @@ export default function AdminMapa() {
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
   const [period, setPeriod] = useState<"24h" | "7d" | "30d">("7d");
   const [ufTrends, setUfTrends] = useState<Record<string, "up" | "down" | "stable">>({});
+  const [recTrends, setRecTrends] = useState<Record<string, RecTrend>>({});
 
   // Dashboard analytics state
   const [analyticsPeriod, setAnalyticsPeriod] = useState("30d");
@@ -150,6 +152,8 @@ export default function AdminMapa() {
   const totalOnline = Object.values(stats).reduce((a, s) => a + s.online, 0);
   const totalAlertas = alerts.filter((a) => a.status === "ativo").length;
   const totalMonitorando = Object.values(stats).reduce((a, s) => a + s.monitorando, 0);
+  const totalGravacoes = Object.values(stats).reduce((a, s) => a + s.gravacoes, 0);
+  const totalHorasGrav = Math.round(Object.values(stats).reduce((a, s) => a + s.horasGravacao, 0) * 10) / 10;
 
   const regions = [
     { nome: "Porto Velho", eventos: 45, emergencias: 8, tendencia: "subindo" as const },
@@ -179,12 +183,13 @@ export default function AdminMapa() {
     const since = new Date(Date.now() - periodHours * 60 * 60 * 1000).toISOString();
 
     const [
-      { data: users }, { data: deviceData }, { data: alertData }, { data: locations },
+      { data: users }, { data: deviceData }, { data: alertData }, { data: locations }, { data: gravacoesData },
     ] = await Promise.all([
       supabase.from("usuarios").select("id, nome_completo, endereco_uf, endereco_cidade, endereco_lat, endereco_lon, status"),
       supabase.from("device_status").select("*").order("updated_at", { ascending: false }),
       supabase.from("alertas_panico").select("*").eq("status", "ativo").order("criado_em", { ascending: false }).limit(50),
       supabase.from("localizacoes").select("user_id, latitude, longitude, created_at").gte("created_at", since).order("created_at", { ascending: false }).limit(200),
+      supabase.from("gravacoes").select("user_id, created_at, duracao_segundos").gte("created_at", since),
     ]);
 
     const userMap: Record<string, { nome: string; uf: string; cidade: string; lat: number | null; lng: number | null }> = {};
@@ -192,11 +197,11 @@ export default function AdminMapa() {
 
     const ufStats: StatsMap = {};
     const munStats: Record<string, StatsMap> = {};
-    const ensureUf = (uf: string) => { if (!ufStats[uf]) ufStats[uf] = { usuarios: 0, online: 0, alertas: 0, monitorando: 0 }; };
+    const ensureUf = (uf: string) => { if (!ufStats[uf]) ufStats[uf] = { usuarios: 0, online: 0, alertas: 0, monitorando: 0, gravacoes: 0, horasGravacao: 0 }; };
     const ensureMun = (uf: string, cidade: string) => {
       if (!cidade) return;
       if (!munStats[uf]) munStats[uf] = {};
-      if (!munStats[uf][cidade]) munStats[uf][cidade] = { usuarios: 0, online: 0, alertas: 0, monitorando: 0 };
+      if (!munStats[uf][cidade]) munStats[uf][cidade] = { usuarios: 0, online: 0, alertas: 0, monitorando: 0, gravacoes: 0, horasGravacao: 0 };
     };
 
     (users || []).forEach((u) => {
@@ -228,6 +233,26 @@ export default function AdminMapa() {
       const u = userMap[a.user_id];
       if (u?.uf) { ensureUf(u.uf); ufStats[u.uf].alertas++; if (u.cidade) { ensureMun(u.uf, u.cidade); munStats[u.uf][u.cidade].alertas++; } }
     });
+    // Recordings per UF
+    const periodHoursVal = { "24h": 24, "7d": 168, "30d": 720 }[period];
+    const midpoint = new Date(Date.now() - (periodHoursVal / 2) * 60 * 60 * 1000).toISOString();
+    const recentRecByUf: Record<string, number> = {};
+    const olderRecByUf: Record<string, number> = {};
+    (gravacoesData || []).forEach((g: any) => {
+      const u = userMap[g.user_id];
+      if (u?.uf) {
+        ensureUf(u.uf);
+        ufStats[u.uf].gravacoes++;
+        ufStats[u.uf].horasGravacao += (g.duracao_segundos || 0) / 3600;
+        if (u.cidade) { ensureMun(u.uf, u.cidade); munStats[u.uf][u.cidade].gravacoes++; munStats[u.uf][u.cidade].horasGravacao += (g.duracao_segundos || 0) / 3600; }
+        if (g.created_at >= midpoint) recentRecByUf[u.uf] = (recentRecByUf[u.uf] || 0) + 1;
+        else olderRecByUf[u.uf] = (olderRecByUf[u.uf] || 0) + 1;
+      }
+    });
+    // Round hours
+    Object.values(ufStats).forEach(s => { s.horasGravacao = Math.round(s.horasGravacao * 10) / 10; });
+    Object.values(munStats).forEach(m => Object.values(m).forEach(s => { s.horasGravacao = Math.round(s.horasGravacao * 10) / 10; }));
+
     setStats(ufStats);
     setMunicipioStats(munStats);
 
@@ -248,10 +273,8 @@ export default function AdminMapa() {
     }).filter(Boolean) as AlertMarker[];
     setAlerts(alertMarkers);
 
-    // Compute UF trends: compare first half vs second half of period
+    // Compute UF event trends
     {
-      const periodHoursVal = { "24h": 24, "7d": 168, "30d": 720 }[period];
-      const midpoint = new Date(Date.now() - (periodHoursVal / 2) * 60 * 60 * 1000).toISOString();
       const [{ data: recentEvents }, { data: olderEvents }] = await Promise.all([
         supabase.from("gravacoes_analises").select("user_id").gte("created_at", midpoint),
         supabase.from("gravacoes_analises").select("user_id").gte("created_at", since).lt("created_at", midpoint),
@@ -272,6 +295,19 @@ export default function AdminMapa() {
       });
       setUfTrends(trends);
     }
+
+    // Recording trends
+    const rTrends: Record<string, RecTrend> = {};
+    const allRecUfs = new Set([...Object.keys(recentRecByUf), ...Object.keys(olderRecByUf)]);
+    allRecUfs.forEach((uf) => {
+      const r = recentRecByUf[uf] || 0;
+      const o = olderRecByUf[uf] || 0;
+      if (r + o < 2) { rTrends[uf] = { trend: "stable", pct: 0 }; return; }
+      if (o === 0) { rTrends[uf] = { trend: r > 0 ? "up" : "stable", pct: 100 }; return; }
+      const pct = Math.round(((r - o) / o) * 100);
+      rTrends[uf] = { trend: pct >= 20 ? "up" : pct <= -20 ? "down" : "stable", pct: Math.abs(pct) };
+    });
+    setRecTrends(rTrends);
 
     // Build device markers for ALL active users (not just those with device_status)
     const deviceMarkers: DeviceMarker[] = (users || [])
@@ -388,70 +424,107 @@ export default function AdminMapa() {
       ...geojson,
       features: geojson.features.map((f: any) => {
         const uf = f.properties.uf_code;
-        const s = stats[uf] || { usuarios: 0, online: 0, alertas: 0, monitorando: 0 };
-        return { ...f, properties: { ...f.properties, usuarios: s.usuarios, online: s.online, alertas: s.alertas, monitorando: s.monitorando } };
+        const s = stats[uf] || { usuarios: 0, online: 0, alertas: 0, monitorando: 0, gravacoes: 0, horasGravacao: 0 };
+        const rt = recTrends[uf];
+        return { ...f, properties: { ...f.properties, ...s, rec_trend: rt?.trend || "stable", rec_pct: rt?.pct || 0 } };
       }),
     };
     if (map.getSource("states")) {
       (map.getSource("states") as any).setData(enriched);
+      if (map.getSource("state-labels")) {
+        const labelFeatures = enriched.features.map((f: any) => {
+          const coords = f.geometry.type === "Polygon" ? f.geometry.coordinates[0] : f.geometry.coordinates.flat(2);
+          const lngs = coords.map((c: number[]) => c[0]); const lats = coords.map((c: number[]) => c[1]);
+          return { type: "Feature", geometry: { type: "Point", coordinates: [(Math.min(...lngs) + Math.max(...lngs)) / 2, (Math.min(...lats) + Math.max(...lats)) / 2] }, properties: { uf_code: f.properties.uf_code, gravacoes: f.properties.gravacoes || 0, rec_trend: f.properties.rec_trend || "stable", rec_pct: f.properties.rec_pct || 0, trend: ufTrends[f.properties.uf_code] || "stable" } };
+        });
+        (map.getSource("state-labels") as any).setData({ type: "FeatureCollection", features: labelFeatures });
+      }
     } else {
       map.addSource("states", { type: "geojson", data: enriched });
-      map.addLayer({ id: "states-fill", type: "fill", source: "states", paint: { "fill-color": ["step", ["get", "usuarios"], "#e5e7eb", 1, "#bfdbfe", 5, "#93c5fd", 10, "#60a5fa", 20, "#3b82f6"], "fill-opacity": 0.6 } });
+      map.addLayer({ id: "states-fill", type: "fill", source: "states", paint: { "fill-color": ["step", ["get", "gravacoes"], "#e5e7eb", 1, "#93c5fd", 10, "#3b82f6", 30, "#1d4ed8", 80, "#1e3a5f"], "fill-opacity": 0.7 } });
       map.addLayer({ id: "states-outline", type: "line", source: "states", paint: { "line-color": "hsl(220, 13%, 70%)", "line-width": 1 } });
       map.addLayer({ id: "states-hover", type: "fill", source: "states", paint: { "fill-color": "hsl(224, 76%, 33%)", "fill-opacity": 0.15 }, filter: ["==", "uf_code", ""] });
 
       const labelFeatures = enriched.features.map((f: any) => {
         const coords = f.geometry.type === "Polygon" ? f.geometry.coordinates[0] : f.geometry.coordinates.flat(2);
         const lngs = coords.map((c: number[]) => c[0]); const lats = coords.map((c: number[]) => c[1]);
-        return { type: "Feature", geometry: { type: "Point", coordinates: [(Math.min(...lngs) + Math.max(...lngs)) / 2, (Math.min(...lats) + Math.max(...lats)) / 2] }, properties: { uf_code: f.properties.uf_code, usuarios: f.properties.usuarios || 0, trend: ufTrends[f.properties.uf_code] || "stable" } };
+        return { type: "Feature", geometry: { type: "Point", coordinates: [(Math.min(...lngs) + Math.max(...lngs)) / 2, (Math.min(...lats) + Math.max(...lats)) / 2] }, properties: { uf_code: f.properties.uf_code, gravacoes: f.properties.gravacoes || 0, rec_trend: f.properties.rec_trend || "stable", rec_pct: f.properties.rec_pct || 0, trend: ufTrends[f.properties.uf_code] || "stable" } };
       });
       map.addSource("state-labels", { type: "geojson", data: { type: "FeatureCollection", features: labelFeatures } });
-      map.addLayer({ id: "state-labels-layer", type: "symbol", source: "state-labels", layout: { "text-field": ["case", [">", ["get", "usuarios"], 0], ["concat", ["get", "uf_code"], " (", ["to-string", ["get", "usuarios"]], ")"], ["get", "uf_code"]], "text-size": 11, "text-font": ["DIN Pro Bold", "Arial Unicode MS Bold"], "text-allow-overlap": false, "text-anchor": "center" }, paint: { "text-color": "hsl(220, 13%, 25%)", "text-halo-color": "hsl(0, 0%, 100%)", "text-halo-width": 1.5 } });
-
-      // Trend arrows layer
       map.addLayer({
-        id: "state-trend-layer", type: "symbol", source: "state-labels",
-        filter: ["!=", ["get", "trend"], "stable"],
+        id: "state-labels-layer", type: "symbol", source: "state-labels",
         layout: {
-          "text-field": ["case", ["==", ["get", "trend"], "up"], "▲", ["==", ["get", "trend"], "down"], "▼", ""],
-          "text-size": 12, "text-font": ["DIN Pro Bold", "Arial Unicode MS Bold"],
-          "text-offset": [0, 1.2], "text-allow-overlap": true, "text-ignore-placement": true,
+          "text-field": ["case", [">", ["get", "gravacoes"], 0], ["concat", ["get", "uf_code"], "\n", ["to-string", ["get", "gravacoes"]], " 🎙"], ["get", "uf_code"]],
+          "text-size": 11, "text-font": ["DIN Pro Bold", "Arial Unicode MS Bold"], "text-allow-overlap": false, "text-anchor": "center", "text-line-height": 1.3,
+        },
+        paint: { "text-color": "hsl(220, 13%, 25%)", "text-halo-color": "hsl(0, 0%, 100%)", "text-halo-width": 1.5 },
+      });
+
+      // Recording trend arrows
+      map.addLayer({
+        id: "state-rec-trend-layer", type: "symbol", source: "state-labels",
+        filter: ["!=", ["get", "rec_trend"], "stable"],
+        layout: {
+          "text-field": ["concat", ["case", ["==", ["get", "rec_trend"], "up"], "▲ +", "▼ -"], ["to-string", ["get", "rec_pct"]], "%"],
+          "text-size": 10, "text-font": ["DIN Pro Bold", "Arial Unicode MS Bold"],
+          "text-offset": [0, 2.0], "text-allow-overlap": true, "text-ignore-placement": true,
         },
         paint: {
-          "text-color": ["case", ["==", ["get", "trend"], "up"], "#dc2626", "#16a34a"],
+          "text-color": ["case", ["==", ["get", "rec_trend"], "up"], "#16a34a", "#dc2626"],
           "text-halo-color": "hsl(0, 0%, 100%)", "text-halo-width": 1.5,
         },
       });
 
       const mbgl = mapboxglInstance;
       if (!mbgl) return;
-      const popup = new mbgl.Popup({ closeButton: false, closeOnClick: false, maxWidth: "240px" });
+      const popup = new mbgl.Popup({ closeButton: false, closeOnClick: false, maxWidth: "280px" });
       map.on("mousemove", "states-fill", (e: any) => {
         map.getCanvas().style.cursor = "pointer";
         if (e.features?.length) {
           const p = e.features[0].properties;
-          map.setFilter("states-hover", ["==", "uf_code", p.uf_code]);
-          const stateName = UF_TO_STATE_NAME[p.uf_code] || p.uf_code;
-          popup.setLngLat(e.lngLat).setHTML(`<div style="font-family:Inter,Roboto,sans-serif;font-size:11px;line-height:1.6;color:hsl(220,13%,18%)"><strong style="font-size:13px">${stateName}</strong><div style="margin-top:4px;display:flex;justify-content:space-between"><span style="color:hsl(220,9%,46%)">Usuárias ativas</span><strong>${p.usuarios || 0}</strong></div><div style="display:flex;justify-content:space-between"><span style="color:hsl(220,9%,46%)">Dispositivos online</span><strong style="color:hsl(142,71%,35%)">${p.online || 0}</strong></div><div style="display:flex;justify-content:space-between"><span style="color:hsl(220,9%,46%)">Monitorando</span><strong style="color:hsl(224,76%,33%)">${p.monitorando || 0}</strong></div><div style="display:flex;justify-content:space-between"><span style="color:hsl(220,9%,46%)">Alertas ativos</span><strong style="color:hsl(0,72%,51%)">${p.alertas || 0}</strong></div></div>`).addTo(map);
+          const uf = p.uf_code;
+          map.setFilter("states-hover", ["==", "uf_code", uf]);
+          const stateName = UF_TO_STATE_NAME[uf] || uf;
+          const grav = Number(p.gravacoes) || 0;
+          const horas = Number(p.horasGravacao) || 0;
+          const rt = recTrends[uf];
+          const trendIcon = rt?.trend === "up" ? "▲" : rt?.trend === "down" ? "▼" : "—";
+          const trendColor = rt?.trend === "up" ? "#16a34a" : rt?.trend === "down" ? "#dc2626" : "hsl(220,9%,46%)";
+          const trendPct = rt?.pct || 0;
+          popup.setLngLat(e.lngLat).setHTML(`<div style="font-family:Inter,Roboto,sans-serif;font-size:11px;line-height:1.6;color:hsl(220,13%,18%)">
+            <strong style="font-size:13px">${stateName}</strong>
+            <div style="background:hsl(224,76%,96%);border-radius:6px;padding:6px 8px;margin:6px 0">
+              <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-weight:600">🎙 Gravações</span><strong style="font-size:14px">${grav}</strong></div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-top:2px">
+                <span style="color:hsl(220,9%,46%);font-size:10px">⏱ ${horas}h de áudio</span>
+                <span style="color:${trendColor};font-weight:700;font-size:11px">${trendIcon} ${trendPct > 0 ? trendPct + "%" : ""}</span>
+              </div>
+            </div>
+            <div style="display:flex;justify-content:space-between"><span style="color:hsl(220,9%,46%)">Usuárias ativas</span><strong>${p.usuarios || 0}</strong></div>
+            <div style="display:flex;justify-content:space-between"><span style="color:hsl(220,9%,46%)">Online</span><strong style="color:hsl(142,71%,35%)">${p.online || 0}</strong></div>
+            <div style="display:flex;justify-content:space-between"><span style="color:hsl(220,9%,46%)">Monitorando</span><strong style="color:hsl(224,76%,33%)">${p.monitorando || 0}</strong></div>
+            <div style="display:flex;justify-content:space-between"><span style="color:hsl(220,9%,46%)">Alertas ativos</span><strong style="color:hsl(0,72%,51%)">${p.alertas || 0}</strong></div>
+          </div>`).addTo(map);
         }
       });
       map.on("mouseleave", "states-fill", () => { map.getCanvas().style.cursor = ""; map.setFilter("states-hover", ["==", "uf_code", ""]); popup.remove(); });
       map.on("click", "states-fill", (e: any) => { if (e.features?.length) { const uf = e.features[0].properties.uf_code; setSelectedUf((prev) => (prev === uf ? null : uf)); } });
     }
-  }, [geojson, stats, mapLoaded]);
+  }, [geojson, stats, recTrends, ufTrends, mapLoaded]);
 
   // Update labels when stats change
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !mapLoaded || !geojson || !map.getSource("state-labels")) return;
     const labelFeatures = geojson.features.map((f: any) => {
-      const uf = f.properties.uf_code; const s = stats[uf] || { usuarios: 0 };
+      const uf = f.properties.uf_code; const s = stats[uf] || { gravacoes: 0 };
+      const rt = recTrends[uf];
       const coords = f.geometry.type === "Polygon" ? f.geometry.coordinates[0] : f.geometry.coordinates.flat(2);
       const lngs = coords.map((c: number[]) => c[0]); const lats = coords.map((c: number[]) => c[1]);
-      return { type: "Feature", geometry: { type: "Point", coordinates: [(Math.min(...lngs) + Math.max(...lngs)) / 2, (Math.min(...lats) + Math.max(...lats)) / 2] }, properties: { uf_code: uf, usuarios: s.usuarios || 0, trend: ufTrends[uf] || "stable" } };
+      return { type: "Feature", geometry: { type: "Point", coordinates: [(Math.min(...lngs) + Math.max(...lngs)) / 2, (Math.min(...lats) + Math.max(...lats)) / 2] }, properties: { uf_code: uf, gravacoes: s.gravacoes || 0, rec_trend: rt?.trend || "stable", rec_pct: rt?.pct || 0, trend: ufTrends[uf] || "stable" } };
     });
     (map.getSource("state-labels") as any).setData({ type: "FeatureCollection", features: labelFeatures });
-  }, [stats, ufTrends, mapLoaded, geojson]);
+  }, [stats, ufTrends, recTrends, mapLoaded, geojson]);
 
   // Markers
   useEffect(() => {
@@ -498,7 +571,7 @@ export default function AdminMapa() {
     }
   }, [selectedUf, mapLoaded, geojson]);
 
-  const topUfs = Object.entries(stats).filter(([, s]) => s.usuarios > 0).sort(([, a], [, b]) => b.online - a.online).slice(0, 8);
+  const topUfs = Object.entries(stats).filter(([, s]) => s.gravacoes > 0 || s.usuarios > 0).sort(([, a], [, b]) => b.gravacoes - a.gravacoes).slice(0, 10);
 
   return (
     <div style={fontStyle}>
@@ -528,9 +601,11 @@ export default function AdminMapa() {
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
         {[
-          { icon: Users, label: "Usuárias Ativas", value: totalUsuarios, color: "hsl(224 76% 33%)", bg: "hsl(224 76% 33% / 0.08)" },
+          { icon: Mic, label: "Gravações", value: totalGravacoes, color: "hsl(224 76% 33%)", bg: "hsl(224 76% 33% / 0.08)" },
+          { icon: Clock, label: "Horas Gravadas", value: `${totalHorasGrav}h`, color: "hsl(262 60% 50%)", bg: "hsl(262 60% 50% / 0.08)" },
+          { icon: Users, label: "Usuárias Ativas", value: totalUsuarios, color: "hsl(220 13% 18%)", bg: "hsl(220 13% 18% / 0.08)" },
           { icon: Smartphone, label: "Dispositivos Online", value: totalOnline, color: "hsl(142 71% 35%)", bg: "hsl(142 71% 35% / 0.08)" },
           { icon: MapPin, label: "Monitorando Agora", value: totalMonitorando, color: "hsl(262 83% 58%)", bg: "hsl(262 83% 58% / 0.08)" },
           { icon: AlertTriangle, label: "Alertas Ativos", value: totalAlertas, color: "hsl(0 72% 51%)", bg: "hsl(0 72% 51% / 0.08)" },
@@ -557,8 +632,26 @@ export default function AdminMapa() {
             </div>
           )}
           <div className="absolute bottom-3 left-3 rounded-lg border p-3" style={{ background: "hsl(0 0% 100% / 0.95)", borderColor: "hsl(220 13% 91%)", backdropFilter: "blur(8px)" }}>
-            <p className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={subtitleStyle}>Legenda</p>
-            <div className="space-y-1.5">
+            <p className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={subtitleStyle}>Gravações por UF</p>
+            <div className="flex items-center gap-1.5 mb-2">
+              {[
+                { color: "#e5e7eb", label: "0" },
+                { color: "#93c5fd", label: "1-9" },
+                { color: "#3b82f6", label: "10-29" },
+                { color: "#1d4ed8", label: "30-79" },
+                { color: "#1e3a5f", label: "80+" },
+              ].map((c) => (
+                <div key={c.label} className="flex items-center gap-0.5 text-[9px]" style={subtitleStyle}>
+                  <span className="inline-block w-3 h-3 rounded-sm" style={{ background: c.color }} />
+                  <span>{c.label}</span>
+                </div>
+              ))}
+            </div>
+            <div className="flex items-center gap-2 text-[9px] mb-2" style={subtitleStyle}>
+              <span style={{ color: "#16a34a" }}>▲ Aumento</span>
+              <span style={{ color: "#dc2626" }}>▼ Declínio</span>
+            </div>
+            <div className="space-y-1.5 border-t pt-2" style={{ borderColor: "hsl(220 13% 91%)" }}>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" checked={showAlerts} onChange={(e) => setShowAlerts(e.target.checked)} className="rounded" />
                 <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: "hsl(0,72%,51%)" }} />
@@ -569,10 +662,6 @@ export default function AdminMapa() {
                 <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: "hsl(142,71%,35%)" }} />
                 <span className="text-[11px]" style={titleStyle}>Dispositivos online</span>
               </label>
-              <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: "hsl(220,9%,60%)" }} />
-                <span className="text-[11px]" style={titleStyle}>Dispositivos offline</span>
-              </div>
             </div>
           </div>
         </div>
@@ -580,11 +669,20 @@ export default function AdminMapa() {
         <div className="w-full md:w-72 border-t md:border-t-0 md:border-l overflow-y-auto p-4" style={{ background: "hsl(0 0% 100%)", borderColor: "hsl(220 13% 91%)" }}>
           {selectedUf ? (
             <>
-              <h3 className="text-sm font-bold mb-3" style={titleStyle}>{UF_TO_STATE_NAME[selectedUf] || selectedUf} — {selectedUf}</h3>
+              <h3 className="text-sm font-bold mb-1" style={titleStyle}>
+                {UF_TO_STATE_NAME[selectedUf] || selectedUf} — {selectedUf}
+                {recTrends[selectedUf] && recTrends[selectedUf].trend !== "stable" && (
+                  <span className="ml-2 text-xs font-bold" style={{ color: recTrends[selectedUf].trend === "up" ? "#16a34a" : "#dc2626" }}>
+                    {recTrends[selectedUf].trend === "up" ? "▲" : "▼"} {recTrends[selectedUf].pct}%
+                  </span>
+                )}
+              </h3>
               {stats[selectedUf] ? (
                 <div className="space-y-2 mb-4">
                   {[
-                    { label: "Usuárias ativas", value: stats[selectedUf].usuarios, color: "hsl(224 76% 33%)" },
+                    { label: "🎙 Gravações", value: stats[selectedUf].gravacoes, color: "hsl(224 76% 33%)" },
+                    { label: "⏱ Horas de áudio", value: `${stats[selectedUf].horasGravacao}h`, color: "hsl(262 60% 50%)" },
+                    { label: "Usuárias ativas", value: stats[selectedUf].usuarios, color: "hsl(220 13% 18%)" },
                     { label: "Online", value: stats[selectedUf].online, color: "hsl(142 71% 35%)" },
                     { label: "Monitorando", value: stats[selectedUf].monitorando, color: "hsl(262 83% 58%)" },
                     { label: "Alertas ativos", value: stats[selectedUf].alertas, color: "hsl(0 72% 51%)" },
@@ -604,13 +702,13 @@ export default function AdminMapa() {
                   <h4 className="text-[10px] font-semibold uppercase tracking-wider mt-4 mb-2" style={subtitleStyle}>Ranking por Município</h4>
                   <div className="space-y-1">
                     {Object.entries(municipioStats[selectedUf])
-                      .sort((a, b) => b[1].usuarios - a[1].usuarios)
+                      .sort((a, b) => b[1].gravacoes - a[1].gravacoes)
                       .map(([cidade, s]) => (
                         <div key={cidade} className="flex items-center justify-between px-2 py-2 rounded-lg text-xs" style={{ background: "hsl(210 17% 96%)" }}>
                           <span className="font-medium truncate mr-2" style={titleStyle}>{cidade}</span>
                           <div className="flex items-center gap-2 flex-shrink-0">
-                            <span style={{ color: "hsl(224 76% 33%)" }}>{s.usuarios}</span>
-                            <span style={{ color: "hsl(142 71% 35%)" }}>{s.online} on</span>
+                            <span style={{ color: "hsl(224 76% 33%)" }}>{s.gravacoes} 🎙</span>
+                            <span style={{ color: "hsl(262 60% 50%)" }}>{s.horasGravacao}h</span>
                             {s.alertas > 0 && <span className="font-bold" style={{ color: "hsl(0 72% 51%)" }}>{s.alertas} ⚠</span>}
                           </div>
                         </div>
@@ -622,20 +720,27 @@ export default function AdminMapa() {
             </>
           ) : (
             <>
-              <h3 className="text-xs font-semibold uppercase tracking-wider mb-3" style={subtitleStyle}>Ranking por UF</h3>
+              <h3 className="text-xs font-semibold uppercase tracking-wider mb-3" style={subtitleStyle}>Ranking por UF — Gravações</h3>
               {topUfs.length === 0 ? (
                 <p className="text-xs py-3 text-center rounded-lg" style={{ ...subtitleStyle, background: "hsl(210 17% 96%)" }}>Nenhum dado disponível</p>
               ) : (
                 <div className="space-y-1">
-                  {topUfs.map(([uf, s]) => (
-                    <button key={uf} onClick={() => setSelectedUf(uf)} className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs hover:bg-gray-50 transition-colors text-left" style={{ background: "hsl(210 17% 96%)" }}>
-                      <span className="font-medium" style={titleStyle}>{UF_TO_STATE_NAME[uf] || uf}</span>
-                      <div className="flex items-center gap-3">
-                        <span style={{ color: "hsl(142 71% 35%)" }}>{s.online} on</span>
-                        {s.alertas > 0 && <span className="font-bold" style={{ color: "hsl(0 72% 51%)" }}>{s.alertas} ⚠</span>}
-                      </div>
-                    </button>
-                  ))}
+                  {topUfs.map(([uf, s]) => {
+                    const rt = recTrends[uf];
+                    return (
+                      <button key={uf} onClick={() => setSelectedUf(uf)} className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs hover:bg-gray-50 transition-colors text-left" style={{ background: "hsl(210 17% 96%)" }}>
+                        <span className="font-medium" style={titleStyle}>{UF_TO_STATE_NAME[uf] || uf}</span>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <span className="font-bold" style={{ color: "hsl(224 76% 33%)" }}>{s.gravacoes}</span>
+                          {rt && rt.trend !== "stable" && (
+                            <span className="font-bold" style={{ color: rt.trend === "up" ? "#16a34a" : "#dc2626" }}>
+                              {rt.trend === "up" ? "▲" : "▼"}{rt.pct}%
+                            </span>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </>
