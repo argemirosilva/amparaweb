@@ -1598,7 +1598,16 @@ serve(async (req) => {
         let aiResult: any = null;
 
         if (LOVABLE_API_KEY && totalGravacoes > 0) {
-          const aiPrompt = `Você é uma especialista em proteção a mulheres vítimas de violência doméstica, com experiência em psicologia e assistência social. Com base nos dados agregados abaixo, gere um relatório humanizado sobre a saúde da relação desta mulher.
+          const aiPrompt = `Você é uma especialista em relações conjugais saudáveis, com experiência em psicologia de casais e assistência social. Com base nos dados agregados abaixo, gere um relatório humanizado sobre a saúde da relação desta mulher.
+
+PRINCÍPIO FUNDAMENTAL:
+Uma relação saudável exige respeito mútuo. Ao analisar os dados e orientar, considere que:
+- A mulher deve respeito ao marido assim como ele deve a ela.
+- Nem toda discordância ou conflito é abuso. Discussões fazem parte de qualquer relacionamento.
+- Identifique padrões genuinamente abusivos (humilhação, controle, ameaças, violência) sem confundir com desentendimentos normais.
+- Não reforce comportamentos que prejudiquem a relação (provocações, desrespeito, manipulação) independente de quem os pratique.
+- As orientações devem promover diálogo, maturidade emocional e busca de equilíbrio — não antagonismo.
+- Somente em situações de risco real (violência física, ameaças, controle abusivo) oriente medidas de proteção.
 
 DADOS AGREGADOS (últimos ${windowDays} dias):
 - Total de gravações analisadas: ${totalGravacoes}
@@ -1613,9 +1622,9 @@ DADOS AGREGADOS (últimos ${windowDays} dias):
 - Último risk level: ${riskHistory?.[0]?.risk_level || "N/A"}
 
 INSTRUÇÕES:
-1. "panorama_narrativo": 2-3 parágrafos acolhedores explicando a situação atual. Use linguagem empática, sem jargão técnico ou jurídico. Comece com "Nos últimos ${windowDays} dias...". Não minimize a situação, mas também não seja alarmista.
-2. "explicacao_emocional": 2-3 frases explicando o que a distribuição de sentimentos significa para ela no dia a dia.
-3. "orientacoes": 3-5 orientações práticas e ESPECÍFICAS para combater cada padrão recorrente identificado acima. Cada orientação deve mencionar qual padrão ela combate e dar uma ação concreta. Exemplo: se o padrão é "manipulação emocional", a orientação deve ensinar como reconhecer e reagir a manipulações. Se o padrão é "isolamento social", deve orientar sobre manter rede de apoio. Se houver risco alto/crítico, priorize segurança física. Tom empoderador e acolhedor.
+1. "panorama_narrativo": 2-3 parágrafos acolhedores e equilibrados explicando a situação atual. Use linguagem empática, sem jargão técnico ou jurídico. Comece com "Nos últimos ${windowDays} dias...". Seja honesta sobre o que os dados mostram sem minimizar riscos reais, mas também sem dramatizar conflitos normais.
+2. "explicacao_emocional": 2-3 frases explicando o que a distribuição de sentimentos significa para ela no dia a dia, considerando o contexto de uma relação a dois onde ambos têm responsabilidades emocionais.
+3. "orientacoes": 3-5 orientações práticas e ESPECÍFICAS para combater cada padrão recorrente identificado. Cada orientação deve mencionar qual padrão ela combate e dar uma ação concreta. Priorize: comunicação assertiva, busca de terapia de casal, estabelecimento de limites saudáveis, autocrítica construtiva. Se houver risco alto/crítico com violência real, priorize segurança física. Tom equilibrado: empoderador mas também promotor de responsabilidade mútua.
 4. "canais_apoio": Liste canais relevantes como "Central de Atendimento à Mulher: ligue 180", "Polícia Militar: ligue 190", "Delegacia da Mulher mais próxima".
 
 RETORNE APENAS JSON válido:
