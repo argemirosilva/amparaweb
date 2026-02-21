@@ -160,19 +160,22 @@ export default function DeviceStatusCard() {
 
         {/* Status badge row */}
         <div className="flex items-center justify-between gap-2">
-          {/* Status badge */}
-          <span
-            className={`inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full shrink-0 ${
-              online
-                ? "bg-emerald-500/10 text-emerald-600"
-                : "bg-muted text-muted-foreground"
-            }`}
-          >
-            {online ? <Wifi className="w-2 h-2" /> : <WifiOff className="w-2 h-2" />}
-            {online ? "Online" : "Offline"}
-          </span>
+          {/* Status badge + battery */}
+          <div className="flex items-center gap-2">
+            <span
+              className={`inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full shrink-0 ${
+                online
+                  ? "bg-emerald-500/10 text-emerald-600"
+                  : "bg-muted text-muted-foreground"
+              }`}
+            >
+              {online ? <Wifi className="w-2 h-2" /> : <WifiOff className="w-2 h-2" />}
+              {online ? "Online" : "Offline"}
+            </span>
+            {device && <BatteryIndicator percent={device.bateria_percentual} charging={device.is_charging} />}
+          </div>
 
-          {/* GPS button - always visible */}
+          {/* GPS button */}
           {(() => {
             const recentGps = location?.created_at
               ? Date.now() - new Date(location.created_at).getTime() < 330_000
@@ -202,16 +205,12 @@ export default function DeviceStatusCard() {
           })()}
         </div>
 
-        {/* Meta row */}
-        {device && (
+        {device && device.last_ping_at && (Date.now() - new Date(device.last_ping_at).getTime() >= 600_000) && (
           <div className="flex items-center gap-3 mt-1.5">
-            {device.last_ping_at && (Date.now() - new Date(device.last_ping_at).getTime() >= 600_000) && (
-              <span className="text-xs text-muted-foreground inline-flex items-center gap-1">
-                <Clock className="w-3 h-3" />
-                {timeSince(device.last_ping_at)}
-              </span>
-            )}
-            <BatteryIndicator percent={device.bateria_percentual} charging={device.is_charging} />
+            <span className="text-xs text-muted-foreground inline-flex items-center gap-1">
+              <Clock className="w-3 h-3" />
+              {timeSince(device.last_ping_at)}
+            </span>
           </div>
         )}
       </div>
