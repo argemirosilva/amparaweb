@@ -1615,7 +1615,7 @@ DADOS AGREGADOS (últimos ${windowDays} dias):
 INSTRUÇÕES:
 1. "panorama_narrativo": 2-3 parágrafos acolhedores explicando a situação atual. Use linguagem empática, sem jargão técnico ou jurídico. Comece com "Nos últimos ${windowDays} dias...". Não minimize a situação, mas também não seja alarmista.
 2. "explicacao_emocional": 2-3 frases explicando o que a distribuição de sentimentos significa para ela no dia a dia.
-3. "orientacoes": 3-5 orientações práticas e personalizadas baseadas nos dados reais. Tom empoderador. Inclua ações concretas que ela pode tomar. Se houver risco alto/crítico, priorize segurança.
+3. "orientacoes": 3-5 orientações práticas e ESPECÍFICAS para combater cada padrão recorrente identificado acima. Cada orientação deve mencionar qual padrão ela combate e dar uma ação concreta. Exemplo: se o padrão é "manipulação emocional", a orientação deve ensinar como reconhecer e reagir a manipulações. Se o padrão é "isolamento social", deve orientar sobre manter rede de apoio. Se houver risco alto/crítico, priorize segurança física. Tom empoderador e acolhedor.
 4. "canais_apoio": Liste canais relevantes como "Central de Atendimento à Mulher: ligue 180", "Polícia Militar: ligue 190", "Delegacia da Mulher mais próxima".
 
 RETORNE APENAS JSON válido:
