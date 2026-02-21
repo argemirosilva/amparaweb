@@ -198,7 +198,7 @@ export default function RiskEvolutionCard() {
 
               {/* Chart */}
               {history.length > 1 && (
-                <div className="h-[90px] -mx-1">
+                <div className="h-[90px] -mx-1 overflow-hidden">
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={history} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
                       <defs>
