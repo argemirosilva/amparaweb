@@ -39,6 +39,7 @@ import AdminOrgaos from "./pages/admin/AdminOrgaos";
 import AdminConfiguracoes from "./pages/admin/AdminConfiguracoes";
 import AdminIntegracoes from "./pages/admin/AdminIntegracoes";
 import AdminLogin from "./pages/admin/AdminLogin";
+import AdminNuvemPalavras from "./pages/admin/AdminNuvemPalavras";
 import ConfigurarConta from "./pages/ConfigurarConta";
 import EsqueciSenha from "./pages/EsqueciSenha";
 import SuporteTickets from "./pages/suporte/SuporteTickets";
@@ -93,6 +94,7 @@ const App = () => (
               <Route path="/admin/usuarios" element={<AdminUsuarios />} />
               <Route path="/admin/auditoria" element={<AdminAuditoria />} />
               <Route path="/admin/relatorios" element={<AdminRelatorios />} />
+              <Route path="/admin/nuvem-palavras" element={<AdminNuvemPalavras />} />
               
               <Route path="/admin/suporte" element={<SuporteTickets />} />
               <Route path="/admin/suporte/:sessionId" element={<SuporteChat />} />
