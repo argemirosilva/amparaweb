@@ -155,7 +155,7 @@ export default function DeviceStatusCard() {
         <p className="text-sm font-semibold text-primary mb-0.5 truncate">
           {noDevice
             ? (error || "Nenhum dispositivo")
-            : (device.dispositivo_info || "App móvel Ampara")}
+            : ((device.dispositivo_info || "App móvel Ampara").split(" ")[0])}
         </p>
 
         {/* Status badge row */}
