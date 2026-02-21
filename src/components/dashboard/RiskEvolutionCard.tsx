@@ -23,12 +23,15 @@ interface Assessment {
   period_end: string;
 }
 
-const levelConfig: Record<string, { color: string; icon: typeof Shield; className: string }> = {
-  "Sem Risco": { color: "hsl(142, 71%, 45%)", icon: ShieldCheck, className: "bg-green-100 text-green-700 border-green-200" },
-  "Baixo": { color: "hsl(142, 71%, 45%)", icon: ShieldCheck, className: "bg-green-100 text-green-700 border-green-200" },
-  "Moderado": { color: "hsl(45, 93%, 47%)", icon: Shield, className: "bg-yellow-100 text-yellow-700 border-yellow-200" },
-  "Alto": { color: "hsl(25, 95%, 53%)", icon: AlertTriangle, className: "bg-orange-100 text-orange-700 border-orange-200" },
-  "Crítico": { color: "hsl(0, 84%, 60%)", icon: ShieldAlert, className: "bg-red-100 text-red-700 border-red-200" },
+// Fixed lilac color for chart — never changes based on risk level
+const CHART_COLOR = "hsl(270, 60%, 55%)";
+
+const levelConfig: Record<string, { icon: typeof Shield; className: string }> = {
+  "Sem Risco": { icon: ShieldCheck, className: "bg-green-100 text-green-700 border-green-200" },
+  "Baixo": { icon: ShieldCheck, className: "bg-green-100 text-green-700 border-green-200" },
+  "Moderado": { icon: Shield, className: "bg-yellow-100 text-yellow-700 border-yellow-200" },
+  "Alto": { icon: AlertTriangle, className: "bg-orange-100 text-orange-700 border-orange-200" },
+  "Crítico": { icon: ShieldAlert, className: "bg-red-100 text-red-700 border-red-200" },
 };
 
 const trendIcons = {
@@ -200,8 +203,8 @@ export default function RiskEvolutionCard() {
                     <AreaChart data={history} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
                       <defs>
                         <linearGradient id="riskGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor={level.color} stopOpacity={0.3} />
-                          <stop offset="100%" stopColor={level.color} stopOpacity={0.02} />
+                          <stop offset="0%" stopColor={CHART_COLOR} stopOpacity={0.3} />
+                          <stop offset="100%" stopColor={CHART_COLOR} stopOpacity={0.02} />
                         </linearGradient>
                       </defs>
                       <YAxis domain={[0, 100]} hide />
@@ -224,7 +227,7 @@ export default function RiskEvolutionCard() {
                           return (
                             <div className="bg-popover border border-border rounded-md px-2.5 py-1.5 shadow-md text-xs">
                               <p className="font-medium">{d.toLocaleDateString("pt-BR")}</p>
-                              <p style={{ color: (levelConfig[p.level] || levelConfig["Sem Risco"]).color }}>
+                              <p style={{ color: CHART_COLOR }}>
                                 Score: {p.score} · {p.level}
                               </p>
                             </div>
@@ -234,11 +237,11 @@ export default function RiskEvolutionCard() {
                       <Area
                         type="monotone"
                         dataKey="score"
-                        stroke={level.color}
+                        stroke={CHART_COLOR}
                         strokeWidth={2}
                         fill="url(#riskGrad)"
                         dot={false}
-                        activeDot={{ r: 3, strokeWidth: 0, fill: level.color }}
+                        activeDot={{ r: 3, strokeWidth: 0, fill: CHART_COLOR }}
                       />
                     </AreaChart>
                   </ResponsiveContainer>
