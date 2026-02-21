@@ -148,7 +148,7 @@ export default function RiskEvolutionCard() {
   const LevelIcon = level.icon;
 
   const trendColor = assessment?.trend === "Subindo"
-    ? "text-orange-500"
+    ? "text-destructive"
     : assessment?.trend === "Reduzindo"
       ? "text-green-500"
       : "text-muted-foreground";
@@ -190,9 +190,8 @@ export default function RiskEvolutionCard() {
                 <Badge className={level.className}>
                   {assessment.risk_level}
                 </Badge>
-                <div className={`flex items-center gap-1 text-sm ml-auto ${trendColor} ${trendPulse}`}>
+                <div className={`flex items-center ml-auto ${trendColor} ${trendPulse}`}>
                   <TrendIcon className="w-4 h-4" />
-                  <span className="font-medium">{assessment.trend}</span>
                 </div>
               </div>
 
