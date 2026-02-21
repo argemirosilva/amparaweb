@@ -6,6 +6,7 @@ import { TrendingUp, TrendingDown, Minus, ShieldAlert, AlertTriangle, Shield, Sh
 import GradientIcon from "@/components/ui/gradient-icon";
 import { useAuth } from "@/contexts/AuthContext";
 import { callWebApi } from "@/services/webApiService";
+import { Area, AreaChart, ResponsiveContainer, Tooltip, YAxis, XAxis } from "recharts";
 
 type WindowDays = 7 | 15 | 30;
 
@@ -34,10 +35,17 @@ const trendIcons = {
   "Reduzindo": TrendingDown,
 };
 
+interface HistoryPoint {
+  date: string;
+  score: number;
+  level: string;
+}
+
 export default function RiskEvolutionCard() {
   const { sessionToken } = useAuth();
   const [window, setWindow] = useState<WindowDays>(7);
   const [assessment, setAssessment] = useState<Assessment | null>(null);
+  const [history, setHistory] = useState<HistoryPoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
@@ -47,9 +55,21 @@ export default function RiskEvolutionCard() {
     setLoading(true);
     setError(null);
     try {
-      const assessRes = await callWebApi("getRiskAssessment", sessionToken, { window_days: w });
+      const [assessRes, histRes] = await Promise.all([
+        callWebApi("getRiskAssessment", sessionToken, { window_days: w }),
+        callWebApi("getRiskHistory", sessionToken, { window_days: w, limit: 30 }),
+      ]);
       if (assessRes.ok && assessRes.data.assessment) {
         setAssessment(assessRes.data.assessment);
+      }
+      if (histRes.ok && histRes.data.history) {
+        setHistory(
+          histRes.data.history.map((h: any) => ({
+            date: h.period_end,
+            score: h.risk_score,
+            level: h.risk_level,
+          }))
+        );
       }
     } catch {
       setError("Erro ao carregar avaliação de risco");
@@ -121,6 +141,58 @@ export default function RiskEvolutionCard() {
                 <span className="font-medium">{assessment.trend}</span>
               </div>
             </div>
+
+            {/* Gráfico de evolução */}
+            {history.length > 1 && (
+              <div className="h-[120px] -mx-2">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={history} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+                    <defs>
+                      <linearGradient id="riskGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor={level.color} stopOpacity={0.3} />
+                        <stop offset="100%" stopColor={level.color} stopOpacity={0.02} />
+                      </linearGradient>
+                    </defs>
+                    <YAxis domain={[0, 100]} hide />
+                    <XAxis
+                      dataKey="date"
+                      tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }}
+                      tickFormatter={(v: string) => {
+                        const d = new Date(v + "T00:00:00");
+                        return `${d.getDate()}/${d.getMonth() + 1}`;
+                      }}
+                      axisLine={false}
+                      tickLine={false}
+                      interval="preserveStartEnd"
+                    />
+                    <Tooltip
+                      content={({ active, payload }) => {
+                        if (!active || !payload?.[0]) return null;
+                        const p = payload[0].payload as HistoryPoint;
+                        const d = new Date(p.date + "T00:00:00");
+                        return (
+                          <div className="bg-popover border border-border rounded-md px-2.5 py-1.5 shadow-md text-xs">
+                            <p className="font-medium">{d.toLocaleDateString("pt-BR")}</p>
+                            <p style={{ color: (levelConfig[p.level] || levelConfig["Sem Risco"]).color }}>
+                              Score: {p.score} · {p.level}
+                            </p>
+                          </div>
+                        );
+                      }}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="score"
+                      stroke={level.color}
+                      strokeWidth={2}
+                      fill="url(#riskGrad)"
+                      dot={false}
+                      activeDot={{ r: 3, strokeWidth: 0, fill: level.color }}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            )}
 
             {/* Detalhes expansíveis */}
             <button
