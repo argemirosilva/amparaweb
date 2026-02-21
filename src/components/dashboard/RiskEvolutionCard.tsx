@@ -263,7 +263,7 @@ export default function RiskEvolutionCard() {
               </button>
 
               {expanded && (
-                <div className="pt-2 border-t border-border/50">
+                <div className="pt-2 border-t border-border/50 max-h-[300px] overflow-y-auto">
                   <RelatorioSaudeContent
                     relatorio={relatorio}
                     loading={relatorioLoading}
