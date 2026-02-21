@@ -520,6 +520,24 @@ serve(async (req) => {
           if (rec?.storage_path) {
             resourceData = { storage_path: rec.storage_path, stream_hint: "Use proxyAudio via web-api with this path" };
           }
+        } else if (scope === "read_analysis") {
+          const { data } = await supabase
+            .from("gravacoes_analises")
+            .select("id, resumo, nivel_risco, sentimento, categorias, palavras_chave, created_at")
+            .eq("gravacao_id", resource_id)
+            .eq("user_id", accessReq.user_id)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .single();
+          resourceData = data;
+        } else if (scope === "read_logs") {
+          const { data } = await supabase
+            .from("device_status")
+            .select("*")
+            .eq("user_id", accessReq.user_id)
+            .order("updated_at", { ascending: false })
+            .limit(20);
+          resourceData = data;
         }
       } else if (resource_type === "analysis") {
         const { data } = await supabase
