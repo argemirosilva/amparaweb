@@ -38,12 +38,7 @@ interface Props {
   error: string | null;
 }
 
-const sentimentoConfig: Record<string, { label: string; color: string }> = {
-  positivo: { label: "Positivo", color: "hsl(142, 71%, 45%)" },
-  negativo: { label: "Negativo", color: "hsl(0, 84%, 60%)" },
-  neutro: { label: "Neutro", color: "hsl(220, 9%, 46%)" },
-  misto: { label: "Misto", color: "hsl(45, 93%, 47%)" },
-};
+import EmotionalFaceIcon, { getEmotionalLevel } from "./EmotionalFaceIcon";
 
 function SectionHeader({ icon: Icon, title }: { icon: typeof Heart; title: string }) {
   return (
@@ -54,35 +49,12 @@ function SectionHeader({ icon: Icon, title }: { icon: typeof Heart; title: strin
   );
 }
 
-function SentimentBar({ sentimentos }: { sentimentos: Record<string, number> }) {
+function computeEmotionalScore(sentimentos: Record<string, number>, totalAlertas: number): number {
+  const positivo = sentimentos.positivo || 0;
+  const neutro = sentimentos.neutro || 0;
   const total = Object.values(sentimentos).reduce((a, b) => a + b, 0);
-  if (total === 0) return <p className="text-xs text-muted-foreground">Sem dados de sentimento.</p>;
-
-  return (
-    <div className="space-y-2">
-      {Object.entries(sentimentos)
-        .filter(([, v]) => v > 0)
-        .sort((a, b) => b[1] - a[1])
-        .map(([key, count]) => {
-          const pct = Math.round((count / total) * 100);
-          const cfg = sentimentoConfig[key] || sentimentoConfig.neutro;
-          return (
-            <div key={key} className="space-y-0.5">
-              <div className="flex justify-between text-[11px]">
-                <span className="font-medium text-foreground/80">{cfg.label}</span>
-                <span className="text-muted-foreground">{pct}% ({count})</span>
-              </div>
-              <div className="h-2 rounded-full bg-muted overflow-hidden">
-                <div
-                  className="h-full rounded-full transition-all duration-500"
-                  style={{ width: `${pct}%`, backgroundColor: cfg.color }}
-                />
-              </div>
-            </div>
-          );
-        })}
-    </div>
-  );
+  const score = total > 0 ? (positivo * 2 + neutro) / (total * 2) : 0.5;
+  return totalAlertas > 0 ? Math.max(0, score - 0.15) : score;
 }
 
 export default function RelatorioSaudeContent({ relatorio, loading, error }: Props) {
@@ -127,9 +99,18 @@ export default function RelatorioSaudeContent({ relatorio, loading, error }: Pro
         {/* Seção 2: Saúde Emocional */}
         <section>
           <SectionHeader icon={Heart} title="Saúde Emocional" />
-          <SentimentBar sentimentos={relatorio.sentimentos} />
+          {(() => {
+            const score = computeEmotionalScore(relatorio.sentimentos, relatorio.periodo.total_alertas);
+            const level = getEmotionalLevel(score);
+            return (
+              <div className="flex flex-col items-center gap-1.5 py-2">
+                <EmotionalFaceIcon score={score} size={64} />
+                <span className="text-xs font-semibold text-primary">{level.label}</span>
+              </div>
+            );
+          })()}
           {relatorio.explicacao_emocional && (
-            <p className="mt-2 text-[11px] text-foreground/60 italic leading-relaxed">
+            <p className="mt-1 text-[11px] text-foreground/60 italic leading-relaxed text-center">
               {relatorio.explicacao_emocional}
             </p>
           )}
