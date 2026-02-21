@@ -134,7 +134,7 @@ export default function AdminMapa() {
   const [showDevices, setShowDevices] = useState(true);
   const [loading, setLoading] = useState(false);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
-  const [period, setPeriod] = useState<"24h" | "7d" | "30d">("7d");
+  const [period, setPeriod] = useState<"24h" | "7d" | "30d" | "6m" | "12m">("7d");
   const [ufTrends, setUfTrends] = useState<Record<string, "up" | "down" | "stable">>({});
   const [recTrends, setRecTrends] = useState<Record<string, RecTrend>>({});
 
@@ -186,7 +186,7 @@ export default function AdminMapa() {
   // Fetch map operational data
   const fetchData = useCallback(async () => {
     setLoading(true);
-    const periodHours = { "24h": 24, "7d": 168, "30d": 720 }[period];
+    const periodHours = { "24h": 24, "7d": 168, "30d": 720, "6m": 4320, "12m": 8760 }[period];
     const since = new Date(Date.now() - periodHours * 60 * 60 * 1000).toISOString();
 
     const [
@@ -241,7 +241,7 @@ export default function AdminMapa() {
       if (u?.uf) { ensureUf(u.uf); ufStats[u.uf].alertas++; if (u.cidade) { ensureMun(u.uf, u.cidade); munStats[u.uf][u.cidade].alertas++; } }
     });
     // Recordings per UF
-    const periodHoursVal = { "24h": 24, "7d": 168, "30d": 720 }[period];
+    const periodHoursVal = { "24h": 24, "7d": 168, "30d": 720, "6m": 4320, "12m": 8760 }[period];
     const midpoint = new Date(Date.now() - (periodHoursVal / 2) * 60 * 60 * 1000).toISOString();
     const recentRecByUf: Record<string, number> = {};
     const olderRecByUf: Record<string, number> = {};
@@ -679,7 +679,7 @@ export default function AdminMapa() {
         </div>
         <div className="flex items-center gap-2">
           <div className="flex gap-1">
-            {([["24h", "24h"], ["7d", "7 dias"], ["30d", "30 dias"]] as const).map(([key, label]) => (
+            {([["24h", "24h"], ["7d", "7 dias"], ["30d", "30 dias"], ["6m", "6 meses"], ["12m", "12 meses"]] as const).map(([key, label]) => (
               <button key={key} onClick={() => setPeriod(key)}
                 className="px-3 py-1.5 text-xs rounded-md border transition-colors"
                 style={{ borderColor: period === key ? "hsl(224 76% 33%)" : "hsl(220 13% 91%)", background: period === key ? "hsl(224 76% 33%)" : "transparent", color: period === key ? "#fff" : "hsl(220 9% 46%)", fontWeight: period === key ? 600 : 400 }}>
