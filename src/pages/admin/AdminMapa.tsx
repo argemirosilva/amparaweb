@@ -34,15 +34,15 @@ const UF_TO_STATE_NAME: Record<string, string> = Object.fromEntries(
 );
 
 const PIE_COLORS = [
-  "hsl(142 64% 34%)", "hsl(45 93% 47%)", "hsl(25 95% 53%)",
-  "hsl(0 73% 42%)", "hsl(220 9% 70%)",
+  "hsl(160 25% 45%)", "hsl(40 35% 52%)", "hsl(25 35% 50%)",
+  "hsl(0 30% 50%)", "hsl(220 10% 65%)",
 ];
 
 const BAR_COLORS = [
-  "hsl(224 76% 48%)", "hsl(262 60% 50%)", "hsl(316 72% 48%)",
-  "hsl(190 80% 42%)", "hsl(142 64% 34%)", "hsl(45 93% 47%)",
-  "hsl(25 95% 53%)", "hsl(0 73% 42%)", "hsl(280 55% 40%)",
-  "hsl(200 70% 50%)", "hsl(160 60% 40%)", "hsl(340 65% 47%)",
+  "hsl(215 25% 50%)", "hsl(250 20% 52%)", "hsl(310 25% 48%)",
+  "hsl(190 30% 45%)", "hsl(160 25% 42%)", "hsl(40 35% 52%)",
+  "hsl(25 35% 50%)", "hsl(0 30% 50%)", "hsl(270 20% 45%)",
+  "hsl(200 25% 50%)", "hsl(150 22% 45%)", "hsl(335 25% 47%)",
 ];
 
 const RISK_LABELS: Record<string, string> = {
@@ -477,35 +477,51 @@ export default function AdminMapa() {
         const uf = f.properties.uf_code;
         const s = stats[uf] || { usuarios: 0, online: 0, alertas: 0, monitorando: 0, gravacoes: 0, horasGravacao: 0 };
         const rt = recTrends[uf];
-        return { ...f, properties: { ...f.properties, ...s, rec_trend: rt?.trend || "stable", rec_pct: rt?.pct || 0 } };
+        const riskAC = ufRiskStats[uf]?.altoCritico || 0;
+        const panicoCount = ufPanicoStats[uf] || 0;
+        return { ...f, properties: { ...f.properties, ...s, rec_trend: rt?.trend || "stable", rec_pct: rt?.pct || 0, risk_alto_critico: riskAC, panico_total: panicoCount } };
       }),
     };
+
+    // Choose fill color expression based on ranking mode
+    const fillColorExpr = rankingMode === "risco"
+      ? ["step", ["get", "risk_alto_critico"], "#e5e7eb", 1, "hsl(0 30% 82%)", 5, "hsl(0 30% 68%)", 15, "hsl(0 30% 55%)", 30, "hsl(0 30% 42%)"]
+      : rankingMode === "panico"
+      ? ["step", ["get", "panico_total"], "#e5e7eb", 1, "hsl(25 35% 80%)", 5, "hsl(25 35% 65%)", 15, "hsl(25 35% 52%)", 30, "hsl(25 35% 40%)"]
+      : ["step", ["get", "gravacoes"], "#e5e7eb", 1, "hsl(215 25% 80%)", 10, "hsl(215 25% 65%)", 30, "hsl(215 25% 50%)", 80, "hsl(215 25% 38%)"];
+
+    const labelIcon = rankingMode === "risco" ? " ⚠" : rankingMode === "panico" ? " 🚨" : " 🎙";
+    const labelDataKey = rankingMode === "risco" ? "risk_alto_critico" : rankingMode === "panico" ? "panico_total" : "gravacoes";
     if (map.getSource("states")) {
       (map.getSource("states") as any).setData(enriched);
+      // Update choropleth color based on ranking mode
+      map.setPaintProperty("states-fill", "fill-color", fillColorExpr as any);
       if (map.getSource("state-labels")) {
         const labelFeatures = enriched.features.map((f: any) => {
           const coords = f.geometry.type === "Polygon" ? f.geometry.coordinates[0] : f.geometry.coordinates.flat(2);
           const lngs = coords.map((c: number[]) => c[0]); const lats = coords.map((c: number[]) => c[1]);
-          return { type: "Feature", geometry: { type: "Point", coordinates: [(Math.min(...lngs) + Math.max(...lngs)) / 2, (Math.min(...lats) + Math.max(...lats)) / 2] }, properties: { uf_code: f.properties.uf_code, gravacoes: f.properties.gravacoes || 0, rec_trend: f.properties.rec_trend || "stable", rec_pct: f.properties.rec_pct || 0, trend: ufTrends[f.properties.uf_code] || "stable" } };
+          return { type: "Feature", geometry: { type: "Point", coordinates: [(Math.min(...lngs) + Math.max(...lngs)) / 2, (Math.min(...lats) + Math.max(...lats)) / 2] }, properties: { uf_code: f.properties.uf_code, gravacoes: f.properties.gravacoes || 0, risk_alto_critico: f.properties.risk_alto_critico || 0, panico_total: f.properties.panico_total || 0, rec_trend: f.properties.rec_trend || "stable", rec_pct: f.properties.rec_pct || 0, trend: ufTrends[f.properties.uf_code] || "stable" } };
         });
         (map.getSource("state-labels") as any).setData({ type: "FeatureCollection", features: labelFeatures });
+        // Update label text
+        map.setLayoutProperty("state-labels-layer", "text-field", ["case", [">", ["get", labelDataKey], 0], ["concat", ["get", "uf_code"], "\n", ["to-string", ["get", labelDataKey]], labelIcon], ["get", "uf_code"]]);
       }
     } else {
       map.addSource("states", { type: "geojson", data: enriched });
-      map.addLayer({ id: "states-fill", type: "fill", source: "states", paint: { "fill-color": ["step", ["get", "gravacoes"], "#e5e7eb", 1, "#93c5fd", 10, "#3b82f6", 30, "#1d4ed8", 80, "#1e3a5f"], "fill-opacity": 0.7 } });
+      map.addLayer({ id: "states-fill", type: "fill", source: "states", paint: { "fill-color": fillColorExpr as any, "fill-opacity": 0.7 } });
       map.addLayer({ id: "states-outline", type: "line", source: "states", paint: { "line-color": "hsl(220, 13%, 70%)", "line-width": 1 } });
       map.addLayer({ id: "states-hover", type: "fill", source: "states", paint: { "fill-color": "hsl(224, 76%, 33%)", "fill-opacity": 0.15 }, filter: ["==", "uf_code", ""] });
 
       const labelFeatures = enriched.features.map((f: any) => {
         const coords = f.geometry.type === "Polygon" ? f.geometry.coordinates[0] : f.geometry.coordinates.flat(2);
         const lngs = coords.map((c: number[]) => c[0]); const lats = coords.map((c: number[]) => c[1]);
-        return { type: "Feature", geometry: { type: "Point", coordinates: [(Math.min(...lngs) + Math.max(...lngs)) / 2, (Math.min(...lats) + Math.max(...lats)) / 2] }, properties: { uf_code: f.properties.uf_code, gravacoes: f.properties.gravacoes || 0, rec_trend: f.properties.rec_trend || "stable", rec_pct: f.properties.rec_pct || 0, trend: ufTrends[f.properties.uf_code] || "stable" } };
+        return { type: "Feature", geometry: { type: "Point", coordinates: [(Math.min(...lngs) + Math.max(...lngs)) / 2, (Math.min(...lats) + Math.max(...lats)) / 2] }, properties: { uf_code: f.properties.uf_code, gravacoes: f.properties.gravacoes || 0, risk_alto_critico: f.properties.risk_alto_critico || 0, panico_total: f.properties.panico_total || 0, rec_trend: f.properties.rec_trend || "stable", rec_pct: f.properties.rec_pct || 0, trend: ufTrends[f.properties.uf_code] || "stable" } };
       });
       map.addSource("state-labels", { type: "geojson", data: { type: "FeatureCollection", features: labelFeatures } });
       map.addLayer({
         id: "state-labels-layer", type: "symbol", source: "state-labels",
         layout: {
-          "text-field": ["case", [">", ["get", "gravacoes"], 0], ["concat", ["get", "uf_code"], "\n", ["to-string", ["get", "gravacoes"]], " 🎙"], ["get", "uf_code"]],
+          "text-field": ["case", [">", ["get", labelDataKey], 0], ["concat", ["get", "uf_code"], "\n", ["to-string", ["get", labelDataKey]], labelIcon], ["get", "uf_code"]],
           "text-size": 11, "text-font": ["DIN Pro Bold", "Arial Unicode MS Bold"], "text-allow-overlap": false, "text-anchor": "center", "text-line-height": 1.3,
         },
         paint: { "text-color": "hsl(220, 13%, 25%)", "text-halo-color": "hsl(0, 0%, 100%)", "text-halo-width": 1.5 },
@@ -561,21 +577,24 @@ export default function AdminMapa() {
       map.on("mouseleave", "states-fill", () => { map.getCanvas().style.cursor = ""; map.setFilter("states-hover", ["==", "uf_code", ""]); popup.remove(); });
       map.on("click", "states-fill", (e: any) => { if (e.features?.length) { const uf = e.features[0].properties.uf_code; setSelectedUf((prev) => (prev === uf ? null : uf)); } });
     }
-  }, [geojson, stats, recTrends, ufTrends, mapLoaded]);
+  }, [geojson, stats, recTrends, ufTrends, mapLoaded, rankingMode, ufRiskStats, ufPanicoStats]);
 
-  // Update labels when stats change
+  // Update labels when stats or rankingMode change
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !mapLoaded || !geojson || !map.getSource("state-labels")) return;
+    const lIcon = rankingMode === "risco" ? " ⚠" : rankingMode === "panico" ? " 🚨" : " 🎙";
+    const lKey = rankingMode === "risco" ? "risk_alto_critico" : rankingMode === "panico" ? "panico_total" : "gravacoes";
     const labelFeatures = geojson.features.map((f: any) => {
       const uf = f.properties.uf_code; const s = stats[uf] || { gravacoes: 0 };
       const rt = recTrends[uf];
       const coords = f.geometry.type === "Polygon" ? f.geometry.coordinates[0] : f.geometry.coordinates.flat(2);
       const lngs = coords.map((c: number[]) => c[0]); const lats = coords.map((c: number[]) => c[1]);
-      return { type: "Feature", geometry: { type: "Point", coordinates: [(Math.min(...lngs) + Math.max(...lngs)) / 2, (Math.min(...lats) + Math.max(...lats)) / 2] }, properties: { uf_code: uf, gravacoes: s.gravacoes || 0, rec_trend: rt?.trend || "stable", rec_pct: rt?.pct || 0, trend: ufTrends[uf] || "stable" } };
+      return { type: "Feature", geometry: { type: "Point", coordinates: [(Math.min(...lngs) + Math.max(...lngs)) / 2, (Math.min(...lats) + Math.max(...lats)) / 2] }, properties: { uf_code: uf, gravacoes: s.gravacoes || 0, risk_alto_critico: ufRiskStats[uf]?.altoCritico || 0, panico_total: ufPanicoStats[uf] || 0, rec_trend: rt?.trend || "stable", rec_pct: rt?.pct || 0, trend: ufTrends[uf] || "stable" } };
     });
     (map.getSource("state-labels") as any).setData({ type: "FeatureCollection", features: labelFeatures });
-  }, [stats, ufTrends, recTrends, mapLoaded, geojson]);
+    map.setLayoutProperty("state-labels-layer", "text-field", ["case", [">", ["get", lKey], 0], ["concat", ["get", "uf_code"], "\n", ["to-string", ["get", lKey]], lIcon], ["get", "uf_code"]]);
+  }, [stats, ufTrends, recTrends, mapLoaded, geojson, rankingMode, ufRiskStats, ufPanicoStats]);
 
   // Markers
   useEffect(() => {
@@ -901,8 +920,8 @@ export default function AdminMapa() {
                   <XAxis dataKey="date" tick={{ fontSize: 11, fill: "hsl(220 9% 46%)" }} interval={timelineData.length > 60 ? Math.floor(timelineData.length / 12) : "preserveStartEnd"} />
                   <YAxis tick={{ fontSize: 11, fill: "hsl(220 9% 46%)" }} allowDecimals={false} />
                   <Tooltip contentStyle={tooltipStyle} />
-                  <Line type="monotone" dataKey="eventos" name="Eventos" stroke="hsl(224 76% 48%)" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
-                  <Line type="monotone" dataKey="emergencias" name="Emergências" stroke="hsl(0 73% 42%)" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
+                  <Line type="monotone" dataKey="eventos" name="Eventos" stroke="hsl(215 25% 50%)" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
+                  <Line type="monotone" dataKey="emergencias" name="Emergências" stroke="hsl(0 30% 50%)" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -964,8 +983,8 @@ export default function AdminMapa() {
                 <XAxis dataKey="hora" tick={{ fontSize: 10, fill: "hsl(220 9% 46%)" }} interval={2} />
                 <YAxis tick={{ fontSize: 10, fill: "hsl(220 9% 46%)" }} allowDecimals={false} />
                 <Tooltip contentStyle={tooltipStyle} />
-                <Area type="monotone" dataKey="alertas" name="Alertas" stroke="hsl(0 73% 42%)" fill="hsl(0 73% 42% / 0.15)" strokeWidth={2} />
-                <Area type="monotone" dataKey="logins" name="Logins" stroke="hsl(224 76% 48%)" fill="hsl(224 76% 48% / 0.15)" strokeWidth={2} />
+                <Area type="monotone" dataKey="alertas" name="Alertas" stroke="hsl(0 30% 50%)" fill="hsl(0 30% 50% / 0.12)" strokeWidth={2} />
+                <Area type="monotone" dataKey="logins" name="Logins" stroke="hsl(215 25% 50%)" fill="hsl(215 25% 50% / 0.12)" strokeWidth={2} />
                 <Legend wrapperStyle={{ fontSize: 11, fontFamily: "Inter, sans-serif" }} />
               </AreaChart>
             </ResponsiveContainer>
