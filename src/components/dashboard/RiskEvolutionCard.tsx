@@ -7,10 +7,8 @@ import GradientIcon from "@/components/ui/gradient-icon";
 import { callWebApi } from "@/services/webApiService";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, YAxis, XAxis } from "recharts";
 import RelatorioSaudeContent, { type RelatorioSaude } from "./RelatorioSaudeContent";
-import EmotionalFaceIcon, { computeEmotionalScore, getEmotionalLevel } from "./EmotionalFaceIcon";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { computeEmotionalScore } from "./EmotionalFaceIcon";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
 
 type WindowDays = 7 | 15 | 30;
 
@@ -45,14 +43,6 @@ interface HistoryPoint {
   level: string;
 }
 
-const avatarKeyMap: Record<string, string> = {
-  "Radiante": "radiante",
-  "Tranquila": "tranquila",
-  "Cansada": "neutra",
-  "Triste": "desgastada",
-  "Chorando": "triste",
-  "Em colapso": "em_colapso",
-};
 
 // Module-level cache so report survives re-renders and re-mounts within the same session
 let cachedRelatorio: RelatorioSaude | null = null;
@@ -71,7 +61,7 @@ export default function RiskEvolutionCard() {
   const [emotionalScore, setEmotionalScore] = useState<number | null>(() =>
     cachedRelatorio ? computeEmotionalScore(cachedRelatorio.sentimentos, cachedRelatorio.periodo.total_alertas) : null
   );
-  const [emotionalAvatars, setEmotionalAvatars] = useState<Record<string, string> | null>(null);
+  
 
   // Fetch risk data only (no report)
   const fetchData = useCallback(async (w: WindowDays) => {
@@ -122,20 +112,6 @@ export default function RiskEvolutionCard() {
     }
   }, [sessionToken]);
 
-  // Fetch emotional avatars from user profile
-  useEffect(() => {
-    if (!usuario?.id) return;
-    supabase
-      .from("usuarios")
-      .select("emotional_avatars")
-      .eq("id", usuario.id)
-      .single()
-      .then(({ data }) => {
-        if (data?.emotional_avatars && typeof data.emotional_avatars === "object") {
-          setEmotionalAvatars(data.emotional_avatars as Record<string, string>);
-        }
-      });
-  }, [usuario?.id]);
 
   useEffect(() => {
     fetchData(window);
@@ -164,32 +140,9 @@ export default function RiskEvolutionCard() {
     ? "animate-pulse"
     : "";
 
-  // Resolve emotional avatar
-  const emotionLevel = emotionalScore !== null ? getEmotionalLevel(emotionalScore) : null;
-  const avatarKey = emotionLevel ? (avatarKeyMap[emotionLevel.label] || "neutra") : null;
-  const rawAvatarUrl = avatarKey ? emotionalAvatars?.[avatarKey] : null;
-  const emotionalAvatarUrl = rawAvatarUrl ? `${rawAvatarUrl}?t=${Date.now()}` : null;
-
-  const hasEmotionalImage = emotionalAvatarUrl && emotionLevel;
-
   return (
     <div className="ampara-card overflow-hidden !p-0">
-      <div className="flex">
-        {/* Left: Emotional avatar image — full height, showing right side of face */}
-        {hasEmotionalImage && !loading && (
-          <div className="relative w-20 shrink-0 overflow-hidden rounded-l-2xl">
-            <img
-              src={emotionalAvatarUrl}
-              alt={emotionLevel.label}
-              className="absolute inset-0 w-full h-full object-cover object-[center_20%] scale-[1.3]"
-            />
-            {/* Gradient fade into card */}
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-card/40 to-card" />
-          </div>
-        )}
-
-        {/* Right: Card content */}
-        <div className="flex-1 p-4 space-y-3">
+      <div className="p-4 space-y-3">
           {/* Header */}
           <div className="flex items-center justify-between">
             <p className="text-base font-semibold">
@@ -304,7 +257,6 @@ export default function RiskEvolutionCard() {
           ) : (
             <p className="text-sm text-muted-foreground">Nenhuma avaliação disponível.</p>
           )}
-        </div>
       </div>
     </div>
   );
