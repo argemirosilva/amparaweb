@@ -15,6 +15,7 @@ import { ptBR } from "date-fns/locale";
 import {
   ArrowLeft, Send, ShieldCheck, ShieldOff, Lock, Clock, Eye, X,
 } from "lucide-react";
+import ResourceViewerModal from "@/components/suporte/ResourceViewerModal";
 
 const SENDER_STYLES: Record<string, { bg: string; text: string; align: string; label: string }> = {
   agent: { bg: "hsl(217 91% 60% / 0.12)", text: "hsl(217 91% 30%)", align: "ml-auto", label: "Agente" },
@@ -49,6 +50,9 @@ export default function SuporteChat() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [confirmRequestId, setConfirmRequestId] = useState("");
   const [confirmCode, setConfirmCode] = useState("");
+
+  // Resource viewer
+  const [viewingGrant, setViewingGrant] = useState<any>(null);
 
   const fetchSession = async () => {
     if (!sessionToken || !sessionId) return;
@@ -267,6 +271,9 @@ export default function SuporteChat() {
                     <Clock className="w-3 h-3" />
                     <GrantCountdown expiresAt={g.expires_at} />
                   </div>
+                  <Button size="sm" variant="outline" className="w-full mt-1 gap-1" onClick={() => setViewingGrant(g)}>
+                    <Eye className="w-3 h-3" /> Visualizar
+                  </Button>
                   <Button size="sm" variant="outline" className="w-full mt-1 gap-1 text-destructive" onClick={() => handleRevoke(g.id)}>
                     <ShieldOff className="w-3 h-3" /> Revogar
                   </Button>
@@ -385,6 +392,14 @@ export default function SuporteChat() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {/* Resource Viewer Modal */}
+      <ResourceViewerModal
+        open={!!viewingGrant}
+        onClose={() => setViewingGrant(null)}
+        grant={viewingGrant}
+        sessionToken={sessionToken || ""}
+        onRevoke={handleRevoke}
+      />
     </div>
   );
 }
