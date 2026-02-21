@@ -134,6 +134,7 @@ export default function AdminMapa() {
   const [loading, setLoading] = useState(false);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
   const [period, setPeriod] = useState<"24h" | "7d" | "30d">("7d");
+  const [ufTrends, setUfTrends] = useState<Record<string, "up" | "down" | "stable">>({});
 
   // Dashboard analytics state
   const [analyticsPeriod, setAnalyticsPeriod] = useState("30d");
@@ -247,6 +248,30 @@ export default function AdminMapa() {
     }).filter(Boolean) as AlertMarker[];
     setAlerts(alertMarkers);
 
+    // Compute UF trends: compare first half vs second half of period
+    {
+      const periodHoursVal = { "24h": 24, "7d": 168, "30d": 720 }[period];
+      const midpoint = new Date(Date.now() - (periodHoursVal / 2) * 60 * 60 * 1000).toISOString();
+      const [{ data: recentEvents }, { data: olderEvents }] = await Promise.all([
+        supabase.from("gravacoes_analises").select("user_id").gte("created_at", midpoint),
+        supabase.from("gravacoes_analises").select("user_id").gte("created_at", since).lt("created_at", midpoint),
+      ]);
+      const recentByUf: Record<string, number> = {};
+      const olderByUf: Record<string, number> = {};
+      (recentEvents || []).forEach((e) => { const uf = userMap[e.user_id]?.uf; if (uf) recentByUf[uf] = (recentByUf[uf] || 0) + 1; });
+      (olderEvents || []).forEach((e) => { const uf = userMap[e.user_id]?.uf; if (uf) olderByUf[uf] = (olderByUf[uf] || 0) + 1; });
+      const trends: Record<string, "up" | "down" | "stable"> = {};
+      const allUfs = new Set([...Object.keys(recentByUf), ...Object.keys(olderByUf)]);
+      allUfs.forEach((uf) => {
+        const r = recentByUf[uf] || 0;
+        const o = olderByUf[uf] || 0;
+        if (r + o < 2) { trends[uf] = "stable"; return; }
+        if (o === 0) { trends[uf] = r > 0 ? "up" : "stable"; return; }
+        const ratio = (r - o) / o;
+        trends[uf] = ratio >= 0.2 ? "up" : ratio <= -0.2 ? "down" : "stable";
+      });
+      setUfTrends(trends);
+    }
 
     // Build device markers for ALL active users (not just those with device_status)
     const deviceMarkers: DeviceMarker[] = (users || [])
@@ -378,10 +403,25 @@ export default function AdminMapa() {
       const labelFeatures = enriched.features.map((f: any) => {
         const coords = f.geometry.type === "Polygon" ? f.geometry.coordinates[0] : f.geometry.coordinates.flat(2);
         const lngs = coords.map((c: number[]) => c[0]); const lats = coords.map((c: number[]) => c[1]);
-        return { type: "Feature", geometry: { type: "Point", coordinates: [(Math.min(...lngs) + Math.max(...lngs)) / 2, (Math.min(...lats) + Math.max(...lats)) / 2] }, properties: { uf_code: f.properties.uf_code, usuarios: f.properties.usuarios || 0 } };
+        return { type: "Feature", geometry: { type: "Point", coordinates: [(Math.min(...lngs) + Math.max(...lngs)) / 2, (Math.min(...lats) + Math.max(...lats)) / 2] }, properties: { uf_code: f.properties.uf_code, usuarios: f.properties.usuarios || 0, trend: ufTrends[f.properties.uf_code] || "stable" } };
       });
       map.addSource("state-labels", { type: "geojson", data: { type: "FeatureCollection", features: labelFeatures } });
       map.addLayer({ id: "state-labels-layer", type: "symbol", source: "state-labels", layout: { "text-field": ["case", [">", ["get", "usuarios"], 0], ["concat", ["get", "uf_code"], " (", ["to-string", ["get", "usuarios"]], ")"], ["get", "uf_code"]], "text-size": 11, "text-font": ["DIN Pro Bold", "Arial Unicode MS Bold"], "text-allow-overlap": false, "text-anchor": "center" }, paint: { "text-color": "hsl(220, 13%, 25%)", "text-halo-color": "hsl(0, 0%, 100%)", "text-halo-width": 1.5 } });
+
+      // Trend arrows layer
+      map.addLayer({
+        id: "state-trend-layer", type: "symbol", source: "state-labels",
+        filter: ["!=", ["get", "trend"], "stable"],
+        layout: {
+          "text-field": ["case", ["==", ["get", "trend"], "up"], "▲", ["==", ["get", "trend"], "down"], "▼", ""],
+          "text-size": 12, "text-font": ["DIN Pro Bold", "Arial Unicode MS Bold"],
+          "text-offset": [0, 1.2], "text-allow-overlap": true, "text-ignore-placement": true,
+        },
+        paint: {
+          "text-color": ["case", ["==", ["get", "trend"], "up"], "#dc2626", "#16a34a"],
+          "text-halo-color": "hsl(0, 0%, 100%)", "text-halo-width": 1.5,
+        },
+      });
 
       const mbgl = mapboxglInstance;
       if (!mbgl) return;
@@ -408,10 +448,10 @@ export default function AdminMapa() {
       const uf = f.properties.uf_code; const s = stats[uf] || { usuarios: 0 };
       const coords = f.geometry.type === "Polygon" ? f.geometry.coordinates[0] : f.geometry.coordinates.flat(2);
       const lngs = coords.map((c: number[]) => c[0]); const lats = coords.map((c: number[]) => c[1]);
-      return { type: "Feature", geometry: { type: "Point", coordinates: [(Math.min(...lngs) + Math.max(...lngs)) / 2, (Math.min(...lats) + Math.max(...lats)) / 2] }, properties: { uf_code: uf, usuarios: s.usuarios || 0 } };
+      return { type: "Feature", geometry: { type: "Point", coordinates: [(Math.min(...lngs) + Math.max(...lngs)) / 2, (Math.min(...lats) + Math.max(...lats)) / 2] }, properties: { uf_code: uf, usuarios: s.usuarios || 0, trend: ufTrends[uf] || "stable" } };
     });
     (map.getSource("state-labels") as any).setData({ type: "FeatureCollection", features: labelFeatures });
-  }, [stats, mapLoaded, geojson]);
+  }, [stats, ufTrends, mapLoaded, geojson]);
 
   // Markers
   useEffect(() => {

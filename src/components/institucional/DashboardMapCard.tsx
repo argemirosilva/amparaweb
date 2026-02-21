@@ -73,6 +73,7 @@ export default function DashboardMapCard() {
   const [devices, setDevices] = useState<DeviceItem[]>([]);
   const [selected, setSelected] = useState<SelectedItem | null>(null);
   const [loading, setLoading] = useState(false);
+  const [ufTrends, setUfTrends] = useState<Record<string, "up" | "down" | "stable">>({});
 
   const totalOnline = Object.values(stats).reduce((a, s) => a + s.online, 0);
   const totalMonitorando = Object.values(stats).reduce((a, s) => a + s.monitorando, 0);
@@ -149,6 +150,28 @@ export default function DashboardMapCard() {
 
     setStats(ufStats);
 
+    // Compute UF trends: compare first half vs second half of 30-day period
+    const midpoint = new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString();
+    const recentByUf: Record<string, number> = {};
+    const olderByUf: Record<string, number> = {};
+    (eventosData || []).forEach((e: any) => {
+      const uf = userMap[e.user_id]?.uf;
+      if (!uf) return;
+      if (e.created_at >= midpoint) recentByUf[uf] = (recentByUf[uf] || 0) + 1;
+      else olderByUf[uf] = (olderByUf[uf] || 0) + 1;
+    });
+    const trends: Record<string, "up" | "down" | "stable"> = {};
+    const allUfs = new Set([...Object.keys(recentByUf), ...Object.keys(olderByUf)]);
+    allUfs.forEach((uf) => {
+      const r = recentByUf[uf] || 0;
+      const o = olderByUf[uf] || 0;
+      if (r + o < 2) { trends[uf] = "stable"; return; }
+      if (o === 0) { trends[uf] = r > 0 ? "up" : "stable"; return; }
+      const ratio = (r - o) / o;
+      trends[uf] = ratio >= 0.2 ? "up" : ratio <= -0.2 ? "down" : "stable";
+    });
+    setUfTrends(trends);
+
     // Device items
     const userLastLoc: Record<string, { lat: number; lng: number }> = {};
     (locations || []).forEach((l) => { if (!userLastLoc[l.user_id]) userLastLoc[l.user_id] = { lat: l.latitude, lng: l.longitude }; });
@@ -213,7 +236,7 @@ export default function DashboardMapCard() {
           return {
             type: "Feature",
             geometry: { type: "Point", coordinates: [(Math.min(...lngs) + Math.max(...lngs)) / 2, (Math.min(...lats) + Math.max(...lats)) / 2] },
-            properties: { uf_code: f.properties.uf_code, eventos: f.properties.eventos || 0 },
+            properties: { uf_code: f.properties.uf_code, eventos: f.properties.eventos || 0, trend: ufTrends[f.properties.uf_code] || "stable" },
           };
         });
         (map.getSource("state-labels") as any).setData({ type: "FeatureCollection", features: labelFeatures });
@@ -246,7 +269,7 @@ export default function DashboardMapCard() {
         return {
           type: "Feature",
           geometry: { type: "Point", coordinates: [(Math.min(...lngs) + Math.max(...lngs)) / 2, (Math.min(...lats) + Math.max(...lats)) / 2] },
-          properties: { uf_code: f.properties.uf_code, eventos: f.properties.eventos || 0 },
+          properties: { uf_code: f.properties.uf_code, eventos: f.properties.eventos || 0, trend: ufTrends[f.properties.uf_code] || "stable" },
         };
       });
       map.addSource("state-labels", { type: "geojson", data: { type: "FeatureCollection", features: labelFeatures } });
@@ -257,6 +280,21 @@ export default function DashboardMapCard() {
           "text-size": 11, "text-font": ["DIN Pro Bold", "Arial Unicode MS Bold"], "text-allow-overlap": false, "text-anchor": "center",
         },
         paint: { "text-color": "hsl(220, 13%, 25%)", "text-halo-color": "hsl(0, 0%, 100%)", "text-halo-width": 1.5 },
+      });
+
+      // Trend arrows layer
+      map.addLayer({
+        id: "state-trend-layer", type: "symbol", source: "state-labels",
+        filter: ["!=", ["get", "trend"], "stable"],
+        layout: {
+          "text-field": ["case", ["==", ["get", "trend"], "up"], "▲", ["==", ["get", "trend"], "down"], "▼", ""],
+          "text-size": 12, "text-font": ["DIN Pro Bold", "Arial Unicode MS Bold"],
+          "text-offset": [0, 1.2], "text-allow-overlap": true, "text-ignore-placement": true,
+        },
+        paint: {
+          "text-color": ["case", ["==", ["get", "trend"], "up"], "#dc2626", "#16a34a"],
+          "text-halo-color": "hsl(0, 0%, 100%)", "text-halo-width": 1.5,
+        },
       });
 
       // Click handler
@@ -347,7 +385,7 @@ export default function DashboardMapCard() {
         popupRef.current?.remove();
       });
     }
-  }, [geojson, stats, mapLoaded, totalEventos]);
+  }, [geojson, stats, ufTrends, mapLoaded, totalEventos]);
 
   // Markers
   useEffect(() => {
