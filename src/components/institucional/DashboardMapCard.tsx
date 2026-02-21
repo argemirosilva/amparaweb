@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMapbox } from "@/hooks/useMapbox";
-import { X, MapPin, Smartphone, RefreshCw } from "lucide-react";
+import { X, MapPin, Smartphone, RefreshCw, TrendingUp, TrendingDown, Minus, Mic, Clock } from "lucide-react";
 
 const fontStyle = { fontFamily: "Inter, Roboto, sans-serif" };
 
@@ -34,6 +34,8 @@ interface UfStats {
   medio: number;
   alto: number;
   critico: number;
+  gravacoes: number;
+  horasGravacao: number;
 }
 
 interface DeviceItem {
@@ -59,7 +61,10 @@ const subtitleStyle = { color: "hsl(220 9% 46%)" };
 const emptyStats = (): UfStats => ({
   usuarios: 0, online: 0, alertas: 0, monitorando: 0,
   eventos: 0, emergencias: 0, baixo: 0, medio: 0, alto: 0, critico: 0,
+  gravacoes: 0, horasGravacao: 0,
 });
+
+interface RecTrend { trend: "up" | "down" | "stable"; pct: number }
 
 export default function DashboardMapCard() {
   const mapContainer = useRef<HTMLDivElement>(null);
@@ -74,10 +79,13 @@ export default function DashboardMapCard() {
   const [selected, setSelected] = useState<SelectedItem | null>(null);
   const [loading, setLoading] = useState(false);
   const [ufTrends, setUfTrends] = useState<Record<string, "up" | "down" | "stable">>({});
+  const [recTrends, setRecTrends] = useState<Record<string, RecTrend>>({});
 
   const totalOnline = Object.values(stats).reduce((a, s) => a + s.online, 0);
   const totalMonitorando = Object.values(stats).reduce((a, s) => a + s.monitorando, 0);
   const totalEventos = Object.values(stats).reduce((a, s) => a + s.eventos, 0);
+  const totalGravacoes = Object.values(stats).reduce((a, s) => a + s.gravacoes, 0);
+  const totalHoras = Object.values(stats).reduce((a, s) => a + s.horasGravacao, 0);
 
   // Load GeoJSON
   useEffect(() => {
@@ -97,13 +105,15 @@ export default function DashboardMapCard() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const midpoint = new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString();
 
-    const [{ data: users }, { data: deviceData }, { data: alertData }, { data: locations }, { data: eventosData }] = await Promise.all([
+    const [{ data: users }, { data: deviceData }, { data: alertData }, { data: locations }, { data: eventosData }, { data: gravacoesData }] = await Promise.all([
       supabase.from("usuarios").select("id, nome_completo, endereco_uf, endereco_lat, endereco_lon, status"),
       supabase.from("device_status").select("*").order("updated_at", { ascending: false }),
       supabase.from("alertas_panico").select("*").gte("criado_em", since).order("criado_em", { ascending: false }).limit(200),
       supabase.from("localizacoes").select("user_id, latitude, longitude, created_at").gte("created_at", since).order("created_at", { ascending: false }).limit(200),
       supabase.from("gravacoes_analises").select("user_id, created_at, nivel_risco").gte("created_at", since),
+      supabase.from("gravacoes").select("user_id, created_at, duracao_segundos").gte("created_at", since),
     ]);
 
     const userMap: Record<string, { nome: string; uf: string; lat: number | null; lng: number | null }> = {};
@@ -148,10 +158,27 @@ export default function DashboardMapCard() {
       }
     });
 
+    // Recordings per UF
+    const recentRecByUf: Record<string, number> = {};
+    const olderRecByUf: Record<string, number> = {};
+    (gravacoesData || []).forEach((g: any) => {
+      const uf = userMap[g.user_id]?.uf;
+      if (uf) {
+        ensureUf(uf);
+        ufStats[uf].gravacoes++;
+        ufStats[uf].horasGravacao += (g.duracao_segundos || 0) / 3600;
+        // Trend buckets
+        if (g.created_at >= midpoint) recentRecByUf[uf] = (recentRecByUf[uf] || 0) + 1;
+        else olderRecByUf[uf] = (olderRecByUf[uf] || 0) + 1;
+      }
+    });
+
+    // Round hours
+    Object.values(ufStats).forEach(s => { s.horasGravacao = Math.round(s.horasGravacao * 10) / 10; });
+
     setStats(ufStats);
 
-    // Compute UF trends: compare first half vs second half of 30-day period
-    const midpoint = new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString();
+    // Event trends
     const recentByUf: Record<string, number> = {};
     const olderByUf: Record<string, number> = {};
     (eventosData || []).forEach((e: any) => {
@@ -171,6 +198,19 @@ export default function DashboardMapCard() {
       trends[uf] = ratio >= 0.2 ? "up" : ratio <= -0.2 ? "down" : "stable";
     });
     setUfTrends(trends);
+
+    // Recording trends
+    const rTrends: Record<string, RecTrend> = {};
+    const allRecUfs = new Set([...Object.keys(recentRecByUf), ...Object.keys(olderRecByUf)]);
+    allRecUfs.forEach((uf) => {
+      const r = recentRecByUf[uf] || 0;
+      const o = olderRecByUf[uf] || 0;
+      if (r + o < 2) { rTrends[uf] = { trend: "stable", pct: 0 }; return; }
+      if (o === 0) { rTrends[uf] = { trend: r > 0 ? "up" : "stable", pct: 100 }; return; }
+      const pct = Math.round(((r - o) / o) * 100);
+      rTrends[uf] = { trend: pct >= 20 ? "up" : pct <= -20 ? "down" : "stable", pct: Math.abs(pct) };
+    });
+    setRecTrends(rTrends);
 
     // Device items
     const userLastLoc: Record<string, { lat: number; lng: number }> = {};
@@ -223,32 +263,30 @@ export default function DashboardMapCard() {
         const uf = f.properties.uf_code;
         const s = stats[uf] || emptyStats();
         const pctPais = totalEventos > 0 ? Math.round((s.eventos / totalEventos) * 100) : 0;
-        return { ...f, properties: { ...f.properties, ...s, pct_pais: pctPais } };
+        const rt = recTrends[uf];
+        return {
+          ...f,
+          properties: {
+            ...f.properties, ...s, pct_pais: pctPais,
+            rec_trend: rt?.trend || "stable", rec_pct: rt?.pct || 0,
+          },
+        };
       }),
     };
 
     if (map.getSource("states")) {
       (map.getSource("states") as any).setData(enriched);
       if (map.getSource("state-labels")) {
-        const labelFeatures = enriched.features.map((f: any) => {
-          const coords = f.geometry.type === "Polygon" ? f.geometry.coordinates[0] : f.geometry.coordinates.flat(2);
-          const lngs = coords.map((c: number[]) => c[0]); const lats = coords.map((c: number[]) => c[1]);
-          return {
-            type: "Feature",
-            geometry: { type: "Point", coordinates: [(Math.min(...lngs) + Math.max(...lngs)) / 2, (Math.min(...lats) + Math.max(...lats)) / 2] },
-            properties: { uf_code: f.properties.uf_code, eventos: f.properties.eventos || 0, trend: ufTrends[f.properties.uf_code] || "stable" },
-          };
-        });
+        const labelFeatures = buildLabelFeatures(enriched);
         (map.getSource("state-labels") as any).setData({ type: "FeatureCollection", features: labelFeatures });
       }
     } else {
       map.addSource("states", { type: "geojson", data: enriched });
 
-      // Choropleth colored by eventos (same thresholds as TransparenciaMapa)
       map.addLayer({
         id: "states-fill", type: "fill", source: "states",
         paint: {
-          "fill-color": ["step", ["get", "eventos"], "#e5e7eb", 1, "#4ade80", 3, "#facc15", 6, "#f97316", 15, "#dc2626"],
+          "fill-color": ["step", ["get", "gravacoes"], "#e5e7eb", 1, "#93c5fd", 10, "#3b82f6", 30, "#1d4ed8", 80, "#1e3a5f"],
           "fill-opacity": 0.75,
         },
       });
@@ -262,37 +300,40 @@ export default function DashboardMapCard() {
         filter: ["==", "uf_code", ""],
       });
 
-      // Labels with UF (eventos)
-      const labelFeatures = enriched.features.map((f: any) => {
-        const coords = f.geometry.type === "Polygon" ? f.geometry.coordinates[0] : f.geometry.coordinates.flat(2);
-        const lngs = coords.map((c: number[]) => c[0]); const lats = coords.map((c: number[]) => c[1]);
-        return {
-          type: "Feature",
-          geometry: { type: "Point", coordinates: [(Math.min(...lngs) + Math.max(...lngs)) / 2, (Math.min(...lats) + Math.max(...lats)) / 2] },
-          properties: { uf_code: f.properties.uf_code, eventos: f.properties.eventos || 0, trend: ufTrends[f.properties.uf_code] || "stable" },
-        };
-      });
+      const labelFeatures = buildLabelFeatures(enriched);
       map.addSource("state-labels", { type: "geojson", data: { type: "FeatureCollection", features: labelFeatures } });
       map.addLayer({
         id: "state-labels-layer", type: "symbol", source: "state-labels",
         layout: {
-          "text-field": ["case", [">", ["get", "eventos"], 0], ["concat", ["get", "uf_code"], " (", ["to-string", ["get", "eventos"]], ")"], ["get", "uf_code"]],
-          "text-size": 11, "text-font": ["DIN Pro Bold", "Arial Unicode MS Bold"], "text-allow-overlap": false, "text-anchor": "center",
+          "text-field": [
+            "case",
+            [">", ["get", "gravacoes"], 0],
+            ["concat", ["get", "uf_code"], "\n", ["to-string", ["get", "gravacoes"]], " 🎙"],
+            ["get", "uf_code"],
+          ],
+          "text-size": 11, "text-font": ["DIN Pro Bold", "Arial Unicode MS Bold"],
+          "text-allow-overlap": false, "text-anchor": "center",
+          "text-line-height": 1.3,
         },
         paint: { "text-color": "hsl(220, 13%, 25%)", "text-halo-color": "hsl(0, 0%, 100%)", "text-halo-width": 1.5 },
       });
 
-      // Trend arrows layer
+      // Trend arrows for recordings
       map.addLayer({
-        id: "state-trend-layer", type: "symbol", source: "state-labels",
-        filter: ["!=", ["get", "trend"], "stable"],
+        id: "state-rec-trend-layer", type: "symbol", source: "state-labels",
+        filter: ["!=", ["get", "rec_trend"], "stable"],
         layout: {
-          "text-field": ["case", ["==", ["get", "trend"], "up"], "▲", ["==", ["get", "trend"], "down"], "▼", ""],
-          "text-size": 12, "text-font": ["DIN Pro Bold", "Arial Unicode MS Bold"],
-          "text-offset": [0, 1.2], "text-allow-overlap": true, "text-ignore-placement": true,
+          "text-field": [
+            "concat",
+            ["case", ["==", ["get", "rec_trend"], "up"], "▲ +", "▼ -"],
+            ["to-string", ["get", "rec_pct"]],
+            "%",
+          ],
+          "text-size": 10, "text-font": ["DIN Pro Bold", "Arial Unicode MS Bold"],
+          "text-offset": [0, 2.0], "text-allow-overlap": true, "text-ignore-placement": true,
         },
         paint: {
-          "text-color": ["case", ["==", ["get", "trend"], "up"], "#dc2626", "#16a34a"],
+          "text-color": ["case", ["==", ["get", "rec_trend"], "up"], "#16a34a", "#dc2626"],
           "text-halo-color": "hsl(0, 0%, 100%)", "text-halo-width": 1.5,
         },
       });
@@ -308,12 +349,13 @@ export default function DashboardMapCard() {
               usuarios: p.usuarios || 0, online: p.online || 0, alertas: p.alertas || 0,
               monitorando: p.monitorando || 0, eventos: p.eventos || 0, emergencias: p.emergencias || 0,
               baixo: p.baixo || 0, medio: p.medio || 0, alto: p.alto || 0, critico: p.critico || 0,
+              gravacoes: p.gravacoes || 0, horasGravacao: p.horasGravacao || 0,
             },
           });
         }
       });
 
-      // Hover tooltip with severity breakdown (same as TransparenciaMapa)
+      // Hover tooltip
       map.on("mouseenter", "states-fill", () => { map.getCanvas().style.cursor = "pointer"; });
       map.on("mousemove", "states-fill", (e: any) => {
         if (!e.features?.length || !mapboxglInstance) return;
@@ -325,7 +367,13 @@ export default function DashboardMapCard() {
         const medio = Number(p.medio) || 0;
         const alto = Number(p.alto) || 0;
         const critico = Number(p.critico) || 0;
+        const grav = Number(p.gravacoes) || 0;
+        const horas = Number(p.horasGravacao) || 0;
         const pctPais = Number(p.pct_pais) || 0;
+        const rt = recTrends[uf];
+        const trendIcon = rt?.trend === "up" ? "▲" : rt?.trend === "down" ? "▼" : "—";
+        const trendColor = rt?.trend === "up" ? "#16a34a" : rt?.trend === "down" ? "#dc2626" : "hsl(220,9%,46%)";
+        const trendPct = rt?.pct || 0;
         const pct = (v: number) => total > 0 ? Math.round((v / total) * 100) : 0;
 
         map.setFilter("states-hover", ["==", "uf_code", uf]);
@@ -335,14 +383,25 @@ export default function DashboardMapCard() {
             <strong style="font-size:13px">${name}</strong>
             <span style="font-size:10px;color:hsl(220,9%,46%);margin-left:8px">${pctPais}% do país</span>
           </div>
+          <div style="background:hsl(224,76%,96%);border-radius:6px;padding:6px 8px;margin-bottom:6px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-weight:600">🎙 Gravações</span>
+              <strong style="font-size:14px">${grav}</strong>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:2px">
+              <span style="color:hsl(220,9%,46%);font-size:10px">⏱ ${horas}h de áudio</span>
+              <span style="color:${trendColor};font-weight:700;font-size:11px">${trendIcon} ${trendPct > 0 ? trendPct + "%" : ""}</span>
+            </div>
+          </div>
           <div style="display:flex;justify-content:space-between">
             <span style="color:hsl(220,9%,46%)">Monitoradas</span>
             <strong>${p.usuarios || 0}</strong>
           </div>
           <div style="display:flex;justify-content:space-between">
-            <span style="color:hsl(220,9%,46%)">Total de eventos</span>
+            <span style="color:hsl(220,9%,46%)">Eventos de risco</span>
             <strong>${total}</strong>
           </div>
+          ${total > 0 ? `
           <div style="margin:6px 0 4px;border-top:1px solid hsl(220,13%,91%);padding-top:6px">
             <span style="color:hsl(220,9%,46%);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px">Gravidade</span>
           </div>
@@ -361,7 +420,7 @@ export default function DashboardMapCard() {
           <div style="display:flex;justify-content:space-between">
             <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#dc2626;margin-right:4px"></span>Crítico</span>
             <span>${critico} <span style="color:hsl(220,9%,46%)">(${pct(critico)}%)</span></span>
-          </div>
+          </div>` : ""}
           <div style="margin-top:6px;border-top:1px solid hsl(220,13%,91%);padding-top:4px">
             <div style="display:flex;justify-content:space-between">
               <span style="color:hsl(220,9%,46%)">Emergências</span>
@@ -385,7 +444,7 @@ export default function DashboardMapCard() {
         popupRef.current?.remove();
       });
     }
-  }, [geojson, stats, ufTrends, mapLoaded, totalEventos]);
+  }, [geojson, stats, ufTrends, recTrends, mapLoaded, totalEventos]);
 
   // Markers
   useEffect(() => {
@@ -411,14 +470,18 @@ export default function DashboardMapCard() {
           <h2 className="text-sm font-semibold" style={titleStyle}>Mapa Operacional</h2>
           <p className="text-xs" style={subtitleStyle}>Últimos 30 dias — clique para detalhes</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-1.5 text-[10px]" style={subtitleStyle}>
+            <Mic className="w-3 h-3" style={{ color: "hsl(224 76% 48%)" }} />
+            <span>{totalGravacoes} grav.</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-[10px]" style={subtitleStyle}>
+            <Clock className="w-3 h-3" style={{ color: "hsl(262 60% 50%)" }} />
+            <span>{totalHoras}h</span>
+          </div>
           <div className="flex items-center gap-1.5 text-[10px]" style={subtitleStyle}>
             <span className="w-2 h-2 rounded-full inline-block" style={{ background: "hsl(142 71% 35%)" }} />
             <span>{totalOnline} online</span>
-          </div>
-          <div className="flex items-center gap-1.5 text-[10px]" style={subtitleStyle}>
-            <span className="w-2 h-2 rounded-full inline-block" style={{ background: "hsl(224 76% 48%)" }} />
-            <span>{totalMonitorando} monit.</span>
           </div>
           <div className="flex items-center gap-1.5 text-[10px]" style={subtitleStyle}>
             <span className="w-2 h-2 rounded-full inline-block" style={{ background: "hsl(0 72% 51%)" }} />
@@ -438,6 +501,30 @@ export default function DashboardMapCard() {
           </div>
         )}
         <div ref={mapContainer} className="w-full h-full" />
+
+        {/* Legend */}
+        <div className="absolute bottom-3 left-3 z-10 rounded-md border px-3 py-2 text-[10px]" style={{ background: "hsla(0,0%,100%,0.92)", borderColor: "hsl(220 13% 91%)" }}>
+          <p className="font-semibold mb-1" style={titleStyle}>Gravações</p>
+          <div className="flex items-center gap-1.5">
+            {[
+              { color: "#e5e7eb", label: "0" },
+              { color: "#93c5fd", label: "1-9" },
+              { color: "#3b82f6", label: "10-29" },
+              { color: "#1d4ed8", label: "30-79" },
+              { color: "#1e3a5f", label: "80+" },
+            ].map((c) => (
+              <div key={c.label} className="flex items-center gap-0.5">
+                <span className="inline-block w-3 h-3 rounded-sm" style={{ background: c.color }} />
+                <span style={subtitleStyle}>{c.label}</span>
+              </div>
+            ))}
+          </div>
+          <div className="flex items-center gap-2 mt-1" style={subtitleStyle}>
+            <span style={{ color: "#16a34a" }}>▲ Aumento</span>
+            <span style={{ color: "#dc2626" }}>▼ Declínio</span>
+            <span>(vs. 15d anteriores)</span>
+          </div>
+        </div>
       </div>
 
       {/* Detail drawer */}
@@ -454,6 +541,12 @@ export default function DashboardMapCard() {
                 {selected.type === "uf" && `${UF_TO_STATE_NAME[selected.uf] || selected.uf} (${selected.uf})`}
                 {selected.type === "device" && selected.data.userName}
               </span>
+              {selected.type === "uf" && recTrends[selected.uf] && recTrends[selected.uf].trend !== "stable" && (
+                <span className="flex items-center gap-1 text-xs font-bold" style={{ color: recTrends[selected.uf].trend === "up" ? "#16a34a" : "#dc2626" }}>
+                  {recTrends[selected.uf].trend === "up" ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
+                  {recTrends[selected.uf].pct}%
+                </span>
+              )}
             </div>
             <button onClick={() => setSelected(null)} className="p-1 rounded hover:bg-gray-100">
               <X className="w-4 h-4" style={subtitleStyle} />
@@ -462,20 +555,21 @@ export default function DashboardMapCard() {
 
           {selected.type === "uf" && (
             <>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 mb-3">
                 {[
-                  { label: "Monitoradas", value: selected.stats.usuarios, color: "hsl(220 13% 18%)" },
-                  { label: "Eventos", value: selected.stats.eventos, color: "hsl(224 76% 48%)" },
-                  { label: "Emergências", value: selected.stats.emergencias, color: "hsl(0 72% 51%)" },
-                  { label: "Online", value: selected.stats.online, color: "hsl(142 71% 35%)" },
+                  { label: "Gravações", value: selected.stats.gravacoes, color: "hsl(224 76% 48%)", icon: "🎙" },
+                  { label: "Horas áudio", value: `${selected.stats.horasGravacao}h`, color: "hsl(262 60% 50%)", icon: "⏱" },
+                  { label: "Monitoradas", value: selected.stats.usuarios, color: "hsl(220 13% 18%)", icon: "" },
+                  { label: "Eventos", value: selected.stats.eventos, color: "hsl(45 93% 47%)", icon: "" },
+                  { label: "Emergências", value: selected.stats.emergencias, color: "hsl(0 72% 51%)", icon: "" },
+                  { label: "Online", value: selected.stats.online, color: "hsl(142 71% 35%)", icon: "" },
                 ].map((item) => (
                   <div key={item.label} className="rounded-md border px-3 py-2" style={{ borderColor: "hsl(220 13% 91%)" }}>
-                    <p className="text-[10px] mb-0.5" style={subtitleStyle}>{item.label}</p>
+                    <p className="text-[10px] mb-0.5" style={subtitleStyle}>{item.icon} {item.label}</p>
                     <p className="text-lg font-bold" style={{ color: item.color }}>{item.value}</p>
                   </div>
                 ))}
               </div>
-              {/* Severity breakdown */}
               {selected.stats.eventos > 0 && (
                 <div className="flex items-center gap-3 text-[10px]" style={subtitleStyle}>
                   <span className="font-semibold uppercase tracking-wider">Gravidade:</span>
@@ -516,4 +610,24 @@ export default function DashboardMapCard() {
       )}
     </div>
   );
+}
+
+function buildLabelFeatures(enriched: any) {
+  return enriched.features.map((f: any) => {
+    const coords = f.geometry.type === "Polygon" ? f.geometry.coordinates[0] : f.geometry.coordinates.flat(2);
+    const lngs = coords.map((c: number[]) => c[0]);
+    const lats = coords.map((c: number[]) => c[1]);
+    return {
+      type: "Feature",
+      geometry: { type: "Point", coordinates: [(Math.min(...lngs) + Math.max(...lngs)) / 2, (Math.min(...lats) + Math.max(...lats)) / 2] },
+      properties: {
+        uf_code: f.properties.uf_code,
+        eventos: f.properties.eventos || 0,
+        gravacoes: f.properties.gravacoes || 0,
+        trend: f.properties.rec_trend || "stable",
+        rec_trend: f.properties.rec_trend || "stable",
+        rec_pct: f.properties.rec_pct || 0,
+      },
+    };
+  });
 }
