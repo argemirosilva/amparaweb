@@ -77,7 +77,7 @@ export default function RelatorioSaudeContent({ relatorio, loading, error }: Pro
   }
 
   return (
-    <ScrollArea className="max-h-[60vh]">
+    <ScrollArea className="max-h-[80vh]">
       <div className="space-y-5 pr-2">
         {/* Seção 1: Panorama */}
         {relatorio.panorama_narrativo &&
