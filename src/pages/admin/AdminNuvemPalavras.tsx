@@ -109,13 +109,9 @@ export default function AdminNuvemPalavras() {
   const fontSize = (count: number, index: number, total: number) => {
     const minFont = selectedWord ? 18 : 14;
     const maxFont = 52;
-    const range = maxCount - minCount;
-    if (range === 0) {
-      // All same count — use random spread for visual variety
-      const ratio = total > 1 ? 1 - index / (total - 1) : 1;
-      return minFont + ratio * (maxFont - minFont) * 0.6 + (maxFont - minFont) * 0.2;
-    }
-    return minFont + ((count - minCount) / range) * (maxFont - minFont);
+    // Use rank-based sizing for better visual spread
+    const ratio = total > 1 ? 1 - index / (total - 1) : 1;
+    return minFont + ratio * (maxFont - minFont);
   };
 
   const shuffled = useMemo(() => {
