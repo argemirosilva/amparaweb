@@ -1,15 +1,13 @@
 interface Props {
   score: number; // 0-1
   size?: number;
+  className?: string;
 }
 
 type Level = {
   label: string;
-  render: (s: number, c: string, cl: string) => JSX.Element;
+  render: (stroke: string, muted: string) => JSX.Element;
 };
-
-const MAIN = "hsl(263, 70%, 58%)";
-const LIGHT = "hsl(263, 70%, 90%)";
 
 function getLevel(score: number): Level {
   if (score >= 0.8) return levels.radiante;
@@ -23,86 +21,78 @@ function getLevel(score: number): Level {
 const levels: Record<string, Level> = {
   radiante: {
     label: "Radiante",
-    render: (_s, c, cl) => (
+    render: (s, m) => (
       <>
-        <circle cx="32" cy="32" r="28" fill={cl} stroke={c} strokeWidth="2.5" />
-        {/* happy eyes - arcs */}
-        <path d="M20 26 Q24 20 28 26" stroke={c} strokeWidth="2.5" fill="none" strokeLinecap="round" />
-        <path d="M36 26 Q40 20 44 26" stroke={c} strokeWidth="2.5" fill="none" strokeLinecap="round" />
-        {/* big smile */}
-        <path d="M20 38 Q32 50 44 38" stroke={c} strokeWidth="2.5" fill="none" strokeLinecap="round" />
+        <circle cx="32" cy="32" r="27" fill="none" stroke={m} strokeWidth="1.5" />
+        <circle cx="24" cy="28" r="1.8" fill={s} />
+        <circle cx="40" cy="28" r="1.8" fill={s} />
+        <path d="M21 37 Q32 46 43 37" stroke={s} strokeWidth="1.8" fill="none" strokeLinecap="round" />
       </>
     ),
   },
   tranquila: {
     label: "Tranquila",
-    render: (_s, c, cl) => (
+    render: (s, m) => (
       <>
-        <circle cx="32" cy="32" r="28" fill={cl} stroke={c} strokeWidth="2.5" />
-        <circle cx="24" cy="28" r="2.5" fill={c} />
-        <circle cx="40" cy="28" r="2.5" fill={c} />
-        {/* gentle smile */}
-        <path d="M22 38 Q32 44 42 38" stroke={c} strokeWidth="2.5" fill="none" strokeLinecap="round" />
+        <circle cx="32" cy="32" r="27" fill="none" stroke={m} strokeWidth="1.5" />
+        <circle cx="24" cy="28" r="1.8" fill={s} />
+        <circle cx="40" cy="28" r="1.8" fill={s} />
+        <path d="M23 38 Q32 43 41 38" stroke={s} strokeWidth="1.8" fill="none" strokeLinecap="round" />
       </>
     ),
   },
   cansada: {
     label: "Cansada",
-    render: (_s, c, cl) => (
+    render: (s, m) => (
       <>
-        <circle cx="32" cy="32" r="28" fill={cl} stroke={c} strokeWidth="2.5" />
-        {/* half-closed eyes */}
-        <line x1="20" y1="28" x2="28" y2="28" stroke={c} strokeWidth="2.5" strokeLinecap="round" />
-        <line x1="36" y1="28" x2="44" y2="28" stroke={c} strokeWidth="2.5" strokeLinecap="round" />
-        {/* straight mouth */}
-        <line x1="24" y1="40" x2="40" y2="40" stroke={c} strokeWidth="2.5" strokeLinecap="round" />
+        <circle cx="32" cy="32" r="27" fill="none" stroke={m} strokeWidth="1.5" />
+        <line x1="21" y1="28" x2="27" y2="28" stroke={s} strokeWidth="1.8" strokeLinecap="round" />
+        <line x1="37" y1="28" x2="43" y2="28" stroke={s} strokeWidth="1.8" strokeLinecap="round" />
+        <line x1="26" y1="39" x2="38" y2="39" stroke={s} strokeWidth="1.8" strokeLinecap="round" />
       </>
     ),
   },
   triste: {
     label: "Triste",
-    render: (_s, c, cl) => (
+    render: (s, m) => (
       <>
-        <circle cx="32" cy="32" r="28" fill={cl} stroke={c} strokeWidth="2.5" />
-        <circle cx="24" cy="28" r="2.5" fill={c} />
-        <circle cx="40" cy="28" r="2.5" fill={c} />
-        {/* frown */}
-        <path d="M22 44 Q32 36 42 44" stroke={c} strokeWidth="2.5" fill="none" strokeLinecap="round" />
+        <circle cx="32" cy="32" r="27" fill="none" stroke={m} strokeWidth="1.5" />
+        <circle cx="24" cy="27" r="1.8" fill={s} />
+        <circle cx="40" cy="27" r="1.8" fill={s} />
+        <path d="M23 43 Q32 36 41 43" stroke={s} strokeWidth="1.8" fill="none" strokeLinecap="round" />
       </>
     ),
   },
   chorando: {
     label: "Chorando",
-    render: (_s, c, cl) => (
+    render: (s, m) => (
       <>
-        <circle cx="32" cy="32" r="28" fill={cl} stroke={c} strokeWidth="2.5" />
-        <circle cx="24" cy="26" r="2.5" fill={c} />
-        <circle cx="40" cy="26" r="2.5" fill={c} />
-        {/* tears */}
-        <ellipse cx="18" cy="34" rx="1.8" ry="3.5" fill={c} opacity="0.5" />
-        <ellipse cx="46" cy="34" rx="1.8" ry="3.5" fill={c} opacity="0.5" />
-        {/* wavy mouth */}
-        <path d="M24 42 Q28 38 32 42 Q36 46 40 42" stroke={c} strokeWidth="2" fill="none" strokeLinecap="round" />
+        <circle cx="32" cy="32" r="27" fill="none" stroke={m} strokeWidth="1.5" />
+        <circle cx="24" cy="26" r="1.8" fill={s} />
+        <circle cx="40" cy="26" r="1.8" fill={s} />
+        <line x1="20" y1="31" x2="20" y2="37" stroke={s} strokeWidth="1.2" strokeLinecap="round" opacity="0.5" />
+        <line x1="44" y1="31" x2="44" y2="37" stroke={s} strokeWidth="1.2" strokeLinecap="round" opacity="0.5" />
+        <path d="M24 43 Q32 37 40 43" stroke={s} strokeWidth="1.8" fill="none" strokeLinecap="round" />
       </>
     ),
   },
   colapso: {
     label: "Em colapso",
-    render: (_s, c, cl) => (
+    render: (s, m) => (
       <>
-        <circle cx="32" cy="34" r="26" fill={cl} stroke={c} strokeWidth="2.5" />
-        {/* wild hair */}
-        <line x1="20" y1="12" x2="16" y2="2" stroke={c} strokeWidth="2.5" strokeLinecap="round" />
-        <line x1="28" y1="10" x2="26" y2="0" stroke={c} strokeWidth="2.5" strokeLinecap="round" />
-        <line x1="36" y1="10" x2="38" y2="0" stroke={c} strokeWidth="2.5" strokeLinecap="round" />
-        <line x1="44" y1="12" x2="48" y2="2" stroke={c} strokeWidth="2.5" strokeLinecap="round" />
+        <circle cx="32" cy="34" r="25" fill="none" stroke={m} strokeWidth="1.5" />
+        {/* hair lines */}
+        <line x1="22" y1="12" x2="19" y2="4" stroke={s} strokeWidth="1.5" strokeLinecap="round" opacity="0.6" />
+        <line x1="29" y1="10" x2="28" y2="2" stroke={s} strokeWidth="1.5" strokeLinecap="round" opacity="0.6" />
+        <line x1="35" y1="10" x2="36" y2="2" stroke={s} strokeWidth="1.5" strokeLinecap="round" opacity="0.6" />
+        <line x1="42" y1="12" x2="45" y2="4" stroke={s} strokeWidth="1.5" strokeLinecap="round" opacity="0.6" />
         {/* wide eyes */}
-        <circle cx="24" cy="30" r="4" stroke={c} strokeWidth="2" fill="none" />
-        <circle cx="24" cy="30" r="1.5" fill={c} />
-        <circle cx="40" cy="30" r="4" stroke={c} strokeWidth="2" fill="none" />
-        <circle cx="40" cy="30" r="1.5" fill={c} />
+        <circle cx="25" cy="30" r="3.5" stroke={s} strokeWidth="1.5" fill="none" />
+        <circle cx="25" cy="30" r="1.2" fill={s} />
+        <circle cx="39" cy="30" r="3.5" stroke={s} strokeWidth="1.5" fill="none" />
+        <circle cx="39" cy="30" r="1.2" fill={s} />
         {/* open mouth */}
-        <ellipse cx="32" cy="44" rx="5" ry="4" stroke={c} strokeWidth="2" fill="none" />
+        <ellipse cx="32" cy="43" rx="4" ry="3" stroke={s} strokeWidth="1.5" fill="none" />
       </>
     ),
   },
@@ -112,8 +102,19 @@ export function getEmotionalLevel(score: number) {
   return getLevel(score);
 }
 
-export default function EmotionalFaceIcon({ score, size = 64 }: Props) {
+export function computeEmotionalScore(sentimentos: Record<string, number>, totalAlertas: number): number {
+  const positivo = sentimentos.positivo || 0;
+  const neutro = sentimentos.neutro || 0;
+  const total = Object.values(sentimentos).reduce((a, b) => a + b, 0);
+  const score = total > 0 ? (positivo * 2 + neutro) / (total * 2) : 0.5;
+  return totalAlertas > 0 ? Math.max(0, score - 0.15) : score;
+}
+
+export default function EmotionalFaceIcon({ score, size = 48, className }: Props) {
   const level = getLevel(score);
+  const stroke = "hsl(var(--muted-foreground))";
+  const muted = "hsl(var(--border))";
+
   return (
     <svg
       width={size}
@@ -122,8 +123,9 @@ export default function EmotionalFaceIcon({ score, size = 64 }: Props) {
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       aria-label={level.label}
+      className={className}
     >
-      {level.render(score, MAIN, LIGHT)}
+      {level.render(stroke, muted)}
     </svg>
   );
 }
