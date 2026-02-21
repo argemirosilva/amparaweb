@@ -4,11 +4,13 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TrendingUp, TrendingDown, Minus, ShieldAlert, AlertTriangle, Shield, ShieldCheck, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
 import GradientIcon from "@/components/ui/gradient-icon";
-import { useAuth } from "@/contexts/AuthContext";
 import { callWebApi } from "@/services/webApiService";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, YAxis, XAxis } from "recharts";
 import RelatorioSaudeContent, { type RelatorioSaude } from "./RelatorioSaudeContent";
 import EmotionalFaceIcon, { computeEmotionalScore, getEmotionalLevel } from "./EmotionalFaceIcon";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 type WindowDays = 7 | 15 | 30;
 
@@ -43,8 +45,17 @@ interface HistoryPoint {
   level: string;
 }
 
+const avatarKeyMap: Record<string, string> = {
+  "Radiante": "radiante",
+  "Tranquila": "tranquila",
+  "Cansada": "neutra",
+  "Triste": "desgastada",
+  "Chorando": "triste",
+  "Em colapso": "em_colapso",
+};
+
 export default function RiskEvolutionCard() {
-  const { sessionToken } = useAuth();
+  const { sessionToken, usuario } = useAuth();
   const [window, setWindow] = useState<WindowDays>(7);
   const [assessment, setAssessment] = useState<Assessment | null>(null);
   const [history, setHistory] = useState<HistoryPoint[]>([]);
@@ -55,6 +66,7 @@ export default function RiskEvolutionCard() {
   const [relatorioLoading, setRelatorioLoading] = useState(false);
   const [relatorioError, setRelatorioError] = useState<string | null>(null);
   const [emotionalScore, setEmotionalScore] = useState<number | null>(null);
+  const [emotionalAvatars, setEmotionalAvatars] = useState<Record<string, string> | null>(null);
 
   const fetchData = useCallback(async (w: WindowDays) => {
     if (!sessionToken) return;
@@ -90,6 +102,21 @@ export default function RiskEvolutionCard() {
     }
   }, [sessionToken]);
 
+  // Fetch emotional avatars from user profile
+  useEffect(() => {
+    if (!usuario?.id) return;
+    supabase
+      .from("usuarios")
+      .select("emotional_avatars")
+      .eq("id", usuario.id)
+      .single()
+      .then(({ data }) => {
+        if (data?.emotional_avatars && typeof data.emotional_avatars === "object") {
+          setEmotionalAvatars(data.emotional_avatars as Record<string, string>);
+        }
+      });
+  }, [usuario?.id]);
+
   useEffect(() => {
     fetchData(window);
   }, [window, fetchData]);
@@ -111,6 +138,11 @@ export default function RiskEvolutionCard() {
   const trendPulse = assessment?.trend === "Subindo" || assessment?.trend === "Reduzindo"
     ? "animate-pulse"
     : "";
+
+  // Resolve emotional avatar
+  const emotionLevel = emotionalScore !== null ? getEmotionalLevel(emotionalScore) : null;
+  const avatarKey = emotionLevel ? (avatarKeyMap[emotionLevel.label] || "neutra") : null;
+  const emotionalAvatarUrl = avatarKey ? emotionalAvatars?.[avatarKey] : null;
 
   return (
     <div className="ampara-card">
@@ -140,30 +172,39 @@ export default function RiskEvolutionCard() {
           <p className="text-sm text-destructive">{error}</p>
         ) : assessment ? (
           <>
-            {/* Score + Level + Trend + Emotional Face */}
-            <div className="flex items-center gap-3 flex-wrap">
-              <span className="text-3xl font-bold" style={{ color: level.color }}>
-                {assessment.risk_score}
-              </span>
-              <Badge className={level.className}>
-                {assessment.risk_level}
-              </Badge>
+            {/* Emotional Avatar + Level + Trend */}
+            <div className="flex items-center gap-3">
+              {emotionLevel ? (
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-12 w-12 border-2 border-border">
+                    {emotionalAvatarUrl ? (
+                      <AvatarImage src={emotionalAvatarUrl} alt={emotionLevel.label} />
+                    ) : (
+                      <AvatarFallback className="bg-muted">
+                        <EmotionalFaceIcon score={emotionalScore!} size={32} />
+                      </AvatarFallback>
+                    )}
+                  </Avatar>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-semibold text-foreground">{emotionLevel.label}</span>
+                    <span className="text-[11px] text-muted-foreground">Saúde emocional</span>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <span className="text-3xl font-bold" style={{ color: level.color }}>
+                    {assessment.risk_score}
+                  </span>
+                  <Badge className={level.className}>
+                    {assessment.risk_level}
+                  </Badge>
+                </>
+              )}
               <div className={`flex items-center gap-1 text-sm ml-auto ${trendColor} ${trendPulse}`}>
                 <TrendIcon className="w-4 h-4" />
                 <span className="font-medium">{assessment.trend}</span>
               </div>
             </div>
-
-            {/* Emotional face */}
-            {emotionalScore !== null && (
-              <div className="flex items-center gap-3 py-1 px-2 rounded-lg bg-muted/40">
-                <EmotionalFaceIcon score={emotionalScore} size={40} />
-                <div className="flex flex-col">
-                  <span className="text-xs font-medium text-foreground/80">{getEmotionalLevel(emotionalScore).label}</span>
-                  <span className="text-[10px] text-muted-foreground">Saúde emocional</span>
-                </div>
-              </div>
-            )}
 
             {/* Gráfico de evolução */}
             {history.length > 1 && (
