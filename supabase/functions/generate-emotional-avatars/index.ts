@@ -109,32 +109,32 @@ const EMOTIONS = [
   {
     key: "radiante",
     prompt:
-      "A circular profile portrait of person [1] with a bright radiant open smile, sparkling happy eyes, glowing warm skin. Bright green circle border. Clean modern mobile UI style, soft warm golden-hour lighting. The person must look genuinely joyful and beaming. Professional portrait, consistent facial identity.",
+      "A soft watercolor-style circular portrait of person [1] with a gentle warm smile, kind bright eyes, healthy glowing skin. Delicate pastel green tint background. Soft diffused lighting, dreamy gentle atmosphere. Minimalist clean aesthetic, muted warm tones. Professional portrait, consistent facial identity.",
   },
   {
     key: "tranquila",
     prompt:
-      "A circular profile portrait of person [1] with a gentle soft calm smile, relaxed peaceful eyes, serene tranquil expression. Soft teal/aqua circle border. Clean modern mobile UI style, soft diffused natural lighting. The person must look at ease and content. Professional portrait, consistent facial identity.",
+      "A soft watercolor-style circular portrait of person [1] with a slight serene smile, calm relaxed eyes, peaceful expression. Delicate pastel mint/sage tint background. Soft diffused natural lighting, tranquil gentle atmosphere. Minimalist clean aesthetic, muted soft tones. Professional portrait, consistent facial identity.",
   },
   {
     key: "neutra",
     prompt:
-      "A circular profile portrait of person [1] with a completely neutral apathetic poker-face expression, relaxed facial muscles, blank stare, no emotion. Pale yellow circle border. Clean modern mobile UI style, even flat studio lighting. The person must look detached and emotionless. Professional portrait, consistent facial identity.",
+      "A soft watercolor-style circular portrait of person [1] with a neutral resting expression, slightly tired eyes, relaxed face. Delicate pastel warm yellow tint background. Soft even lighting, subdued gentle atmosphere. Minimalist clean aesthetic, muted earthy tones. Professional portrait, consistent facial identity.",
   },
   {
     key: "desgastada",
     prompt:
-      "A circular profile portrait of person [1] looking sad with furrowed eyebrows, downturned mouth, sorrowful tired eyes, slightly lowered head. Soft orange circle border. Clean modern mobile UI style, slightly desaturated cool lighting. The person must look visibly upset and drained. Professional portrait, consistent facial identity.",
+      "A soft watercolor-style circular portrait of person [1] looking slightly melancholic, gentle downturned lips, thoughtful sad eyes, pensive expression. Delicate pastel peach/salmon tint background. Soft cool-toned lighting, contemplative gentle atmosphere. Minimalist clean aesthetic, muted soft tones. Professional portrait, consistent facial identity.",
   },
   {
     key: "triste",
     prompt:
-      "A circular profile portrait of person [1] actively crying with visible tear streaks on cheeks, watery glassy red eyes, trembling lips, deeply emotional. Light red circle border. Clean modern mobile UI style, cool blue-toned soft lighting. The person must look like they are weeping. Professional portrait, consistent facial identity.",
+      "A soft watercolor-style circular portrait of person [1] with a sad expression, glistening eyes as if holding back tears, slightly flushed cheeks, vulnerable look. Delicate pastel rose tint background. Soft cool diffused lighting, melancholic but gentle atmosphere. Minimalist clean aesthetic, muted desaturated tones. Professional portrait, consistent facial identity.",
   },
   {
     key: "em_colapso",
     prompt:
-      "A circular profile portrait of person [1] in total emotional collapse and panic. Wide frightened eyes, open mouth as if screaming or crying out, slightly disheveled messy hair, tear streaks, visible anguish and desperation. Intense dark red circle border. Clean modern mobile UI style, dramatic harsh contrasted lighting. The person must look in extreme distress. Professional portrait, consistent facial identity.",
+      "A soft watercolor-style circular portrait of person [1] looking deeply exhausted and overwhelmed, weary unfocused eyes, messy hair falling across face, emotionally drained expression. Delicate pastel mauve/dusty rose tint background. Soft dim lighting, somber but gentle atmosphere. Minimalist clean aesthetic, muted cool desaturated tones. Professional portrait, consistent facial identity.",
   },
 ];
 
