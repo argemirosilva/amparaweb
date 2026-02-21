@@ -172,6 +172,22 @@ export default function PerfilPage() {
       await api("updateMe", { avatar_url: avatarUrl });
       setPerfil(prev => prev ? { ...prev, avatar_url: avatarUrl } : prev);
       toast({ title: "Foto atualizada!" });
+
+      // Fire-and-forget: generate emotional avatar variations
+      fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-emotional-avatars`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
+        body: JSON.stringify({ userId: usuario.id, sessionToken }),
+      }).then(r => r.json()).then(res => {
+        if (res.success) {
+          console.log(`Emotional avatars generated: ${res.generated}/6`);
+        } else {
+          console.warn("Emotional avatars generation failed:", res.error);
+        }
+      }).catch(err => console.warn("Emotional avatars error:", err));
     } catch (err) {
       console.error("Avatar upload error:", err);
       toast({ title: "Erro ao enviar foto", variant: "destructive" });
