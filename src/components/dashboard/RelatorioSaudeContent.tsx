@@ -90,24 +90,14 @@ export default function RelatorioSaudeContent({ relatorio, loading, error }: Pro
         }
 
         {/* Seção 2: Saúde Emocional */}
+        {relatorio.explicacao_emocional &&
         <section>
-          <SectionHeader icon={Heart} title="Saúde Emocional" />
-          {(() => {
-            const score = computeEmotionalScore(relatorio.sentimentos, relatorio.periodo.total_alertas);
-            const level = getEmotionalLevel(score);
-            return (
-              <div className="flex items-center justify-center gap-2 py-1">
-                <EmotionalFaceIcon score={score} size={28} />
-                <span className="text-sm font-medium text-foreground">{level.label}</span>
-              </div>
-            );
-          })()}
-          {relatorio.explicacao_emocional &&
-          <p className="mt-1 text-[11px] text-foreground/60 italic leading-relaxed text-center">
+            <SectionHeader icon={Heart} title="Saúde Emocional" />
+            <p className="text-[11px] text-foreground/60 italic leading-relaxed text-center">
               {relatorio.explicacao_emocional}
             </p>
-          }
-        </section>
+          </section>
+        }
 
         {/* Seção 3: Padrões Identificados */}
         {(relatorio.tipos_violencia.length > 0 || relatorio.padroes_recorrentes.length > 0) &&
