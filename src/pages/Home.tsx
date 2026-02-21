@@ -17,8 +17,8 @@ export default function HomePage() {
           <DeviceStatusCard />
           <Button
             onClick={() => navigate("/busca-perfil")}
-            variant="outline"
-            className="sm:hidden h-auto gap-1.5 border-primary/30 text-primary hover:bg-primary/10 flex-col px-4 min-w-[90px]"
+            variant="default"
+            className="sm:hidden h-auto gap-1.5 flex-col px-4 min-w-[90px]"
           >
             <UserSearch className="w-5 h-5" />
             <span className="text-[10px] leading-tight text-center">Pesquisar<br/>parceiro</span>
@@ -26,8 +26,7 @@ export default function HomePage() {
         </div>
         <Button
           onClick={() => navigate("/busca-perfil")}
-          variant="outline"
-          className="hidden sm:flex w-full gap-2 border-primary/30 text-primary hover:bg-primary/10"
+          className="hidden sm:flex w-full gap-2"
         >
           <UserSearch className="w-4 h-4" />
           Pesquisar parceiro
