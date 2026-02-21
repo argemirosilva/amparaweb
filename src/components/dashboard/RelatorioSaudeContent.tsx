@@ -38,7 +38,7 @@ interface Props {
   error: string | null;
 }
 
-import EmotionalFaceIcon, { getEmotionalLevel } from "./EmotionalFaceIcon";
+import EmotionalFaceIcon, { getEmotionalLevel, computeEmotionalScore } from "./EmotionalFaceIcon";
 
 function SectionHeader({ icon: Icon, title }: { icon: typeof Heart; title: string }) {
   return (
@@ -49,13 +49,6 @@ function SectionHeader({ icon: Icon, title }: { icon: typeof Heart; title: strin
   );
 }
 
-function computeEmotionalScore(sentimentos: Record<string, number>, totalAlertas: number): number {
-  const positivo = sentimentos.positivo || 0;
-  const neutro = sentimentos.neutro || 0;
-  const total = Object.values(sentimentos).reduce((a, b) => a + b, 0);
-  const score = total > 0 ? (positivo * 2 + neutro) / (total * 2) : 0.5;
-  return totalAlertas > 0 ? Math.max(0, score - 0.15) : score;
-}
 
 export default function RelatorioSaudeContent({ relatorio, loading, error }: Props) {
   if (loading) {

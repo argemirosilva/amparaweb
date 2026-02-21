@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { callWebApi } from "@/services/webApiService";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, YAxis, XAxis } from "recharts";
 import RelatorioSaudeContent, { type RelatorioSaude } from "./RelatorioSaudeContent";
+import EmotionalFaceIcon, { computeEmotionalScore, getEmotionalLevel } from "./EmotionalFaceIcon";
 
 type WindowDays = 7 | 15 | 30;
 
@@ -53,15 +54,17 @@ export default function RiskEvolutionCard() {
   const [relatorio, setRelatorio] = useState<RelatorioSaude | null>(null);
   const [relatorioLoading, setRelatorioLoading] = useState(false);
   const [relatorioError, setRelatorioError] = useState<string | null>(null);
+  const [emotionalScore, setEmotionalScore] = useState<number | null>(null);
 
   const fetchData = useCallback(async (w: WindowDays) => {
     if (!sessionToken) return;
     setLoading(true);
     setError(null);
     try {
-      const [assessRes, histRes] = await Promise.all([
+      const [assessRes, histRes, relRes] = await Promise.all([
         callWebApi("getRiskAssessment", sessionToken, { window_days: w }),
         callWebApi("getRiskHistory", sessionToken, { window_days: w, limit: 30 }),
+        callWebApi("getRelatorioSaude", sessionToken, { window_days: w <= 30 ? 90 : w }),
       ]);
       if (assessRes.ok && assessRes.data.assessment) {
         setAssessment(assessRes.data.assessment);
@@ -74,6 +77,11 @@ export default function RiskEvolutionCard() {
             level: h.risk_level,
           }))
         );
+      }
+      if (relRes.ok && relRes.data.relatorio) {
+        const rel = relRes.data.relatorio as RelatorioSaude;
+        setRelatorio(rel);
+        setEmotionalScore(computeEmotionalScore(rel.sentimentos, rel.periodo.total_alertas));
       }
     } catch {
       setError("Erro ao carregar avaliação de risco");
@@ -132,7 +140,7 @@ export default function RiskEvolutionCard() {
           <p className="text-sm text-destructive">{error}</p>
         ) : assessment ? (
           <>
-            {/* Score + Level + Trend */}
+            {/* Score + Level + Trend + Emotional Face */}
             <div className="flex items-center gap-3 flex-wrap">
               <span className="text-3xl font-bold" style={{ color: level.color }}>
                 {assessment.risk_score}
@@ -145,6 +153,17 @@ export default function RiskEvolutionCard() {
                 <span className="font-medium">{assessment.trend}</span>
               </div>
             </div>
+
+            {/* Emotional face */}
+            {emotionalScore !== null && (
+              <div className="flex items-center gap-3 py-1 px-2 rounded-lg bg-muted/40">
+                <EmotionalFaceIcon score={emotionalScore} size={40} />
+                <div className="flex flex-col">
+                  <span className="text-xs font-medium text-foreground/80">{getEmotionalLevel(emotionalScore).label}</span>
+                  <span className="text-[10px] text-muted-foreground">Saúde emocional</span>
+                </div>
+              </div>
+            )}
 
             {/* Gráfico de evolução */}
             {history.length > 1 && (
@@ -200,36 +219,15 @@ export default function RiskEvolutionCard() {
 
             {/* Detalhes expansíveis */}
             <button
-              onClick={async () => {
-                const willExpand = !expanded;
-                setExpanded(willExpand);
-                if (willExpand && !relatorio && !relatorioLoading && sessionToken) {
-                  setRelatorioLoading(true);
-                  setRelatorioError(null);
-                  try {
-                    const res = await callWebApi("getRelatorioSaude", sessionToken, { window_days: window <= 30 ? 90 : window });
-                    if (res.ok && res.data.relatorio) {
-                      setRelatorio(res.data.relatorio);
-                    } else {
-                      setRelatorioError("Não foi possível gerar o relatório.");
-                    }
-                  } catch {
-                    setRelatorioError("Erro ao carregar relatório de saúde.");
-                  } finally {
-                    setRelatorioLoading(false);
-                  }
-                }
-              }}
+              onClick={() => setExpanded(!expanded)}
               className="w-full flex items-center justify-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors py-1"
             >
-              {relatorioLoading ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : expanded ? (
+              {expanded ? (
                 <ChevronUp className="w-3.5 h-3.5" />
               ) : (
                 <ChevronDown className="w-3.5 h-3.5" />
               )}
-              {relatorioLoading ? "Gerando relatório..." : expanded ? "Ocultar relatório" : "Ver relatório de saúde da relação"}
+              {expanded ? "Ocultar relatório" : "Ver relatório de saúde da relação"}
             </button>
 
             {expanded && (
