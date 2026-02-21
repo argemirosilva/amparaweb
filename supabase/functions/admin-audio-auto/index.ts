@@ -336,12 +336,19 @@ async function processItem(
         .map((t) => `[${t.speaker === "M" ? "Ele" : "Ela"}] ${t.text}`)
         .join("\n");
 
-      // 9) Generate random date within last 30 days
+      // 9) Generate random date within last 12 months
       const now = Date.now();
-      const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
-      const randomTs = new Date(now - Math.random() * thirtyDaysMs);
-      // Also randomize the time of day for realism
-      randomTs.setHours(Math.floor(Math.random() * 18) + 6); // 06:00–23:59
+      const twelveMonthsMs = 365 * 24 * 60 * 60 * 1000;
+      const randomTs = new Date(now - Math.random() * twelveMonthsMs);
+      // Randomize time with nighttime bias (60% between 19-23h)
+      const hourRoll = Math.random();
+      if (hourRoll < 0.60) {
+        randomTs.setHours(19 + Math.floor(Math.random() * 5)); // 19-23
+      } else if (hourRoll < 0.85) {
+        randomTs.setHours(12 + Math.floor(Math.random() * 7)); // 12-18
+      } else {
+        randomTs.setHours(6 + Math.floor(Math.random() * 6)); // 06-11
+      }
       randomTs.setMinutes(Math.floor(Math.random() * 60));
       randomTs.setSeconds(Math.floor(Math.random() * 60));
       const randomDate = randomTs.toISOString();

@@ -108,8 +108,8 @@ export default function AdminGeradorAudios() {
   const [usuarios, setUsuarios] = useState<{ id: string; nome_completo: string; email: string }[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
   const [audioMode, setAudioMode] = useState<string>("violencia");
-  const [batchSize, setBatchSize] = useState<string>("20");
-  const [randomMode, setRandomMode] = useState(false);
+  const [batchSize, setBatchSize] = useState<string>("100");
+  const randomMode = true;
   const cancelRef = useRef(false);
   const analyzeCancelRef = useRef(false);
   const logsEndRef = useRef<HTMLDivElement>(null);
@@ -329,81 +329,22 @@ export default function AdminGeradorAudios() {
         </p>
       </div>
 
-      {/* Random mode toggle */}
+      {/* Random mode info */}
       <Card className="mb-6" style={{ background: "hsl(0 0% 100%)", borderColor: "hsl(220 13% 91%)" }}>
         <CardContent className="pt-4 pb-4">
           <div className="flex items-center gap-3">
             <Shuffle className="w-5 h-5" style={{ color: "hsl(224 76% 33%)" }} />
             <div className="flex-1">
               <p className="text-sm font-medium" style={{ color: "hsl(220 13% 18%)" }}>
-                Modo Aleatório
+                Geração 100% Aleatória
               </p>
               <p className="text-xs" style={{ color: "hsl(220 9% 46%)" }}>
-                Distribui áudios entre todas as {usuarios.length} usuárias ativas e alterna tipos (violência / briga saudável) automaticamente.
+                Distribui áudios entre todas as {usuarios.length} usuárias ativas, alterna tipos (violência / briga saudável), e gera datas aleatórias nos últimos 12 meses.
               </p>
             </div>
-            <Switch checked={randomMode} onCheckedChange={setRandomMode} disabled={isRunning} />
           </div>
         </CardContent>
       </Card>
-
-      {/* User selector — hidden in random mode */}
-      {!randomMode && (
-        <Card className="mb-6" style={{ background: "hsl(0 0% 100%)", borderColor: "hsl(220 13% 91%)" }}>
-          <CardContent className="pt-4 pb-4">
-            <div className="flex items-center gap-3 flex-wrap">
-              <User className="w-5 h-5" style={{ color: "hsl(224 76% 33%)" }} />
-              <div>
-                <p className="text-sm font-medium" style={{ color: "hsl(220 13% 18%)" }}>
-                  Vincular gravações à usuária:
-                </p>
-              </div>
-              <Select value={targetUserId} onValueChange={setTargetUserId} disabled={isRunning || loadingUsers}>
-                <SelectTrigger className="w-72">
-                  <SelectValue placeholder={loadingUsers ? "Carregando..." : "Selecione a usuária"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {usuarios.map((u) => (
-                    <SelectItem key={u.id} value={u.id}>
-                      {u.nome_completo} ({u.email})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Audio mode selector — hidden in random mode */}
-      {!randomMode && (
-        <Card className="mb-6" style={{ background: "hsl(0 0% 100%)", borderColor: "hsl(220 13% 91%)" }}>
-          <CardContent className="pt-4 pb-4">
-            <div className="flex items-center gap-3 flex-wrap">
-              <Mic className="w-5 h-5" style={{ color: "hsl(224 76% 33%)" }} />
-              <div>
-                <p className="text-sm font-medium" style={{ color: "hsl(220 13% 18%)" }}>
-                  Tipo de áudio:
-                </p>
-              </div>
-              <Select value={audioMode} onValueChange={setAudioMode} disabled={isRunning}>
-                <SelectTrigger className="w-72">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="violencia">🔴 Violência doméstica (controle/manipulação)</SelectItem>
-                  <SelectItem value="briga_saudavel">🟢 Briga saudável (discussão sem violência)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <p className="text-xs mt-2 ml-8" style={{ color: "hsl(220 9% 46%)" }}>
-              {audioMode === "briga_saudavel"
-                ? "Gera discussões acaloradas porém saudáveis — sem controle, manipulação ou escalada de violência. Útil para treinar o sistema a distinguir brigas normais."
-                : "Gera diálogos com padrões de abuso psicológico e controle coercitivo para treinamento de detecção."}
-            </p>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Batch size */}
       <Card className="mb-6" style={{ background: "hsl(0 0% 100%)", borderColor: "hsl(220 13% 91%)" }}>
@@ -423,6 +364,9 @@ export default function AdminGeradorAudios() {
                 <SelectItem value="20">20</SelectItem>
                 <SelectItem value="50">50</SelectItem>
                 <SelectItem value="100">100</SelectItem>
+                <SelectItem value="200">200</SelectItem>
+                <SelectItem value="500">500</SelectItem>
+                <SelectItem value="1000">1000</SelectItem>
               </SelectContent>
             </Select>
           </div>
