@@ -63,6 +63,7 @@ export default function TransparenciaMapa() {
   const [stats, setStats] = useState<StatsMap>({});
   const [geojson, setGeojson] = useState<any>(null);
   const [municipios, setMunicipios] = useState<{ nome: string; eventos: number }[]>([]);
+  const [ufTrends, setUfTrends] = useState<Record<string, "up" | "down" | "stable">>({});
 
   // Load GeoJSON once
   useEffect(() => {
@@ -144,6 +145,28 @@ export default function TransparenciaMapa() {
       });
 
       setStats(statsMap);
+
+      // Compute UF trends: compare first half vs second half of period
+      const midpoint = new Date(Date.now() - (periodDays / 2) * 24 * 60 * 60 * 1000).toISOString();
+      const recentByUf: Record<string, number> = {};
+      const olderByUf: Record<string, number> = {};
+      (eventos || []).forEach((e: any) => {
+        const uf = userUfMap[e.user_id];
+        if (!uf) return;
+        if (e.created_at >= midpoint) recentByUf[uf] = (recentByUf[uf] || 0) + 1;
+        else olderByUf[uf] = (olderByUf[uf] || 0) + 1;
+      });
+      const trends: Record<string, "up" | "down" | "stable"> = {};
+      const allUfs = new Set([...Object.keys(recentByUf), ...Object.keys(olderByUf)]);
+      allUfs.forEach((uf) => {
+        const r = recentByUf[uf] || 0;
+        const o = olderByUf[uf] || 0;
+        if (r + o < 2) { trends[uf] = "stable"; return; }
+        if (o === 0) { trends[uf] = r > 0 ? "up" : "stable"; return; }
+        const ratio = (r - o) / o;
+        trends[uf] = ratio >= 0.2 ? "up" : ratio <= -0.2 ? "down" : "stable";
+      });
+      setUfTrends(trends);
     }
 
     loadStats();
@@ -302,7 +325,7 @@ export default function TransparenciaMapa() {
           return {
             type: "Feature",
             geometry: { type: "Point", coordinates: center },
-            properties: { uf_code: f.properties.uf_code, state_name: UF_TO_STATE_NAME[f.properties.uf_code] || f.properties.name || "", eventos: f.properties.eventos || 0 },
+            properties: { uf_code: f.properties.uf_code, state_name: UF_TO_STATE_NAME[f.properties.uf_code] || f.properties.name || "", eventos: f.properties.eventos || 0, trend: ufTrends[f.properties.uf_code] || "stable" },
           };
         });
         (map.getSource("state-labels") as any).setData({ type: "FeatureCollection", features: labelFeatures });
@@ -364,7 +387,7 @@ export default function TransparenciaMapa() {
         return {
           type: "Feature",
           geometry: { type: "Point", coordinates: center },
-          properties: { uf_code: f.properties.uf_code, state_name: UF_TO_STATE_NAME[f.properties.uf_code] || f.properties.name || "", eventos: f.properties.eventos || 0 },
+          properties: { uf_code: f.properties.uf_code, state_name: UF_TO_STATE_NAME[f.properties.uf_code] || f.properties.name || "", eventos: f.properties.eventos || 0, trend: ufTrends[f.properties.uf_code] || "stable" },
         };
       });
 
@@ -395,6 +418,21 @@ export default function TransparenciaMapa() {
           "text-color": "hsl(220, 13%, 25%)",
           "text-halo-color": "hsl(0, 0%, 100%)",
           "text-halo-width": 1.5,
+        },
+      });
+
+      // Trend arrows layer
+      map.addLayer({
+        id: "state-trend-layer", type: "symbol", source: "state-labels",
+        filter: ["!=", ["get", "trend"], "stable"],
+        layout: {
+          "text-field": ["case", ["==", ["get", "trend"], "up"], "▲", ["==", ["get", "trend"], "down"], "▼", ""],
+          "text-size": 12, "text-font": ["DIN Pro Bold", "Arial Unicode MS Bold"],
+          "text-offset": [0, 1.2], "text-allow-overlap": true, "text-ignore-placement": true,
+        },
+        paint: {
+          "text-color": ["case", ["==", ["get", "trend"], "up"], "#dc2626", "#16a34a"],
+          "text-halo-color": "hsl(0, 0%, 100%)", "text-halo-width": 1.5,
         },
       });
 
@@ -485,7 +523,7 @@ export default function TransparenciaMapa() {
         }
       });
     }
-  }, [geojson, stats, mapLoaded]);
+  }, [geojson, stats, ufTrends, mapLoaded]);
 
   // Fly to UF when filter changes
   useEffect(() => {
