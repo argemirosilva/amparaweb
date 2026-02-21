@@ -18,20 +18,23 @@ const COLORS = [
   "hsl(220 20% 45%)",
 ];
 
-// Only show words that are direct offenses/insults against women
+// Only show negative/offensive adjectives directed at women
 const OFFENSE_WORDS = new Set([
-  "vadia", "vagabunda", "puta", "piranha", "vaca", "cadela",
-  "burra", "inútil", "incompetente", "idiota", "imbecil", "retardada",
-  "louca", "maluca", "histérica", "doida", "perturbada", "desequilibrada",
-  "feia", "gorda", "nojenta", "ridícula", "patética", "insignificante",
-  "imprestável", "desgraçada", "miserável", "sem vergonha", "safada",
-  "ordinária", "oferecida", "vagaba", "lixo", "escória", "verme",
-  "prostituta", "meretriz", "rameira", "galinha", "cachorra",
-  "otária", "trouxa", "besta", "cretina", "imbecil",
-  "ingrata", "interesseira", "mercenária", "aproveitadora",
-  "encosto", "peso morto", "estorvo", "insuportável",
-  "mentirosa", "falsa", "manipuladora", "cobra", "ardilosa",
-  "destruidora", "problema", "culpada", "responsável por tudo",
+  // Xingamentos sexualizados
+  "vadia", "vagabunda", "puta", "piranha", "safada", "oferecida", "galinha",
+  // Inteligência / capacidade
+  "burra", "inútil", "incompetente", "idiota", "imbecil", "retardada", "ignorante", "incapaz", "imprestável",
+  // Sanidade / estabilidade
+  "louca", "maluca", "histérica", "doida", "perturbada", "desequilibrada", "descontrolada", "pirada", "surtada",
+  // Aparência / corpo
+  "feia", "gorda", "horrorosa", "nojenta", "repugnante", "asquerosa",
+  // Caráter / moral
+  "falsa", "mentirosa", "manipuladora", "ardilosa", "traiçoeira", "covarde",
+  "ingrata", "interesseira", "aproveitadora", "mercenária", "oportunista",
+  // Depreciativos gerais
+  "ridícula", "patética", "insignificante", "desprezível", "miserável",
+  "desgraçada", "insuportável", "detestável", "desprezada", "ordinária",
+  "cretina", "otária", "besta", "trouxa", "mesquinha", "medíocre",
 ]);
 
 const MAX_WORDS = 30;
