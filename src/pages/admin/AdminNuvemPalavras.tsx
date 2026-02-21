@@ -32,6 +32,14 @@ const COLORS = [
   "hsl(220 20% 45%)",
 ];
 
+// Palavras genéricas a excluir (pedidos de ajuda, sentimentos neutros, etc.)
+const EXCLUDED_WORDS = new Set([
+  "socorro", "ajuda", "proteger", "abraço", "paz", "saúde",
+  "atenção", "prioridade", "preocupado", "sensível",
+  "amor", "te amo", "pizza", "salada", "bobagem",
+  "ouvir mais e falar menos", "realista",
+]);
+
 type WordFreq = { word: string; count: number };
 
 export default function AdminNuvemPalavras() {
@@ -58,7 +66,7 @@ export default function AdminNuvemPalavras() {
       (data || []).forEach((row) => {
         (row.palavras_chave || []).forEach((w: string) => {
           const key = w.trim().toLowerCase();
-          if (key) freq[key] = (freq[key] || 0) + 1;
+          if (key && !EXCLUDED_WORDS.has(key)) freq[key] = (freq[key] || 0) + 1;
         });
       });
 
