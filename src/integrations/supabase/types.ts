@@ -1525,6 +1525,7 @@ export type Database = {
           data_nascimento: string | null
           email: string
           email_verificado: boolean
+          emotional_avatars: Json | null
           endereco_bairro: string | null
           endereco_cep: string | null
           endereco_cidade: string | null
@@ -1563,6 +1564,7 @@ export type Database = {
           data_nascimento?: string | null
           email: string
           email_verificado?: boolean
+          emotional_avatars?: Json | null
           endereco_bairro?: string | null
           endereco_cep?: string | null
           endereco_cidade?: string | null
@@ -1601,6 +1603,7 @@ export type Database = {
           data_nascimento?: string | null
           email?: string
           email_verificado?: boolean
+          emotional_avatars?: Json | null
           endereco_bairro?: string | null
           endereco_cep?: string | null
           endereco_cidade?: string | null
