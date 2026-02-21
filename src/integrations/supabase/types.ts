@@ -135,10 +135,12 @@ export type Database = {
           approx_age_max: number | null
           approx_age_min: number | null
           company_public: string | null
+          cor_raca: string | null
           created_at: string
           data_nascimento: string | null
           display_name_masked: string | null
           email_clues: Json | null
+          escolaridade: string | null
           father_first_name: string | null
           father_name_partial_normalized: string | null
           flags: string[] | null
@@ -175,10 +177,12 @@ export type Database = {
           approx_age_max?: number | null
           approx_age_min?: number | null
           company_public?: string | null
+          cor_raca?: string | null
           created_at?: string
           data_nascimento?: string | null
           display_name_masked?: string | null
           email_clues?: Json | null
+          escolaridade?: string | null
           father_first_name?: string | null
           father_name_partial_normalized?: string | null
           flags?: string[] | null
@@ -215,10 +219,12 @@ export type Database = {
           approx_age_max?: number | null
           approx_age_min?: number | null
           company_public?: string | null
+          cor_raca?: string | null
           created_at?: string
           data_nascimento?: string | null
           display_name_masked?: string | null
           email_clues?: Json | null
+          escolaridade?: string | null
           father_first_name?: string | null
           father_name_partial_normalized?: string | null
           flags?: string[] | null
@@ -1521,6 +1527,7 @@ export type Database = {
           compartilhar_gps_panico: boolean
           compartilhar_gps_risco_alto: boolean
           configuracao_alertas: Json
+          cor_raca: string | null
           created_at: string
           data_nascimento: string | null
           email: string
@@ -1537,6 +1544,7 @@ export type Database = {
           endereco_numero: string | null
           endereco_referencia: string | null
           endereco_uf: string | null
+          escolaridade: string | null
           gps_duracao_minutos: number
           id: string
           mora_com_agressor: boolean | null
@@ -1560,6 +1568,7 @@ export type Database = {
           compartilhar_gps_panico?: boolean
           compartilhar_gps_risco_alto?: boolean
           configuracao_alertas?: Json
+          cor_raca?: string | null
           created_at?: string
           data_nascimento?: string | null
           email: string
@@ -1576,6 +1585,7 @@ export type Database = {
           endereco_numero?: string | null
           endereco_referencia?: string | null
           endereco_uf?: string | null
+          escolaridade?: string | null
           gps_duracao_minutos?: number
           id?: string
           mora_com_agressor?: boolean | null
@@ -1599,6 +1609,7 @@ export type Database = {
           compartilhar_gps_panico?: boolean
           compartilhar_gps_risco_alto?: boolean
           configuracao_alertas?: Json
+          cor_raca?: string | null
           created_at?: string
           data_nascimento?: string | null
           email?: string
@@ -1615,6 +1626,7 @@ export type Database = {
           endereco_numero?: string | null
           endereco_referencia?: string | null
           endereco_uf?: string | null
+          escolaridade?: string | null
           gps_duracao_minutos?: number
           id?: string
           mora_com_agressor?: boolean | null
