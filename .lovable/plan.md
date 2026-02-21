@@ -1,64 +1,71 @@
 
 
-# Redistribuir Gravacoes nos Ultimos 90 Dias com Padroes de Escalada/Decaida
+# Setas de Tendencia nos Mapas -- Admin e Transparencia
 
-## Contexto
+## O que muda
 
-- **550 gravacoes** distribuidas entre **55 usuarias**
-- **374 analises** vinculadas (com niveis: critico 83, alto 114, moderado 171, sem_risco 6)
-- Objetivo: espalhar registros ao longo de 90 dias simulando ciclos realistas de violencia
+Cada estado no mapa passa a exibir, alem da sigla e contagem, uma seta indicando tendencia:
+- **Seta vermelha para cima** -- estado com ocorrencias crescendo
+- **Seta verde para baixo** -- estado com ocorrencias diminuindo
+- Sem seta quando nao ha dados suficientes ou a variacao e insignificante
 
-## Estrategia de Distribuicao
+## Como calcular a tendencia
 
-Dividir as 55 usuarias em 4 perfis comportamentais:
-
-| Perfil | % Usuarias | Padrao Temporal |
-|--------|-----------|-----------------|
-| **Escalada progressiva** | ~30% | Poucas gravacoes no inicio, aumentando em frequencia e risco nas ultimas semanas |
-| **Decaida (melhora)** | ~25% | Muitas gravacoes no inicio, diminuindo ao longo do tempo |
-| **Pico e retorno** | ~25% | Periodo calmo, pico intenso no meio, volta a estabilizar |
-| **Constante/cronico** | ~20% | Distribuicao uniforme ao longo dos 90 dias |
-
-## Implementacao
-
-Criar uma **Edge Function utilitaria** (`seed-recordings-timeline`) que:
-
-1. Busca todas as gravacoes agrupadas por `user_id`
-2. Atribui cada usuaria a um perfil aleatorio (com os pesos acima)
-3. Para cada gravacao da usuaria, calcula um novo `created_at` baseado no perfil:
-   - **Escalada**: datas concentradas nos ultimos 20-30 dias, com peso exponencial crescente
-   - **Decaida**: datas concentradas nos primeiros 30 dias, decrescente
-   - **Pico**: cluster no periodo entre dia 30-50
-   - **Constante**: distribuicao uniforme nos 90 dias
-4. Atualiza `created_at` e `updated_at` de cada gravacao
-5. Atualiza tambem o `created_at` das `gravacoes_analises` correspondentes para manter consistencia
-6. Gera horarios variados (06h-23h) com peso maior em horarios noturnos (19h-23h) para realismo
+Dividir o periodo selecionado ao meio (ex: 90 dias = 45 dias recentes vs 45 dias anteriores). Comparar a contagem de eventos em cada metade por UF:
+- Se a metade recente tem 20%+ a mais de eventos que a anterior: **crescendo**
+- Se a metade recente tem 20%- a menos: **decaindo**
+- Caso contrario: **estavel** (sem seta)
 
 ## Detalhes Tecnicos
 
-### Edge Function `seed-recordings-timeline`
+### 1. `src/pages/admin/AdminMapa.tsx`
 
-- Rota protegida: exige `session_token` de admin
-- Parametro opcional `dry_run: true` para preview sem alterar dados
-- Retorna resumo: quantas gravacoes por perfil, distribuicao temporal
+**No `fetchData`:**
+- Buscar `gravacoes_analises.created_at` e `user_id` para o periodo completo (ja faz isso em `loadAnalytics`)
+- Calcular por UF: `eventosRecentHalf` vs `eventosOlderHalf`
+- Armazenar `ufTrend: Record<string, "up" | "down" | "stable">` em novo state
 
-### Campos atualizados
+**No choropleth/labels `useEffect`:**
+- Enriquecer `labelFeatures` com propriedade `trend` ("up" / "down" / "stable")
+- Alterar o `text-field` do layer `state-labels-layer` para incluir seta Unicode:
+  - Up: `\u2191` (cor vermelha via segundo label layer)
+  - Down: `\u2193` (cor verde via segundo label layer)
+- Como Mapbox symbol layers nao suportam cores diferentes por caracter, adicionar um **segundo symbol layer** (`state-trend-layer`) posicionado logo abaixo do label principal com:
+  - `text-field`: apenas a seta (filtrado por trend != stable)
+  - `text-color`: vermelho para up, verde para down (via expression)
+  - `text-offset`: deslocado para baixo do label principal
 
-- `gravacoes.created_at` -- nova data/hora
-- `gravacoes.updated_at` -- mesma nova data + poucos minutos
-- `gravacoes_analises.created_at` -- alinhado com a gravacao correspondente
+### 2. `src/pages/transparencia/TransparenciaMapa.tsx`
 
-### Logica de horario
+Mesma logica aplicada:
+- No `loadStats`: dividir os eventos por metade do periodo e calcular trend por UF
+- Novo state `ufTrends`
+- No choropleth `useEffect`: adicionar propriedade `trend` aos `labelFeatures` e criar segundo layer de setas
 
-- 60% entre 19h-23h (periodo noturno, mais realista)
-- 25% entre 12h-18h
-- 15% entre 06h-11h
+### Novo layer de setas (ambos mapas)
 
-### Arquivos
+```text
+Layer: "state-trend-layer"
+Type: symbol
+Source: "state-labels" (mesma source, ja tem o ponto central)
+Layout:
+  text-field: [case, ["==", ["get","trend"], "up"], "▲", ["==", ["get","trend"], "down"], "▼", ""]
+  text-size: 12
+  text-offset: [0, 1.2]  (abaixo do label principal)
+  text-allow-overlap: true
+Paint:
+  text-color: [case, ["==", ["get","trend"], "up"], "#dc2626", "#16a34a"]
+  text-halo-color: white
+  text-halo-width: 1.5
+Filter: ["!=", ["get","trend"], "stable"]
+```
 
-- **Criar**: `supabase/functions/seed-recordings-timeline/index.ts`
-- Executar uma unica vez via curl/fetch, depois pode ser removida
+### Arquivos afetados
 
-### Execucao
+- `src/pages/admin/AdminMapa.tsx` -- novo state `ufTrends`, calculo de tendencia no fetch, novo layer de setas
+- `src/pages/transparencia/TransparenciaMapa.tsx` -- idem
 
-Apos deploy, chamar a funcao passando o token de admin. A funcao processa tudo em batch e retorna o resumo.
+### Nenhuma alteracao no backend
+
+Todos os dados necessarios ja existem nas tabelas `gravacoes_analises` e `alertas_panico`.
+
