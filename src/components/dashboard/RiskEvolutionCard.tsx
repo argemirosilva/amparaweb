@@ -141,6 +141,11 @@ export default function RiskEvolutionCard() {
     fetchData(window);
   }, [window, fetchData]);
 
+  // Fetch report once on mount (cached for session)
+  useEffect(() => {
+    fetchRelatorio();
+  }, [fetchRelatorio]);
+
   const handleWindowChange = (val: string) => {
     setWindow(Number(val) as WindowDays);
   };
