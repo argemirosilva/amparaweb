@@ -4,7 +4,7 @@ import DeviceStatusCard from "@/components/dashboard/DeviceStatusCard";
 import AudioRecorderCard from "@/components/dashboard/AudioRecorderCard";
 import RiskEvolutionCard from "@/components/dashboard/RiskEvolutionCard";
 import { Button } from "@/components/ui/button";
-import { Search } from "lucide-react";
+import { UserSearch } from "lucide-react";
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -20,7 +20,7 @@ export default function HomePage() {
             variant="outline"
             className="sm:hidden h-auto gap-1.5 border-primary/30 text-primary hover:bg-primary/10 flex-col px-4 min-w-[90px]"
           >
-            <Search className="w-5 h-5" />
+            <UserSearch className="w-5 h-5" />
             <span className="text-[10px] leading-tight text-center">Pesquisar<br/>parceiro</span>
           </Button>
         </div>
@@ -29,7 +29,7 @@ export default function HomePage() {
           variant="outline"
           className="hidden sm:flex w-full gap-2 border-primary/30 text-primary hover:bg-primary/10"
         >
-          <Search className="w-4 h-4" />
+          <UserSearch className="w-4 h-4" />
           Pesquisar parceiro
         </Button>
         <AudioRecorderCard />
