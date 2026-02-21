@@ -130,7 +130,7 @@ Retorne APENAS um JSON válido (sem markdown, sem backticks) com a seguinte estr
   "justificativa_risco": "Justificativa técnica para o nível de risco atribuído",
   "classificacao_contexto": "saudavel|rispido_nao_abusivo|potencial_abuso_leve|padrao_consistente_abuso|ameaca_risco|risco_elevado_escalada",
   "sentimento": "positivo|negativo|neutro|misto",
-  "palavras_chave": ["palavras ou frases relevantes extraídas"],
+  "palavras_chave": ["palavras ou frases relevantes extraídas — INCLUA OBRIGATORIAMENTE todos os xingamentos, adjetivos ofensivos e depreciativos dirigidos à mulher (ex: burra, inútil, vagabunda, louca, histérica, feia, ridícula, etc). Estes devem ser a PRIORIDADE na extração de palavras-chave."],
   "categorias": ["categorias resumidas: violencia_fisica, violencia_psicologica, ameaca, coercao, controle, assedio, nenhuma"]
 }
 
