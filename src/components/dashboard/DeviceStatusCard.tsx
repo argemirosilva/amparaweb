@@ -42,18 +42,18 @@ function BatteryIndicator({ percent, charging }: { percent: number | null; charg
         ? BatteryMedium
         : BatteryLow;
 
-  const color = charging
-    ? "text-primary"
+  const iconColor = charging
+    ? "text-emerald-400"
     : percent > 60
-      ? "text-primary"
+      ? "text-emerald-400"
       : percent > 20
         ? "text-muted-foreground"
         : "text-destructive";
 
   return (
-    <span className={`inline-flex items-center gap-0.5 text-xs ${color}`}>
-      <Icon className="w-3.5 h-3.5" />
-      {percent}%
+    <span className="inline-flex items-center gap-0.5">
+      <Icon className={`w-4.5 h-4.5 ${iconColor}`} />
+      <span className="text-[10px] text-muted-foreground">{percent}%</span>
     </span>
   );
 }
