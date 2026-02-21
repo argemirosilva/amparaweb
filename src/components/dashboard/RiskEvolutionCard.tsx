@@ -198,9 +198,9 @@ export default function RiskEvolutionCard() {
 
               {/* Chart */}
               {history.length > 1 && (
-                <div className="h-[90px] -mx-1 overflow-hidden">
+                <div className="h-[60px] -mx-1 overflow-hidden">
                   <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={history} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+                    <AreaChart data={history} margin={{ top: 2, right: 0, bottom: 0, left: -24 }}>
                       <defs>
                         <linearGradient id="riskFillGrad" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="0%" stopColor={CHART_STROKE} stopOpacity={0.15} />
