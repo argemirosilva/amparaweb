@@ -32,13 +32,16 @@ const COLORS = [
   "hsl(220 20% 45%)",
 ];
 
-// Palavras genéricas a excluir (pedidos de ajuda, sentimentos neutros, etc.)
+// Excluir: reações, pedidos de ajuda, sentimentos, rótulos genéricos, itens aleatórios
 const EXCLUDED_WORDS = new Set([
   "socorro", "ajuda", "proteger", "abraço", "paz", "saúde",
-  "atenção", "prioridade", "preocupado", "sensível",
-  "amor", "te amo", "pizza", "salada", "bobagem",
-  "ouvir mais e falar menos", "realista",
+  "atenção", "prioridade", "preocupado", "sensível", "perigo",
+  "amor", "te amo", "pizza", "salada", "bobagem", "medo",
+  "ouvir mais e falar menos", "realista", "cansada", "chateada",
+  "sozinha", "drama", "agressor", "violência", "violencia",
 ]);
+
+const MAX_WORDS = 50;
 
 type WordFreq = { word: string; count: number };
 
@@ -72,7 +75,8 @@ export default function AdminNuvemPalavras() {
 
       const sorted = Object.entries(freq)
         .map(([word, count]) => ({ word, count }))
-        .sort((a, b) => b.count - a.count);
+        .sort((a, b) => b.count - a.count)
+        .slice(0, MAX_WORDS);
 
       setWords(sorted);
       setLoading(false);
