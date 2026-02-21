@@ -38,7 +38,7 @@ interface Props {
   error: string | null;
 }
 
-import EmotionalFaceIcon, { getEmotionalLevel, computeEmotionalScore } from "./EmotionalFaceIcon";
+
 
 function SectionHeader({ icon: Icon, title }: {icon: typeof Heart;title: string;}) {
   return (
