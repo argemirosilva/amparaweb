@@ -827,6 +827,169 @@ Deno.serve(async (req) => {
         return json({ ok: true, retried: count || 0 });
       }
 
+      // ── SEED USERS ──
+      case "seedUsers": {
+        const count = body.count || 100;
+
+        const CIDADES = [
+          { cidade: "Manaus", uf: "AM", lat: -3.119, lon: -60.021 },
+          { cidade: "Belém", uf: "PA", lat: -1.455, lon: -48.502 },
+          { cidade: "Macapá", uf: "AP", lat: 0.034, lon: -51.066 },
+          { cidade: "Palmas", uf: "TO", lat: -10.184, lon: -48.333 },
+          { cidade: "São Luís", uf: "MA", lat: -2.530, lon: -44.282 },
+          { cidade: "Teresina", uf: "PI", lat: -5.089, lon: -42.801 },
+          { cidade: "Fortaleza", uf: "CE", lat: -3.717, lon: -38.543 },
+          { cidade: "Natal", uf: "RN", lat: -5.795, lon: -35.209 },
+          { cidade: "João Pessoa", uf: "PB", lat: -7.120, lon: -34.845 },
+          { cidade: "Recife", uf: "PE", lat: -8.054, lon: -34.871 },
+          { cidade: "Maceió", uf: "AL", lat: -9.665, lon: -35.735 },
+          { cidade: "Aracaju", uf: "SE", lat: -10.911, lon: -37.071 },
+          { cidade: "Salvador", uf: "BA", lat: -12.971, lon: -38.510 },
+          { cidade: "Vitória da Conquista", uf: "BA", lat: -14.861, lon: -40.844 },
+          { cidade: "Belo Horizonte", uf: "MG", lat: -19.917, lon: -43.934 },
+          { cidade: "Uberlândia", uf: "MG", lat: -18.918, lon: -48.275 },
+          { cidade: "Juiz de Fora", uf: "MG", lat: -21.764, lon: -43.349 },
+          { cidade: "Vitória", uf: "ES", lat: -20.319, lon: -40.337 },
+          { cidade: "Rio de Janeiro", uf: "RJ", lat: -22.906, lon: -43.172 },
+          { cidade: "Niterói", uf: "RJ", lat: -22.883, lon: -43.103 },
+          { cidade: "São Paulo", uf: "SP", lat: -23.550, lon: -46.633 },
+          { cidade: "Campinas", uf: "SP", lat: -22.905, lon: -47.060 },
+          { cidade: "Sorocaba", uf: "SP", lat: -23.501, lon: -47.458 },
+          { cidade: "Ribeirão Preto", uf: "SP", lat: -21.177, lon: -47.810 },
+          { cidade: "Santos", uf: "SP", lat: -23.960, lon: -46.333 },
+          { cidade: "Curitiba", uf: "PR", lat: -25.428, lon: -49.273 },
+          { cidade: "Londrina", uf: "PR", lat: -23.310, lon: -51.162 },
+          { cidade: "Maringá", uf: "PR", lat: -23.420, lon: -51.933 },
+          { cidade: "Florianópolis", uf: "SC", lat: -27.594, lon: -48.548 },
+          { cidade: "Joinville", uf: "SC", lat: -26.304, lon: -48.845 },
+          { cidade: "Porto Alegre", uf: "RS", lat: -30.034, lon: -51.230 },
+          { cidade: "Caxias do Sul", uf: "RS", lat: -29.168, lon: -51.179 },
+          { cidade: "Campo Grande", uf: "MS", lat: -20.449, lon: -54.620 },
+          { cidade: "Cuiabá", uf: "MT", lat: -15.601, lon: -56.097 },
+          { cidade: "Goiânia", uf: "GO", lat: -16.686, lon: -49.264 },
+          { cidade: "Brasília", uf: "DF", lat: -15.793, lon: -47.882 },
+          { cidade: "Porto Velho", uf: "RO", lat: -8.760, lon: -63.900 },
+          { cidade: "Rio Branco", uf: "AC", lat: -9.974, lon: -67.810 },
+          { cidade: "Boa Vista", uf: "RR", lat: 2.819, lon: -60.673 },
+          { cidade: "Imperatriz", uf: "MA", lat: -5.518, lon: -47.474 },
+          { cidade: "Petrolina", uf: "PE", lat: -9.389, lon: -40.502 },
+          { cidade: "Caruaru", uf: "PE", lat: -8.282, lon: -35.976 },
+          { cidade: "Feira de Santana", uf: "BA", lat: -12.266, lon: -38.966 },
+          { cidade: "Montes Claros", uf: "MG", lat: -16.735, lon: -43.861 },
+          { cidade: "Pelotas", uf: "RS", lat: -31.771, lon: -52.342 },
+          { cidade: "Chapecó", uf: "SC", lat: -27.100, lon: -52.615 },
+          { cidade: "Cascavel", uf: "PR", lat: -24.955, lon: -53.455 },
+          { cidade: "Piracicaba", uf: "SP", lat: -22.725, lon: -47.649 },
+          { cidade: "Bauru", uf: "SP", lat: -22.314, lon: -49.060 },
+          { cidade: "Volta Redonda", uf: "RJ", lat: -22.523, lon: -44.104 },
+        ];
+
+        const NOMES = [
+          "Ana", "Maria", "Julia", "Beatriz", "Larissa", "Fernanda", "Camila", "Patrícia",
+          "Luciana", "Tatiane", "Vanessa", "Renata", "Débora", "Priscila", "Adriana",
+          "Simone", "Jéssica", "Aline", "Raquel", "Luana", "Sabrina", "Carla", "Cláudia",
+          "Mariana", "Letícia", "Viviane", "Natália", "Michele", "Elaine", "Cristiane",
+          "Gabriela", "Daniela", "Caroline", "Isabela", "Thaís", "Bruna", "Amanda",
+          "Rafaela", "Érica", "Sandra", "Rosana", "Mônica", "Valéria", "Sônia", "Marta",
+          "Helena", "Tereza", "Francisca", "Antônia", "Joana", "Célia", "Regina", "Márcia",
+          "Aparecida", "Vera", "Rosa", "Fátima", "Lúcia", "Solange", "Neide",
+        ];
+
+        const SOBRENOMES = [
+          "Silva", "Santos", "Oliveira", "Souza", "Lima", "Pereira", "Costa", "Ferreira",
+          "Almeida", "Rodrigues", "Nascimento", "Araújo", "Ribeiro", "Carvalho", "Gomes",
+          "Martins", "Barbosa", "Rocha", "Moreira", "Correia", "Melo", "Cardoso", "Dias",
+          "Teixeira", "Mendes", "Vieira", "Nunes", "Monteiro", "Pinto", "Batista",
+          "Duarte", "Moura", "Lopes", "Freitas", "Ramos", "Campos", "Reis", "Azevedo",
+        ];
+
+        const BAIRROS = [
+          "Centro", "Jardim América", "Vila Nova", "São José", "Santa Maria", "Boa Vista",
+          "Liberdade", "Consolação", "Parque Industrial", "Vila Mariana", "Bela Vista",
+          "Jardim das Flores", "Alto da Boa Vista", "Vila Progresso", "São Francisco",
+          "Nova Esperança", "Jardim Primavera", "Santa Lúcia", "Vila Rica", "Monte Castelo",
+        ];
+
+        const ESCOLARIDADES = [
+          "Ensino Fundamental Incompleto", "Ensino Fundamental Completo",
+          "Ensino Médio Incompleto", "Ensino Médio Completo",
+          "Ensino Superior Incompleto", "Ensino Superior Completo",
+          "Pós-Graduação",
+        ];
+
+        const COR_RACA = ["Branca", "Preta", "Parda", "Amarela", "Indígena"];
+
+        const pick = <T>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
+        const randBetween = (a: number, b: number) => a + Math.random() * (b - a);
+
+        const dummyHash = "$2b$10$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+
+        const users: any[] = [];
+        for (let i = 0; i < count; i++) {
+          const nome = pick(NOMES);
+          const sobrenome1 = pick(SOBRENOMES);
+          const sobrenome2 = pick(SOBRENOMES);
+          const nomeCompleto = `${nome} ${sobrenome1} ${sobrenome2}`;
+          const cidade = pick(CIDADES);
+          const suffix = `${i + 1}`.padStart(3, "0");
+          const email = `${nome.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")}.${sobrenome1.toLowerCase()}.seed${suffix}@ficticio.com`;
+
+          const nascAno = 1970 + Math.floor(Math.random() * 35); // 1970-2004
+          const nascMes = String(1 + Math.floor(Math.random() * 12)).padStart(2, "0");
+          const nascDia = String(1 + Math.floor(Math.random() * 28)).padStart(2, "0");
+
+          const ddd = String(11 + Math.floor(Math.random() * 88)).padStart(2, "0");
+          const tel = `(${ddd}) 9${String(Math.floor(Math.random() * 10000)).padStart(4, "0")}-${String(Math.floor(Math.random() * 10000)).padStart(4, "0")}`;
+
+          const cep = `${String(10000 + Math.floor(Math.random() * 89999)).padStart(5, "0")}-${String(Math.floor(Math.random() * 1000)).padStart(3, "0")}`;
+
+          // Random date within last 6 months for created_at
+          const createdAt = new Date(Date.now() - Math.random() * 180 * 24 * 60 * 60 * 1000).toISOString();
+
+          users.push({
+            nome_completo: nomeCompleto,
+            email,
+            telefone: tel,
+            senha_hash: dummyHash,
+            status: "ativo",
+            email_verificado: true,
+            onboarding_completo: true,
+            data_nascimento: `${nascAno}-${nascMes}-${nascDia}`,
+            cor_raca: pick(COR_RACA),
+            escolaridade: pick(ESCOLARIDADES),
+            endereco_cidade: cidade.cidade,
+            endereco_uf: cidade.uf,
+            endereco_bairro: pick(BAIRROS),
+            endereco_cep: cep,
+            endereco_lat: cidade.lat + randBetween(-0.05, 0.05),
+            endereco_lon: cidade.lon + randBetween(-0.05, 0.05),
+            mora_com_agressor: Math.random() < 0.35,
+            tem_filhos: Math.random() < 0.5,
+            compartilhar_gps_panico: true,
+            compartilhar_gps_risco_alto: Math.random() < 0.6,
+            created_at: createdAt,
+          });
+        }
+
+        // Insert in batches of 50
+        let inserted = 0;
+        const errors: string[] = [];
+        for (let i = 0; i < users.length; i += 50) {
+          const batch = users.slice(i, i + 50);
+          const { error: insErr, data: insData } = await supabase
+            .from("usuarios")
+            .insert(batch)
+            .select("id");
+          if (insErr) {
+            errors.push(`Batch ${i}: ${insErr.message}`);
+          } else {
+            inserted += insData.length;
+          }
+        }
+
+        return json({ ok: true, inserted, total_requested: count, errors: errors.length > 0 ? errors : undefined });
+      }
+
       default:
         return json({ error: "Unknown action" }, 400);
     }
