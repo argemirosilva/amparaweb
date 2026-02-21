@@ -1,62 +1,90 @@
 
-# Adicionar Seletor de Dados no Ranking do Mapa Admin
+
+# Relatorio de Saude da Relacao -- Dentro do Card de Evolucao de Risco
 
 ## O que muda
 
-A sidebar direita do mapa atualmente mostra apenas "Ranking por UF -- Gravacoes". Sera adicionado um seletor com 3 opcoes para alternar os dados exibidos no ranking:
+Quando a usuaria clica em "Ver detalhes da analise" no card de Evolucao de Risco no dashboard, em vez de ver apenas fatores tecnicos e resumo seco, ela vera um **relatorio completo e humanizado** sobre a saude da sua relacao, gerado por IA com base em todos os dados agregados.
 
-1. **Gravacoes** (atual) -- ordenado por numero de gravacoes
-2. **Indice de Risco** -- ordenado por quantidade de analises com risco alto/critico
-3. **Acionamento de Panico** -- ordenado por numero de alertas de panico
+## Estrutura do Relatorio (secoes visuais dentro do card expandido)
 
-## Detalhes
+### Secao 1 -- Panorama da Relacao
+- Texto narrativo humanizado (2-3 paragrafos) explicando a situacao atual em linguagem acolhedora
+- Contexto temporal: "Nos ultimos X dias, observamos que..."
+- Gerado pela IA com base nos dados agregados
 
-### Novo estado e dados
+### Secao 2 -- Saude Emocional
+- Barras horizontais mostrando distribuicao de sentimentos (positivo/negativo/neutro/misto) extraidas de todas as analises do periodo
+- Classificacao de contexto predominante (saudavel, rispido, abusivo, etc.)
+- Texto curto da IA explicando o que isso significa
 
-- Novo state `rankingMode`: `"gravacoes" | "risco" | "panico"` (default: `"gravacoes"`)
-- Novo state `ufRiskStats`: contagem de analises por nivel de risco por UF (agregado de `gravacoes_analises`)
-- Novo state `ufPanicoStats`: contagem de alertas de panico por UF (agregado de `alertas_panico` no periodo)
+### Secao 3 -- Padroes Identificados
+- Cards visuais com os tipos de violencia detectados (Psicologica, Moral, Fisica, etc.) com frequencia
+- Lista de padroes recorrentes (controle, isolamento, intimidacao) com contagem
+- Palavras-chave mais frequentes como tags
 
-### Busca de dados adicionais (dentro do `fetchData` existente)
+### Secao 4 -- Orientacoes Personalizadas
+- 3-5 orientacoes praticas geradas pela IA baseadas no historico real
+- Tom acolhedor e empoderador, sem jargao juridico
+- Links para canais de apoio (180, delegacias)
 
-- **Risco por UF**: query em `gravacoes_analises` com `nivel_risco` e `user_id`, cruzando com `userMap` para obter a UF. Agrega contagem total e contagem de alto+critico por UF.
-- **Panico por UF**: query em `alertas_panico` (todos no periodo, nao so ativos), cruzando `user_id` com `userMap` para UF. Agrega contagem total por UF.
+### Secao 5 -- Fatores de Risco e Periodo
+- Fatores identificados (mantidos do formato atual mas com linguagem melhor)
+- Periodo coberto e total de gravacoes analisadas
 
-### Seletor visual
+## Mudancas Tecnicas
 
-Tres botoes pequenos (estilo similar aos botoes de periodo) logo acima da lista de ranking:
+### 1. Backend -- nova action `getRelatorioSaude` em `web-api/index.ts`
+
+Agrega dados de multiplas tabelas:
+- `gravacoes_analises`: sentimentos, categorias, padroes, palavras-chave, niveis de risco (ultimos 90 dias)
+- `risk_assessments`: historico de scores
+- `vitimas_agressores` + `agressores`: flags do agressor (arma, forca de seguranca)
+- `alertas_panico`: contagem e tipos
+
+Chama a IA (Gemini Flash) com um prompt dedicado que recebe os dados agregados e retorna:
 
 ```text
-  [Gravacoes]  [Risco]  [Panico]
+{
+  panorama_narrativo: "texto humanizado...",
+  saude_emocional: {
+    sentimentos: { positivo: N, negativo: N, neutro: N, misto: N },
+    contexto_predominante: "rispido_nao_abusivo",
+    explicacao: "texto curto..."
+  },
+  padroes: {
+    tipos_violencia: [{ tipo, contagem }],
+    padroes_recorrentes: [{ padrao, contagem }],
+    palavras_frequentes: [{ palavra, contagem }]
+  },
+  orientacoes: ["orientacao 1", "orientacao 2", ...],
+  canais_apoio: ["Central 180", "Delegacia da Mulher"]
+}
 ```
 
-### Conteudo do ranking por modo
+A agregacao dos dados (contagem de sentimentos, tipos de violencia, etc.) e feita no backend antes de enviar para a IA. A IA recebe os dados ja processados e gera apenas os textos narrativos e orientacoes.
 
-**Gravacoes** (atual, sem mudancas):
-- Ordena por `s.gravacoes`
-- Mostra valor numerico + seta de tendencia
+### 2. Frontend -- `RiskEvolutionCard.tsx`
 
-**Risco**:
-- Ordena por contagem de analises alto+critico
-- Mostra: "X alto/critico" com badge colorido
+- O botao "Ver detalhes da analise" passa a carregar o relatorio completo (lazy load)
+- Ao expandir, faz uma chamada a `getRelatorioSaude` (com cache local no state)
+- Renderiza as 5 secoes com componentes visuais simples:
+  - Barras horizontais para sentimentos (div com width percentual)
+  - Badges para tipos de violencia e palavras-chave
+  - Texto corrido para narrativa e orientacoes
+  - Icones para canais de apoio
 
-**Panico**:
-- Ordena por total de acionamentos
-- Mostra: "X acionamentos"
+### 3. Novo componente `RelatorioSaudeContent.tsx`
 
-### Ranking por municipio (quando UF selecionada)
+Componente dedicado para renderizar o conteudo do relatorio dentro do card expandido. Recebe o payload do backend e renderiza as secoes. Usa ScrollArea para scroll interno se o conteudo for grande.
 
-O mesmo seletor aparece na visao de municipio. Quando risco ou panico estiver selecionado, ordena os municipios pelo criterio correspondente.
+### Arquivos a criar
+- `src/components/dashboard/RelatorioSaudeContent.tsx`
 
-### Dados necessarios por modo (municipio)
+### Arquivos a modificar
+- `src/components/dashboard/RiskEvolutionCard.tsx` -- expandido carrega relatorio completo
+- `supabase/functions/web-api/index.ts` -- nova action `getRelatorioSaude` + prompt de IA dedicado
 
-- Risco por municipio: mesma query de `gravacoes_analises`, agrupando por cidade do usuario
-- Panico por municipio: mesma query de `alertas_panico`, agrupando por cidade do usuario
+### Sem mudancas no banco de dados
+Todos os dados necessarios ja existem nas tabelas `gravacoes_analises`, `risk_assessments`, `alertas_panico`, `vitimas_agressores` e `agressores`.
 
-## Arquivo modificado
-
-- `src/pages/admin/AdminMapa.tsx` -- adicao de states, queries no fetchData, seletor visual e logica de ordenacao no ranking
-
-## Sem alteracoes de banco de dados
-
-Todas as tabelas necessarias (`gravacoes_analises`, `alertas_panico`) ja possuem as politicas de leitura corretas.
