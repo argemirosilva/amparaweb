@@ -85,6 +85,36 @@ const TOPICS_VIOLENCIA = [
   "ameaça de expulsão de casa",
   "depreciação da família da parceira",
   "controle sobre alimentação e saúde",
+  "proibição de estudar ou trabalhar fora",
+  "humilhação na frente de outras pessoas",
+  "comparação com ex-namoradas ou outras mulheres",
+  "cobranças sobre maternidade e cuidados com filhos",
+  "ameaça de suicídio para manipular",
+  "destruição de objetos pessoais",
+  "controle do carro e transporte",
+  "invasão de privacidade — diário, e-mails, redes sociais",
+  "ridicularização de sonhos e ambições",
+  "silêncio punitivo e tratamento de gelo",
+  "culpabilização da vítima por tudo que dá errado",
+  "ameaça de revelar segredos íntimos",
+  "controle religioso ou espiritual",
+  "pressão sexual e coerção",
+  "desqualificação como mãe",
+  "ameaça de tirar a casa ou bens",
+  "monitoramento por câmeras ou GPS",
+  "proibição de usar maquiagem ou se arrumar",
+  "acusações constantes de traição sem motivo",
+  "manipulação financeira — esconder renda ou dívidas",
+  "impedir acesso a tratamento médico",
+  "forçar reconciliação com presente e promessa vazia",
+  "usar dependência financeira como arma",
+  "infantilização — tratar como incapaz",
+  "ameaça de denúncia falsa",
+  "controle sobre amizades no trabalho",
+  "ciúmes do sucesso profissional dela",
+  "sabotagem de entrevista de emprego",
+  "recusa de participar das responsabilidades domésticas",
+  "crítica constante à comida que ela prepara",
 ];
 
 const TOPICS_BRIGA_SAUDAVEL = [
@@ -108,12 +138,71 @@ const TOPICS_BRIGA_SAUDAVEL = [
   "escolha do restaurante para sair",
   "estresse do trabalho trazido pra casa",
   "animal de estimação e responsabilidades",
+  "quem controla o ar condicionado",
+  "desorganização da garagem ou depósito",
+  "tempo gasto com videogame ou hobby",
+  "esquecer datas importantes",
+  "diferença de opinião sobre criar os filhos com ou sem palmada",
+  "amigo inconveniente que sempre aparece",
+  "volume da TV ou música alta",
+  "dieta e alimentação saudável",
+  "planos de mudança de cidade ou bairro",
+  "reclamação sobre sogro ou sogra intrometida",
+  "quem esqueceu de desligar o fogão",
+  "disputa pelo controle remoto",
+  "diferença de horário de dormir",
+  "discussão sobre economizar ou gastar",
+  "reclamação sobre roupas espalhadas",
 ];
+
+// ~15% das gravações de violência: a mulher também extrapola o respeito
+const TOPICS_MULHER_EXTRAPOLA = [
+  "ela humilha ele na frente dos amigos e ele reage controlando",
+  "ela xinga e deprecia ele, mas ele escala para ameaças",
+  "ela faz chantagem emocional e ele responde com controle financeiro",
+  "discussão mútua agressiva onde ela ofende a masculinidade dele",
+  "ela ameaça sair de casa com os filhos e ele responde com intimidação",
+  "briga onde ambos se desrespeitam mas ele escala para manipulação",
+  "ela faz comparação com ex-namorado e ele reage com ciúmes extremos",
+  "ela critica a família dele de forma cruel e ele responde controlando",
+  "discussão onde ela também grita e xinga mas ele ameaça veladamante",
+  "ela joga objetos e ele escala para intimidação psicológica",
+  "ela deprecia o salário dele e ele responde controlando o dinheiro dela",
+  "briga onde ela provoca e zomba mas ele reage com silêncio punitivo prolongado",
+  "ela ameaça denúncia falsa e ele responde com chantagem sobre custódia",
+  "discussão onde ambos falam coisas horríveis mas há assimetria de poder",
+  "ela faz escândalo em público e ele depois pune com isolamento em casa",
+];
+
+// Duration variation: returns [turnsHint, targetLabel]
+function randomDurationHint(): string {
+  const roll = Math.random();
+  if (roll < 0.15) return "entre 10 e 18"; // ~30-60s — curto
+  if (roll < 0.35) return "entre 18 e 28"; // ~1-2min
+  if (roll < 0.60) return "entre 28 e 40"; // ~2-3min
+  if (roll < 0.80) return "entre 40 e 55"; // ~3-4min
+  if (roll < 0.92) return "entre 55 e 70"; // ~4-5min
+  return "entre 70 e 90"; // ~5-7min — longo
+}
 
 async function generateScript(targetDurationHint: string, audioMode: string = "violencia") {
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
-  const topics = audioMode === "briga_saudavel" ? TOPICS_BRIGA_SAUDAVEL : TOPICS_VIOLENCIA;
-  const topic = topics[Math.floor(Math.random() * topics.length)];
+
+  // Determine which topic pool and prompt style to use
+  let topic: string;
+  let isMulherExtrapola = false;
+
+  if (audioMode === "briga_saudavel") {
+    topic = TOPICS_BRIGA_SAUDAVEL[Math.floor(Math.random() * TOPICS_BRIGA_SAUDAVEL.length)];
+  } else {
+    // ~15% chance of "mulher extrapola" scenario
+    if (Math.random() < 0.15) {
+      topic = TOPICS_MULHER_EXTRAPOLA[Math.floor(Math.random() * TOPICS_MULHER_EXTRAPOLA.length)];
+      isMulherExtrapola = true;
+    } else {
+      topic = TOPICS_VIOLENCIA[Math.floor(Math.random() * TOPICS_VIOLENCIA.length)];
+    }
+  }
 
   let prompt: string;
 
@@ -121,7 +210,7 @@ async function generateScript(targetDurationHint: string, audioMode: string = "v
     prompt = `Gere um roteiro de diálogo realista em português brasileiro entre um casal (M = homem, F = mulher) sobre o tema: "${topic}".
 
 REGRAS OBRIGATÓRIAS:
-- O roteiro deve ter ${targetDurationHint} turnos de fala para resultar em áudio de 1 a 5 minutos.
+- O roteiro deve ter ${targetDurationHint} turnos de fala.
 - O casal está tendo uma DISCUSSÃO ACALORADA porém SAUDÁVEL. Eles discordam, ficam irritados, levantam a voz, mas NÃO há:
   * Controle coercitivo, manipulação ou gaslighting
   * Ameaças veladas ou diretas
@@ -142,11 +231,28 @@ REGRAS OBRIGATÓRIAS:
 
 Responda EXCLUSIVAMENTE com JSON válido (sem markdown, sem texto extra):
 {"topic":"${topic}","turns":[{"speaker":"M","text":"..."},{"speaker":"F","text":"..."}]}`;
+  } else if (isMulherExtrapola) {
+    prompt = `Gere um roteiro de diálogo realista em português brasileiro entre um casal (M = homem, F = mulher) sobre o tema: "${topic}".
+
+REGRAS OBRIGATÓRIAS:
+- O roteiro deve ter ${targetDurationHint} turnos de fala.
+- CENÁRIO COMPLEXO: a mulher TAMBÉM extrapola o respeito — ela xinga, humilha, provoca ou agride verbalmente.
+- PORÉM, o homem ESCALA a situação para um nível mais grave: controle coercitivo, ameaças, manipulação psicológica, intimidação.
+- A assimetria de poder deve ficar CLARA: mesmo que ela também erre, ele usa táticas de dominação e controle.
+- Isso NÃO é uma briga saudável — é uma relação tóxica onde AMBOS se desrespeitam, mas ele detém mais poder e controle.
+- Linguagem natural coloquial brasileira com gírias e expressões regionais variadas.
+- Cada fala deve ter entre 5 e 35 palavras.
+- Inclua falas sobrepostas e interrupções (marcadas com "..." no final).
+- Varie o tom: ela pode ser agressiva/provocadora, ele pode ser frio/calculista ou explosivo.
+- O objetivo é treinar o sistema a reconhecer violência MESMO quando a vítima também tem comportamento inadequado.
+
+Responda EXCLUSIVAMENTE com JSON válido (sem markdown, sem texto extra):
+{"topic":"${topic}","turns":[{"speaker":"M","text":"..."},{"speaker":"F","text":"..."}]}`;
   } else {
     prompt = `Gere um roteiro de diálogo realista em português brasileiro entre um casal (M = homem agressor, F = mulher vítima) sobre o tema: "${topic}".
 
 REGRAS OBRIGATÓRIAS:
-- O roteiro deve ter ${targetDurationHint} turnos de fala para resultar em áudio de 1 a 5 minutos.
+- O roteiro deve ter ${targetDurationHint} turnos de fala.
 - Estrutura narrativa: início aparentemente neutro → escalada gradual → controle/ameaça velada → minimização → tentativa de reconciliação falsa.
 - Linguagem natural coloquial brasileira com gírias e expressões regionais variadas.
 - SEM violência física explícita. Foco em abuso psicológico, controle coercitivo, manipulação.
@@ -190,7 +296,7 @@ Responda EXCLUSIVAMENTE com JSON válido (sem markdown, sem texto extra):
   if (!parsed.turns || !Array.isArray(parsed.turns) || parsed.turns.length < 5)
     throw new Error("Script has too few turns");
 
-  return { ...parsed, topic };
+  return { ...parsed, topic, mulher_extrapola: isMulherExtrapola };
 }
 
 // ── TTS via ElevenLabs ──
@@ -274,10 +380,8 @@ async function processItem(
         })
         .eq("id", item.id);
 
-      // 1) Determine target length hint based on previous attempt results
-      let turnsHint = "entre 25 e 40";
-      if (attempt === 2) turnsHint = "entre 35 e 50";
-      if (attempt === 3) turnsHint = "entre 30 e 45";
+      // 1) Use random duration variation
+      const turnsHint = randomDurationHint();
 
       // 2) Generate script
       const script = await generateScript(turnsHint, audioMode);
@@ -308,9 +412,9 @@ async function processItem(
       const finalMp3 = concatenateBuffers(segments);
       const durationSec = estimateDurationSec(finalMp3.length);
 
-      // 5) Duration check
-      if (durationSec < 60 && attempt < MAX_ATTEMPTS) continue;
-      if (durationSec > 300 && attempt < MAX_ATTEMPTS) continue;
+      // 5) Duration check — relaxed: accept 20s to 7min
+      if (durationSec < 20 && attempt < MAX_ATTEMPTS) continue;
+      if (durationSec > 420 && attempt < MAX_ATTEMPTS) continue;
 
       // 6) Upload MP3 to storage
       const storagePath = `autogerado/${jobId}/${item.item_index}/mix.mp3`;
