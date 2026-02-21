@@ -23,8 +23,9 @@ interface Assessment {
   period_end: string;
 }
 
-// Fixed lilac color for chart — never changes based on risk level
-const CHART_COLOR = "hsl(270, 35%, 62%)";
+// Brand colors for chart
+const CHART_STROKE = "hsl(270, 60%, 42%)";
+const CHART_ACCENT = "hsl(316, 72%, 48%)";
 
 const levelConfig: Record<string, { icon: typeof Shield; className: string }> = {
   "Sem Risco": { icon: ShieldCheck, className: "bg-green-100 text-green-700 border-green-200" },
@@ -201,32 +202,25 @@ export default function RiskEvolutionCard() {
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={history} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
                       <defs>
-                        <linearGradient id="riskGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor={CHART_COLOR} stopOpacity={0.3} />
-                          <stop offset="100%" stopColor={CHART_COLOR} stopOpacity={0.02} />
+                        <linearGradient id="riskFillGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor={CHART_STROKE} stopOpacity={0.15} />
+                          <stop offset="100%" stopColor={CHART_ACCENT} stopOpacity={0.01} />
+                        </linearGradient>
+                        <linearGradient id="riskStrokeGrad" x1="0" y1="0" x2="1" y2="0">
+                          <stop offset="0%" stopColor={CHART_ACCENT} />
+                          <stop offset="100%" stopColor={CHART_STROKE} />
                         </linearGradient>
                       </defs>
                       <YAxis domain={[0, 100]} hide />
-                      <XAxis
-                        dataKey="date"
-                        tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }}
-                        tickFormatter={(v: string) => {
-                          const d = new Date(v + "T00:00:00");
-                          return `${d.getDate()}/${d.getMonth() + 1}`;
-                        }}
-                        axisLine={false}
-                        tickLine={false}
-                        interval="preserveStartEnd"
-                      />
                       <Tooltip
                         content={({ active, payload }) => {
                           if (!active || !payload?.[0]) return null;
                           const p = payload[0].payload as HistoryPoint;
                           const d = new Date(p.date + "T00:00:00");
                           return (
-                            <div className="bg-popover border border-border rounded-md px-2.5 py-1.5 shadow-md text-xs">
+                            <div className="bg-popover/95 backdrop-blur-sm border border-border/50 rounded-lg px-3 py-2 shadow-lg text-xs">
                               <p className="font-medium">{d.toLocaleDateString("pt-BR")}</p>
-                              <p style={{ color: CHART_COLOR }}>
+                              <p style={{ color: CHART_STROKE }}>
                                 Score: {p.score} · {p.level}
                               </p>
                             </div>
@@ -234,13 +228,13 @@ export default function RiskEvolutionCard() {
                         }}
                       />
                       <Area
-                        type="monotone"
+                        type="natural"
                         dataKey="score"
-                        stroke={CHART_COLOR}
-                        strokeWidth={2}
-                        fill="url(#riskGrad)"
+                        stroke="url(#riskStrokeGrad)"
+                        strokeWidth={1.5}
+                        fill="url(#riskFillGrad)"
                         dot={false}
-                        activeDot={{ r: 3, strokeWidth: 0, fill: CHART_COLOR }}
+                        activeDot={{ r: 3.5, strokeWidth: 0, fill: CHART_STROKE, filter: "drop-shadow(0 0 3px hsl(270 60% 42% / 0.4))" }}
                       />
                     </AreaChart>
                   </ResponsiveContainer>
