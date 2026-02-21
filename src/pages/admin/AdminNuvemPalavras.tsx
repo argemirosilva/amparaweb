@@ -106,12 +106,17 @@ export default function AdminNuvemPalavras() {
     };
   }, [words]);
 
-  const fontSize = (count: number, index: number, total: number) => {
-    const minFont = selectedWord ? 12 : 10;
-    const maxFont = selectedWord ? 32 : 28;
-    const ratio = total > 1 ? 1 - index / (total - 1) : 1;
-    return minFont + ratio * (maxFont - minFont);
-  };
+  // Pre-compute font sizes based on rank in sorted order
+  const fontSizeMap = useMemo(() => {
+    const minFont = selectedWord ? 13 : 11;
+    const maxFont = selectedWord ? 34 : 30;
+    const map: Record<string, number> = {};
+    words.forEach((w, i) => {
+      const ratio = words.length > 1 ? 1 - i / (words.length - 1) : 1;
+      map[w.word] = minFont + ratio * (maxFont - minFont);
+    });
+    return map;
+  }, [words, selectedWord]);
 
   const shuffled = useMemo(() => {
     if (!words.length) return [];
@@ -190,7 +195,7 @@ export default function AdminNuvemPalavras() {
                     onClick={() => handleWordClick(w.word)}
                     className="cursor-pointer transition-all hover:opacity-70 hover:scale-105 font-semibold leading-none border-none bg-transparent p-0"
                     style={{
-                      fontSize: `${fontSize(w.count, i, shuffled.length)}px`,
+                      fontSize: `${fontSizeMap[w.word] || 14}px`,
                       color: COLORS[i % COLORS.length],
                     }}
                   >
