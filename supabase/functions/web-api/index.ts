@@ -1478,6 +1478,216 @@ serve(async (req) => {
         return json({ success: true });
       }
 
+      // ========== RELATÓRIO DE SAÚDE DA RELAÇÃO ==========
+      case "getRelatorioSaude": {
+        const windowDays = params.window_days || 90;
+
+        const endDate = new Date();
+        const startDate = new Date();
+        startDate.setDate(endDate.getDate() - windowDays);
+        const startStr = startDate.toISOString();
+
+        // 1. Fetch analyses
+        const { data: analises } = await supabase
+          .from("gravacoes_analises")
+          .select("sentimento, categorias, palavras_chave, nivel_risco, analise_completa, created_at")
+          .eq("user_id", userId)
+          .gte("created_at", startStr)
+          .order("created_at", { ascending: true });
+
+        // 2. Fetch risk history
+        const { data: riskHistory } = await supabase
+          .from("risk_assessments")
+          .select("risk_score, risk_level, period_end, trend")
+          .eq("usuario_id", userId)
+          .order("period_end", { ascending: false })
+          .limit(30);
+
+        // 3. Fetch aggressor info
+        const { data: vinculos } = await supabase
+          .from("vitimas_agressores")
+          .select("tipo_vinculo, status_relacao, agressor_id")
+          .eq("usuario_id", userId);
+
+        let agressorFlags: Record<string, any> = {};
+        if (vinculos && vinculos.length > 0) {
+          const agIds = vinculos.map((v: any) => v.agressor_id);
+          const { data: agressores } = await supabase
+            .from("agressores")
+            .select("id, forca_seguranca, tem_arma_em_casa, flags, risk_level")
+            .in("id", agIds);
+          if (agressores && agressores.length > 0) {
+            const ag = agressores[0];
+            agressorFlags = {
+              forca_seguranca: ag.forca_seguranca,
+              tem_arma: ag.tem_arma_em_casa,
+              flags: ag.flags,
+              risk_level: ag.risk_level,
+            };
+          }
+        }
+
+        // 4. Fetch panic alerts count
+        const { data: alertas } = await supabase
+          .from("alertas_panico")
+          .select("id, tipo_acionamento, status")
+          .eq("user_id", userId)
+          .gte("criado_em", startStr);
+
+        // 5. Aggregate data
+        const sentimentos: Record<string, number> = { positivo: 0, negativo: 0, neutro: 0, misto: 0 };
+        const tiposViolencia: Record<string, number> = {};
+        const padroesCount: Record<string, number> = {};
+        const palavrasCount: Record<string, number> = {};
+        const niveisRisco: Record<string, number> = {};
+
+        for (const a of (analises || [])) {
+          // Sentimentos
+          const sent = (a.sentimento || "neutro").toLowerCase();
+          if (sentimentos[sent] !== undefined) sentimentos[sent]++;
+          else sentimentos["neutro"]++;
+
+          // Categorias (tipos de violência)
+          for (const cat of (a.categorias || [])) {
+            tiposViolencia[cat] = (tiposViolencia[cat] || 0) + 1;
+          }
+
+          // Palavras-chave
+          for (const pw of (a.palavras_chave || [])) {
+            palavrasCount[pw] = (palavrasCount[pw] || 0) + 1;
+          }
+
+          // Nivel de risco
+          if (a.nivel_risco) {
+            niveisRisco[a.nivel_risco] = (niveisRisco[a.nivel_risco] || 0) + 1;
+          }
+
+          // Padrões da análise completa
+          const ac = a.analise_completa as any;
+          if (ac?.padroes_detectados) {
+            for (const p of ac.padroes_detectados) {
+              const nome = typeof p === "string" ? p : p?.padrao || p?.nome || "";
+              if (nome) padroesCount[nome] = (padroesCount[nome] || 0) + 1;
+            }
+          }
+        }
+
+        const totalGravacoes = (analises || []).length;
+        const totalAlertas = (alertas || []).length;
+
+        // Sort and pick top items
+        const topViolencia = Object.entries(tiposViolencia)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 8)
+          .map(([tipo, contagem]) => ({ tipo, contagem }));
+
+        const topPadroes = Object.entries(padroesCount)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 10)
+          .map(([padrao, contagem]) => ({ padrao, contagem }));
+
+        const topPalavras = Object.entries(palavrasCount)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 15)
+          .map(([palavra, contagem]) => ({ palavra, contagem }));
+
+        // 6. Call AI for narrative
+        const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+        let aiResult: any = null;
+
+        if (LOVABLE_API_KEY && totalGravacoes > 0) {
+          const aiPrompt = `Você é uma especialista em proteção a mulheres vítimas de violência doméstica, com experiência em psicologia e assistência social. Com base nos dados agregados abaixo, gere um relatório humanizado sobre a saúde da relação desta mulher.
+
+DADOS AGREGADOS (últimos ${windowDays} dias):
+- Total de gravações analisadas: ${totalGravacoes}
+- Alertas de pânico: ${totalAlertas}
+- Distribuição de sentimentos: ${JSON.stringify(sentimentos)}
+- Tipos de violência detectados: ${JSON.stringify(topViolencia)}
+- Padrões recorrentes: ${JSON.stringify(topPadroes)}
+- Palavras-chave frequentes: ${JSON.stringify(topPalavras)}
+- Níveis de risco das gravações: ${JSON.stringify(niveisRisco)}
+- Informações do agressor: ${JSON.stringify(agressorFlags)}
+- Último risk score: ${riskHistory?.[0]?.risk_score || "N/A"}
+- Último risk level: ${riskHistory?.[0]?.risk_level || "N/A"}
+
+INSTRUÇÕES:
+1. "panorama_narrativo": 2-3 parágrafos acolhedores explicando a situação atual. Use linguagem empática, sem jargão técnico ou jurídico. Comece com "Nos últimos ${windowDays} dias...". Não minimize a situação, mas também não seja alarmista.
+2. "explicacao_emocional": 2-3 frases explicando o que a distribuição de sentimentos significa para ela no dia a dia.
+3. "orientacoes": 3-5 orientações práticas e personalizadas baseadas nos dados reais. Tom empoderador. Inclua ações concretas que ela pode tomar. Se houver risco alto/crítico, priorize segurança.
+4. "canais_apoio": Liste canais relevantes como "Central de Atendimento à Mulher: ligue 180", "Polícia Militar: ligue 190", "Delegacia da Mulher mais próxima".
+
+RETORNE APENAS JSON válido:
+{
+  "panorama_narrativo": "texto...",
+  "explicacao_emocional": "texto...",
+  "orientacoes": ["orientação 1", "orientação 2", ...],
+  "canais_apoio": ["canal 1", "canal 2", ...]
+}`;
+
+          try {
+            const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${LOVABLE_API_KEY}`,
+              },
+              body: JSON.stringify({
+                model: "google/gemini-3-flash-preview",
+                messages: [
+                  { role: "user", content: aiPrompt },
+                ],
+                temperature: 0.4,
+                max_tokens: 4000,
+              }),
+            });
+
+            if (aiResponse.ok) {
+              const aiData = await aiResponse.json();
+              let content = aiData.choices?.[0]?.message?.content || "";
+              const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
+              if (jsonMatch) content = jsonMatch[1];
+              try {
+                aiResult = JSON.parse(content.trim());
+              } catch {
+                console.error("Failed to parse AI report response:", content.slice(0, 200));
+              }
+            } else {
+              console.error("AI report error:", aiResponse.status);
+            }
+          } catch (e) {
+            console.error("AI report fetch error:", e);
+          }
+        }
+
+        return json({
+          success: true,
+          relatorio: {
+            periodo: {
+              inicio: startDate.toISOString().slice(0, 10),
+              fim: endDate.toISOString().slice(0, 10),
+              dias: windowDays,
+              total_gravacoes: totalGravacoes,
+              total_alertas: totalAlertas,
+            },
+            sentimentos,
+            tipos_violencia: topViolencia,
+            padroes_recorrentes: topPadroes,
+            palavras_frequentes: topPalavras,
+            niveis_risco: niveisRisco,
+            agressor: agressorFlags,
+            risco_atual: riskHistory?.[0] || null,
+            panorama_narrativo: aiResult?.panorama_narrativo || null,
+            explicacao_emocional: aiResult?.explicacao_emocional || null,
+            orientacoes: aiResult?.orientacoes || [],
+            canais_apoio: aiResult?.canais_apoio || [
+              "Central de Atendimento à Mulher: ligue 180",
+              "Polícia Militar: ligue 190",
+              "Delegacia da Mulher mais próxima",
+            ],
+          },
+        });
+      }
+
       default:
         return json({ error: `Action desconhecida: ${action}` }, 400);
     }

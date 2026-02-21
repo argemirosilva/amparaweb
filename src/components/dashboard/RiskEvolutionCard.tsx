@@ -2,11 +2,12 @@ import { useState, useEffect, useCallback } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TrendingUp, TrendingDown, Minus, ShieldAlert, AlertTriangle, Shield, ShieldCheck, ChevronDown, ChevronUp } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, ShieldAlert, AlertTriangle, Shield, ShieldCheck, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
 import GradientIcon from "@/components/ui/gradient-icon";
 import { useAuth } from "@/contexts/AuthContext";
 import { callWebApi } from "@/services/webApiService";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, YAxis, XAxis } from "recharts";
+import RelatorioSaudeContent, { type RelatorioSaude } from "./RelatorioSaudeContent";
 
 type WindowDays = 7 | 15 | 30;
 
@@ -49,6 +50,9 @@ export default function RiskEvolutionCard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
+  const [relatorio, setRelatorio] = useState<RelatorioSaude | null>(null);
+  const [relatorioLoading, setRelatorioLoading] = useState(false);
+  const [relatorioError, setRelatorioError] = useState<string | null>(null);
 
   const fetchData = useCallback(async (w: WindowDays) => {
     if (!sessionToken) return;
@@ -196,44 +200,45 @@ export default function RiskEvolutionCard() {
 
             {/* Detalhes expansíveis */}
             <button
-              onClick={() => setExpanded(!expanded)}
+              onClick={async () => {
+                const willExpand = !expanded;
+                setExpanded(willExpand);
+                if (willExpand && !relatorio && !relatorioLoading && sessionToken) {
+                  setRelatorioLoading(true);
+                  setRelatorioError(null);
+                  try {
+                    const res = await callWebApi("getRelatorioSaude", sessionToken, { window_days: window <= 30 ? 90 : window });
+                    if (res.ok && res.data.relatorio) {
+                      setRelatorio(res.data.relatorio);
+                    } else {
+                      setRelatorioError("Não foi possível gerar o relatório.");
+                    }
+                  } catch {
+                    setRelatorioError("Erro ao carregar relatório de saúde.");
+                  } finally {
+                    setRelatorioLoading(false);
+                  }
+                }
+              }}
               className="w-full flex items-center justify-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors py-1"
             >
-              {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-              {expanded ? "Ocultar detalhes" : "Ver detalhes da análise"}
+              {relatorioLoading ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : expanded ? (
+                <ChevronUp className="w-3.5 h-3.5" />
+              ) : (
+                <ChevronDown className="w-3.5 h-3.5" />
+              )}
+              {relatorioLoading ? "Gerando relatório..." : expanded ? "Ocultar relatório" : "Ver relatório de saúde da relação"}
             </button>
 
             {expanded && (
-              <div className="space-y-3 pt-1 border-t border-border/50">
-                {/* Fatores */}
-                {assessment.fatores && assessment.fatores.length > 0 && (
-                  <div>
-                    <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Fatores identificados</span>
-                    <ul className="mt-1.5 space-y-1">
-                      {(assessment.fatores as string[]).map((f, i) => (
-                        <li key={i} className="text-xs text-foreground/80 flex items-start gap-1.5">
-                          <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: level.color }} />
-                          {f}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {/* Resumo */}
-                {assessment.resumo_tecnico && (
-                  <div>
-                    <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Resumo técnico</span>
-                    <p className="mt-1 text-xs text-foreground/70 leading-relaxed">
-                      {assessment.resumo_tecnico}
-                    </p>
-                  </div>
-                )}
-
-                {/* Período */}
-                <p className="text-[10px] text-muted-foreground/60">
-                  Período: {assessment.period_start} a {assessment.period_end}
-                </p>
+              <div className="pt-2 border-t border-border/50">
+                <RelatorioSaudeContent
+                  relatorio={relatorio}
+                  loading={relatorioLoading}
+                  error={relatorioError}
+                />
               </div>
             )}
           </>
