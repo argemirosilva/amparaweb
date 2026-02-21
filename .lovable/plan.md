@@ -1,85 +1,46 @@
 
+# Nuvem de Palavras -- Painel Admin
 
-# Substituir Barras de Sentimento por Carinha Emocional Lilas
+## Objetivo
+Criar uma nova pagina no painel administrativo que exiba uma **nuvem de palavras** (word cloud) baseada nas palavras-chave extraidas das analises de gravacoes (`gravacoes_analises.palavras_chave`).
 
-## O que muda
+## Dados Disponiveis
+A tabela `gravacoes_analises` ja possui a coluna `palavras_chave` (tipo `text[]`) com dados reais. Exemplo das mais frequentes:
 
-A secao "Saude Emocional" do Relatorio de Saude deixa de exibir barras horizontais de porcentagem (positivo/negativo/neutro/misto) e passa a mostrar uma **unica carinha SVG lilas** que representa visualmente o estado emocional da vitima, com um texto explicativo abaixo.
+| Palavra | Ocorrencias |
+|---------|-------------|
+| socorro | 43 |
+| medo | 41 |
+| violencia | 41 |
+| ameaca | 35 |
+| perigo | 34 |
+| agressor | 33 |
+| ajuda | 32 |
+| controle | 12 |
 
-## Escala de Expressoes (6 niveis)
+## Funcionalidades
+- Visualizacao de nuvem de palavras com tamanho proporcional a frequencia
+- Filtro por periodo (7 dias, 30 dias, 90 dias, todos)
+- As palavras mais frequentes aparecem maiores e com cores mais fortes
+- Layout responsivo seguindo o padrao visual do painel admin
 
-A carinha muda de expressao com base na proporcao de sentimentos negativos vs positivos nas gravacoes analisadas:
+## Implementacao Tecnica
 
-```text
-Score emocional = (positivo * 2 + neutro) / (total * 2)
-                  0.0 -------- 0.2 -------- 0.4 -------- 0.6 -------- 0.8 -------- 1.0
+### 1. Nova pagina `src/pages/admin/AdminNuvemPalavras.tsx`
+- Componente que busca dados diretamente do Supabase (`gravacoes_analises`)
+- Agrega as palavras-chave e calcula frequencias
+- Renderiza a nuvem usando CSS puro (sem biblioteca externa) -- cada palavra e um `<span>` com `font-size` proporcional a frequencia e cores variadas do tema AMPARA
+- Filtro de periodo usando selects no topo
 
-Nivel:          Em colapso    Chorando      Triste       Cansada     Tranquila    Radiante
-Expressao:      Cabelos p/    Lagrimas      Boca p/      Neutra/     Sorriso      Sorrindo
-                cima                        baixo        abatida     leve         aberto
-```
+### 2. Rota no `App.tsx`
+- Adicionar rota `/admin/nuvem-palavras` dentro do bloco `<AdminLayout>`
 
-- **Radiante** (score >= 0.8): sorriso aberto, olhos felizes
-- **Tranquila** (score >= 0.6): sorriso leve, expressao calma
-- **Cansada** (score >= 0.4): boca reta, olhos semi-cerrados
-- **Triste** (score >= 0.25): boca para baixo, olhos tristes
-- **Chorando** (score >= 0.1): lagrimas, boca tremula
-- **Em colapso** (score < 0.1): cabelos para cima, olhos arregalados, boca aberta
+### 3. Menu lateral no `AdminLayout.tsx`
+- Adicionar item "Nuvem de Palavras" com icone `Cloud` do lucide-react no sidebar
+- Visivel para todos os perfis admin (nao restrito a `admin_master`)
 
-Bonus: se houver alertas de panico no periodo, o score e penalizado para refletir a gravidade.
-
-## Layout visual
-
-```text
-+-------------------------------------------+
-|  [icone Heart]  SAUDE EMOCIONAL           |
-|                                           |
-|          (  carinha SVG lilas  )           |
-|              64x64 pixels                 |
-|                                           |
-|          "Cansada"  (label)               |
-|                                           |
-|  "Nos ultimos 30 dias, as gravacoes       |
-|   mostram predominancia de momentos       |
-|   de tensao e desgaste emocional..."      |
-|   (texto da IA - explicacao_emocional)    |
-+-------------------------------------------+
-```
-
-## Detalhes tecnicos
-
-### Arquivo a criar
-- `src/components/dashboard/EmotionalFaceIcon.tsx` -- componente que recebe o score (0-1) e renderiza o SVG correspondente em lilas. Cada expressao e desenhada com paths SVG inline (circulo para rosto, arcos para boca, circulos para olhos, linhas para lagrimas/cabelos). Cor principal: `hsl(263, 70%, 58%)` (lilas Ampara).
-
-### Arquivo a modificar
-- `src/components/dashboard/RelatorioSaudeContent.tsx`:
-  - Remover o componente `SentimentBar` (barras horizontais)
-  - Substituir pela carinha centralizada usando `EmotionalFaceIcon`
-  - Calcular o score emocional a partir de `relatorio.sentimentos`
-  - Mostrar o label do nivel abaixo da carinha
-  - Manter o texto `explicacao_emocional` da IA abaixo
-
-### Calculo do score (no frontend)
-
-```text
-const { positivo = 0, negativo = 0, neutro = 0, misto = 0 } = relatorio.sentimentos;
-const total = positivo + negativo + neutro + misto;
-const score = total > 0 ? (positivo * 2 + neutro) / (total * 2) : 0.5;
-// Penalizar se houver alertas de panico
-const adjusted = relatorio.periodo.total_alertas > 0
-  ? Math.max(0, score - 0.15)
-  : score;
-```
-
-### SVG das carinhas
-
-Cada nivel tem paths SVG distintos:
-- Rosto: circulo com fill lilas claro e stroke lilas
-- Olhos: circulos ou arcos dependendo da expressao
-- Boca: arco (sorriso), linha reta (neutra), arco invertido (triste), ondulada (chorando)
-- Extras: lagrimas (gotas para chorando), cabelos em pe (linhas para colapso)
-- Tamanho: 64x64 com viewBox padronizado
-
-### Sem mudancas no backend
-O payload do relatorio ja contem `sentimentos` e `explicacao_emocional`. Nenhuma alteracao necessaria na action `getRelatorioSaude`.
-
+### 4. Estilo da Nuvem
+- Implementacao CSS pura: palavras dispostas em `flex-wrap` centralizado
+- Tamanho de fonte escalado entre 12px e 48px com base na frequencia
+- Paleta de cores alternando entre tons da marca (azul AMPARA, roxo, cinza escuro)
+- Hover mostra tooltip com a contagem exata
