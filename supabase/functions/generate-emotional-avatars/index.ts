@@ -109,32 +109,32 @@ const EMOTIONS = [
   {
     key: "radiante",
     prompt:
-      "A portrait of a person [1] looking radiante and joyful. Open smile, bright sparkling eyes, warm golden-hour glow on the skin. Soft warm lighting. Professional portrait style.",
+      "A circular profile portrait of person [1] with a bright radiant open smile, sparkling happy eyes, glowing warm skin. Bright green circle border. Clean modern mobile UI style, soft warm golden-hour lighting. The person must look genuinely joyful and beaming. Professional portrait, consistent facial identity.",
   },
   {
     key: "tranquila",
     prompt:
-      "A portrait of a person [1] looking serene and calm. Gentle soft smile, relaxed eyes, peaceful expression. Soft diffused natural lighting. Professional portrait style.",
+      "A circular profile portrait of person [1] with a gentle soft calm smile, relaxed peaceful eyes, serene tranquil expression. Soft teal/aqua circle border. Clean modern mobile UI style, soft diffused natural lighting. The person must look at ease and content. Professional portrait, consistent facial identity.",
   },
   {
     key: "neutra",
     prompt:
-      "A portrait of a person [1] with a completely neutral expression. Relaxed facial muscles, neutral mouth, steady calm gaze. Even flat studio lighting. Professional portrait style.",
+      "A circular profile portrait of person [1] with a completely neutral apathetic poker-face expression, relaxed facial muscles, blank stare, no emotion. Pale yellow circle border. Clean modern mobile UI style, even flat studio lighting. The person must look detached and emotionless. Professional portrait, consistent facial identity.",
   },
   {
     key: "desgastada",
     prompt:
-      "A portrait of a person [1] looking exhausted and worn out. Tired droopy eyes, slightly furrowed brow, tense jaw, faint under-eye circles. Slightly desaturated cool lighting. Professional portrait style.",
+      "A circular profile portrait of person [1] looking sad with furrowed eyebrows, downturned mouth, sorrowful tired eyes, slightly lowered head. Soft orange circle border. Clean modern mobile UI style, slightly desaturated cool lighting. The person must look visibly upset and drained. Professional portrait, consistent facial identity.",
   },
   {
     key: "triste",
     prompt:
-      "A portrait of a person [1] looking deeply sad. Downturned mouth, watery glassy eyes, sorrowful expression, slightly lowered head. Cool blue-toned soft lighting. Professional portrait style.",
+      "A circular profile portrait of person [1] actively crying with visible tear streaks on cheeks, watery glassy red eyes, trembling lips, deeply emotional. Light red circle border. Clean modern mobile UI style, cool blue-toned soft lighting. The person must look like they are weeping. Professional portrait, consistent facial identity.",
   },
   {
     key: "em_colapso",
     prompt:
-      "A portrait of a person [1] in extreme emotional distress. Wide frightened eyes, open mouth as if crying out, disheveled hair, tear streaks on cheeks, visible anguish. Dramatic harsh contrasted lighting. Professional portrait style.",
+      "A circular profile portrait of person [1] in total emotional collapse and panic. Wide frightened eyes, open mouth as if screaming or crying out, slightly disheveled messy hair, tear streaks, visible anguish and desperation. Intense dark red circle border. Clean modern mobile UI style, dramatic harsh contrasted lighting. The person must look in extreme distress. Professional portrait, consistent facial identity.",
   },
 ];
 
