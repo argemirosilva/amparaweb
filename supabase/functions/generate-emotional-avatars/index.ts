@@ -14,14 +14,32 @@ function json(data: unknown, status = 200) {
   });
 }
 
-/* ---------- Google OAuth2 via Service Account ---------- */
+/* ---------- Google OAuth2 via individual secrets ---------- */
 
 async function importPrivateKey(pem: string): Promise<CryptoKey> {
-  const pemContents = pem
-    .replace(/-----BEGIN PRIVATE KEY-----/, "")
-    .replace(/-----END PRIVATE KEY-----/, "")
-    .replace(/\n/g, "");
-  const binaryDer = Uint8Array.from(atob(pemContents), (c) => c.charCodeAt(0));
+  // Clean the PEM key - handle various formats
+  let b64 = pem;
+  
+  // Replace escaped newlines
+  b64 = b64.replace(/\\n/g, "\n");
+  
+  // Remove PEM envelope if present
+  b64 = b64.replace(/-----BEGIN PRIVATE KEY-----/g, "");
+  b64 = b64.replace(/-----END PRIVATE KEY-----/g, "");
+  
+  // Remove all whitespace
+  b64 = b64.replace(/[\n\r\s]/g, "");
+  
+  // PKCS8 RSA keys always start with "MIIE" - trim any prefix junk
+  const miieIdx = b64.indexOf("MIIE");
+  if (miieIdx > 0) {
+    console.log(`Trimming ${miieIdx} junk chars before MIIE`);
+    b64 = b64.substring(miieIdx);
+  }
+  
+  console.log("PEM base64 length:", b64.length, "first 20:", b64.substring(0, 20));
+  
+  const binaryDer = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
   return crypto.subtle.importKey(
     "pkcs8",
     binaryDer,
@@ -41,24 +59,25 @@ function base64url(data: Uint8Array | string): string {
 }
 
 async function getGoogleAccessToken(
-  serviceAccountJson: string,
-  scope: string
+  clientEmail: string,
+  privateKey: string
 ): Promise<string> {
-  const sa = JSON.parse(serviceAccountJson);
   const now = Math.floor(Date.now() / 1000);
+  const tokenUri = "https://oauth2.googleapis.com/token";
+  const scope = "https://www.googleapis.com/auth/cloud-platform";
 
   const header = base64url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
   const payload = base64url(
     JSON.stringify({
-      iss: sa.client_email,
+      iss: clientEmail,
       scope,
-      aud: sa.token_uri || "https://oauth2.googleapis.com/token",
+      aud: tokenUri,
       iat: now,
       exp: now + 3600,
     })
   );
 
-  const key = await importPrivateKey(sa.private_key);
+  const key = await importPrivateKey(privateKey);
   const sig = new Uint8Array(
     await crypto.subtle.sign(
       "RSASSA-PKCS1-v1_5",
@@ -68,17 +87,14 @@ async function getGoogleAccessToken(
   );
   const jwt = `${header}.${payload}.${base64url(sig)}`;
 
-  const tokenRes = await fetch(
-    sa.token_uri || "https://oauth2.googleapis.com/token",
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
-        assertion: jwt,
-      }),
-    }
-  );
+  const tokenRes = await fetch(tokenUri, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
+      assertion: jwt,
+    }),
+  });
   if (!tokenRes.ok) {
     const txt = await tokenRes.text();
     throw new Error(`Google token error: ${tokenRes.status} ${txt}`);
@@ -93,32 +109,32 @@ const EMOTIONS = [
   {
     key: "radiante",
     prompt:
-      "Transform this portrait to show the person looking radiante and joyful. Open smile, bright sparkling eyes, warm golden-hour glow on the skin. Keep the person's identity, hairstyle and clothing exactly the same. Soft warm lighting. Professional portrait style.",
+      "A portrait of a person [1] looking radiante and joyful. Open smile, bright sparkling eyes, warm golden-hour glow on the skin. Soft warm lighting. Professional portrait style.",
   },
   {
     key: "tranquila",
     prompt:
-      "Transform this portrait to show the person looking serene and calm. Gentle soft smile, relaxed eyes, peaceful expression. Keep the person's identity, hairstyle and clothing exactly the same. Soft diffused natural lighting. Professional portrait style.",
+      "A portrait of a person [1] looking serene and calm. Gentle soft smile, relaxed eyes, peaceful expression. Soft diffused natural lighting. Professional portrait style.",
   },
   {
     key: "neutra",
     prompt:
-      "Transform this portrait to show the person with a completely neutral expression. Relaxed facial muscles, neutral mouth, steady calm gaze. Keep the person's identity, hairstyle and clothing exactly the same. Even flat studio lighting. Professional portrait style.",
+      "A portrait of a person [1] with a completely neutral expression. Relaxed facial muscles, neutral mouth, steady calm gaze. Even flat studio lighting. Professional portrait style.",
   },
   {
     key: "desgastada",
     prompt:
-      "Transform this portrait to show the person looking exhausted and worn out. Tired droopy eyes, slightly furrowed brow, tense jaw, faint under-eye circles. Keep the person's identity, hairstyle and clothing exactly the same. Slightly desaturated cool lighting. Professional portrait style.",
+      "A portrait of a person [1] looking exhausted and worn out. Tired droopy eyes, slightly furrowed brow, tense jaw, faint under-eye circles. Slightly desaturated cool lighting. Professional portrait style.",
   },
   {
     key: "triste",
     prompt:
-      "Transform this portrait to show the person looking deeply sad. Downturned mouth, watery glassy eyes, sorrowful expression, slightly lowered head. Keep the person's identity, hairstyle and clothing exactly the same. Cool blue-toned soft lighting. Professional portrait style.",
+      "A portrait of a person [1] looking deeply sad. Downturned mouth, watery glassy eyes, sorrowful expression, slightly lowered head. Cool blue-toned soft lighting. Professional portrait style.",
   },
   {
     key: "em_colapso",
     prompt:
-      "Transform this portrait to show the person in extreme emotional distress. Wide frightened eyes, open mouth as if crying out, disheveled hair, tear streaks on cheeks, visible anguish. Keep the person's identity and clothing the same. Dramatic harsh contrasted lighting. Professional portrait style.",
+      "A portrait of a person [1] in extreme emotional distress. Wide frightened eyes, open mouth as if crying out, disheveled hair, tear streaks on cheeks, visible anguish. Dramatic harsh contrasted lighting. Professional portrait style.",
   },
 ];
 
@@ -133,15 +149,23 @@ async function generateEmotionImage(
 ): Promise<string> {
   const endpoint = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/imagen-3.0-capability-001:predict`;
 
+  // Log request size for debugging
+  console.log("Base image B64 length:", baseImageB64.length);
+  
   const body = {
     instances: [
       {
         prompt,
         referenceImages: [
           {
-            referenceType: "REFERENCE_TYPE_RAW",
+            referenceType: "REFERENCE_TYPE_SUBJECT",
+            referenceId: 1,
             referenceImage: {
               bytesBase64Encoded: baseImageB64,
+            },
+            subjectImageConfig: {
+              subjectDescription: "a woman",
+              subjectType: "SUBJECT_TYPE_PERSON",
             },
           },
         ],
@@ -149,10 +173,7 @@ async function generateEmotionImage(
     ],
     parameters: {
       sampleCount: 1,
-      outputOptions: {
-        mimeType: "image/webp",
-        compressionQuality: 85,
-      },
+      personGeneration: "allow_all",
     },
   };
 
@@ -191,10 +212,12 @@ serve(async (req) => {
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const saJson = Deno.env.get("GOOGLE_SERVICE_ACCOUNT_JSON");
+    const gcpProjectId = Deno.env.get("GCP_PROJECT_ID");
+    const gcpClientEmail = Deno.env.get("GCP_CLIENT_EMAIL");
+    const gcpPrivateKey = Deno.env.get("GCP_PRIVATE_KEY");
 
-    if (!saJson) {
-      return json({ error: "GOOGLE_SERVICE_ACCOUNT_JSON not configured" }, 500);
+    if (!gcpProjectId || !gcpClientEmail || !gcpPrivateKey) {
+      return json({ error: "GCP credentials not configured (GCP_PROJECT_ID, GCP_CLIENT_EMAIL, GCP_PRIVATE_KEY)" }, 500);
     }
 
     const supabase = createClient(supabaseUrl, serviceRoleKey);
@@ -241,7 +264,6 @@ serve(async (req) => {
       return json({ error: "Failed to download avatar" }, 500);
     }
     const avatarBytes = new Uint8Array(await avatarRes.arrayBuffer());
-    // Chunk-based base64 to avoid stack overflow on large images
     let binary = "";
     const chunkSize = 8192;
     for (let i = 0; i < avatarBytes.length; i += chunkSize) {
@@ -250,39 +272,10 @@ serve(async (req) => {
     }
     const baseImageB64 = btoa(binary);
 
-    // 3. Get Google access token
-    // Debug: log first chars of secret to diagnose encoding
-    console.log("SA_JSON first 20 chars:", saJson.substring(0, 20));
-    console.log("SA_JSON last 5 chars:", saJson.substring(saJson.length - 5));
-    console.log("SA_JSON char codes [0..3]:", [...saJson.substring(0, 4)].map(c => c.charCodeAt(0)));
-    
-    // Strip wrapping quotes if secret was double-encoded
-    let cleanSaJson = saJson.trim();
-    // Try multiple levels of unwrapping
-    while (cleanSaJson.startsWith('"') || cleanSaJson.startsWith("'")) {
-      try {
-        const unwrapped = JSON.parse(cleanSaJson);
-        if (typeof unwrapped === "string") {
-          cleanSaJson = unwrapped;
-        } else {
-          // It parsed into an object, use it directly
-          break;
-        }
-      } catch {
-        // Remove surrounding quotes manually
-        cleanSaJson = cleanSaJson.slice(1, -1).replace(/\\"/g, '"').replace(/\\\\/g, '\\');
-        break;
-      }
-    }
-    const sa = typeof cleanSaJson === "string" ? JSON.parse(cleanSaJson) : cleanSaJson;
-    const gcpProjectId = sa.project_id;
-    const location = "us-central1";
-
+    // 3. Get Google access token using individual secrets
     console.log("Getting Google access token for project:", gcpProjectId);
-    const accessToken = await getGoogleAccessToken(
-      cleanSaJson,
-      "https://www.googleapis.com/auth/cloud-platform"
-    );
+    const accessToken = await getGoogleAccessToken(gcpClientEmail, gcpPrivateKey);
+    const location = "us-central1";
 
     // 4. Generate 6 emotional variations
     const emotionalAvatars: Record<string, string> = {};
@@ -299,14 +292,12 @@ serve(async (req) => {
           emotion.prompt
         );
 
-        // Chunk-based decode to avoid stack overflow
         const rawBinary = atob(generatedB64);
         const imgBytes = new Uint8Array(rawBinary.length);
         for (let i = 0; i < rawBinary.length; i++) {
           imgBytes[i] = rawBinary.charCodeAt(i);
         }
 
-        // Upload to storage
         const storagePath = `${userId}/${emotion.key}.webp`;
         const { error: uploadErr } = await supabase.storage
           .from("user-emotions")
@@ -321,7 +312,6 @@ serve(async (req) => {
           continue;
         }
 
-        // Get public URL
         const { data: urlData } = supabase.storage
           .from("user-emotions")
           .getPublicUrl(storagePath);
