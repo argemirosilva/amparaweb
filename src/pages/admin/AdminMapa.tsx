@@ -728,26 +728,7 @@ export default function AdminMapa() {
             </div>
           )}
           <div className="absolute bottom-3 left-3 rounded-lg border p-3" style={{ background: "hsl(0 0% 100% / 0.95)", borderColor: "hsl(220 13% 91%)", backdropFilter: "blur(8px)" }}>
-            <p className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={subtitleStyle}>Gravações por UF</p>
-            <div className="flex items-center gap-1.5 mb-2">
-              {[
-                { color: "#e5e7eb", label: "0" },
-                { color: "#93c5fd", label: "1-9" },
-                { color: "#3b82f6", label: "10-29" },
-                { color: "#1d4ed8", label: "30-79" },
-                { color: "#1e3a5f", label: "80+" },
-              ].map((c) => (
-                <div key={c.label} className="flex items-center gap-0.5 text-[9px]" style={subtitleStyle}>
-                  <span className="inline-block w-3 h-3 rounded-sm" style={{ background: c.color }} />
-                  <span>{c.label}</span>
-                </div>
-              ))}
-            </div>
-            <div className="flex items-center gap-2 text-[9px] mb-2" style={subtitleStyle}>
-              <span style={{ color: "#dc2626" }}>▲ Aumento</span>
-              <span style={{ color: "#16a34a" }}>▼ Declínio</span>
-            </div>
-            <div className="space-y-1.5 border-t pt-2" style={{ borderColor: "hsl(220 13% 91%)" }}>
+            <div className="space-y-1.5">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" checked={showAlerts} onChange={(e) => setShowAlerts(e.target.checked)} className="rounded" />
                 <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: "hsl(0,72%,51%)" }} />
