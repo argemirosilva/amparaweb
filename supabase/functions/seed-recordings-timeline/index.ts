@@ -30,29 +30,29 @@ function assignProfile(): Profile {
   return "constante";
 }
 
-/** Returns days-ago (0 = today, 90 = 90 days ago) based on profile */
+/** Returns days-ago (0 = today, 365 = 365 days ago) based on profile */
 function daysAgoForProfile(profile: Profile, idx: number, total: number): number {
   const t = total > 1 ? idx / (total - 1) : 0.5; // 0..1 progression
 
   switch (profile) {
     case "escalada":
-      // Concentrated in recent days (low days-ago). t=0 → ~80 days ago, t=1 → ~0 days ago
-      return Math.round((1 - Math.pow(t, 2)) * 85 + Math.random() * 5);
+      // Concentrated in recent days (low days-ago). t=0 → ~360 days ago, t=1 → ~0 days ago
+      return Math.round((1 - Math.pow(t, 2)) * 355 + Math.random() * 10);
 
     case "decaida":
-      // Concentrated early (high days-ago). t=0 → ~0 days ago, t=1 → ~85 days ago
-      return Math.round(Math.pow(t, 2) * 85 + Math.random() * 5);
+      // Concentrated early (high days-ago). t=0 → ~0 days ago, t=1 → ~355 days ago
+      return Math.round(Math.pow(t, 2) * 355 + Math.random() * 10);
 
     case "pico":
-      // Cluster between day 30-50 ago, with some scatter
+      // Cluster between day 120-200 ago, with some scatter
       if (t < 0.15 || t > 0.85) {
         // Sparse edges
-        return Math.round(Math.random() * 90);
+        return Math.round(Math.random() * 365);
       }
-      return Math.round(30 + Math.random() * 20);
+      return Math.round(120 + Math.random() * 80);
 
     case "constante":
-      return Math.round(Math.random() * 90);
+      return Math.round(Math.random() * 365);
   }
 }
 
