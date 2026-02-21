@@ -25,7 +25,14 @@ function isOnline(lastPing: string | null): boolean {
 }
 
 function BatteryIndicator({ percent, charging }: { percent: number | null; charging: boolean | null }) {
-  if (percent === null) return null;
+  if (percent === null) {
+    return (
+      <span className="inline-flex items-center gap-0.5 text-xs text-muted-foreground">
+        <BatteryLow className="w-3.5 h-3.5" />
+        --
+      </span>
+    );
+  }
 
   const Icon = charging
     ? BatteryCharging
