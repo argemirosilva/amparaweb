@@ -161,11 +161,6 @@ export default function RiskEvolutionCard() {
             />
             {/* Gradient fade into card */}
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-card" />
-            {/* Bottom label overlay */}
-            <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent p-2 pt-6">
-              <p className="text-[10px] font-semibold text-white leading-tight">{emotionLevel.label}</p>
-              <p className="text-[8px] text-white/70">Saúde emocional</p>
-            </div>
           </div>
         )}
 
