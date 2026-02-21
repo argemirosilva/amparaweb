@@ -882,25 +882,8 @@ export default function AdminMapa() {
           <GovKpiCard title="Tempo de Áudio" value={`${kpis.totalHorasGravacao}h`} icon={Clock} subtitle="total gravado" />
         </div>
 
-        {/* Timeline + Risk Pie */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
-          <div className="lg:col-span-2 rounded-md border p-4" style={cardStyle}>
-            <h2 className="text-sm font-semibold mb-4" style={titleStyle}>Evolução Temporal — Eventos e Emergências</h2>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={timelineData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(220 13% 91%)" />
-                  <XAxis dataKey="date" tick={{ fontSize: 11, fill: "hsl(220 9% 46%)" }} interval={timelineData.length > 60 ? Math.floor(timelineData.length / 12) : "preserveStartEnd"} />
-                  <YAxis tick={{ fontSize: 11, fill: "hsl(220 9% 46%)" }} allowDecimals={false} />
-                  <Tooltip contentStyle={tooltipStyle} />
-                  <Line type="monotone" dataKey="eventos" name="Eventos" stroke="hsl(215 25% 50%)" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
-                  <Line type="monotone" dataKey="emergencias" name="Emergências" stroke="hsl(0 30% 50%)" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-            {timelineData.length === 0 && <p className="text-center text-xs mt-2" style={subtitleStyle}>Nenhum dado no período selecionado</p>}
-          </div>
-
+        {/* Row 1: Risk Distribution + Word Cloud */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
           <div className="rounded-md border p-4" style={cardStyle}>
             <h2 className="text-sm font-semibold mb-4" style={titleStyle}>Distribuição por Nível de Risco</h2>
             <div className="h-64">
@@ -920,10 +903,28 @@ export default function AdminMapa() {
               )}
             </div>
           </div>
+          <WordCloudCard since={new Date(Date.now() - ({ "24h": 24, "7d": 168, "30d": 720, "6m": 4320, "12m": 8760 }[period] || 168) * 60 * 60 * 1000).toISOString()} />
         </div>
 
-        {/* Alert Type */}
+        {/* Row 2: Timeline + Alert Type */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+          <div className="rounded-md border p-4" style={cardStyle}>
+            <h2 className="text-sm font-semibold mb-4" style={titleStyle}>Evolução Temporal — Eventos e Emergências</h2>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={timelineData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(220 13% 91%)" />
+                  <XAxis dataKey="date" tick={{ fontSize: 11, fill: "hsl(220 9% 46%)" }} interval={timelineData.length > 60 ? Math.floor(timelineData.length / 12) : "preserveStartEnd"} />
+                  <YAxis tick={{ fontSize: 11, fill: "hsl(220 9% 46%)" }} allowDecimals={false} />
+                  <Tooltip contentStyle={tooltipStyle} />
+                  <Line type="monotone" dataKey="eventos" name="Eventos" stroke="hsl(215 25% 50%)" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
+                  <Line type="monotone" dataKey="emergencias" name="Emergências" stroke="hsl(0 30% 50%)" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+            {timelineData.length === 0 && <p className="text-center text-xs mt-2" style={subtitleStyle}>Nenhum dado no período selecionado</p>}
+          </div>
+
           <div className="rounded-md border p-4" style={cardStyle}>
             <h2 className="text-sm font-semibold mb-4" style={titleStyle}>Alertas por Tipo de Acionamento</h2>
             <div className="h-64">
@@ -1024,8 +1025,6 @@ export default function AdminMapa() {
           </div>
         </div>
 
-        {/* Word Cloud */}
-        <WordCloudCard since={new Date(Date.now() - ({ "24h": 24, "7d": 168, "30d": 720, "6m": 4320, "12m": 8760 }[period] || 168) * 60 * 60 * 1000).toISOString()} />
       </div>
     </div>
   );
