@@ -50,15 +50,7 @@ async function requireAdmin(supabase: any, userId: string): Promise<boolean> {
   );
 }
 
-function generateCode6(): string {
-  const arr = new Uint32Array(1);
-  crypto.getRandomValues(arr);
-  return String(arr[0] % 1000000).padStart(6, "0");
-}
-
-async function hashCode(code: string): Promise<string> {
-  return await hashToken(code);
-}
+// generateCode6 and hashCode removed — access is now auto-granted
 
 async function addTimeline(supabase: any, userId: string, sessionId: string, eventType: string, description: string) {
   await supabase.from("support_audit_timeline").insert({
@@ -301,10 +293,6 @@ serve(async (req) => {
       if (!sess) return json({ error: "Sessão não encontrada" }, 404);
       if (sess.status === "closed") return json({ error: "Sessão já encerrada" }, 400);
 
-      const code = generateCode6();
-      const codeHash = await hashCode(code);
-      const expiresAt = new Date(Date.now() + 2 * 60 * 1000).toISOString();
-
       const { data: request, error } = await supabase
         .from("support_access_requests")
         .insert({
@@ -315,106 +303,42 @@ serve(async (req) => {
           resource_id,
           requested_scope,
           justification_text: justification_text.trim(),
-          code_hash: codeHash,
-          code_expires_at: expiresAt,
-          status: "pending",
+          code_hash: "auto-granted",
+          code_expires_at: new Date().toISOString(),
+          status: "granted",
         })
         .select()
         .single();
       if (error) return json({ error: error.message }, 500);
 
-      await supabase
-        .from("support_sessions")
-        .update({ status: "waiting_consent", last_activity_at: new Date().toISOString() })
-        .eq("id", session_id);
-
-      await addTimeline(supabase, sess.user_id, session_id, "access_requested",
-        `Agente solicitou acesso a ${resource_type}. Justificativa: ${justification_text.trim().substring(0, 100)}`);
-
-      await supabase.from("support_messages").insert({
-        session_id,
-        sender_type: "system",
-        message_text: `Solicitação de acesso enviada. Aguardando código de consentimento da usuária. Recurso: ${resource_type}, Escopo: ${requested_scope}`,
-      });
-
-      return json({ request_id: request.id, code, expires_at: expiresAt }, 201);
-    }
-
-    if (action === "confirmAccess") {
-      const { request_id, code } = params;
-      if (!request_id || !code) return json({ error: "request_id e code obrigatórios" }, 400);
-
-      const { data: request } = await supabase
-        .from("support_access_requests")
-        .select("*")
-        .eq("id", request_id)
-        .single();
-      if (!request) return json({ error: "Solicitação não encontrada" }, 404);
-
-      // Verify user owns this request (if not admin)
-      const isAdmin = await requireAdmin(supabase, userId);
-      if (!isAdmin && request.user_id !== userId) return json({ error: "Acesso negado" }, 403);
-
-      if (request.status === "blocked") return json({ error: "Solicitação bloqueada por excesso de tentativas" }, 403);
-      if (request.status !== "pending") return json({ error: `Solicitação já processada: ${request.status}` }, 400);
-
-      if (new Date(request.code_expires_at) < new Date()) {
-        await supabase
-          .from("support_access_requests")
-          .update({ status: "expired" })
-          .eq("id", request_id);
-        return json({ error: "Código expirado" }, 410);
-      }
-
-      const inputHash = await hashCode(code);
-      if (inputHash !== request.code_hash) {
-        const newAttempts = request.attempts + 1;
-        const newStatus = newAttempts >= 3 ? "blocked" : "pending";
-        await supabase
-          .from("support_access_requests")
-          .update({ attempts: newAttempts, status: newStatus })
-          .eq("id", request_id);
-
-        if (newStatus === "blocked") {
-          await addTimeline(supabase, request.user_id, request.session_id, "access_revoked",
-            "Solicitação bloqueada: 3 tentativas incorretas.");
-        }
-        return json({ error: `Código incorreto. Tentativa ${newAttempts}/3.` }, 401);
-      }
-
       const grantExpiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
       const { data: grant, error: grantErr } = await supabase
         .from("support_access_grants")
-        .insert({
-          request_id,
-          expires_at: grantExpiresAt,
-          active: true,
-        })
+        .insert({ request_id: request.id, expires_at: grantExpiresAt, active: true })
         .select()
         .single();
       if (grantErr) return json({ error: grantErr.message }, 500);
 
       await supabase
-        .from("support_access_requests")
-        .update({ status: "granted" })
-        .eq("id", request_id);
-
-      await supabase
         .from("support_sessions")
         .update({ status: "active", last_activity_at: new Date().toISOString() })
-        .eq("id", request.session_id);
+        .eq("id", session_id);
 
-      await addTimeline(supabase, request.user_id, request.session_id, "access_granted",
-        `Acesso concedido a ${request.resource_type} (${request.requested_scope}). Expira em 10 minutos.`);
+      await addTimeline(supabase, sess.user_id, session_id, "access_requested",
+        `Agente solicitou acesso a ${resource_type}. Justificativa: ${justification_text.trim().substring(0, 100)}`);
+      await addTimeline(supabase, sess.user_id, session_id, "access_granted",
+        `Acesso concedido a ${resource_type} (${requested_scope}). Expira em 10 minutos.`);
 
       await supabase.from("support_messages").insert({
-        session_id: request.session_id,
+        session_id,
         sender_type: "system",
-        message_text: `✅ Acesso concedido. O agente pode visualizar ${request.resource_type} por 10 minutos.`,
+        message_text: `✅ Acesso concedido a ${resource_type} (${requested_scope}) por 10 minutos. A usuária pode revogar a qualquer momento.`,
       });
 
-      return json({ grant });
+      return json({ grant }, 201);
     }
+
+    // confirmAccess removed — access is now auto-granted
 
     if (action === "revokeAccess") {
       const { grant_id, revoked_by: revokedByParam = "agent" } = params;
@@ -857,92 +781,7 @@ serve(async (req) => {
       return json({ success: true, data: { items: data || [] } });
     }
 
-    if (action === "showCode") {
-      const { request_id } = params;
-      if (!request_id) return json({ error: "request_id obrigatório" }, 400);
-
-      const { data: request } = await supabase
-        .from("support_access_requests")
-        .select("*")
-        .eq("id", request_id)
-        .eq("user_id", userId)
-        .single();
-      if (!request) return json({ error: "Solicitação não encontrada" }, 404);
-
-      if (request.status !== "pending") {
-        return json({ error: `Solicitação já processada: ${request.status}` }, 400);
-      }
-
-      // If code expired, generate a new one
-      if (new Date(request.code_expires_at) < new Date()) {
-        const newCode = generateCode6();
-        const newHash = await hashCode(newCode);
-        const newExpires = new Date(Date.now() + 2 * 60 * 1000).toISOString();
-
-        await supabase
-          .from("support_access_requests")
-          .update({ code_hash: newHash, code_expires_at: newExpires, attempts: 0 })
-          .eq("id", request_id);
-
-        await addTimeline(supabase, userId, request.session_id, "code_shown",
-          `Novo código de consentimento gerado para acesso a ${request.resource_type}.`);
-
-        return json({ success: true, data: { code: newCode, expires_at: newExpires } });
-      }
-
-      // Code still valid — regenerate (since we can't retrieve the original from hash)
-      const newCode = generateCode6();
-      const newHash = await hashCode(newCode);
-      const newExpires = new Date(Date.now() + 2 * 60 * 1000).toISOString();
-
-      await supabase
-        .from("support_access_requests")
-        .update({ code_hash: newHash, code_expires_at: newExpires, attempts: 0 })
-        .eq("id", request_id);
-
-      await addTimeline(supabase, userId, request.session_id, "code_shown",
-        `Código de consentimento exibido para acesso a ${request.resource_type}.`);
-
-      return json({ success: true, data: { code: newCode, expires_at: newExpires } });
-    }
-
-    if (action === "denyAccess") {
-      const { request_id } = params;
-      if (!request_id) return json({ error: "request_id obrigatório" }, 400);
-
-      const { data: request } = await supabase
-        .from("support_access_requests")
-        .select("*")
-        .eq("id", request_id)
-        .eq("user_id", userId)
-        .single();
-      if (!request) return json({ error: "Solicitação não encontrada" }, 404);
-
-      if (request.status !== "pending") {
-        return json({ error: `Solicitação já processada: ${request.status}` }, 400);
-      }
-
-      await supabase
-        .from("support_access_requests")
-        .update({ status: "denied" })
-        .eq("id", request_id);
-
-      await supabase
-        .from("support_sessions")
-        .update({ status: "active", last_activity_at: new Date().toISOString() })
-        .eq("id", request.session_id);
-
-      await addTimeline(supabase, userId, request.session_id, "access_revoked",
-        `Acesso a ${request.resource_type} recusado pela usuária.`);
-
-      await supabase.from("support_messages").insert({
-        session_id: request.session_id,
-        sender_type: "system",
-        message_text: `❌ Acesso a ${request.resource_type} recusado pela usuária.`,
-      });
-
-      return json({ success: true });
-    }
+    // showCode and denyAccess removed — access is now auto-granted
 
     if (action === "getAuditTimeline") {
       const { session_id } = params;

@@ -30,7 +30,6 @@ const AUDIT_ICONS: Record<string, typeof ShieldCheck> = {
   session_created: ShieldCheck,
   agent_assigned: Eye,
   access_requested: ShieldAlert,
-  code_shown: Eye,
   access_granted: CheckCircle,
   data_accessed: Eye,
   access_revoked: Lock,
@@ -53,7 +52,6 @@ interface AccessRequest {
   requested_scope: string;
   justification_text: string;
   status: string;
-  code_expires_at: string;
   created_at: string;
   support_access_grants: Array<{
     id: string;
@@ -83,9 +81,6 @@ export default function SupportTicketDetail() {
   const [newMsg, setNewMsg] = useState("");
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [codeData, setCodeData] = useState<{ requestId: string; code: string; expiresAt: string } | null>(null);
-  const [confirmCode, setConfirmCode] = useState("");
-  const [confirming, setConfirming] = useState(false);
 
   const loadSession = useCallback(async () => {
     if (!sessionToken || !sessionId) return;
@@ -112,7 +107,6 @@ export default function SupportTicketDetail() {
 
   useEffect(() => { loadSession(); loadAudit(); }, [loadSession, loadAudit]);
 
-  // Polling
   useEffect(() => {
     const interval = setInterval(() => {
       loadSession();
@@ -145,53 +139,6 @@ export default function SupportTicketDetail() {
     setSending(false);
   };
 
-  const handleShowCode = async (requestId: string) => {
-    if (!sessionToken) return;
-    try {
-      const res = await callSupportApi("showCode", sessionToken, { request_id: requestId });
-      if (res.ok && res.data?.data) {
-        setCodeData({ requestId, code: res.data.data.code, expiresAt: res.data.data.expires_at });
-      } else {
-        toast.error(res.data?.error || "Erro ao gerar código.");
-      }
-    } catch {
-      toast.error("Erro ao gerar código.");
-    }
-  };
-
-  const handleConfirmAccess = async (requestId: string) => {
-    if (!sessionToken || !confirmCode.trim()) return;
-    setConfirming(true);
-    try {
-      const res = await callSupportApi("confirmAccess", sessionToken, {
-        request_id: requestId,
-        code: confirmCode.trim(),
-      });
-      if (res.ok) {
-        toast.success("Acesso concedido por 10 minutos.");
-        setCodeData(null);
-        setConfirmCode("");
-        loadSession();
-      } else {
-        toast.error(res.data?.error || "Código inválido.");
-      }
-    } catch {
-      toast.error("Erro ao confirmar.");
-    }
-    setConfirming(false);
-  };
-
-  const handleDenyAccess = async (requestId: string) => {
-    if (!sessionToken) return;
-    try {
-      const res = await callSupportApi("denyAccess", sessionToken, { request_id: requestId });
-      if (res.ok) {
-        toast.success("Acesso recusado.");
-        loadSession();
-      }
-    } catch { /* ignore */ }
-  };
-
   const handleRevokeAll = async () => {
     if (!sessionToken || !sessionId) return;
     try {
@@ -209,8 +156,6 @@ export default function SupportTicketDetail() {
       .filter((g) => g.active && new Date(g.expires_at) > new Date())
       .map((g) => ({ ...g, resource_type: r.resource_type, requested_scope: r.requested_scope }))
   );
-
-  const pendingRequests = accessRequests.filter((r) => r.status === "pending");
 
   if (loading) {
     return (
@@ -240,7 +185,7 @@ export default function SupportTicketDetail() {
           <ShieldCheck className="w-5 h-5 text-primary shrink-0 mt-0.5" />
           <div className="text-xs text-foreground space-y-0.5">
             <p className="font-medium">Sua segurança</p>
-            <p className="text-muted-foreground">Nenhum dado sensível é acessado sem sua autorização. Se pedirem acesso, você verá um código nesta tela. Você pode revogar a qualquer momento.</p>
+            <p className="text-muted-foreground">Nenhum dado sensível é acessado sem solicitação formal. Toda atividade é registrada na auditoria. Você pode revogar qualquer acesso a qualquer momento.</p>
           </div>
         </CardContent>
       </Card>
@@ -267,61 +212,6 @@ export default function SupportTicketDetail() {
           </CardContent>
         </Card>
       )}
-
-      {/* Pending access requests */}
-      {pendingRequests.map((r) => (
-        <Card key={r.id} className="border-primary/30 bg-primary/5">
-          <CardContent className="p-4 space-y-3">
-            <div className="flex items-center gap-2">
-              <ShieldAlert className="w-5 h-5 text-primary" />
-              <span className="text-sm font-semibold text-foreground">Solicitação de Acesso</span>
-            </div>
-            <div className="text-xs space-y-1 text-muted-foreground">
-              <p><strong>Recurso:</strong> {RESOURCE_LABELS[r.resource_type] || r.resource_type}</p>
-              <p><strong>Escopo:</strong> {SCOPE_LABELS[r.requested_scope] || r.requested_scope}</p>
-              <p><strong>Justificativa:</strong> {r.justification_text}</p>
-              <CodeExpiryTimer expiresAt={r.code_expires_at} />
-            </div>
-
-            {codeData?.requestId === r.id ? (
-              <div className="space-y-2">
-                <div className="bg-background border border-border rounded-lg p-3 text-center">
-                  <p className="text-xs text-muted-foreground mb-1">Seu código de consentimento:</p>
-                  <p className="text-2xl font-mono font-bold tracking-[0.3em] text-primary">{codeData.code}</p>
-                  <p className="text-[10px] text-muted-foreground mt-1">Informe este código ao agente ou digite abaixo para autorizar.</p>
-                </div>
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Digite o código"
-                    value={confirmCode}
-                    onChange={(e) => setConfirmCode(e.target.value)}
-                    maxLength={6}
-                    className="font-mono text-center tracking-widest"
-                  />
-                  <Button
-                    size="sm"
-                    disabled={confirming || confirmCode.length < 6}
-                    onClick={() => handleConfirmAccess(r.id)}
-                  >
-                    {confirming ? <Loader2 className="w-4 h-4 animate-spin" /> : "Autorizar"}
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="flex gap-2">
-                <Button size="sm" className="flex-1 gap-1" onClick={() => handleShowCode(r.id)}>
-                  <Eye className="w-3.5 h-3.5" />
-                  Mostrar código
-                </Button>
-                <Button size="sm" variant="destructive" className="flex-1 gap-1" onClick={() => handleDenyAccess(r.id)}>
-                  <XCircle className="w-3.5 h-3.5" />
-                  Recusar
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      ))}
 
       {/* Tabs: Chat / Audit */}
       <Tabs defaultValue="chat" className="w-full">
@@ -425,33 +315,4 @@ function GrantCountdown({ expiresAt }: { expiresAt: string }) {
   }, [expiresAt]);
 
   return <span className="font-mono">{remaining}</span>;
-}
-
-function CodeExpiryTimer({ expiresAt }: { expiresAt: string }) {
-  const [remaining, setRemaining] = useState("");
-  const [expired, setExpired] = useState(false);
-
-  useEffect(() => {
-    const tick = () => {
-      const diff = new Date(expiresAt).getTime() - Date.now();
-      if (diff <= 0) {
-        setExpired(true);
-        setRemaining("Expirado");
-        return;
-      }
-      const min = Math.floor(diff / 60000);
-      const sec = Math.floor((diff % 60000) / 1000);
-      setRemaining(`${min}:${String(sec).padStart(2, "0")}`);
-    };
-    tick();
-    const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
-  }, [expiresAt]);
-
-  return (
-    <p className={`flex items-center gap-1 ${expired ? "text-destructive" : ""}`}>
-      <Clock className="w-3 h-3" />
-      {expired ? "Código expirado — clique em \"Mostrar código\" para gerar novo" : `Expira em ${remaining}`}
-    </p>
-  );
 }
