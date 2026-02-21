@@ -77,7 +77,7 @@ export default function RelatorioSaudeContent({ relatorio, loading, error }: Pro
   }
 
   return (
-    <ScrollArea className="max-h-[80vh]">
+    <div>
       <div className="space-y-5 pr-2">
         {/* Seção 1: Panorama */}
         {relatorio.panorama_narrativo &&
@@ -138,7 +138,7 @@ export default function RelatorioSaudeContent({ relatorio, loading, error }: Pro
 
             {relatorio.palavras_frequentes.length > 0 &&
           <div>
-                <span className="text-[10px] font-semibold text-muted-foreground uppercase">Palavras frequentes</span>
+                <span className="text-[10px] font-semibold text-muted-foreground uppercase">Ofensas frequentes</span>
                 <div className="flex flex-wrap gap-1 mt-1">
                   {relatorio.palavras_frequentes.map((pw) =>
               <Badge key={pw.palavra} variant="secondary" className="text-[10px]">
@@ -191,6 +191,6 @@ export default function RelatorioSaudeContent({ relatorio, loading, error }: Pro
           </p>
         </div>
       </div>
-    </ScrollArea>);
+    </div>);
 
 }
