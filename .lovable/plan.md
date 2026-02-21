@@ -1,77 +1,64 @@
 
-# Visualizacao de Recursos com Grant Ativo -- Painel do Agente
 
-## Problema Atual
+# Redistribuir Gravacoes nos Ultimos 90 Dias com Padroes de Escalada/Decaida
 
-O backend (`getResource`) ja valida o grant e retorna dados (metadados, transcricao, analise, logs), mas o frontend do agente (`SuporteChat.tsx`) nao tem nenhum botao ou painel para o agente **visualizar** o recurso apos o acesso ser concedido.
+## Contexto
 
-## Solucao
+- **550 gravacoes** distribuidas entre **55 usuarias**
+- **374 analises** vinculadas (com niveis: critico 83, alto 114, moderado 171, sem_risco 6)
+- Objetivo: espalhar registros ao longo de 90 dias simulando ciclos realistas de violencia
 
-Adicionar ao sidebar do chat (onde ja aparecem os grants ativos) um botao **"Visualizar Recurso"** em cada grant ativo. Ao clicar, o sistema chama `getResource` e exibe os dados em um painel/modal.
+## Estrategia de Distribuicao
 
----
+Dividir as 55 usuarias em 4 perfis comportamentais:
 
-## Alteracoes
+| Perfil | % Usuarias | Padrao Temporal |
+|--------|-----------|-----------------|
+| **Escalada progressiva** | ~30% | Poucas gravacoes no inicio, aumentando em frequencia e risco nas ultimas semanas |
+| **Decaida (melhora)** | ~25% | Muitas gravacoes no inicio, diminuindo ao longo do tempo |
+| **Pico e retorno** | ~25% | Periodo calmo, pico intenso no meio, volta a estabilizar |
+| **Constante/cronico** | ~20% | Distribuicao uniforme ao longo dos 90 dias |
 
-### 1. `src/pages/suporte/SuporteChat.tsx`
+## Implementacao
 
-**Novo state:**
-- `resourceData` (any | null) -- dados retornados pelo `getResource`
-- `loadingResource` (boolean) -- loading do fetch
-- `viewingGrant` (any | null) -- grant sendo visualizado (para contexto do tipo/escopo)
+Criar uma **Edge Function utilitaria** (`seed-recordings-timeline`) que:
 
-**Nova funcao `handleViewResource(grant)`:**
-- Chama `callSupportApi("getResource", sessionToken, { grant_id, resource_type, resource_id })`
-- Armazena resposta em `resourceData`
-- Abre modal/painel
-
-**No sidebar, dentro de cada grant ativo:**
-- Adicionar botao "Visualizar" (icone `Eye`) ao lado de "Revogar"
-- Ao clicar: chama `handleViewResource`
-
-**Novo Dialog/Modal "Visualizacao do Recurso":**
-- Header: tipo do recurso + escopo + countdown do grant
-- Body renderiza conforme o tipo:
-  - **Metadados**: tabela com data, duracao, tamanho, status, device
-  - **Transcricao**: texto formatado (read-only, sem copiar)
-  - **Analise**: resumo, nivel de risco, sentimento, categorias, palavras-chave
-  - **Logs**: tabela com device_status (ping, bateria, versao, etc.)
-  - **Audio streaming**: botao "Ouvir" que usa o `proxyAudio` existente via `web-api` (WaveformPlayer ou audio element com URL temporaria)
-- Footer: botao "Fechar" + "Revogar acesso"
-
-### 2. Audio Streaming (escopo `read_audio_stream`)
-
-O `getResource` retorna `{ storage_path, stream_hint }`. Para reproduzir:
-- Usar o proxy de audio ja existente no `web-api` (action `proxyAudio`)
-- Montar URL: `SUPABASE_URL/functions/v1/web-api` com body `{ action: "proxyAudio", session_token, path: storage_path }`
-- Renderizar um player de audio simples (elemento `<audio>` com source blob ou WaveformPlayer)
-
-### 3. Seguranca no Frontend
-
-- Desabilitar selecao de texto na transcricao (CSS `user-select: none`)
-- Nao exibir URLs de storage ao agente
-- Cada clique em "Visualizar" gera log no backend (ja implementado no `getResource`)
-- Se o grant expirar enquanto visualiza, fechar modal automaticamente
-
----
+1. Busca todas as gravacoes agrupadas por `user_id`
+2. Atribui cada usuaria a um perfil aleatorio (com os pesos acima)
+3. Para cada gravacao da usuaria, calcula um novo `created_at` baseado no perfil:
+   - **Escalada**: datas concentradas nos ultimos 20-30 dias, com peso exponencial crescente
+   - **Decaida**: datas concentradas nos primeiros 30 dias, decrescente
+   - **Pico**: cluster no periodo entre dia 30-50
+   - **Constante**: distribuicao uniforme nos 90 dias
+4. Atualiza `created_at` e `updated_at` de cada gravacao
+5. Atualiza tambem o `created_at` das `gravacoes_analises` correspondentes para manter consistencia
+6. Gera horarios variados (06h-23h) com peso maior em horarios noturnos (19h-23h) para realismo
 
 ## Detalhes Tecnicos
 
-### Renderizacao por tipo de recurso
+### Edge Function `seed-recordings-timeline`
 
-```text
-resource_type + scope -> Componente
--------------------------------------------------
-recording + read_metadata    -> Tabela de metadados
-recording + read_transcription -> Bloco de texto
-recording + read_audio_stream  -> Player de audio
-analysis  + read_analysis      -> Card de analise
-transcription + read_transcription -> Bloco de texto
-metadata  + read_metadata      -> Tabela de metadados
-logs      + read_logs          -> Tabela de logs
-```
+- Rota protegida: exige `session_token` de admin
+- Parametro opcional `dry_run: true` para preview sem alterar dados
+- Retorna resumo: quantas gravacoes por perfil, distribuicao temporal
 
-### Arquivos afetados
+### Campos atualizados
 
-- `src/pages/suporte/SuporteChat.tsx` -- adicionar botao, state, modal de visualizacao
-- Nenhuma alteracao no backend (ja implementado)
+- `gravacoes.created_at` -- nova data/hora
+- `gravacoes.updated_at` -- mesma nova data + poucos minutos
+- `gravacoes_analises.created_at` -- alinhado com a gravacao correspondente
+
+### Logica de horario
+
+- 60% entre 19h-23h (periodo noturno, mais realista)
+- 25% entre 12h-18h
+- 15% entre 06h-11h
+
+### Arquivos
+
+- **Criar**: `supabase/functions/seed-recordings-timeline/index.ts`
+- Executar uma unica vez via curl/fetch, depois pode ser removida
+
+### Execucao
+
+Apos deploy, chamar a funcao passando o token de admin. A funcao processa tudo em batch e retorna o resumo.
