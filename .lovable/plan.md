@@ -1,46 +1,31 @@
 
-# Nuvem de Palavras -- Painel Admin
 
-## Objetivo
-Criar uma nova pagina no painel administrativo que exiba uma **nuvem de palavras** (word cloud) baseada nas palavras-chave extraidas das analises de gravacoes (`gravacoes_analises.palavras_chave`).
+# Reorganizar Cards do Dashboard Admin
 
-## Dados Disponiveis
-A tabela `gravacoes_analises` ja possui a coluna `palavras_chave` (tipo `text[]`) com dados reais. Exemplo das mais frequentes:
+## Mudancas
 
-| Palavra | Ocorrencias |
-|---------|-------------|
-| socorro | 43 |
-| medo | 41 |
-| violencia | 41 |
-| ameaca | 35 |
-| perigo | 34 |
-| agressor | 33 |
-| ajuda | 32 |
-| controle | 12 |
+**Arquivo:** `src/pages/admin/AdminMapa.tsx`
 
-## Funcionalidades
-- Visualizacao de nuvem de palavras com tamanho proporcional a frequencia
-- Filtro por periodo (7 dias, 30 dias, 90 dias, todos)
-- As palavras mais frequentes aparecem maiores e com cores mais fortes
-- Layout responsivo seguindo o padrao visual do painel admin
+### Novo layout dos graficos:
 
-## Implementacao Tecnica
+**Linha 1 — Distribuicao por Nivel de Risco + Nuvem de Palavras (lado a lado, 50/50)**
+- Card "Distribuicao por Nivel de Risco" (pie chart) ocupa `lg:col-span-1`
+- Card "Nuvem de Palavras" (WordCloudCard) ocupa `lg:col-span-1`
+- Grid: `grid-cols-1 lg:grid-cols-2`
 
-### 1. Nova pagina `src/pages/admin/AdminNuvemPalavras.tsx`
-- Componente que busca dados diretamente do Supabase (`gravacoes_analises`)
-- Agrega as palavras-chave e calcula frequencias
-- Renderiza a nuvem usando CSS puro (sem biblioteca externa) -- cada palavra e um `<span>` com `font-size` proporcional a frequencia e cores variadas do tema AMPARA
-- Filtro de periodo usando selects no topo
+**Linha 2 — Evolucao Temporal + Alertas por Tipo de Acionamento (lado a lado, 50/50)**
+- Card "Evolucao Temporal" (line chart) ocupa `lg:col-span-1`
+- Card "Alertas por Tipo de Acionamento" (pie chart) ocupa `lg:col-span-1`
+- Grid: `grid-cols-1 lg:grid-cols-2`
 
-### 2. Rota no `App.tsx`
-- Adicionar rota `/admin/nuvem-palavras` dentro do bloco `<AdminLayout>`
+**Linha 3 — Atividade por Hora do Dia** (sem alteracao, full width)
 
-### 3. Menu lateral no `AdminLayout.tsx`
-- Adicionar item "Nuvem de Palavras" com icone `Cloud` do lucide-react no sidebar
-- Visivel para todos os perfis admin (nao restrito a `admin_master`)
+**Linha 4 — Regioes com maior incidencia** (sem alteracao, full width)
 
-### 4. Estilo da Nuvem
-- Implementacao CSS pura: palavras dispostas em `flex-wrap` centralizado
-- Tamanho de fonte escalado entre 12px e 48px com base na frequencia
-- Paleta de cores alternando entre tons da marca (azul AMPARA, roxo, cinza escuro)
-- Hover mostra tooltip com a contagem exata
+### Detalhes tecnicos
+
+1. Mover o `WordCloudCard` do final do arquivo para dentro do grid da "Distribuicao por Nivel de Risco", transformando-o em `grid-cols-1 lg:grid-cols-2`
+2. Mover o card "Alertas por Tipo de Acionamento" para dentro do grid da "Evolucao Temporal", tambem `lg:grid-cols-2` (em vez do atual `lg:grid-cols-3` com 2/3 + 1/3)
+3. Remover o grid antigo que continha apenas "Alertas por Tipo de Acionamento" sozinho
+4. Remover o bloco `WordCloudCard` do final da pagina
+
