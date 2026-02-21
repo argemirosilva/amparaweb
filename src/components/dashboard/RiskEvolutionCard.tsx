@@ -142,7 +142,8 @@ export default function RiskEvolutionCard() {
   // Resolve emotional avatar
   const emotionLevel = emotionalScore !== null ? getEmotionalLevel(emotionalScore) : null;
   const avatarKey = emotionLevel ? (avatarKeyMap[emotionLevel.label] || "neutra") : null;
-  const emotionalAvatarUrl = avatarKey ? emotionalAvatars?.[avatarKey] : null;
+  const rawAvatarUrl = avatarKey ? emotionalAvatars?.[avatarKey] : null;
+  const emotionalAvatarUrl = rawAvatarUrl ? `${rawAvatarUrl}?t=${Date.now()}` : null;
 
   const hasEmotionalImage = emotionalAvatarUrl && emotionLevel;
 
