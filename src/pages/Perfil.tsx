@@ -93,7 +93,7 @@ interface AgressorEditForm {
   forca_seguranca: boolean;
   forca_seguranca_tipo: string;
   tem_arma_em_casa: boolean;
-  apelido: string;
+  
   cidade_uf: string;
   bairro: string;
   profissao: string;
@@ -245,7 +245,7 @@ export default function PerfilPage() {
       forca_seguranca: ag.forca_seguranca || false,
       forca_seguranca_tipo: ag.sector || "",
       tem_arma_em_casa: ag.tem_arma_em_casa || false,
-      apelido: ag.aliases?.length ? ag.aliases[0] : "",
+      
       cidade_uf: ag.primary_city_uf || "",
       bairro: ag.neighborhoods?.length ? ag.neighborhoods[0] : "",
       profissao: ag.profession || "",
@@ -278,8 +278,6 @@ export default function PerfilPage() {
       sector: agressorForm.forca_seguranca ? (agressorForm.forca_seguranca_tipo || null) : null,
     };
 
-    if (agressorForm.apelido.trim()) payload.aliases = [agressorForm.apelido.trim()];
-    else payload.aliases = [];
     if (agressorForm.cidade_uf.trim()) payload.primary_city_uf = agressorForm.cidade_uf.trim();
     else payload.primary_city_uf = null;
     if (agressorForm.bairro.trim()) payload.neighborhoods = [agressorForm.bairro.trim()];
@@ -555,9 +553,6 @@ export default function PerfilPage() {
                       {v.agressor.profession && (
                         <div><span className="text-muted-foreground">Profissão:</span> <span className="text-foreground">{v.agressor.profession}</span></div>
                       )}
-                      {v.agressor.aliases?.length ? (
-                        <div><span className="text-muted-foreground">Apelido:</span> <span className="text-foreground">{v.agressor.aliases[0]}</span></div>
-                      ) : null}
                       {v.agressor.neighborhoods?.length ? (
                         <div><span className="text-muted-foreground">Bairro:</span> <span className="text-foreground">{v.agressor.neighborhoods[0]}</span></div>
                       ) : null}
@@ -594,11 +589,6 @@ export default function PerfilPage() {
                           onChange={e => setAgressorForm({ ...agressorForm, telefone: formatPhone(e.target.value) })} />
                       </div>
 
-                      <div>
-                        <label className="block text-xs font-medium text-muted-foreground mb-1">Apelido</label>
-                        <input type="text" className="ampara-input text-sm" placeholder="Como é conhecido" value={agressorForm.apelido} maxLength={50}
-                          onChange={e => setAgressorForm({ ...agressorForm, apelido: e.target.value })} />
-                      </div>
 
                       <div className="grid grid-cols-2 gap-2">
                         <div>

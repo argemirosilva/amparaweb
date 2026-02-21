@@ -29,7 +29,6 @@ export interface SearchResult {
 
 export interface SearchFormData {
   nome: string;
-  apelido: string;
   idade_aprox: string;
   nome_pai: string;
   nome_mae: string;
@@ -42,7 +41,7 @@ export interface SearchFormData {
 }
 
 export const emptySearchForm: SearchFormData = {
-  nome: "", apelido: "", idade_aprox: "",
+  nome: "", idade_aprox: "",
   nome_pai: "", nome_mae: "",
   ddd: "", final_telefone: "",
   cidade_uf: "", bairro: "",
@@ -69,7 +68,6 @@ export default function BuscaPerfilPage() {
 
     const payload: Record<string, any> = {};
     if (data.nome.trim()) payload.nome = data.nome.trim();
-    if (data.apelido.trim()) payload.apelido = data.apelido.trim();
     if (data.idade_aprox.trim()) payload.idade_aprox = parseInt(data.idade_aprox);
     if (data.nome_pai.trim()) payload.nome_pai = data.nome_pai.trim();
     if (data.nome_mae.trim()) payload.nome_mae = data.nome_mae.trim();
