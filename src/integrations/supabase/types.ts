@@ -1698,6 +1698,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_unanalyzed_gravacoes: {
+        Args: { p_limit?: number }
+        Returns: {
+          id: string
+          transcricao: string
+          user_id: string
+        }[]
+      }
       has_admin_role: {
         Args: {
           p_role: Database["public"]["Enums"]["admin_role"]
