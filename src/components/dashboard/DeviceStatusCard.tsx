@@ -87,11 +87,11 @@ export default function DeviceStatusCard() {
 
   const isActive = !!(device?.is_recording || device?.is_monitoring);
 
-  // Derive the real start time from the database timestamps
+  // Derive the real start time from the database timestamps, with fallback to device updated_at
   const activityStartIso = device?.is_recording
-    ? device.recordingStartedAt
+    ? (device.recordingStartedAt ?? device.monitoringStartedAt ?? device.updated_at ?? null)
     : device?.is_monitoring
-      ? device.monitoringStartedAt
+      ? (device.monitoringStartedAt ?? device.updated_at ?? null)
       : null;
 
   // Tick every second while active, using the real DB start time
