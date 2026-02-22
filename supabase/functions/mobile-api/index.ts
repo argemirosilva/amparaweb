@@ -2226,8 +2226,10 @@ serve(async (req) => {
     const ip = req.headers.get("x-forwarded-for") || req.headers.get("cf-connecting-ip") || "unknown";
 
     if (!action) {
+      console.error("[400_DEBUG] Missing action. Body keys:", Object.keys(body).join(","), "Body preview:", JSON.stringify(body).substring(0, 500));
       return errorResponse("Campo 'action' é obrigatório", 400);
     }
+    console.log("[REQUEST]", action, "from", ip);
 
     switch (action) {
       // ── Fase 1 ──
