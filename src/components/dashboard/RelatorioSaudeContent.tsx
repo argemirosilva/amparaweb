@@ -105,23 +105,28 @@ export default function RelatorioSaudeContent({ relatorio, loading, error }: Pro
         <section>
             <SectionHeader icon={ShieldAlert} title="Padrões Identificados" />
 
-            {relatorio.tipos_violencia.length > 0 &&
-          <div className="mb-3">
-                <span className="text-[10px] font-semibold text-muted-foreground uppercase">Tipos de violência</span>
-                <div className="flex flex-wrap gap-1.5 mt-1">
-                  {relatorio.tipos_violencia.map((tv) =>
-              <Badge
-                key={tv.tipo}
-                variant="outline"
-                className="text-[10px] border-destructive/30 text-destructive/80">
-
-                      <AlertTriangle className="w-2.5 h-2.5 mr-0.5" />
-                      {tv.tipo} ({tv.contagem})
-                    </Badge>
-              )}
+            {(() => {
+              const filtered = relatorio.tipos_violencia.filter((tv) =>
+                tv.tipo.toLowerCase() !== "nenhuma" && tv.tipo.toLowerCase() !== "nenhum"
+              );
+              if (filtered.length === 0) return null;
+              return (
+                <div className="mb-3">
+                  <span className="text-[10px] font-semibold text-muted-foreground uppercase">Tipos de violência</span>
+                  <div className="flex flex-wrap gap-1.5 mt-1">
+                    {filtered.map((tv) =>
+                      <Badge
+                        key={tv.tipo}
+                        variant="outline"
+                        className="text-[10px] border-destructive/30 text-destructive/80">
+                        <AlertTriangle className="w-2.5 h-2.5 mr-0.5" />
+                        {tv.tipo} ({tv.contagem})
+                      </Badge>
+                    )}
+                  </div>
                 </div>
-              </div>
-          }
+              );
+            })()}
 
             {relatorio.padroes_recorrentes.length > 0 &&
           <div className="mb-3">
