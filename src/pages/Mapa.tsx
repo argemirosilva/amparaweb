@@ -9,7 +9,7 @@ import type mapboxgl from "mapbox-gl";
 function formatRelativeTime(isoDate: string): string {
   const diff = Date.now() - new Date(isoDate).getTime();
   const mins = Math.floor(diff / 60_000);
-  if (mins < 1) return "agora";
+  if (mins < 1) return "agora mesmo";
   if (mins < 60) return `${mins}min`;
   const hours = Math.floor(mins / 60);
   if (hours < 24) return `${hours}h${mins % 60 > 0 ? `${mins % 60}min` : ""}`;
