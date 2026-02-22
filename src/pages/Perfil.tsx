@@ -142,6 +142,7 @@ export default function PerfilPage() {
 
   // Aggressor edit
   const [editingAgressorId, setEditingAgressorId] = useState<string | null>(null);
+  const [perfilExpanded, setPerfilExpanded] = useState(false);
   const [agressorForm, setAgressorForm] = useState<AgressorEditForm | null>(null);
   const [editingVinculoId, setEditingVinculoId] = useState<string | null>(null);
 
@@ -390,20 +391,35 @@ export default function PerfilPage() {
         </div>
 
         {!editingPerfil ? (
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div><p className="text-muted-foreground">Telefone</p><p className="text-foreground">{perfil?.telefone || "—"}</p></div>
-            <div><p className="text-muted-foreground">Nascimento</p><p className="text-foreground">{perfil?.data_nascimento || "—"}</p></div>
-            <div className="col-span-2">
-              <p className="text-muted-foreground">Endereço</p>
-              <p className="text-foreground">{perfil?.endereco_fixo || "—"}</p>
-              {perfil?.endereco_referencia && <p className="text-xs text-muted-foreground mt-0.5">Ref: {perfil.endereco_referencia}</p>}
+          <>
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div><p className="text-muted-foreground">Telefone</p><p className="text-foreground">{perfil?.telefone || "—"}</p></div>
+              <div><p className="text-muted-foreground">Nascimento</p><p className="text-foreground">{perfil?.data_nascimento || "—"}</p></div>
             </div>
-            <div><p className="text-muted-foreground">Tem filhos?</p><p className="text-foreground">{perfil?.tem_filhos ? "Sim" : "Não"}</p></div>
-            <div><p className="text-muted-foreground">Mora com agressor?</p><p className="text-foreground">{perfil?.mora_com_agressor ? "Sim" : "Não"}</p></div>
-            <div><p className="text-muted-foreground">Cor / Raça</p><p className="text-foreground">{perfil?.cor_raca || "—"}</p></div>
-            <div><p className="text-muted-foreground">Escolaridade</p><p className="text-foreground">{perfil?.escolaridade || "—"}</p></div>
-            <div className="col-span-2"><p className="text-muted-foreground">Profissão</p><p className="text-foreground">{perfil?.profissao || "—"}</p></div>
-          </div>
+
+            {perfilExpanded && (
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="col-span-2">
+                  <p className="text-muted-foreground">Endereço</p>
+                  <p className="text-foreground">{perfil?.endereco_fixo || "—"}</p>
+                  {perfil?.endereco_referencia && <p className="text-xs text-muted-foreground mt-0.5">Ref: {perfil.endereco_referencia}</p>}
+                </div>
+                <div><p className="text-muted-foreground">Tem filhos?</p><p className="text-foreground">{perfil?.tem_filhos ? "Sim" : "Não"}</p></div>
+                <div><p className="text-muted-foreground">Mora com agressor?</p><p className="text-foreground">{perfil?.mora_com_agressor ? "Sim" : "Não"}</p></div>
+                <div><p className="text-muted-foreground">Cor / Raça</p><p className="text-foreground">{perfil?.cor_raca || "—"}</p></div>
+                <div><p className="text-muted-foreground">Escolaridade</p><p className="text-foreground">{perfil?.escolaridade || "—"}</p></div>
+                <div className="col-span-2"><p className="text-muted-foreground">Profissão</p><p className="text-foreground">{perfil?.profissao || "—"}</p></div>
+              </div>
+            )}
+
+            <button
+              onClick={() => setPerfilExpanded(!perfilExpanded)}
+              className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center gap-1 py-1"
+            >
+              {perfilExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              {perfilExpanded ? "Ver menos" : "Ver mais detalhes"}
+            </button>
+          </>
         ) : (
           <div className="space-y-3">
             <input type="text" className="ampara-input" placeholder="Nome completo" value={perfilForm.nome_completo || ""}
