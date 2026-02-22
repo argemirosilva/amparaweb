@@ -6,8 +6,7 @@ import { TrendingUp, TrendingDown, Minus, ShieldAlert, AlertTriangle, Shield, Sh
 import GradientIcon from "@/components/ui/gradient-icon";
 import { callWebApi } from "@/services/webApiService";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, YAxis, XAxis } from "recharts";
-import RelatorioSaudeContent, { type RelatorioSaude } from "./RelatorioSaudeContent";
-import { computeEmotionalScore } from "./EmotionalFaceIcon";
+import MacroReportCard from "@/components/gravacoes/MacroReportCard";
 import { useAuth } from "@/contexts/AuthContext";
 
 type WindowDays = 7 | 15 | 30;
@@ -48,10 +47,6 @@ interface HistoryPoint {
 }
 
 
-// Module-level cache so report survives re-renders within the same session
-let cachedRelatorio: RelatorioSaude | null = null;
-let cachedForUser: string | null = null;
-
 export default function RiskEvolutionCard() {
   const { sessionToken, usuario } = useAuth();
   const [window, setWindow] = useState<WindowDays>(7);
@@ -60,12 +55,6 @@ export default function RiskEvolutionCard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
-  const [relatorio, setRelatorio] = useState<RelatorioSaude | null>(cachedRelatorio);
-  const [relatorioLoading, setRelatorioLoading] = useState(false);
-  const [relatorioError, setRelatorioError] = useState<string | null>(null);
-  const [emotionalScore, setEmotionalScore] = useState<number | null>(() =>
-    cachedRelatorio ? computeEmotionalScore(cachedRelatorio.sentimentos, cachedRelatorio.periodo.total_alertas) : null
-  );
   
 
   // Fetch risk data only (no report)
@@ -97,48 +86,9 @@ export default function RiskEvolutionCard() {
     }
   }, [sessionToken]);
 
-  // Reset cache when user changes (logout/login)
-  useEffect(() => {
-    const uid = usuario?.id || null;
-    if (cachedForUser && cachedForUser !== uid) {
-      cachedRelatorio = null;
-      cachedForUser = null;
-      setRelatorio(null);
-      setEmotionalScore(null);
-    }
-  }, [usuario?.id]);
-
-  // Fetch report lazily, cache for entire session
-  const fetchRelatorio = useCallback(async () => {
-    if (cachedRelatorio && cachedForUser === usuario?.id) return;
-    if (!sessionToken) return;
-    setRelatorioLoading(true);
-    setRelatorioError(null);
-    try {
-      const relRes = await callWebApi("getRelatorioSaude", sessionToken, { window_days: 90 });
-      if (relRes.ok && relRes.data.relatorio) {
-        const rel = relRes.data.relatorio as RelatorioSaude;
-        cachedRelatorio = rel;
-        cachedForUser = usuario?.id || null;
-        setRelatorio(rel);
-        setEmotionalScore(computeEmotionalScore(rel.sentimentos, rel.periodo.total_alertas));
-      }
-    } catch {
-      setRelatorioError("Erro ao carregar relatório");
-    } finally {
-      setRelatorioLoading(false);
-    }
-  }, [sessionToken, usuario?.id]);
-
-
   useEffect(() => {
     fetchData(window);
   }, [window, fetchData]);
-
-  // Fetch report once on mount (cached for session)
-  useEffect(() => {
-    fetchRelatorio();
-  }, [fetchRelatorio]);
 
   const handleWindowChange = (val: string) => {
     setWindow(Number(val) as WindowDays);
@@ -243,23 +193,18 @@ export default function RiskEvolutionCard() {
 
               {/* Expandable report */}
               <button
-                onClick={() => {
-                  const next = !expanded;
-                  setExpanded(next);
-                  if (next) fetchRelatorio();
-                }}
+                onClick={() => setExpanded(!expanded)}
                 className="w-full flex items-center justify-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors py-1"
               >
                 {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                 {expanded ? "Ocultar detalhes" : "Como estou?"}
               </button>
 
-              {expanded && (
+              {expanded && sessionToken && (
                 <div className="pt-2 border-t border-border/50">
-                  <RelatorioSaudeContent
-                    relatorio={relatorio}
-                    loading={relatorioLoading}
-                    error={relatorioError}
+                  <MacroReportCard
+                    sessionToken={sessionToken}
+                    windowDays={window}
                   />
                 </div>
               )}

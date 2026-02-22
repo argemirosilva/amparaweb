@@ -17,7 +17,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import WaveformPlayer, { type WaveformMarker } from "./WaveformPlayer";
 import AnaliseCard from "@/components/dashboard/AnaliseCard";
-import MacroReportCard from "@/components/gravacoes/MacroReportCard";
 
 interface AnaliseData {
   resumo: string | null;
@@ -326,11 +325,6 @@ export default function GravacaoExpandedContent({
         onActiveChange={handleAnaliseActiveChange}
       />
 
-      {/* Macro Report - summary of last 7 days */}
-      <MacroReportCard
-        sessionToken={sessionToken}
-        onActiveChange={handleAnaliseActiveChange}
-      />
     </div>
   );
 }
