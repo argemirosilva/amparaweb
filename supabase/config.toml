@@ -71,3 +71,6 @@ verify_jwt = false
 
 [functions.run-batch-analysis]
 verify_jwt = false
+
+[functions.analysis-worker]
+verify_jwt = false
