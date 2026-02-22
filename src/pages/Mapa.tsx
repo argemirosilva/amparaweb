@@ -285,7 +285,7 @@ export default function Mapa() {
 
   // Computed HUD values
   const movement = data ? updateMovement(data.speed, data.precisao_metros) : null;
-  const speedKmh = movement ? Math.round(movement.speedKmh) : 0;
+  const speedKmh = movement ? (movement.speedKmh < 3 ? 0 : Math.round(movement.speedKmh)) : 0;
   const movementLabel = data?.isHome ? "Em Casa" : movement?.label || "—";
   const movementEmoji = data?.isHome ? "🏠" : movement?.emoji || "";
   const address = data?.isHome ? "🏠 Em Casa" : data?.geo?.display_address || "Localizando...";
