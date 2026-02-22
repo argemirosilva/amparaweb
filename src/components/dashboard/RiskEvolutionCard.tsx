@@ -251,7 +251,7 @@ export default function RiskEvolutionCard() {
                 className="w-full flex items-center justify-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors py-1"
               >
                 {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                {expanded ? "Ocultar relatório" : "Ver relatório de saúde da relação"}
+                {expanded ? "Ocultar detalhes" : "Como estou?"}
               </button>
 
               {expanded && (
