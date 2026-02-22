@@ -1450,6 +1450,12 @@ async function handleCancelarPanico(
     });
   }
 
+  // Reset device recording/monitoring flags
+  await supabase
+    .from("device_status")
+    .update({ is_recording: false, is_monitoring: false })
+    .eq("user_id", user.id);
+
   // Audit
   await supabase.from("audit_logs").insert({
     user_id: user.id,
