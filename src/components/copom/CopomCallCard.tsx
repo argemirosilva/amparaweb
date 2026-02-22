@@ -93,7 +93,7 @@ export default function CopomCallCard({ panicAlertId, testMode }: { panicAlertId
       lat: -22.3154, lng: -49.0615, accuracy_m: 12,
       movement_status: "PARADA", speed_kmh: 0,
     },
-    monitoring_link: `${window.location.origin}/a2jb3`,
+    monitoring_link: "https://amparamulher.com.br/a2jb3",
     victim_aggressor_relation: "Ex-marido",
     aggressor: {
       name: "João Santos", name_masked: "J*** S***", description: "Ex-marido, ativo, risco: alto",

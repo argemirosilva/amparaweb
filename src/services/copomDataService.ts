@@ -227,8 +227,9 @@ export async function collectCopomData(
   // 7. Build protocol & monitoring link
   const protocolId = alertData?.protocolo ?? null;
   const timestamp = alertData?.criado_em ?? new Date().toISOString();
+  const PRODUCTION_DOMAIN = "https://amparamulher.com.br";
   const monitoringLink = share?.codigo
-    ? `${window.location.origin}/${share.codigo}`
+    ? `${PRODUCTION_DOMAIN}/${share.codigo}`
     : null;
 
   // 8. Movement classification
