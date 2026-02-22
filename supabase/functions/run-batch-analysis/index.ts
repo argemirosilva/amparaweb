@@ -34,6 +34,10 @@ Deno.serve(async (req) => {
   const { data: pending } = await supabase
     .rpc("get_unanalyzed_gravacoes", { p_limit: batchSize });
 
+  // Count total remaining efficiently
+  const { data: countData } = await supabase.rpc("count_unanalyzed_gravacoes");
+  const remainingCount = countData || 0;
+
   if (!pending || pending.length === 0) {
     return json({ ok: true, message: "Todas já foram analisadas", analyzed: 0, remaining: 0 });
   }
@@ -137,10 +141,14 @@ Deno.serve(async (req) => {
     console.log(`Chained next batch. Analyzed: ${analyzedCount}/${toProcess.length}`);
   }
 
+  // Remaining = total remaining minus what we just analyzed
+  const finalRemaining = Math.max(0, (remainingCount || 0) - analyzedCount);
+
   return json({
     ok: true,
     analyzed: analyzedCount,
     batch_size: toProcess.length,
+    remaining: finalRemaining,
     auto_chain: autoChain && mayHaveMore,
     errors: errors.length > 0 ? errors : undefined,
   });

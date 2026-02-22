@@ -1698,6 +1698,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      count_unanalyzed_gravacoes: { Args: never; Returns: number }
       get_unanalyzed_gravacoes: {
         Args: { p_limit?: number }
         Returns: {
