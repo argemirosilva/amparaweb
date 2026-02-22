@@ -326,26 +326,11 @@ export default function Rastreamento() {
       const dot = document.createElement("div");
       dot.className = dotClass;
 
-      if (avatarUrl) {
-        const img = new Image();
-        img.className = "ampara-nav-img";
-        img.alt = firstName;
-        img.crossOrigin = "anonymous";
-        img.onerror = () => {
-          img.remove();
-          const placeholder = document.createElement("div");
-          placeholder.className = "ampara-nav-placeholder";
-          placeholder.textContent = initial;
-          dot.appendChild(placeholder);
-        };
-        img.src = avatarUrl;
-        dot.appendChild(img);
-      } else {
-        const placeholder = document.createElement("div");
-        placeholder.className = "ampara-nav-placeholder";
-        placeholder.textContent = initial;
-        dot.appendChild(placeholder);
-      }
+      // No avatar on tracking map – always show initial placeholder
+      const placeholder = document.createElement("div");
+      placeholder.className = "ampara-nav-placeholder";
+      placeholder.textContent = initial;
+      dot.appendChild(placeholder);
 
       const arrow = document.createElement("div");
       arrow.className = "ampara-nav-arrow";
