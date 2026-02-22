@@ -84,42 +84,30 @@ export default function DeviceStatusCard() {
   const firstName = (usuario?.nome_completo || "").split(" ")[0];
   const [elapsed, setElapsed] = useState(0);
   const [cancelling, setCancelling] = useState(false);
-  const counterStartRef = useRef<number | null>(null);
-  const prevActiveRef = useRef(false);
 
   const isActive = !!(device?.is_recording || device?.is_monitoring);
 
-  // When activity starts via Realtime, mark local start time; when it stops, reset
-  useEffect(() => {
-    if (isActive && !prevActiveRef.current) {
-      // Just became active — start counter from now
-      counterStartRef.current = Date.now();
-    } else if (!isActive && prevActiveRef.current) {
-      // Just became inactive — reset
-      counterStartRef.current = null;
-      setElapsed(0);
-    }
-    prevActiveRef.current = isActive;
-  }, [isActive]);
+  // Derive the real start time from the database timestamps
+  const activityStartIso = device?.is_recording
+    ? device.recordingStartedAt
+    : device?.is_monitoring
+      ? device.monitoringStartedAt
+      : null;
 
-  // Tick every second while active
+  // Tick every second while active, using the real DB start time
   useEffect(() => {
-    if (!isActive) {
+    if (!isActive || !activityStartIso) {
       setElapsed(0);
       return;
     }
-    if (!counterStartRef.current) {
-      counterStartRef.current = Date.now();
-    }
+    const startMs = new Date(activityStartIso).getTime();
     const tick = () => {
-      if (counterStartRef.current) {
-        setElapsed(Math.max(0, Math.floor((Date.now() - counterStartRef.current) / 1000)));
-      }
+      setElapsed(Math.max(0, Math.floor((Date.now() - startMs) / 1000)));
     };
     tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
-  }, [isActive]);
+  }, [isActive, activityStartIso]);
 
   if (loading) {
     return (
