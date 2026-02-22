@@ -1,40 +1,105 @@
 
-## Mover o Relatorio MACRO para o Card de Evolucao de Risco
 
-### O que muda
+# Correção: Garantir Sempre Uma Única Sessão Ativa por Usuária
 
-O relatorio MACRO (resumo dos ultimos N dias) sai de dentro de cada gravacao individual e passa a viver exclusivamente dentro do card "Evolucao do Risco", no botao "Como estou?". Alem disso, o seletor de janela (7d / 15d / 30d) que ja existe no card passa a controlar tambem qual relatorio MACRO e exibido.
+## Problema
 
-### Mudancas
+Existem dois pontos no backend que criam sessões de monitoramento:
+1. `syncConfigMobile` (agendamento automático)
+2. `reportarStatusGravacao` com status "iniciada" (gravação manual/panico)
 
-**1. Remover MacroReportCard de GravacaoExpandedContent**
-- Arquivo: `src/components/gravacoes/GravacaoExpandedContent.tsx`
-- Remover o import e a renderizacao do `MacroReportCard` (linhas 20, 329-333)
-- O card de gravacao fica apenas com waveform, transcricao, acoes e AnaliseCard (MICRO)
+Em ambos, o código verifica se já existe sessão ativa para o mesmo device. Se existir, reutiliza. Mas **nunca encerra sessões anteriores** de outros devices ou sessões órfãs. Resultado: múltiplas sessões "ativa" se acumulam.
 
-**2. Integrar MacroReportCard dentro do RiskEvolutionCard**
-- Arquivo: `src/components/dashboard/RiskEvolutionCard.tsx`
-- Dentro da secao expandida ("Como estou?"), substituir o `RelatorioSaudeContent` (antigo relatorio de saude baseado em `getRelatorioSaude`) pelo `MacroReportCard` da nova pipeline
-- O `MacroReportCard` recebera o `windowDays` do seletor de tabs ja existente (7, 15, 30), para que ao trocar a aba, tanto o grafico de risco quanto o relatorio MACRO atualizem juntos
-- Remover a logica de cache e fetch do `RelatorioSaudeContent` (estados `relatorio`, `relatorioLoading`, `relatorioError`, `emotionalScore`, `cachedRelatorio`, `cachedForUser`, e a funcao `fetchRelatorio`)
-- Remover o import de `RelatorioSaudeContent` e `computeEmotionalScore`
+Além disso, o `cancelPanico` usa `maybeSingle()` e só sela uma sessão, deixando as demais ativas.
 
-**3. Adaptar MacroReportCard para aceitar windowDays como prop**
-- Arquivo: `src/components/gravacoes/MacroReportCard.tsx`
-- Adicionar prop `windowDays: number` (default 7)
-- Usar esse valor nas chamadas `getMacroLatest` e `runMacro` em vez do fixo `7`
-- Refetch automaticamente quando `windowDays` mudar
-- O botao "Gerar relatorio" mostra o periodo correto ("ultimos 7/15/30 dias")
+## Solução
 
-### Resultado final
+Regra única: **antes de criar qualquer sessão nova, selar TODAS as sessões ativas do usuário**. Isso garante no máximo uma sessão ativa por vez.
 
-- Card "Evolucao do Risco" na Home: seletor 7d/15d/30d controla grafico + relatorio MACRO
-- Botao "Como estou?" expande e mostra o MacroReportCard com dados da janela selecionada
-- Card de gravacao individual: mostra apenas analise MICRO (AnaliseCard)
+## Alterações
 
-### Detalhes tecnicos
+### 1. mobile-api: syncConfigMobile (linha ~724)
 
-- `RiskEvolutionCard.tsx`: remover ~30 linhas de estado/cache do relatorio antigo; adicionar `<MacroReportCard sessionToken={sessionToken} windowDays={window} />` na secao expandida
-- `MacroReportCard.tsx`: adicionar prop `windowDays`, usar em `fetchReport` e `generateReport`, adicionar `useEffect` para refetch quando `windowDays` mudar
-- `GravacaoExpandedContent.tsx`: remover 2 linhas (import + renderizacao do MacroReportCard)
-- Nenhuma mudanca no backend; os endpoints `getMacroLatest` e `runMacro` ja aceitam `window_days` como parametro
+**Antes:** Verifica sessão ativa por `user_id + device_id`. Se não existe, cria nova.
+
+**Depois:** Antes de criar, buscar TODAS as sessões ativas do `user_id` (qualquer device). Selar cada uma com `sealed_reason: "nova_sessao"`. Depois criar a nova.
+
+### 2. mobile-api: reportarStatusGravacao - "iniciada" (linha ~1912)
+
+**Antes:** Verifica sessão ativa por `user_id + device_id`. Se não existe, cria nova.
+
+**Depois:** Mesmo padrão — selar todas as sessões ativas do user antes de criar a nova.
+
+### 3. mobile-api: cancelPanico (linha ~1425)
+
+**Antes:** `maybeSingle()` — sela apenas uma sessão.
+
+**Depois:** Buscar com `.select("id")` sem `maybeSingle()` para obter TODAS as sessões ativas e selar cada uma.
+
+### 4. web-api: cancelPanico
+
+Mesma correção do ponto 3 — selar todas as sessões ativas, não apenas uma.
+
+### 5. mobile-api: receberAudioMobile (linha ~1578)
+
+**Antes:** Retorna erro 400 se não há sessão ativa.
+
+**Depois:** Quando não há sessão ativa, salvar o áudio como gravação independente na tabela `gravacoes` (status "pendente") e disparar `process-recording`. Isso resolve a race condition de segmentos que chegam após o cancelamento.
+
+### 6. session-maintenance: auto-expirar sessões órfãs
+
+Adicionar um Step 0 no `session-maintenance` que busca sessões com status "ativa" há mais de 10 minutos sem nenhum segmento vinculado e as marca como `sem_segmentos` (delete ou seal).
+
+### 7. Limpeza imediata do banco
+
+Executar SQL para selar as 14 sessões ativas órfãs atuais.
+
+---
+
+## Detalhes Técnicos
+
+### Função auxiliar para selar sessões (mobile-api)
+
+Criar uma função reutilizável `sealAllActiveSessions(supabase, userId, reason)` que:
+1. Busca todas as sessões com `status = "ativa"` e `user_id = userId`
+2. Para cada uma, faz update para `status: "aguardando_finalizacao"`, `closed_at: now`, `sealed_reason: reason`
+3. Insere audit_log para cada sessão selada
+4. Retorna a quantidade de sessões seladas
+
+Essa função será chamada em: `syncConfigMobile`, `reportarStatusGravacao("iniciada")`, `cancelPanico`.
+
+### Fluxo corrigido de criação de sessão
+
+```text
+App solicita nova sessão (sync ou iniciarGravacao)
+         |
+  sealAllActiveSessions(userId, "nova_sessao")
+         |
+  Cria sessão nova (status "ativa")
+         |
+  Apenas 1 sessão ativa por vez
+```
+
+### Fluxo corrigido do receberAudio sem sessão
+
+```text
+Android envia segmento de áudio
+         |
+    Sessão ativa?
+    /          \
+  SIM          NÃO
+   |             |
+Salva como    Salva no R2 +
+segmento      insere em gravacoes
+da sessão     (status "pendente") +
+              dispara process-recording
+```
+
+### Arquivos modificados
+
+| Arquivo | Alteração |
+|---|---|
+| `supabase/functions/mobile-api/index.ts` | Função `sealAllActiveSessions`; chamada nos 3 pontos; fallback no receberAudio |
+| `supabase/functions/web-api/index.ts` | cancelPanico: selar todas as sessões |
+| `supabase/functions/session-maintenance/index.ts` | Step 0: auto-expirar sessões ativas sem segmentos > 10 min |
+
