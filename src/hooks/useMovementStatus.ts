@@ -32,14 +32,14 @@ function normalizeSpeed(speed: number | null): number {
 }
 
 function classify(avgSpeed: number): MovementStatus {
-  if (avgSpeed === 0) return "parado";
-  if (avgSpeed >= 1 && avgSpeed <= 15) return "caminhando";
+  if (avgSpeed < 3) return "parado";
+  if (avgSpeed <= 15) return "caminhando";
   return "veiculo";
 }
 
 const STATUS_MAP: Record<MovementStatus, { label: string; emoji: string; badgeClass: string }> = {
   parado: { label: "Parada", emoji: "📍", badgeClass: "bg-muted text-muted-foreground" },
-  caminhando: { label: "Caminhando", emoji: "🚶‍♀️", badgeClass: "bg-blue-500/10 text-blue-600" },
+  caminhando: { label: "Em movimento a pé", emoji: "🚶‍♀️", badgeClass: "bg-blue-500/10 text-blue-600" },
   veiculo: { label: "Em Veículo", emoji: "🚗", badgeClass: "bg-orange-500/10 text-orange-600" },
 };
 
