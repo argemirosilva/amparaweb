@@ -7,14 +7,23 @@ import {
   ShieldQuestion,
   AlertTriangle,
   Brain,
-  
   TrendingUp,
   Scale,
   Loader2,
   ChevronDown,
   ChevronUp,
+  Eye,
+  Heart,
+  Lightbulb,
 } from "lucide-react";
 import { callWebApi } from "@/services/webApiService";
+
+interface TaticaManipulativa {
+  tatica: string;
+  descricao: string;
+  evidencia: string;
+  gravidade: string;
+}
 
 interface AnaliseData {
   resumo: string | null;
@@ -29,6 +38,9 @@ interface AnaliseData {
     tipos_violencia?: string[];
     classificacao_contexto?: string;
     justificativa_risco?: string;
+    taticas_manipulativas?: TaticaManipulativa[];
+    orientacoes_vitima?: string[];
+    sinais_alerta?: string[];
   } | null;
 }
 
@@ -56,39 +68,39 @@ const CONTEXTO_MAP: Record<string, string> = {
 };
 
 const VIOLENCIA_MAP: Record<string, string> = {
-  fisica: "Física",
-  psicologica: "Psicológica",
-  moral: "Moral",
-  patrimonial: "Patrimonial",
-  sexual: "Sexual",
-  nenhuma: "Nenhuma",
-  violencia_fisica: "Física",
-  violencia_psicologica: "Psicológica",
-  ameaca: "Ameaça",
-  coercao: "Coerção",
-  controle: "Controle",
-  assedio: "Assédio",
+  fisica: "Física", psicologica: "Psicológica", moral: "Moral",
+  patrimonial: "Patrimonial", sexual: "Sexual", nenhuma: "Nenhuma",
+  violencia_fisica: "Física", violencia_psicologica: "Psicológica",
+  ameaca: "Ameaça", coercao: "Coerção", controle: "Controle", assedio: "Assédio",
+};
+
+const TATICA_LABELS: Record<string, string> = {
+  instrumentalizacao_filhos: "Instrumentalização dos filhos",
+  falsa_demonstracao_afeto: "Falsa demonstração de afeto",
+  ameaca_juridica_velada: "Ameaça jurídica velada",
+  acusacao_sem_evidencia: "Acusação sem evidência",
+  gaslighting: "Gaslighting",
+  vitimizacao_reversa: "Vitimização reversa",
+  controle_disfarçado_preocupacao: "Controle disfarçado de preocupação",
+};
+
+const GRAVIDADE_COLORS: Record<string, string> = {
+  baixa: "bg-amber-500/10 text-amber-700 border-amber-200",
+  media: "bg-orange-500/10 text-orange-700 border-orange-200",
+  alta: "bg-red-500/10 text-red-700 border-red-200",
 };
 
 export default function AnaliseCard({
-  gravacaoId,
-  status,
-  sessionToken,
-  preloadedData,
-  onActiveChange,
+  gravacaoId, status, sessionToken, preloadedData, onActiveChange,
 }: {
-  gravacaoId: string;
-  status: string;
-  sessionToken: string;
-  preloadedData?: AnaliseData | null;
-  onActiveChange?: (active: boolean) => void;
+  gravacaoId: string; status: string; sessionToken: string;
+  preloadedData?: AnaliseData | null; onActiveChange?: (active: boolean) => void;
 }) {
   const [analise, setAnalise] = useState<AnaliseData | null>(null);
   const [loading, setLoading] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
 
-  // Accept preloaded data from parent
   useEffect(() => {
     if (preloadedData !== undefined) {
       setAnalise(preloadedData);
@@ -104,9 +116,7 @@ export default function AnaliseCard({
     setLoading(true);
     onActiveChange?.(true);
     const res = await callWebApi("getAnalise", sessionToken, { gravacao_id: gravacaoId });
-    if (res.ok && res.data.analise) {
-      setAnalise(res.data.analise);
-    }
+    if (res.ok && res.data.analise) setAnalise(res.data.analise);
     setLoaded(true);
     setLoading(false);
   };
@@ -115,13 +125,7 @@ export default function AnaliseCard({
 
   if (!loaded) {
     return (
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={loadAnalise}
-        disabled={loading}
-        className="text-xs gap-1.5"
-      >
+      <Button variant="outline" size="sm" onClick={loadAnalise} disabled={loading} className="text-xs gap-1.5">
         {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Brain className="w-3 h-3" />}
         Ver análise de IA
       </Button>
@@ -129,9 +133,7 @@ export default function AnaliseCard({
   }
 
   if (!analise) {
-    return (
-      <p className="text-xs text-muted-foreground italic">Análise não disponível.</p>
-    );
+    return <p className="text-xs text-muted-foreground italic">Análise não disponível.</p>;
   }
 
   const risco = RISCO_CONFIG[analise.nivel_risco || "sem_risco"] || RISCO_CONFIG.sem_risco;
@@ -142,11 +144,11 @@ export default function AnaliseCard({
     ? CONTEXTO_MAP[completa.classificacao_contexto] || completa.classificacao_contexto
     : null;
 
-  const tiposViolencia = (completa?.tipos_violencia || analise.categorias || []).filter(
-    (t) => t !== "nenhuma"
-  );
+  const tiposViolencia = (completa?.tipos_violencia || analise.categorias || []).filter((t) => t !== "nenhuma");
   const padroes = completa?.padroes_detectados || [];
-  const linguagem = completa?.analise_linguagem || [];
+  const taticas = completa?.taticas_manipulativas || [];
+  const orientacoes = completa?.orientacoes_vitima || [];
+  const sinaisAlerta = completa?.sinais_alerta || [];
 
   return (
     <div className="rounded-xl border border-border bg-card/50 overflow-hidden">
@@ -157,43 +159,82 @@ export default function AnaliseCard({
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm font-semibold text-foreground">
-              Risco: {risco.label}
-            </span>
-            <Badge className={`${sentimento.color} text-[10px] border-0`}>
-              {sentimento.label}
-            </Badge>
-            {contextoLabel && (
-              <Badge variant="outline" className="text-[10px]">
-                {contextoLabel}
-              </Badge>
-            )}
+            <span className="text-sm font-semibold text-foreground">Risco: {risco.label}</span>
+            <Badge className={`${sentimento.color} text-[10px] border-0`}>{sentimento.label}</Badge>
+            {contextoLabel && <Badge variant="outline" className="text-[10px]">{contextoLabel}</Badge>}
           </div>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            {completa?.resumo_contexto || analise.resumo}
-          </p>
+          <p className="text-xs text-muted-foreground mt-0.5">{completa?.resumo_contexto || analise.resumo}</p>
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setShowDetails(!showDetails)}
-          className="shrink-0 h-8 w-8 p-0"
-        >
+        <Button variant="ghost" size="sm" onClick={() => setShowDetails(!showDetails)} className="shrink-0 h-8 w-8 p-0">
           {showDetails ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
         </Button>
       </div>
 
+      {/* Sinais de Alerta - always visible when present */}
+      {sinaisAlerta.length > 0 && (
+        <div className="px-3 pb-2">
+          <div className="flex flex-wrap gap-1.5">
+            {sinaisAlerta.map((s, i) => (
+              <Badge key={i} variant="outline" className="text-[10px] bg-red-500/5 text-red-600 border-red-200">
+                <AlertTriangle className="w-2.5 h-2.5 mr-1" />
+                {s}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Expanded details */}
       {showDetails && (
         <div className="border-t border-border px-3 pb-3 pt-2 space-y-3">
+          {/* Táticas Manipulativas */}
+          {taticas.length > 0 && (
+            <Section icon={Eye} title="Táticas Manipulativas Identificadas">
+              <div className="space-y-2">
+                {taticas.map((t, i) => (
+                  <div key={i} className={`rounded-lg border p-2.5 ${GRAVIDADE_COLORS[t.gravidade] || "bg-muted"}`}>
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <Badge variant="outline" className="text-[10px] font-semibold">
+                        {TATICA_LABELS[t.tatica] || t.tatica}
+                      </Badge>
+                      <Badge variant="outline" className="text-[9px]">
+                        {t.gravidade}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-foreground leading-relaxed">{t.descricao}</p>
+                    {t.evidencia && (
+                      <p className="text-[11px] text-muted-foreground mt-1 italic border-l-2 border-muted-foreground/30 pl-2">
+                        "{t.evidencia}"
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </Section>
+          )}
+
+          {/* Orientações para a mulher */}
+          {orientacoes.length > 0 && (
+            <Section icon={Heart} title="Orientações">
+              <div className="rounded-lg border border-primary/20 bg-primary/5 p-2.5">
+                <ul className="space-y-1.5">
+                  {orientacoes.map((o, i) => (
+                    <li key={i} className="text-xs text-foreground flex items-start gap-1.5">
+                      <Lightbulb className="w-3 h-3 text-primary mt-0.5 shrink-0" />
+                      {o}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </Section>
+          )}
+
           {/* Tipos de violência */}
           {tiposViolencia.length > 0 && (
             <Section icon={Scale} title="Tipos de Violência (Lei Maria da Penha)">
               <div className="flex flex-wrap gap-1.5">
                 {tiposViolencia.map((t, i) => (
-                  <Badge key={i} variant="destructive" className="text-[10px]">
-                    {VIOLENCIA_MAP[t] || t}
-                  </Badge>
+                  <Badge key={i} variant="destructive" className="text-[10px]">{VIOLENCIA_MAP[t] || t}</Badge>
                 ))}
               </div>
             </Section>
@@ -205,22 +246,17 @@ export default function AnaliseCard({
               <ul className="space-y-0.5">
                 {padroes.map((p, i) => (
                   <li key={i} className="text-xs text-foreground flex items-start gap-1.5">
-                    <span className="text-muted-foreground mt-0.5">•</span>
-                    {p}
+                    <span className="text-muted-foreground mt-0.5">•</span>{p}
                   </li>
                 ))}
               </ul>
             </Section>
           )}
 
-          {/* Análise de linguagem removed — highlights shown in transcription */}
-
           {/* Justificativa do risco */}
           {completa?.justificativa_risco && (
             <Section icon={ShieldQuestion} title="Justificativa do Risco">
-              <p className="text-xs text-foreground leading-relaxed">
-                {completa.justificativa_risco}
-              </p>
+              <p className="text-xs text-foreground leading-relaxed">{completa.justificativa_risco}</p>
             </Section>
           )}
         </div>
@@ -229,20 +265,11 @@ export default function AnaliseCard({
   );
 }
 
-function Section({
-  icon: Icon,
-  title,
-  children,
-}: {
-  icon: typeof Brain;
-  title: string;
-  children: React.ReactNode;
-}) {
+function Section({ icon: Icon, title, children }: { icon: typeof Brain; title: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1">
       <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-        <Icon className="w-3 h-3" />
-        {title}
+        <Icon className="w-3 h-3" />{title}
       </div>
       {children}
     </div>
