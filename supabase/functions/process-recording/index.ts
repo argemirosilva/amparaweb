@@ -105,49 +105,43 @@ async function getAnalysisPrompt(supabase: any): Promise<string> {
 PRINCÍPIO DE BOM SENSO:
 - O foco desta análise é a PROTEÇÃO DA MULHER. O sistema tem uma leve tendência a favor da vítima.
 - Nem toda discordância é abuso, mas na dúvida, proteja a mulher.
-- Somente aponte comportamentos inadequados da mulher quando forem MUITO CLAROS e evidentes (ex: agressão física iniciada por ela, ameaças explícitas dela).
-- Desabafos, frustrações, cobranças e reações emocionais da mulher NÃO devem ser classificados como abuso — são respostas esperadas em contextos de tensão.
-- Mantenha o bom senso: diferencie conflitos normais de abuso real, mas quando houver ambiguidade, interprete a favor da segurança da mulher.
+- Somente aponte comportamentos inadequados da mulher quando forem MUITO CLAROS e evidentes.
+- Desabafos, frustrações, cobranças e reações emocionais da mulher NÃO devem ser classificados como abuso.
 
 Objetivo:
 - Avaliar conversas de forma holística, indo além de frases isoladas.
 - Identificar sinais REAIS de abuso psicológico, moral, físico, patrimonial ou sexual — com evidências claras.
 - Diferenciar interações consensuais e conflitos normais de violência mascarada ou ameaças implícitas.
+- Detectar TÁTICAS MANIPULATIVAS SUTIS que podem não parecer abuso direto mas são formas de controle.
 
-Regras de Comportamento e Análise:
-1) Análise Contextual:
-- Considere o tom geral, desequilíbrios de poder e tentativas de controle.
-- Avalie a frequência de desqualificações e as respostas emocionais da possível vítima.
-- Identifique ironias usadas como agressão e mudanças bruscas de humor.
+Regras:
+1) Análise Contextual: tom geral, desequilíbrios de poder, tentativas de controle, frequência de desqualificações.
+2) Identificação de Escalada: aumento na intensidade, linguagem possessiva, transição de brincadeiras para intimidação.
+3) Classificação: saudavel, rispido_nao_abusivo, potencial_abuso_leve, padrao_consistente_abuso, ameaca_risco, risco_elevado_escalada.
+4) Extração de Xingamentos: TODOS os insultos direcionados à mulher. Normalize para minúsculas.
+5) TÁTICAS MANIPULATIVAS: instrumentalizacao_filhos, falsa_demonstracao_afeto, ameaca_juridica_velada, acusacao_sem_evidencia, gaslighting, vitimizacao_reversa, controle_disfarçado_preocupacao.
+6) ORIENTAÇÕES PARA A MULHER: alertas, sugestões de ação e frases de validação emocional personalizadas.
 
-2) Identificação de Escalada:
-- Monitore o aumento na intensidade das falas e o uso de linguagem possessiva.
-- Observe a transição de 'brincadeiras' para intimidação ou ameaças veladas.
-
-3) Categorias de Classificação:
-- Classifique o contexto entre: 1) Saudável, 2) Ríspido mas não abusivo, 3) Potencial abuso leve, 4) Padrão consistente de abuso, 5) Ameaça/Risco, 6) Risco elevado/Escalada.
-
-Retorne APENAS um JSON válido (sem markdown, sem backticks) com a seguinte estrutura:
+Retorne APENAS JSON válido (sem markdown, sem backticks):
 {
-  "resumo_contexto": "Descrição neutra e equilibrada dos fatos observados na transcrição (máx 200 palavras)",
-  "analise_linguagem": ["Classificação de falas específicas identificadas (ex: humor vs. humilhação)"],
-  "padroes_detectados": ["Listagem de comportamentos detectados (ex: controle, isolamento, desqualificação)"],
-  "tipos_violencia": ["Tipos de violência identificados baseados na Lei Maria da Penha: fisica, psicologica, moral, patrimonial, sexual, nenhuma"],
+  "resumo_contexto": "Descrição neutra e equilibrada (máx 200 palavras)",
+  "analise_linguagem": [],
+  "padroes_detectados": [],
+  "tipos_violencia": ["fisica|psicologica|moral|patrimonial|sexual|nenhuma"],
   "nivel_risco": "sem_risco|moderado|alto|critico",
-  "justificativa_risco": "Justificativa técnica para o nível de risco atribuído",
+  "justificativa_risco": "...",
   "classificacao_contexto": "saudavel|rispido_nao_abusivo|potencial_abuso_leve|padrao_consistente_abuso|ameaca_risco|risco_elevado_escalada",
   "sentimento": "positivo|negativo|neutro|misto",
-  "palavras_chave": ["palavras ou frases relevantes extraídas — INCLUA OBRIGATORIAMENTE todos os xingamentos, adjetivos ofensivos e depreciativos dirigidos à mulher (ex: burra, inútil, vagabunda, louca, histérica, feia, ridícula, etc). Estes devem ser a PRIORIDADE na extração de palavras-chave."],
-  "categorias": ["categorias resumidas: violencia_fisica, violencia_psicologica, ameaca, coercao, controle, assedio, nenhuma"]
+  "palavras_chave": [],
+  "xingamentos": [],
+  "categorias": ["violencia_fisica|violencia_psicologica|ameaca|coercao|controle|assedio|nenhuma"],
+  "taticas_manipulativas": [{"tatica":"...","descricao":"...","evidencia":"...","gravidade":"baixa|media|alta"}],
+  "orientacoes_vitima": ["Orientações práticas e acolhedoras personalizadas"],
+  "sinais_alerta": ["sinais identificados"]
 }
 
-Tom e Restrições:
-- Mantenha uma postura técnica, neutra, equilibrada e estruturada.
-- Evite falsos positivos; não assuma intenções sem evidências claras.
-- Não forneça aconselhamento jurídico ou instruções operacionais.
-- Se o diálogo for claramente consensual ou um desentendimento normal, declare a ausência de padrões abusivos.
-- Baseie-se exclusivamente no conteúdo da transcrição.
-- Não reforce comportamentos que prejudiquem a relação de nenhum dos lados.`;
+Se NÃO houver táticas/orientações/sinais, retorne arrays vazios.
+Seja ESPECÍFICO nas evidências — cite trechos da transcrição.`;
 
   try {
     const { data } = await supabase
