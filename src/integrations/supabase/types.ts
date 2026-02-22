@@ -169,6 +169,7 @@ export type Database = {
           updated_at: string
           vehicles: Json | null
           violence_profile_probs: Json | null
+          xingamentos_frequentes: string[] | null
         }
         Insert: {
           aliases?: string[] | null
@@ -211,6 +212,7 @@ export type Database = {
           updated_at?: string
           vehicles?: Json | null
           violence_profile_probs?: Json | null
+          xingamentos_frequentes?: string[] | null
         }
         Update: {
           aliases?: string[] | null
@@ -253,6 +255,7 @@ export type Database = {
           updated_at?: string
           vehicles?: Json | null
           violence_profile_probs?: Json | null
+          xingamentos_frequentes?: string[] | null
         }
         Relationships: []
       }
@@ -655,6 +658,7 @@ export type Database = {
           resumo: string | null
           sentimento: string | null
           user_id: string
+          xingamentos: string[] | null
         }
         Insert: {
           analise_completa?: Json | null
@@ -668,6 +672,7 @@ export type Database = {
           resumo?: string | null
           sentimento?: string | null
           user_id: string
+          xingamentos?: string[] | null
         }
         Update: {
           analise_completa?: Json | null
@@ -681,6 +686,7 @@ export type Database = {
           resumo?: string | null
           sentimento?: string | null
           user_id?: string
+          xingamentos?: string[] | null
         }
         Relationships: [
           {
