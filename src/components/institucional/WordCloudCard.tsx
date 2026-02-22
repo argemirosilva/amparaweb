@@ -6,6 +6,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { OFFENSE_WORDS } from "@/lib/offenseWords";
 
 const COLORS = [
   "hsl(224 76% 33%)",
@@ -17,25 +18,6 @@ const COLORS = [
   "hsl(280 45% 45%)",
   "hsl(220 20% 45%)",
 ];
-
-// Only show negative/offensive adjectives directed at women
-const OFFENSE_WORDS = new Set([
-  // Xingamentos sexualizados
-  "vadia", "vagabunda", "puta", "piranha", "safada", "oferecida", "galinha",
-  // Inteligência / capacidade
-  "burra", "inútil", "incompetente", "idiota", "imbecil", "retardada", "ignorante", "incapaz", "imprestável",
-  // Sanidade / estabilidade
-  "louca", "maluca", "histérica", "doida", "perturbada", "desequilibrada", "descontrolada", "pirada", "surtada",
-  // Aparência / corpo
-  "feia", "gorda", "horrorosa", "nojenta", "repugnante", "asquerosa",
-  // Caráter / moral
-  "falsa", "mentirosa", "manipuladora", "ardilosa", "traiçoeira", "covarde",
-  "ingrata", "interesseira", "aproveitadora", "mercenária", "oportunista",
-  // Depreciativos gerais
-  "ridícula", "patética", "insignificante", "desprezível", "miserável",
-  "desgraçada", "insuportável", "detestável", "desprezada", "ordinária",
-  "cretina", "otária", "besta", "trouxa", "mesquinha", "medíocre",
-]);
 
 const MAX_WORDS = 30;
 

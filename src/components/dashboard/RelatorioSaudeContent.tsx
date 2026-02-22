@@ -1,4 +1,5 @@
 import { Badge } from "@/components/ui/badge";
+import { OFFENSE_WORDS } from "@/lib/offenseWords";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -139,18 +140,24 @@ export default function RelatorioSaudeContent({ relatorio, loading, error }: Pro
               </div>
           }
 
-            {relatorio.palavras_frequentes.length > 0 &&
-          <div>
-                <span className="text-[10px] font-semibold text-muted-foreground uppercase">Ofensas frequentes</span>
-                <div className="flex flex-wrap gap-1 mt-1">
-                  {relatorio.palavras_frequentes.map((pw) =>
-              <Badge key={pw.palavra} variant="secondary" className="text-[10px]">
-                      {pw.palavra}
-                    </Badge>
-              )}
+            {relatorio.palavras_frequentes.length > 0 && (() => {
+              const filtered = relatorio.palavras_frequentes.filter((pw) =>
+                OFFENSE_WORDS.has(pw.palavra.toLowerCase().trim())
+              );
+              if (filtered.length === 0) return null;
+              return (
+                <div>
+                  <span className="text-[10px] font-semibold text-muted-foreground uppercase">Ofensas frequentes</span>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {filtered.map((pw) =>
+                      <Badge key={pw.palavra} variant="secondary" className="text-[10px]">
+                        {pw.palavra}
+                      </Badge>
+                    )}
+                  </div>
                 </div>
-              </div>
-          }
+              );
+            })()}
           </section>
         }
 
