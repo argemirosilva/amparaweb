@@ -330,6 +330,147 @@ export type Database = {
           },
         ]
       }
+      analysis_jobs: {
+        Row: {
+          attempts: number
+          created_at: string
+          id: string
+          job_type: string
+          last_error: string | null
+          payload_json: Json
+          scheduled_for: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          id?: string
+          job_type: string
+          last_error?: string | null
+          payload_json?: Json
+          scheduled_for?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          id?: string
+          job_type?: string
+          last_error?: string | null
+          payload_json?: Json
+          scheduled_for?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      analysis_macro_reports: {
+        Row: {
+          aggregates_json: Json
+          created_at: string
+          error_message: string | null
+          id: string
+          latest: boolean
+          model: string
+          output_json: Json
+          prompt_version: string
+          status: string
+          user_id: string
+          window_days: number
+          window_end: string
+          window_start: string
+        }
+        Insert: {
+          aggregates_json?: Json
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          latest?: boolean
+          model: string
+          output_json?: Json
+          prompt_version: string
+          status?: string
+          user_id: string
+          window_days: number
+          window_end: string
+          window_start: string
+        }
+        Update: {
+          aggregates_json?: Json
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          latest?: boolean
+          model?: string
+          output_json?: Json
+          prompt_version?: string
+          status?: string
+          user_id?: string
+          window_days?: number
+          window_end?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
+      analysis_micro_results: {
+        Row: {
+          context_classification: string
+          created_at: string
+          cycle_phase: string
+          error_message: string | null
+          id: string
+          input_hash: string
+          latest: boolean
+          model: string
+          output_json: Json
+          prompt_version: string
+          recording_id: string | null
+          risk_level: string
+          status: string
+          transcription_id: string | null
+          user_id: string
+        }
+        Insert: {
+          context_classification?: string
+          created_at?: string
+          cycle_phase?: string
+          error_message?: string | null
+          id?: string
+          input_hash: string
+          latest?: boolean
+          model: string
+          output_json?: Json
+          prompt_version: string
+          recording_id?: string | null
+          risk_level?: string
+          status?: string
+          transcription_id?: string | null
+          user_id: string
+        }
+        Update: {
+          context_classification?: string
+          created_at?: string
+          cycle_phase?: string
+          error_message?: string | null
+          id?: string
+          input_hash?: string
+          latest?: boolean
+          model?: string
+          output_json?: Json
+          prompt_version?: string
+          recording_id?: string | null
+          risk_level?: string
+          status?: string
+          transcription_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       audio_generation_items: {
         Row: {
           created_at: string

@@ -351,6 +351,24 @@ serve(async (req) => {
       }).catch((e) => console.error("WhatsApp notify error from process-recording:", e));
     }
 
+    // 10. Fire-and-forget: enqueue MICRO analysis in new pipeline
+    {
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      fetch(`${supabaseUrl}/functions/v1/analysis-worker`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${serviceKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          action: "enqueueMicro",
+          recording_id: gravacao_id,
+          user_id: gravacao.user_id,
+        }),
+      }).catch((e) => console.error("Analysis worker enqueue error:", e));
+    }
+
     console.log(`Recording ${gravacao_id} fully processed.`);
     return json({
       success: true,
