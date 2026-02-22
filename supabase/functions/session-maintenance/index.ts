@@ -173,6 +173,53 @@ serve(async (req) => {
     const r2Config = getR2Config();
     const results: Record<string, unknown>[] = [];
 
+    // ── Step 0: Auto-expire orphan sessions (ativa > 10 min without segments) ──
+    const orphanCutoff = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+    const { data: orphanSessions } = await supabase
+      .from("monitoramento_sessoes")
+      .select("id, user_id")
+      .eq("status", "ativa")
+      .lt("created_at", orphanCutoff);
+
+    if (orphanSessions && orphanSessions.length > 0) {
+      for (const session of orphanSessions) {
+        // Check if session has any segments
+        const { count } = await supabase
+          .from("gravacoes_segmentos")
+          .select("id", { count: "exact", head: true })
+          .eq("monitor_session_id", session.id);
+
+        if ((count || 0) === 0) {
+          const now = new Date().toISOString();
+          await supabase
+            .from("monitoramento_sessoes")
+            .update({
+              status: "aguardando_finalizacao",
+              closed_at: now,
+              sealed_reason: "sem_segmentos_auto",
+              finalizado_em: now,
+            })
+            .eq("id", session.id);
+
+          await supabase.from("audit_logs").insert({
+            user_id: session.user_id,
+            action_type: "session_sealed",
+            success: true,
+            details: { session_id: session.id, sealed_reason: "sem_segmentos_auto" },
+          });
+
+          // Reset device flags
+          await supabase
+            .from("device_status")
+            .update({ is_recording: false, is_monitoring: false })
+            .eq("user_id", session.user_id);
+
+          results.push({ action: "orphan_expired", session_id: session.id });
+          console.log(`Auto-expired orphan session ${session.id} (no segments after 10min)`);
+        }
+      }
+    }
+
     // ── Step 1: Expire active sessions whose window_end_at has passed ──
     const { data: expiredSessions } = await supabase
       .from("monitoramento_sessoes")

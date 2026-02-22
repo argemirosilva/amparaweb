@@ -1726,19 +1726,30 @@ RETORNE APENAS JSON válido:
           window_selada: true,
         }).eq("id", alerta.id);
 
-        // Auto-seal monitoring session
-        const { data: activeSession } = await supabase
+        // Auto-seal ALL active monitoring sessions for this user
+        const { data: activeSessions } = await supabase
           .from("monitoramento_sessoes")
           .select("id")
           .eq("user_id", userId)
-          .eq("status", "ativa")
-          .maybeSingle();
-        if (activeSession) {
-          await supabase.from("monitoramento_sessoes").update({
-            status: "aguardando_finalizacao",
-            closed_at: now.toISOString(),
-            sealed_reason: "panico_cancelado_web",
-          }).eq("id", activeSession.id);
+          .eq("status", "ativa");
+
+        if (activeSessions && activeSessions.length > 0) {
+          for (const sess of activeSessions) {
+            await supabase.from("monitoramento_sessoes").update({
+              status: "aguardando_finalizacao",
+              closed_at: now.toISOString(),
+              sealed_reason: "panico_cancelado_web",
+              finalizado_em: now.toISOString(),
+            }).eq("id", sess.id);
+
+            await supabase.from("audit_logs").insert({
+              user_id: userId,
+              action_type: "session_sealed",
+              success: true,
+              details: { session_id: sess.id, sealed_reason: "panico_cancelado_web" },
+            });
+          }
+          console.log(`[SEAL] Sealed ${activeSessions.length} active session(s) for user ${userId} via web cancelPanico`);
         }
 
         // Reset device recording/monitoring flags
