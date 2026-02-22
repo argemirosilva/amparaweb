@@ -30,29 +30,11 @@ Deno.serve(async (req) => {
   const batchSize = body.batch_size || 5;
   const autoChain = body.auto_chain !== false; // default true
 
-  // Find pending recordings (with transcription, without analysis)
-  const { data: unanalyzed } = await supabase
-    .from("gravacoes")
-    .select("id, user_id, transcricao")
-    .eq("status", "processado")
-    .not("transcricao", "is", null)
-    .order("created_at")
-    .limit(2000);
+  // Find recordings with transcription that do NOT have an analysis yet
+  const { data: pending } = await supabase
+    .rpc("get_unanalyzed_gravacoes", { p_limit: batchSize });
 
-  if (!unanalyzed || unanalyzed.length === 0) {
-    return json({ ok: true, message: "Nenhuma gravação encontrada", analyzed: 0 });
-  }
-
-  const allIds = unanalyzed.map((g: any) => g.id);
-  const { data: existingAnalyses } = await supabase
-    .from("gravacoes_analises")
-    .select("gravacao_id")
-    .in("gravacao_id", allIds);
-
-  const analyzedSet = new Set((existingAnalyses || []).map((a: any) => a.gravacao_id));
-  const pending = unanalyzed.filter((g: any) => !analyzedSet.has(g.id));
-
-  if (pending.length === 0) {
+  if (!pending || pending.length === 0) {
     return json({ ok: true, message: "Todas já foram analisadas", analyzed: 0, remaining: 0 });
   }
 
@@ -68,7 +50,7 @@ Deno.serve(async (req) => {
     if (promptData?.valor?.trim()) systemPrompt = promptData.valor.trim();
   } catch { /* use default */ }
 
-  const toProcess = pending.slice(0, batchSize);
+  const toProcess = pending; // already limited by RPC
   let analyzedCount = 0;
   const errors: string[] = [];
 
@@ -116,7 +98,7 @@ Deno.serve(async (req) => {
         };
       }
 
-      const { error: insErr } = await supabase.from("gravacoes_analises").upsert({
+      const { error: insErr } = await supabase.from("gravacoes_analises").insert({
         gravacao_id: grav.id,
         user_id: grav.user_id,
         resumo: parsed.resumo_contexto || parsed.resumo || "",
@@ -126,7 +108,7 @@ Deno.serve(async (req) => {
         palavras_chave: parsed.palavras_chave || [],
         analise_completa: parsed,
         modelo_usado: "google/gemini-2.5-flash",
-      }, { onConflict: "gravacao_id", ignoreDuplicates: true });
+      });
 
       if (insErr) {
         errors.push(`${grav.id}: insert error ${insErr.message}`);
@@ -138,10 +120,10 @@ Deno.serve(async (req) => {
     }
   }
 
-  const remaining = pending.length - analyzedCount;
+  // Chain if we processed a full batch (likely more pending)
+  const mayHaveMore = toProcess.length === batchSize && analyzedCount > 0;
 
-  // Fire-and-forget: chain next batch if there are more pending
-  if (autoChain && remaining > 0 && analyzedCount > 0) {
+  if (autoChain && mayHaveMore) {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     fetch(`${supabaseUrl}/functions/v1/run-batch-analysis`, {
@@ -152,16 +134,14 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({ batch_size: batchSize, auto_chain: true }),
     }).catch((e) => console.error("Chain call error:", e));
-    console.log(`Chained next batch. Remaining: ${remaining}`);
+    console.log(`Chained next batch. Analyzed: ${analyzedCount}/${toProcess.length}`);
   }
 
   return json({
     ok: true,
     analyzed: analyzedCount,
-    processed_in_batch: toProcess.length,
-    remaining,
-    total_pending: pending.length,
-    auto_chain: autoChain && remaining > 0 && analyzedCount > 0,
+    batch_size: toProcess.length,
+    auto_chain: autoChain && mayHaveMore,
     errors: errors.length > 0 ? errors : undefined,
   });
 });
