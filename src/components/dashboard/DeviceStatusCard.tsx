@@ -2,8 +2,22 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDeviceStatus } from "@/hooks/useDeviceStatus";
 import { useAuth } from "@/contexts/AuthContext";
+import { callWebApi } from "@/services/webApiService";
+import { toast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Smartphone, Clock, BatteryFull, BatteryMedium, BatteryLow, BatteryCharging, Wifi, WifiOff, MapPin, Mic, AlertTriangle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Smartphone, Clock, BatteryFull, BatteryMedium, BatteryLow, BatteryCharging, Wifi, WifiOff, MapPin, Mic, AlertTriangle, XCircle } from "lucide-react";
 import GradientIcon from "@/components/ui/gradient-icon";
 
 function timeSince(date: string): string {
@@ -65,10 +79,11 @@ function formatDateTime(iso: string): string {
 
 export default function DeviceStatusCard() {
   const { device, location, geo, addressLoading, loading, error } = useDeviceStatus();
-  const { usuario } = useAuth();
+  const { usuario, sessionToken } = useAuth();
   const navigate = useNavigate();
   const firstName = (usuario?.nome_completo || "").split(" ")[0];
   const [elapsed, setElapsed] = useState(0);
+  const [cancelling, setCancelling] = useState(false);
   const counterStartRef = useRef<number | null>(null);
   const prevActiveRef = useRef(false);
 
@@ -125,10 +140,50 @@ export default function DeviceStatusCard() {
       }`}>
         {/* Panic banner */}
         {panicActive && (
-          <div className="absolute top-0 left-0 right-0 flex items-center justify-center gap-1.5 bg-destructive text-destructive-foreground text-[11px] font-bold py-1 tracking-wide">
-            <AlertTriangle className="w-3.5 h-3.5" />
-            PÂNICO ATIVO
-            <AlertTriangle className="w-3.5 h-3.5" />
+          <div className="absolute top-0 left-0 right-0 flex items-center justify-between bg-destructive text-destructive-foreground text-[11px] font-bold py-1 px-3 tracking-wide">
+            <div className="flex items-center gap-1.5">
+              <AlertTriangle className="w-3.5 h-3.5" />
+              PÂNICO ATIVO
+              <AlertTriangle className="w-3.5 h-3.5" />
+            </div>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <button
+                  className="flex items-center gap-1 text-[10px] font-semibold bg-destructive-foreground/20 hover:bg-destructive-foreground/30 rounded px-2 py-0.5 transition-colors"
+                  disabled={cancelling}
+                >
+                  <XCircle className="w-3 h-3" />
+                  Cancelar
+                </button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Cancelar alerta de pânico?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Isso encerrará o alerta ativo e interromperá o monitoramento de emergência. Tem certeza?
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Manter ativo</AlertDialogCancel>
+                  <AlertDialogAction
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    onClick={async () => {
+                      if (!sessionToken) return;
+                      setCancelling(true);
+                      const res = await callWebApi("cancelPanico", sessionToken);
+                      if (res.ok) {
+                        toast({ title: "Pânico cancelado", description: "O alerta foi encerrado com sucesso." });
+                      } else {
+                        toast({ title: "Erro", description: res.data?.error || "Não foi possível cancelar.", variant: "destructive" });
+                      }
+                      setCancelling(false);
+                    }}
+                  >
+                    Sim, cancelar pânico
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         )}
         {/* Recording / Monitoring indicator */}

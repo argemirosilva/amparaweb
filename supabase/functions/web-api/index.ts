@@ -1700,6 +1700,55 @@ RETORNE APENAS JSON válido:
         });
       }
 
+      // ========== CANCELAR PÂNICO ==========
+      case "cancelPanico": {
+        const now = new Date();
+        const { data: alerta } = await supabase
+          .from("alertas_panico")
+          .select("id, criado_em")
+          .eq("user_id", userId)
+          .eq("status", "ativo")
+          .order("criado_em", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (!alerta) return json({ error: "Nenhum alerta ativo encontrado" }, 404);
+
+        const criadoEm = new Date(alerta.criado_em);
+        const tempoAte = Math.round((now.getTime() - criadoEm.getTime()) / 1000);
+
+        await supabase.from("alertas_panico").update({
+          status: "cancelado",
+          cancelado_em: now.toISOString(),
+          motivo_cancelamento: params.motivo || "Cancelado pelo painel web",
+          tipo_cancelamento: "manual_web",
+          cancelado_dentro_janela: tempoAte <= 60,
+          tempo_ate_cancelamento_segundos: tempoAte,
+          window_selada: true,
+        }).eq("id", alerta.id);
+
+        // Auto-seal monitoring session
+        const { data: activeSession } = await supabase
+          .from("monitoramento_sessoes")
+          .select("id")
+          .eq("user_id", userId)
+          .eq("status", "ativa")
+          .maybeSingle();
+        if (activeSession) {
+          await supabase.from("monitoramento_sessoes").update({
+            status: "aguardando_finalizacao",
+            closed_at: now.toISOString(),
+            sealed_reason: "panico_cancelado_web",
+          }).eq("id", activeSession.id);
+        }
+
+        await supabase.from("audit_logs").insert({
+          user_id: userId, action_type: "panic_cancelled_web", success: true,
+          details: { alerta_id: alerta.id, tempo_segundos: tempoAte },
+        });
+
+        return json({ success: true, alerta_id: alerta.id });
+      }
+
       // ========== ANALYSIS PIPELINE (proxy to analysis-worker) ==========
       case "getMacroLatest":
       case "runMacro":
