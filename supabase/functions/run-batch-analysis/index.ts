@@ -110,6 +110,7 @@ Deno.serve(async (req) => {
         nivel_risco: parsed.nivel_risco || "sem_risco",
         categorias: parsed.categorias || [],
         palavras_chave: parsed.palavras_chave || [],
+        xingamentos: parsed.xingamentos || [],
         analise_completa: parsed,
         modelo_usado: "google/gemini-2.5-flash",
       });

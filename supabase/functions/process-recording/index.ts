@@ -167,6 +167,7 @@ async function analyzeTranscription(transcricao: string, supabase: any): Promise
   nivel_risco: string;
   categorias: string[];
   palavras_chave: string[];
+  xingamentos: string[];
   analise_completa: any;
 }> {
   const systemPrompt = await getAnalysisPrompt(supabase);
@@ -190,6 +191,7 @@ async function analyzeTranscription(transcricao: string, supabase: any): Promise
       nivel_risco: parsed.nivel_risco || "sem_risco",
       categorias: parsed.categorias || [],
       palavras_chave: parsed.palavras_chave || [],
+      xingamentos: parsed.xingamentos || [],
       analise_completa: parsed,
     };
   } catch (e) {
@@ -200,6 +202,7 @@ async function analyzeTranscription(transcricao: string, supabase: any): Promise
       nivel_risco: "sem_risco",
       categorias: [],
       palavras_chave: [],
+      xingamentos: [],
       analise_completa: { raw_response: raw },
     };
   }
@@ -305,6 +308,7 @@ serve(async (req) => {
         nivel_risco: analysis.nivel_risco,
         categorias: analysis.categorias,
         palavras_chave: analysis.palavras_chave,
+        xingamentos: analysis.xingamentos,
         analise_completa: analysis.analise_completa,
         modelo_usado: "google/gemini-3-flash-preview",
       });
