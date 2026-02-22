@@ -19,6 +19,17 @@ const TIPOS_VINCULO = [
   "Noivo", "Ex-noivo", "Companheiro", "Ex-companheiro", "Outro",
 ];
 
+const CORES_RACA = [
+  "Branca", "Preta", "Parda", "Amarela", "Indígena", "Prefiro não informar",
+];
+
+const ESCOLARIDADES = [
+  "Sem escolaridade", "Ensino Fundamental incompleto", "Ensino Fundamental completo",
+  "Ensino Médio incompleto", "Ensino Médio completo",
+  "Ensino Superior incompleto", "Ensino Superior completo",
+  "Pós-graduação", "Prefiro não informar",
+];
+
 interface PerfilData {
   nome_completo: string;
   email: string;
@@ -36,6 +47,9 @@ interface PerfilData {
   tem_filhos: boolean;
   mora_com_agressor: boolean;
   avatar_url: string | null;
+  cor_raca: string | null;
+  escolaridade: string | null;
+  profissao: string | null;
 }
 
 interface GuardiaoData {
@@ -100,7 +114,8 @@ interface AgressorEditForm {
   placa_parcial: string;
   veiculo_modelo: string;
   veiculo_cor: string;
-  
+  cor_raca: string;
+  escolaridade: string;
 }
 
 export default function PerfilPage() {
@@ -252,7 +267,8 @@ export default function PerfilPage() {
       placa_parcial: firstVehicle?.plate_partial || firstVehicle?.plate_prefix || "",
       veiculo_modelo: firstVehicle?.model || "",
       veiculo_cor: firstVehicle?.color || "",
-      
+      cor_raca: (ag as any).cor_raca || "",
+      escolaridade: (ag as any).escolaridade || "",
     });
   };
 
@@ -276,6 +292,8 @@ export default function PerfilPage() {
       forca_seguranca: agressorForm.forca_seguranca,
       tem_arma_em_casa: agressorForm.tem_arma_em_casa,
       sector: agressorForm.forca_seguranca ? (agressorForm.forca_seguranca_tipo || null) : null,
+      cor_raca: agressorForm.cor_raca || null,
+      escolaridade: agressorForm.escolaridade || null,
     };
 
     if (agressorForm.cidade_uf.trim()) payload.primary_city_uf = agressorForm.cidade_uf.trim();
@@ -352,6 +370,9 @@ export default function PerfilPage() {
               data_nascimento: perfil?.data_nascimento || "",
               tem_filhos: perfil?.tem_filhos || false,
               mora_com_agressor: perfil?.mora_com_agressor || false,
+              cor_raca: perfil?.cor_raca || "",
+              escolaridade: perfil?.escolaridade || "",
+              profissao: perfil?.profissao || "",
             });
             setEnderecoForm({
               endereco_cep: perfil?.endereco_cep || "",
@@ -379,6 +400,9 @@ export default function PerfilPage() {
             </div>
             <div><p className="text-muted-foreground">Tem filhos?</p><p className="text-foreground">{perfil?.tem_filhos ? "Sim" : "Não"}</p></div>
             <div><p className="text-muted-foreground">Mora com agressor?</p><p className="text-foreground">{perfil?.mora_com_agressor ? "Sim" : "Não"}</p></div>
+            <div><p className="text-muted-foreground">Cor / Raça</p><p className="text-foreground">{perfil?.cor_raca || "—"}</p></div>
+            <div><p className="text-muted-foreground">Escolaridade</p><p className="text-foreground">{perfil?.escolaridade || "—"}</p></div>
+            <div className="col-span-2"><p className="text-muted-foreground">Profissão</p><p className="text-foreground">{perfil?.profissao || "—"}</p></div>
           </div>
         ) : (
           <div className="space-y-3">
@@ -388,6 +412,27 @@ export default function PerfilPage() {
               onChange={e => setPerfilForm({ ...perfilForm, telefone: e.target.value })} />
             <input type="date" className="ampara-input" value={perfilForm.data_nascimento || ""}
               onChange={e => setPerfilForm({ ...perfilForm, data_nascimento: e.target.value })} />
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1.5">Cor / Raça</label>
+              <select className="ampara-input" value={perfilForm.cor_raca || ""}
+                onChange={e => setPerfilForm({ ...perfilForm, cor_raca: e.target.value })}>
+                <option value="">Selecione...</option>
+                {CORES_RACA.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1.5">Escolaridade</label>
+              <select className="ampara-input" value={perfilForm.escolaridade || ""}
+                onChange={e => setPerfilForm({ ...perfilForm, escolaridade: e.target.value })}>
+                <option value="">Selecione...</option>
+                {ESCOLARIDADES.map(e => <option key={e} value={e}>{e}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1.5">Profissão</label>
+              <input type="text" className="ampara-input" placeholder="Profissão ou ocupação" value={perfilForm.profissao || ""}
+                onChange={e => setPerfilForm({ ...perfilForm, profissao: e.target.value })} maxLength={60} />
+            </div>
             <EnderecoForm value={enderecoForm} onChange={setEnderecoForm} />
             <label className="flex items-center gap-3 cursor-pointer">
               <input type="checkbox" checked={perfilForm.tem_filhos || false}
@@ -620,6 +665,25 @@ export default function PerfilPage() {
                         <label className="block text-xs font-medium text-muted-foreground mb-1">Profissão</label>
                         <input type="text" className="ampara-input text-sm" placeholder="Profissão ou setor" value={agressorForm.profissao}
                           onChange={e => setAgressorForm({ ...agressorForm, profissao: e.target.value })} />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-xs font-medium text-muted-foreground mb-1">Cor / Raça</label>
+                          <select className="ampara-input text-sm" value={agressorForm.cor_raca}
+                            onChange={e => setAgressorForm({ ...agressorForm, cor_raca: e.target.value })}>
+                            <option value="">Selecione...</option>
+                            {CORES_RACA.map(c => <option key={c} value={c}>{c}</option>)}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-muted-foreground mb-1">Escolaridade</label>
+                          <select className="ampara-input text-sm" value={agressorForm.escolaridade}
+                            onChange={e => setAgressorForm({ ...agressorForm, escolaridade: e.target.value })}>
+                            <option value="">Selecione...</option>
+                            {ESCOLARIDADES.map(e => <option key={e} value={e}>{e}</option>)}
+                          </select>
+                        </div>
                       </div>
 
                       <div className="border border-border rounded-lg p-2.5 space-y-2">
