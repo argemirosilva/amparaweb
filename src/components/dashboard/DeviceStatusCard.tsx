@@ -234,7 +234,12 @@ export default function DeviceStatusCard() {
               {online ? <Wifi className="w-2 h-2" /> : <WifiOff className="w-2 h-2" />}
               {online ? "Online" : "Offline"}
             </span>
-            {device && <BatteryIndicator percent={device.bateria_percentual} charging={device.is_charging} />}
+            {device && online && <BatteryIndicator percent={device.bateria_percentual} charging={device.is_charging} />}
+            {device && !online && (
+              <span className="inline-flex items-center gap-0.5">
+                <BatteryLow className="w-4.5 h-4.5 text-muted-foreground" />
+              </span>
+            )}
           </div>
 
           {/* GPS button */}
@@ -246,20 +251,24 @@ export default function DeviceStatusCard() {
               <button
                 onClick={() => navigate("/mapa")}
                 className={`inline-flex items-center gap-1 text-[10px] font-medium transition-colors ${
-                  panicActive
-                    ? "text-destructive"
-                    : recentGps
-                      ? "text-blue-500"
-                      : "text-primary hover:text-primary/80"
+                  !online
+                    ? "text-muted-foreground"
+                    : panicActive
+                      ? "text-destructive"
+                      : recentGps
+                        ? "text-blue-500"
+                        : "text-primary hover:text-primary/80"
                 }`}
                 title="Ver localização"
               >
                 <MapPin className={`w-3.5 h-3.5 ${
-                  panicActive
-                    ? "animate-pulse"
-                    : recentGps
+                  !online
+                    ? ""
+                    : panicActive
                       ? "animate-pulse"
-                      : ""
+                      : recentGps
+                        ? "animate-pulse"
+                        : ""
                 }`} />
                 GPS
               </button>
