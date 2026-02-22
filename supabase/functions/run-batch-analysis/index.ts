@@ -116,7 +116,7 @@ Deno.serve(async (req) => {
         };
       }
 
-      const { error: insErr } = await supabase.from("gravacoes_analises").insert({
+      const { error: insErr } = await supabase.from("gravacoes_analises").upsert({
         gravacao_id: grav.id,
         user_id: grav.user_id,
         resumo: parsed.resumo_contexto || parsed.resumo || "",
@@ -126,7 +126,7 @@ Deno.serve(async (req) => {
         palavras_chave: parsed.palavras_chave || [],
         analise_completa: parsed,
         modelo_usado: "google/gemini-2.5-flash",
-      });
+      }, { onConflict: "gravacao_id", ignoreDuplicates: true });
 
       if (insErr) {
         errors.push(`${grav.id}: insert error ${insErr.message}`);
