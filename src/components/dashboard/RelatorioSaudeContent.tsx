@@ -126,12 +126,15 @@ export default function RelatorioSaudeContent({ relatorio, loading, error }: Pro
           <div className="mb-3">
                 <span className="text-[10px] font-semibold text-muted-foreground uppercase">Padrões recorrentes</span>
                 <ul className="mt-1 space-y-0.5">
-                  {relatorio.padroes_recorrentes.map((p) =>
-              <li key={p.padrao} className="text-xs text-foreground/70 flex items-start gap-1.5">
-                      <TrendingUp className="w-3 h-3 mt-0.5 shrink-0 text-orange-500" />
-                      <span>{p.padrao} <span className="text-muted-foreground">({p.contagem}x)</span></span>
-                    </li>
-              )}
+                  {relatorio.padroes_recorrentes.map((p) => {
+                    const isDangerous = /ameaça|agress|físic|bater|empurr|socos?|tapa|espanc|matar|morte|arma|faca|sufoc|estrangul|ferir|machucar|lesão|lesao|golpe|violên|apanha|surr/i.test(p.padrao);
+                    return (
+                      <li key={p.padrao} className={`text-xs flex items-start gap-1.5 ${isDangerous ? "text-red-600 font-medium" : "text-foreground/70"}`}>
+                        <TrendingUp className={`w-3 h-3 mt-0.5 shrink-0 ${isDangerous ? "text-red-600" : "text-orange-500"}`} />
+                        <span>{p.padrao} <span className={isDangerous ? "text-red-400" : "text-muted-foreground"}>({p.contagem}x)</span></span>
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
           }
