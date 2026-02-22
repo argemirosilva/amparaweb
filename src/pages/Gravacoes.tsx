@@ -318,6 +318,28 @@ export default function GravacoesPage() {
                               <Clock className="w-2.5 h-2.5" />
                               {formatDuration(g.duracao_segundos)}
                             </span>
+                            {g.nivel_risco === "sem_risco" && (() => {
+                              const countdown = getRetentionCountdown(g.created_at, retencaoDias);
+                              if (!countdown) return null;
+                              const expireAt = new Date(g.created_at).getTime() + retencaoDias * 24 * 60 * 60 * 1000;
+                              const remainingHours = (expireAt - Date.now()) / (1000 * 60 * 60);
+                              const isUrgent = remainingHours < 24;
+                              return (
+                                <TooltipProvider delayDuration={300}>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <span className={`text-[9px] inline-flex items-center gap-0.5 cursor-help ${isUrgent ? "text-destructive/70 font-medium" : "text-muted-foreground/50"}`}>
+                                        <Trash2 className="w-2.5 h-2.5" />
+                                        {countdown}
+                                      </span>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="bottom" className="max-w-[220px] text-center">
+                                      <p className="text-xs">Gravações sem risco são excluídas automaticamente após <strong>{retencaoDias} dias</strong>. Você pode alterar isso em Configurações.</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              );
+                            })()}
                             {(g.status === "pendente" || g.status === "processando") && (
                               <Loader2 className="w-2.5 h-2.5 animate-spin text-muted-foreground/60" />
                             )}
@@ -343,31 +365,6 @@ export default function GravacoesPage() {
                           </div>
                         </div>
                       </div>
-                      {/* Retention countdown for sem_risco */}
-                      {g.nivel_risco === "sem_risco" && (() => {
-                        const countdown = getRetentionCountdown(g.created_at, retencaoDias);
-                        if (!countdown) return null;
-                        const expireAt = new Date(g.created_at).getTime() + retencaoDias * 24 * 60 * 60 * 1000;
-                        const remainingHours = (expireAt - Date.now()) / (1000 * 60 * 60);
-                        const isUrgent = remainingHours < 24;
-                        return (
-                          <TooltipProvider delayDuration={300}>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <div className="flex items-center gap-1 px-3 -mt-1 pb-1 cursor-help">
-                                  <Trash2 className={`w-2.5 h-2.5 ${isUrgent ? "text-destructive/70" : "text-muted-foreground/50"}`} />
-                                  <span className={`text-[9px] ${isUrgent ? "text-destructive/70 font-medium" : "text-muted-foreground/50"}`}>
-                                    {countdown}
-                                  </span>
-                                </div>
-                              </TooltipTrigger>
-                              <TooltipContent side="bottom" className="max-w-[220px] text-center">
-                                <p className="text-xs">Gravações sem risco são excluídas automaticamente após <strong>{retencaoDias} dias</strong>. Você pode alterar isso em Configurações.</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        );
-                      })()}
                     </button>
 
                     {isExpanded && (
