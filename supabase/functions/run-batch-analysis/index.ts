@@ -30,13 +30,14 @@ Deno.serve(async (req) => {
   const batchSize = body.batch_size || 10;
   const offset = body.offset || 0;
 
-  // Find unanalyzed auto-generated recordings
+  // Find all recordings with transcription
   const { data: unanalyzed } = await supabase
     .from("gravacoes")
     .select("id, user_id, transcricao")
-    .eq("device_id", "admin_autogerado")
+    .eq("status", "processado")
     .not("transcricao", "is", null)
-    .order("created_at");
+    .order("created_at")
+    .limit(2000);
 
   if (!unanalyzed || unanalyzed.length === 0) {
     return json({ ok: true, message: "Nenhuma gravação encontrada", analyzed: 0 });

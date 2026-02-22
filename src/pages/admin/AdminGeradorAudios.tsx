@@ -281,23 +281,34 @@ export default function AdminGeradorAudios() {
     if (!sessionToken) return;
     setAnalyzing(true);
     analyzeCancelRef.current = false;
-    addLog("🧠 Iniciando análise de risco em lote...");
+    addLog("🧠 Iniciando análise de risco em lote (todas as gravações)...");
 
     let totalAnalyzed = 0;
-    let remaining = 1; // start loop
+    let remaining = 1;
 
     while (remaining > 0 && !analyzeCancelRef.current) {
       try {
-        const res = await callApi("batchAnalyze", sessionToken, { batch_size: 5 });
-        if (!res.ok) {
-          addLog(`❌ Erro: ${res.error}`);
+        const res = await fetch(
+          `${SUPABASE_URL}/functions/v1/run-batch-analysis`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              apikey: SUPABASE_KEY,
+            },
+            body: JSON.stringify({ batch_size: 5, offset: 0 }),
+          }
+        );
+        const data = await res.json();
+        if (!data.ok) {
+          addLog(`❌ Erro: ${data.message || "desconhecido"}`);
           break;
         }
-        totalAnalyzed += res.analyzed || 0;
-        remaining = res.remaining || 0;
-        addLog(`🧠 Analisadas: ${res.analyzed} | Restantes: ${remaining} | Total: ${totalAnalyzed}`);
-        if (res.errors?.length) {
-          res.errors.forEach((e: string) => addLog(`  ⚠️ ${e}`));
+        totalAnalyzed += data.analyzed || 0;
+        remaining = data.remaining || 0;
+        addLog(`🧠 Analisadas: ${data.analyzed} | Restantes: ${remaining} | Total acumulado: ${totalAnalyzed}`);
+        if (data.errors?.length) {
+          data.errors.forEach((e: string) => addLog(`  ⚠️ ${e}`));
         }
       } catch (err: any) {
         addLog(`❌ Erro: ${err.message}`);
