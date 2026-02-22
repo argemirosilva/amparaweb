@@ -315,14 +315,14 @@ serve(async (req) => {
       case "getMe": {
         const { data } = await supabase
           .from("usuarios")
-          .select("id, nome_completo, email, telefone, data_nascimento, endereco_fixo, endereco_cep, endereco_logradouro, endereco_numero, endereco_complemento, endereco_bairro, endereco_cidade, endereco_uf, endereco_referencia, tem_filhos, mora_com_agressor, onboarding_completo, avatar_url, retencao_dias_sem_risco, compartilhar_gps_panico, compartilhar_gps_risco_alto, gps_duracao_minutos")
+          .select("id, nome_completo, email, telefone, data_nascimento, endereco_fixo, endereco_cep, endereco_logradouro, endereco_numero, endereco_complemento, endereco_bairro, endereco_cidade, endereco_uf, endereco_referencia, tem_filhos, mora_com_agressor, onboarding_completo, avatar_url, retencao_dias_sem_risco, compartilhar_gps_panico, compartilhar_gps_risco_alto, gps_duracao_minutos, cor_raca, escolaridade, profissao")
           .eq("id", userId)
           .single();
         return json({ success: true, usuario: data });
       }
 
       case "updateMe": {
-        const allowed = ["nome_completo", "telefone", "data_nascimento", "endereco_fixo", "endereco_cep", "endereco_logradouro", "endereco_numero", "endereco_complemento", "endereco_bairro", "endereco_cidade", "endereco_uf", "endereco_referencia", "tem_filhos", "mora_com_agressor", "onboarding_completo", "avatar_url", "retencao_dias_sem_risco", "compartilhar_gps_panico", "compartilhar_gps_risco_alto", "gps_duracao_minutos", "cor_raca", "escolaridade"];
+        const allowed = ["nome_completo", "telefone", "data_nascimento", "endereco_fixo", "endereco_cep", "endereco_logradouro", "endereco_numero", "endereco_complemento", "endereco_bairro", "endereco_cidade", "endereco_uf", "endereco_referencia", "tem_filhos", "mora_com_agressor", "onboarding_completo", "avatar_url", "retencao_dias_sem_risco", "compartilhar_gps_panico", "compartilhar_gps_risco_alto", "gps_duracao_minutos", "cor_raca", "escolaridade", "profissao"];
         const updates: Record<string, any> = {};
         for (const key of allowed) {
           if (params[key] !== undefined) updates[key] = params[key];
@@ -795,7 +795,7 @@ serve(async (req) => {
         const enriched = await Promise.all((data || []).map(async (v: any) => {
           const { data: ag } = await supabase
             .from("agressores")
-            .select("nome, data_nascimento, telefone, forca_seguranca, tem_arma_em_casa, aliases, nome_pai_parcial, nome_mae_parcial, primary_city_uf, neighborhoods, profession, vehicles, sector, risk_level, risk_score, display_name_masked")
+            .select("nome, data_nascimento, telefone, forca_seguranca, tem_arma_em_casa, aliases, nome_pai_parcial, nome_mae_parcial, primary_city_uf, neighborhoods, profession, vehicles, sector, risk_level, risk_score, display_name_masked, cor_raca, escolaridade")
             .eq("id", v.agressor_id)
             .single();
           return { ...v, agressor: ag };
@@ -823,6 +823,7 @@ serve(async (req) => {
           "primary_city_uf", "neighborhoods", "reference_points", "geo_area_tags",
           "profession", "sector", "company_public", "vehicles",
           "appearance_tags", "phone_clues", "email_clues",
+          "cor_raca", "escolaridade",
         ];
         const upd: Record<string, any> = {};
         for (const key of allowedFields) {

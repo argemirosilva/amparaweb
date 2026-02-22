@@ -1,0 +1,1 @@
+ALTER TABLE public.usuarios ADD COLUMN IF NOT EXISTS profissao TEXT DEFAULT NULL;
