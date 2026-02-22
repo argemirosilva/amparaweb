@@ -101,7 +101,7 @@ export default function BuscaPerfilPage() {
       </div>
 
       <div className="rounded-xl bg-muted/50 border border-border p-4 space-y-2">
-        <p className="text-xs text-primary/70 leading-relaxed">
+        <p className="text-xs text-muted-foreground leading-relaxed">
           Cruza dados parciais que você conhece com relatos anônimos de outras mulheres para indicar possíveis riscos. Quanto mais campos preencher, melhor o resultado.
         </p>
         <p className="text-xs text-amber-600 dark:text-amber-400 leading-relaxed font-medium">
