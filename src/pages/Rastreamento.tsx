@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveAddress } from "@/services/reverseGeocodeService";
+import { snapToRoad } from "@/services/snapToRoadService";
 import { classifyMovement } from "@/hooks/useMovementStatus";
 import { useMapbox } from "@/hooks/useMapbox";
 import { enhancePOILayers } from "@/hooks/useMapPOI";
@@ -106,6 +107,7 @@ export default function Rastreamento() {
   const { codigo } = useParams<{ codigo: string }>();
   const [share, setShare] = useState<ShareData | null>(null);
   const [location, setLocation] = useState<LocationData | null>(null);
+  const [snappedPos, setSnappedPos] = useState<{ latitude: number; longitude: number } | null>(null);
   const [recentLocs, setRecentLocs] = useState<LocationData[]>([]);
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
   const [status, setStatus] = useState<"loading" | "active" | "expired" | "not_found">("loading");
@@ -220,8 +222,19 @@ export default function Rastreamento() {
     channel.subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [share]);
+  // Snap to road when location changes
+  useEffect(() => {
+    if (!location || recentLocs.length < 2) {
+      if (location) setSnappedPos({ latitude: location.latitude, longitude: location.longitude });
+      return;
+    }
+    const points = recentLocs.slice(0, 5).map(l => ({ latitude: l.latitude, longitude: l.longitude }));
+    snapToRoad(points).then(result => {
+      setSnappedPos({ latitude: result.latitude, longitude: result.longitude });
+    });
+  }, [location, recentLocs]);
 
-  // Refresh relative times every 15s (GPS data arrives via realtime, no need for 3s)
+
   useEffect(() => {
     const id = setInterval(() => setTick(t => t + 1), 15_000);
     return () => clearInterval(id);
@@ -277,7 +290,8 @@ export default function Rastreamento() {
     const firstName = userInfo?.nome_completo?.split(" ")[0] || "";
     const avatarUrl = userInfo?.avatar_url || "";
     const recentLocation = Date.now() - new Date(location.created_at).getTime() < 60_000;
-    const position: [number, number] = [location.longitude, location.latitude];
+    const displayPos = snappedPos || { longitude: location.longitude, latitude: location.latitude };
+    const position: [number, number] = [displayPos.longitude, displayPos.latitude];
 
     const needsVisualUpdate = !markerContentRef.current
       || markerContentRef.current.avatarUrl !== avatarUrl
@@ -351,7 +365,7 @@ export default function Rastreamento() {
     }
 
     prevPosRef.current = position;
-  }, [location, share, userInfo, mapboxgl, recentLocs, tick, following]);
+  }, [location, share, userInfo, mapboxgl, recentLocs, tick, following, snappedPos]);
 
   // Track whether marker is off-screen and compute edge-clamped position
   useEffect(() => {
@@ -359,7 +373,8 @@ export default function Rastreamento() {
     const map = mapRef.current;
 
     const checkVisibility = () => {
-      const point = map.project([location.longitude, location.latitude]);
+      const dp = snappedPos || { longitude: location.longitude, latitude: location.latitude };
+      const point = map.project([dp.longitude, dp.latitude]);
       const canvas = map.getCanvas();
       const w = canvas.clientWidth;
       const h = canvas.clientHeight;
@@ -384,14 +399,15 @@ export default function Rastreamento() {
     checkVisibility();
     map.on("move", checkVisibility);
     return () => { map.off("move", checkVisibility); };
-  }, [location]);
+  }, [location, snappedPos]);
 
   const recenter = useCallback(() => {
     if (!mapRef.current || !location) return;
+    const dp = snappedPos || { longitude: location.longitude, latitude: location.latitude };
     setFollowing(true);
-    mapRef.current.panTo([location.longitude, location.latitude]);
+    mapRef.current.panTo([dp.longitude, dp.latitude]);
     mapRef.current.setZoom(16);
-  }, [location]);
+  }, [location, snappedPos]);
 
   // Computed values for HUD
   const effectiveSpeed = location ? (location.speed ?? estimateSpeed(recentLocs)) : null;

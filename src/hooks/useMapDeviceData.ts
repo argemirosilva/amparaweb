@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { resolveAddress, type GeoResult } from "@/services/reverseGeocodeService";
+import { snapToRoad } from "@/services/snapToRoadService";
 
 interface MapDeviceData {
   latitude: number;
@@ -122,15 +123,26 @@ export function useMapDeviceData(): MapDeviceResult {
   }, []);
 
   // Apply a location update (from initial fetch or realtime payload)
-  const applyLocation = useCallback((loc: { latitude: number; longitude: number; speed: number | null; precisao_metros: number | null; created_at: string }, isPanic: boolean) => {
+  const applyLocation = useCallback(async (loc: { latitude: number; longitude: number; speed: number | null; precisao_metros: number | null; created_at: string }, isPanic: boolean) => {
     const profile = profileRef.current;
+
+    // Snap to nearest road using recent history
+    const history = locationHistoryRef.current;
+    const snapPoints = [
+      { latitude: loc.latitude, longitude: loc.longitude },
+      ...history.slice(0, 4).map(h => ({ latitude: h.latitude, longitude: h.longitude })),
+    ];
+    const snapped = await snapToRoad(snapPoints);
+    const displayLat = snapped.snapped ? snapped.latitude : loc.latitude;
+    const displayLon = snapped.snapped ? snapped.longitude : loc.longitude;
+
     const isHome = checkIsHome(loc.latitude, loc.longitude, profile?.endereco_fixo ?? null);
     const stationarySince = calcStationarySince(loc.latitude, loc.longitude, loc.created_at);
 
-    // Instantly update coords (geo will follow async)
+    // Use snapped coords for display, original for calculations
     setData(prev => ({
-      latitude: loc.latitude,
-      longitude: loc.longitude,
+      latitude: displayLat,
+      longitude: displayLon,
       speed: loc.speed,
       precisao_metros: loc.precisao_metros,
       created_at: loc.created_at,
@@ -144,8 +156,8 @@ export function useMapDeviceData(): MapDeviceResult {
       stationarySince,
     }));
 
-    // Resolve address asynchronously
-    resolveAddress(loc.latitude, loc.longitude).then(geo => {
+    // Resolve address using snapped coordinates for better accuracy
+    resolveAddress(displayLat, displayLon).then(geo => {
       setData(prev => prev ? { ...prev, geo, addressLoading: false } : prev);
     });
   }, [calcStationarySince]);
