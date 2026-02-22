@@ -522,6 +522,7 @@ export default function Rastreamento() {
                   <span className="text-sm">{isPanic ? "🚨" : movement.emoji}</span>
                   <span className="text-sm font-semibold text-white">
                     {isPanic ? "Pânico Ativo" : movement.label}
+                    {stationarySince && !isPanic && ` (${formatRelativeTime(stationarySince)})`}
                   </span>
                 </div>
 
@@ -536,11 +537,6 @@ export default function Rastreamento() {
                     <span className="flex items-center gap-1 text-[10px] text-zinc-500">
                       <Signal className="w-3 h-3" />
                       ±{Math.round(location.precisao_metros)}m
-                    </span>
-                  )}
-                  {stationarySince && (
-                    <span className="text-[10px] text-zinc-500">
-                      📍 Parada há {formatRelativeTime(stationarySince)}
                     </span>
                   )}
                   <span className="text-[10px] text-zinc-500">

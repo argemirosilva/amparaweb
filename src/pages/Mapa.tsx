@@ -363,6 +363,7 @@ export default function Mapa() {
                     <span className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${isRecent ? "bg-green-400 animate-pulse" : "bg-zinc-500"}`} />
                     <span className="text-xs font-semibold text-white">
                       {movementEmoji} {movementLabel}
+                      {data.stationarySince && ` (${formatRelativeTime(data.stationarySince)})`}
                     </span>
                   </div>
                   <p className="text-[10px] text-zinc-400 leading-snug break-words">{address}</p>
@@ -371,11 +372,6 @@ export default function Mapa() {
                       <span className="flex items-center gap-0.5 text-[9px] text-zinc-500">
                         <Signal className="w-2.5 h-2.5" />
                         ±{Math.round(data.precisao_metros)}m
-                      </span>
-                    )}
-                    {data.stationarySince && (
-                      <span className="text-[9px] text-zinc-500">
-                        📍 {formatRelativeTime(data.stationarySince)}
                       </span>
                     )}
                     <span className="text-[9px] text-zinc-500">
