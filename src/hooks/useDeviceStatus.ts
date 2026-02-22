@@ -11,6 +11,7 @@ interface DeviceData {
   is_recording: boolean;
   is_monitoring: boolean;
   last_ping_at: string | null;
+  updated_at: string | null;
   panicActive: boolean;
   recordingStartedAt: string | null;
   monitoringStartedAt: string | null;
@@ -51,7 +52,7 @@ export function useDeviceStatus(): DeviceStatusResult {
       const [deviceRes, locationRes, panicRes, monitorRes, recordingRes] = await Promise.all([
         supabase
           .from("device_status")
-          .select("status, bateria_percentual, is_charging, dispositivo_info, is_recording, is_monitoring, last_ping_at")
+          .select("status, bateria_percentual, is_charging, dispositivo_info, is_recording, is_monitoring, last_ping_at, updated_at")
           .eq("user_id", usuario.id)
           .order("updated_at", { ascending: false })
           .limit(1)
