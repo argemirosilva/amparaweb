@@ -20,15 +20,15 @@ const HYSTERESIS_COUNT = 2; // consecutive readings to confirm change
 
 // ── Helpers ─────────────────────────────────────────────
 
-/** Normalize speed to km/h (auto-detect m/s vs km/h) */
+/** Max plausible speed in km/h – anything above is a GPS spike */
+const MAX_SPEED_KMH = 200;
+
+/** Normalize speed to km/h. GPS always reports m/s; clamp absurd values. */
 function normalizeSpeed(speed: number | null): number {
   if (speed === null || speed <= 0) return 0;
-  // Heuristic: if speed < 1, it's likely m/s from GPS API
-  // Most GPS APIs return m/s; walking ~1.4 m/s = 5 km/h
-  // If speed > 100, it's already km/h (unlikely anyone moves > 100 m/s = 360 km/h)
-  // Safe threshold: if < 50, assume m/s and convert
-  const kmh = speed < 50 ? speed * 3.6 : speed;
-  return Math.round(kmh * 10) / 10; // 1 decimal
+  const kmh = speed * 3.6; // m/s → km/h
+  if (kmh > MAX_SPEED_KMH) return 0; // discard GPS spikes
+  return Math.round(kmh * 10) / 10;
 }
 
 function classify(avgSpeed: number): MovementStatus {
