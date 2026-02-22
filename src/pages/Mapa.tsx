@@ -72,12 +72,35 @@ export default function Mapa() {
   const [webglError, setWebglError] = useState<string | null>(null);
   const mapLoadedRef = useRef(false);
   const [offScreenInfo, setOffScreenInfo] = useState<{ angle: number; cardinal: string } | null>(null);
+  const [autoFollow, setAutoFollow] = useState(true);
+  const autoFollowTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Refresh relative timestamps every 15s (no need for 3s – data comes via realtime)
   useEffect(() => {
     const id = setInterval(() => setTick(t => t + 1), 15_000);
     return () => clearInterval(id);
   }, []);
+
+  // Disable auto-follow temporarily when user interacts with the map
+  useEffect(() => {
+    if (!mapRef.current) return;
+    const map = mapRef.current;
+    const pauseFollow = () => {
+      // Only pause on user-initiated interactions (not programmatic flyTo)
+      if (!map.isMoving()) return;
+      setAutoFollow(false);
+      if (autoFollowTimeoutRef.current) clearTimeout(autoFollowTimeoutRef.current);
+      // Re-enable after 10s of no interaction
+      autoFollowTimeoutRef.current = setTimeout(() => setAutoFollow(true), 10_000);
+    };
+    map.on("dragstart", pauseFollow);
+    map.on("zoomstart", pauseFollow);
+    return () => {
+      map.off("dragstart", pauseFollow);
+      map.off("zoomstart", pauseFollow);
+      if (autoFollowTimeoutRef.current) clearTimeout(autoFollowTimeoutRef.current);
+    };
+  }, [mapboxgl]);
 
   // Init map
   useEffect(() => {
@@ -139,6 +162,12 @@ export default function Mapa() {
       // Smooth position animation
       const from = prevPosRef.current || position;
       smoothPanMarker(markerRef.current, from, position, 800);
+
+      // Auto-follow: smoothly center map on new position
+      if (autoFollow) {
+        const currentZoom = mapRef.current.getZoom();
+        mapRef.current.easeTo({ center: position, zoom: Math.max(currentZoom, 16), duration: 800 });
+      }
 
       // Only rebuild DOM when visual state actually changes (not every tick)
       if (needsVisualUpdate) {
@@ -234,6 +263,8 @@ export default function Mapa() {
 
   const recenter = useCallback(() => {
     if (!mapRef.current || !data) return;
+    setAutoFollow(true);
+    if (autoFollowTimeoutRef.current) clearTimeout(autoFollowTimeoutRef.current);
     mapRef.current.flyTo({ center: [data.longitude, data.latitude], zoom: 16, duration: 800 });
   }, [data]);
 
@@ -298,10 +329,10 @@ export default function Mapa() {
         {data && (
           <button
             onClick={recenter}
-            className="absolute right-3 bottom-32 z-10 w-10 h-10 rounded-full bg-black/70 backdrop-blur-md border border-white/10 shadow-xl flex items-center justify-center text-white hover:bg-black/90 transition-all active:scale-95"
-            title="Centralizar"
+            className={`absolute right-3 bottom-32 z-10 w-10 h-10 rounded-full backdrop-blur-md border shadow-xl flex items-center justify-center transition-all active:scale-95 ${autoFollow ? "bg-primary text-primary-foreground border-primary/30" : "bg-black/70 text-white border-white/10 hover:bg-black/90"}`}
+            title={autoFollow ? "Seguindo" : "Centralizar e seguir"}
           >
-            <Locate className="w-4 h-4" />
+            <Navigation className={`w-4 h-4 ${autoFollow ? "animate-pulse" : ""}`} />
           </button>
         )}
 
