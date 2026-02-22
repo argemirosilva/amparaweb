@@ -101,16 +101,11 @@ export default function BuscaPerfilPage() {
       </div>
 
       <div className="rounded-xl bg-muted/50 border border-border p-4 space-y-2">
-        <h2 className="text-sm font-semibold text-foreground">O que já sabemos sobre seu parceiro</h2>
         <p className="text-xs text-muted-foreground leading-relaxed">
-          Este recurso cruza informações parciais que você conhece — como nome, apelido, bairro ou profissão —
-          com relatos anônimos de outras mulheres. Quanto mais campos você preencher, mais preciso será o resultado.
-          Nenhum dado sensível é revelado: apenas indicadores de risco e orientações de segurança.
+          Cruza dados parciais que você conhece com relatos anônimos de outras mulheres para indicar possíveis riscos. Quanto mais campos preencher, melhor o resultado.
         </p>
         <p className="text-xs text-amber-600 dark:text-amber-400 leading-relaxed font-medium">
-          ⚠ Importante: os relatos são inseridos voluntariamente por outras usuárias e não passam por auditoria.
-          Os resultados são indicativos e devem ser interpretados com cautela — não substituem denúncias formais
-          nem investigações oficiais.
+          ⚠ Resultados indicativos — baseados em relatos voluntários, não auditados. Não substituem denúncias formais.
         </p>
       </div>
 
