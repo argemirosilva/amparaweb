@@ -668,8 +668,25 @@ async function handlePing(
       .maybeSingle();
     if (activePanic) locData.alerta_id = activePanic.id;
 
-    const { error: locError } = await supabase.from("localizacoes").insert(locData);
-    if (locError) console.error(`[handlePing] loc insert error: ${locError.message}`);
+    // Deduplicate: skip if same user+device already has this timestamp_gps
+    let skipDup = false;
+    if (locData.timestamp_gps) {
+      const { count } = await supabase
+        .from("localizacoes")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId)
+        .eq("timestamp_gps", locData.timestamp_gps as string)
+        .limit(1);
+      if ((count ?? 0) > 0) {
+        skipDup = true;
+        console.log(`[handlePing] skipping duplicate timestamp_gps=${locData.timestamp_gps}`);
+      }
+    }
+
+    if (!skipDup) {
+      const { error: locError } = await supabase.from("localizacoes").insert(locData);
+      if (locError) console.error(`[handlePing] loc insert error: ${locError.message}`);
+    }
   }
 
   return jsonResponse({
@@ -1314,18 +1331,36 @@ async function handleEnviarLocalizacaoGPS(
     finalAlertaId = activePanic.id;
   }
 
-  await supabase.from("localizacoes").insert({
-    user_id: user.id,
-    device_id: deviceId || null,
-    alerta_id: finalAlertaId,
-    latitude,
-    longitude,
-    precisao_metros: body.precisao_metros != null ? Number(body.precisao_metros) : null,
-    bateria_percentual: body.bateria_percentual != null ? Number(body.bateria_percentual) : null,
-    speed: body.speed != null ? Number(body.speed) : null,
-    heading: body.heading != null ? Number(body.heading) : null,
-    timestamp_gps: body.timestamp_gps as string || null,
-  });
+  // Deduplicate: skip if same user already has this timestamp_gps
+  const tsGps = body.timestamp_gps as string || null;
+  let skipDup = false;
+  if (tsGps) {
+    const { count } = await supabase
+      .from("localizacoes")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .eq("timestamp_gps", tsGps)
+      .limit(1);
+    if ((count ?? 0) > 0) {
+      skipDup = true;
+      console.log(`[enviarLocalizacao] skipping duplicate timestamp_gps=${tsGps}`);
+    }
+  }
+
+  if (!skipDup) {
+    await supabase.from("localizacoes").insert({
+      user_id: user.id,
+      device_id: deviceId || null,
+      alerta_id: finalAlertaId,
+      latitude,
+      longitude,
+      precisao_metros: body.precisao_metros != null ? Number(body.precisao_metros) : null,
+      bateria_percentual: body.bateria_percentual != null ? Number(body.bateria_percentual) : null,
+      speed: body.speed != null ? Number(body.speed) : null,
+      heading: body.heading != null ? Number(body.heading) : null,
+      timestamp_gps: tsGps,
+    });
+  }
 
   return jsonResponse({
     success: true,
