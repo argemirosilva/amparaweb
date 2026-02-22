@@ -45,6 +45,7 @@ const FIELD_HINTS: Record<string, string> = {
 };
 
 const TEXTAREA_KEYS = new Set(["elevenlabs_copom_telefone"]);
+const HIDDEN_KEYS = new Set(["ia_prompt_analise"]);
 
 const CATEGORY_ORDER = ["sistema", "panico", "gps", "notificacoes", "dados", "limites"];
 
@@ -105,7 +106,7 @@ export default function AdminConfiguracoes() {
     .map((cat) => ({
       category: cat,
       label: CATEGORY_LABELS[cat] || cat,
-      items: settings.filter((s) => s.categoria === cat),
+      items: settings.filter((s) => s.categoria === cat && !HIDDEN_KEYS.has(s.chave)),
     }))
     .filter((g) => g.items.length > 0);
 
