@@ -41,6 +41,12 @@ interface AnaliseData {
     taticas_manipulativas?: TaticaManipulativa[];
     orientacoes_vitima?: string[];
     sinais_alerta?: string[];
+    ciclo_violencia?: {
+      fase_atual?: string;
+      transicao_detectada?: boolean;
+      encurtamento_ciclo?: boolean;
+      justificativa?: string;
+    };
   } | null;
 }
 
@@ -56,6 +62,14 @@ const SENTIMENTO_MAP: Record<string, { label: string; color: string }> = {
   negativo: { label: "Negativo", color: "bg-red-500/10 text-red-700" },
   neutro: { label: "Neutro", color: "bg-muted text-muted-foreground" },
   misto: { label: "Misto", color: "bg-amber-500/10 text-amber-700" },
+};
+
+const CICLO_MAP: Record<string, { label: string; color: string }> = {
+  tensao: { label: "Tensão", color: "bg-amber-500/10 text-amber-700" },
+  explosao: { label: "Explosão", color: "bg-red-500/10 text-red-700" },
+  lua_de_mel: { label: "Lua de mel", color: "bg-sky-500/10 text-sky-700" },
+  calmaria: { label: "Calmaria", color: "bg-emerald-500/10 text-emerald-700" },
+  nao_identificado: { label: "Não identificado", color: "bg-muted text-muted-foreground" },
 };
 
 const CONTEXTO_MAP: Record<string, string> = {
@@ -149,6 +163,8 @@ export default function AnaliseCard({
   const taticas = completa?.taticas_manipulativas || [];
   const orientacoes = completa?.orientacoes_vitima || [];
   const sinaisAlerta = completa?.sinais_alerta || [];
+  const ciclo = completa?.ciclo_violencia;
+  const cicloFase = ciclo?.fase_atual ? CICLO_MAP[ciclo.fase_atual] : null;
 
   return (
     <div className="rounded-xl border border-border bg-card/50 overflow-hidden">
@@ -162,6 +178,11 @@ export default function AnaliseCard({
             <span className="text-sm font-semibold text-foreground">Risco: {risco.label}</span>
             <Badge className={`${sentimento.color} text-[10px] border-0`}>{sentimento.label}</Badge>
             {contextoLabel && <Badge variant="outline" className="text-[10px]">{contextoLabel}</Badge>}
+            {cicloFase && cicloFase.label !== "Não identificado" && (
+              <Badge className={`${cicloFase.color} text-[10px] border-0`}>
+                Ciclo: {cicloFase.label}
+              </Badge>
+            )}
           </div>
           <p className="text-xs text-muted-foreground mt-0.5">{completa?.resumo_contexto || analise.resumo}</p>
         </div>
@@ -250,6 +271,20 @@ export default function AnaliseCard({
                   </li>
                 ))}
               </ul>
+            </Section>
+          )}
+
+          {/* Ciclo de violência */}
+          {ciclo && ciclo.fase_atual && ciclo.fase_atual !== "nao_identificado" && (
+            <Section icon={TrendingUp} title="Ciclo de Violência">
+              <div className="space-y-1">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {cicloFase && <Badge className={`${cicloFase.color} text-[10px] border-0`}>{cicloFase.label}</Badge>}
+                  {ciclo.transicao_detectada && <Badge variant="outline" className="text-[10px] border-amber-200 text-amber-700">Transição detectada</Badge>}
+                  {ciclo.encurtamento_ciclo && <Badge variant="outline" className="text-[10px] border-red-200 text-red-700">Encurtamento do ciclo</Badge>}
+                </div>
+                {ciclo.justificativa && <p className="text-xs text-foreground leading-relaxed">{ciclo.justificativa}</p>}
+              </div>
             </Section>
           )}
 
