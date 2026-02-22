@@ -27,10 +27,10 @@ Deno.serve(async (req) => {
   );
 
   const body = await req.json().catch(() => ({}));
-  const batchSize = body.batch_size || 10;
-  const offset = body.offset || 0;
+  const batchSize = body.batch_size || 5;
+  const autoChain = body.auto_chain !== false; // default true
 
-  // Find all recordings with transcription
+  // Find pending recordings (with transcription, without analysis)
   const { data: unanalyzed } = await supabase
     .from("gravacoes")
     .select("id, user_id, transcricao")
@@ -68,7 +68,7 @@ Deno.serve(async (req) => {
     if (promptData?.valor?.trim()) systemPrompt = promptData.valor.trim();
   } catch { /* use default */ }
 
-  const toProcess = pending.slice(offset, offset + batchSize);
+  const toProcess = pending.slice(0, batchSize);
   let analyzedCount = 0;
   const errors: string[] = [];
 
@@ -138,12 +138,30 @@ Deno.serve(async (req) => {
     }
   }
 
+  const remaining = pending.length - analyzedCount;
+
+  // Fire-and-forget: chain next batch if there are more pending
+  if (autoChain && remaining > 0 && analyzedCount > 0) {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    fetch(`${supabaseUrl}/functions/v1/run-batch-analysis`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${serviceKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ batch_size: batchSize, auto_chain: true }),
+    }).catch((e) => console.error("Chain call error:", e));
+    console.log(`Chained next batch. Remaining: ${remaining}`);
+  }
+
   return json({
     ok: true,
     analyzed: analyzedCount,
     processed_in_batch: toProcess.length,
-    remaining: pending.length - offset - analyzedCount,
+    remaining,
     total_pending: pending.length,
+    auto_chain: autoChain && remaining > 0 && analyzedCount > 0,
     errors: errors.length > 0 ? errors : undefined,
   });
 });
