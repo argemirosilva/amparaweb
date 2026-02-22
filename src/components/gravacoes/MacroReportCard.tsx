@@ -44,9 +44,11 @@ const ALERTA_CONFIG: Record<string, { color: string; bg: string; label: string }
 
 export default function MacroReportCard({
   sessionToken,
+  windowDays = 7,
   onActiveChange,
 }: {
   sessionToken: string;
+  windowDays?: number;
   onActiveChange?: (active: boolean) => void;
 }) {
   const [report, setReport] = useState<MacroReport | null>(null);
@@ -59,16 +61,18 @@ export default function MacroReportCard({
   const fetchReport = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const res = await callWebApi("getMacroLatest", sessionToken, { window_days: 7 });
+    const res = await callWebApi("getMacroLatest", sessionToken, { window_days: windowDays });
     if (res.ok && res.data.report) {
       setReport(res.data.report);
       onActiveChange?.(true);
     }
     setLoaded(true);
     setLoading(false);
-  }, [sessionToken, onActiveChange]);
+  }, [sessionToken, windowDays, onActiveChange]);
 
   useEffect(() => {
+    setReport(null);
+    setLoaded(false);
     fetchReport();
   }, [fetchReport]);
 
@@ -76,7 +80,7 @@ export default function MacroReportCard({
     setGenerating(true);
     setError(null);
     onActiveChange?.(true);
-    const res = await callWebApi("runMacro", sessionToken, { window_days: 7 });
+    const res = await callWebApi("runMacro", sessionToken, { window_days: windowDays });
     if (res.ok) {
       await fetchReport();
     } else {
@@ -109,7 +113,7 @@ export default function MacroReportCard({
           disabled={generating}
         >
           {generating ? <Loader2 className="w-3 h-3 animate-spin" /> : <FileBarChart className="w-3 h-3" />}
-          Gerar relatório (últimos 7 dias)
+          Gerar relatório (últimos {windowDays} dias)
         </Button>
         {error && <p className="text-xs text-destructive">{error}</p>}
       </div>
