@@ -299,7 +299,7 @@ export default function GravacoesPage() {
                         }
                         setExpanded(isExpanded ? null : g.id);
                       }}
-                      className="w-full px-3 py-3.5 text-left hover:bg-accent/30 transition-colors"
+                      className="w-full px-2.5 py-2 text-left hover:bg-accent/30 transition-colors"
                     >
                       <div className="flex items-center gap-1">
                         <Play className="w-3 h-3 shrink-0 text-primary" />
