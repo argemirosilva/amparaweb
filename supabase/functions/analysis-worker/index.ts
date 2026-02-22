@@ -32,7 +32,7 @@ const HEURISTICS = {
 };
 
 const MICRO_PROMPT_VERSION = "micro_prompt_v2";
-const MACRO_PROMPT_VERSION = "macro_prompt_v1";
+const MACRO_PROMPT_VERSION = "macro_prompt_v2";
 const MICRO_MODEL = "google/gemini-3-flash-preview";
 const MACRO_MODEL = "google/gemini-3-flash-preview";
 
@@ -441,31 +441,23 @@ async function runMacro(supabase: any, jobId: string, payload: any): Promise<any
     return { skipped: true, reason: "No micro results in window" };
   }
 
-  const macroPrompt = `Você é uma especialista em relações conjugais saudáveis, com experiência em psicologia de casais e assistência social. Com base nos dados agregados abaixo, gere um relatório humanizado sobre a saúde da relação desta mulher.
+  const macroPrompt = `Você é uma especialista em proteção à mulher. Analise os dados agregados e gere um resumo CONCISO e DIRETO.
 
-PRINCÍPIO FUNDAMENTAL:
-O foco deste sistema é a PROTEÇÃO DA MULHER. Na dúvida, proteja-a.
-- Desabafos, frustrações e reações emocionais da mulher são respostas esperadas.
-- Promova diálogo e maturidade emocional, mas priorizando segurança.
+PRINCÍPIO: Foco na PROTEÇÃO DA MULHER. Na dúvida, proteja-a.
 
-DADOS AGREGADOS (últimos ${window_days} dias):
+DADOS (últimos ${window_days} dias):
 ${JSON.stringify(aggregates, null, 2)}
 
 INSTRUÇÕES:
-1. "panorama_narrativo": 2-3 parágrafos acolhedores explicando a situação atual.
-2. "explicacao_emocional": 2-3 frases sobre o que a distribuição de sentimentos significa.
-3. "orientacoes": 3-5 orientações práticas e ESPECÍFICAS.
-4. "canais_apoio": Canais relevantes (180, 190, Delegacia da Mulher).
-5. "ciclo_violencia_resumo": Resumo das fases do ciclo identificadas no período.
-6. "nivel_alerta": "baixo"|"moderado"|"alto"|"critico" baseado nos dados agregados.
+- Seja objetiva e breve. Máximo 3-4 frases no resumo.
+- Orientações curtas e práticas (máx 3).
+- Só inclua canais de apoio se o nível for alto ou crítico.
 
-RETORNE APENAS JSON válido:
+RETORNE APENAS JSON:
 {
-  "panorama_narrativo": "texto...",
-  "explicacao_emocional": "texto...",
-  "orientacoes": [],
+  "resumo": "3-4 frases diretas sobre a situação atual, incluindo padrões e riscos identificados.",
+  "orientacoes": ["ação curta 1", "ação curta 2"],
   "canais_apoio": [],
-  "ciclo_violencia_resumo": "texto...",
   "nivel_alerta": "baixo|moderado|alto|critico"
 }`;
 

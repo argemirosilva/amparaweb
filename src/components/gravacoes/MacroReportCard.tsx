@@ -9,10 +9,6 @@ import {
   AlertTriangle,
   Shield,
   Phone,
-  Heart,
-  TrendingUp,
-  ChevronDown,
-  ChevronUp,
 } from "lucide-react";
 
 interface MacroReport {
@@ -20,18 +16,14 @@ interface MacroReport {
   window_days: number;
   created_at: string;
   output_json: {
+    resumo?: string;
     panorama_narrativo?: string;
-    explicacao_emocional?: string;
     orientacoes?: string[];
     canais_apoio?: string[];
-    ciclo_violencia_resumo?: string;
     nivel_alerta?: string;
   };
   aggregates_json: {
     total_gravacoes_analisadas?: number;
-    alertas_panico?: number;
-    niveis_risco_gravacoes?: Record<string, number>;
-    distribuicao_fases_ciclo?: Record<string, number>;
   };
 }
 
@@ -56,7 +48,6 @@ export default function MacroReportCard({
   const [loaded, setLoaded] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [expanded, setExpanded] = useState(false);
 
   const fetchReport = useCallback(async () => {
     setLoading(true);
@@ -126,19 +117,17 @@ export default function MacroReportCard({
   const alerta = ALERTA_CONFIG[output.nivel_alerta || "baixo"] || ALERTA_CONFIG.baixo;
   const updatedAt = new Date(report.created_at);
   const isStale = Date.now() - updatedAt.getTime() > 3 * 24 * 60 * 60 * 1000;
+  const resumoText = output.resumo || output.panorama_narrativo;
 
   return (
     <div className="rounded-xl border border-border bg-card/50 overflow-hidden">
       {/* Header */}
       <div className="flex items-center gap-3 p-3">
-        <div className={`w-10 h-10 rounded-xl ${alerta.bg} flex items-center justify-center shrink-0`}>
-          <Shield className={`w-5 h-5 ${alerta.color}`} />
+        <div className={`w-8 h-8 rounded-lg ${alerta.bg} flex items-center justify-center shrink-0`}>
+          <Shield className={`w-4 h-4 ${alerta.color}`} />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm font-semibold text-foreground">
-              Resumo dos últimos {report.window_days} dias
-            </span>
             <Badge className={`${alerta.bg} ${alerta.color} text-[10px] border-0`}>
               {alerta.label}
             </Badge>
@@ -149,85 +138,51 @@ export default function MacroReportCard({
             )}
           </div>
           <p className="text-[10px] text-muted-foreground mt-0.5">
-            Atualizado em {updatedAt.toLocaleDateString("pt-BR")} às {updatedAt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
-            {" · "}{report.aggregates_json.total_gravacoes_analisadas || 0} gravações analisadas
+            {updatedAt.toLocaleDateString("pt-BR")} · {report.aggregates_json.total_gravacoes_analisadas || 0} gravações
           </p>
         </div>
-        <div className="flex items-center gap-1 shrink-0">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 w-7 p-0"
-            onClick={generateReport}
-            disabled={generating}
-            title="Atualizar relatório"
-          >
-            {generating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setExpanded(!expanded)}
-            className="h-8 w-8 p-0"
-          >
-            {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-          </Button>
-        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 w-7 p-0 shrink-0"
+          onClick={generateReport}
+          disabled={generating}
+          title="Atualizar relatório"
+        >
+          {generating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+        </Button>
       </div>
 
-      {/* Panorama always visible */}
-      {output.panorama_narrativo && (
+      {/* Resumo */}
+      {resumoText && (
         <div className="px-3 pb-2">
-          <p className="text-xs text-foreground/90 leading-relaxed line-clamp-3">
-            {output.panorama_narrativo}
-          </p>
+          <p className="text-xs text-foreground/90 leading-relaxed">{resumoText}</p>
         </div>
       )}
 
-      {/* Expanded details */}
-      {expanded && (
-        <div className="border-t border-border px-3 pb-3 pt-2 space-y-3">
-          {/* Emotional explanation */}
-          {output.explicacao_emocional && (
-            <Section icon={Heart} title="Análise Emocional">
-              <p className="text-xs text-foreground leading-relaxed">{output.explicacao_emocional}</p>
-            </Section>
-          )}
+      {/* Orientações */}
+      {output.orientacoes && output.orientacoes.length > 0 && (
+        <div className="px-3 pb-2">
+          <ul className="space-y-1">
+            {output.orientacoes.map((o, i) => (
+              <li key={i} className="text-xs text-foreground flex items-start gap-1.5">
+                <span className="text-primary mt-0.5 shrink-0">•</span>{o}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
-          {/* Cycle summary */}
-          {output.ciclo_violencia_resumo && (
-            <Section icon={TrendingUp} title="Ciclo de Violência">
-              <p className="text-xs text-foreground leading-relaxed">{output.ciclo_violencia_resumo}</p>
-            </Section>
-          )}
-
-          {/* Guidelines */}
-          {output.orientacoes && output.orientacoes.length > 0 && (
-            <Section icon={Heart} title="Orientações">
-              <div className="rounded-lg border border-primary/20 bg-primary/5 p-2.5">
-                <ul className="space-y-1.5">
-                  {output.orientacoes.map((o, i) => (
-                    <li key={i} className="text-xs text-foreground flex items-start gap-1.5">
-                      <span className="text-primary mt-0.5 shrink-0">•</span>{o}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </Section>
-          )}
-
-          {/* Support channels */}
-          {output.canais_apoio && output.canais_apoio.length > 0 && (
-            <Section icon={Phone} title="Canais de Apoio">
-              <div className="flex flex-wrap gap-1.5">
-                {output.canais_apoio.map((c, i) => (
-                  <Badge key={i} variant="outline" className="text-[10px] bg-primary/5">
-                    <Phone className="w-2.5 h-2.5 mr-1" />{c}
-                  </Badge>
-                ))}
-              </div>
-            </Section>
-          )}
+      {/* Canais de apoio - só se alto/crítico */}
+      {output.canais_apoio && output.canais_apoio.length > 0 && (
+        <div className="px-3 pb-3">
+          <div className="flex flex-wrap gap-1.5">
+            {output.canais_apoio.map((c, i) => (
+              <Badge key={i} variant="outline" className="text-[10px] bg-primary/5">
+                <Phone className="w-2.5 h-2.5 mr-1" />{c}
+              </Badge>
+            ))}
+          </div>
         </div>
       )}
 
@@ -238,17 +193,6 @@ export default function MacroReportCard({
           </p>
         </div>
       )}
-    </div>
-  );
-}
-
-function Section({ icon: Icon, title, children }: { icon: typeof Heart; title: string; children: React.ReactNode }) {
-  return (
-    <div className="space-y-1">
-      <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-        <Icon className="w-3 h-3" />{title}
-      </div>
-      {children}
     </div>
   );
 }
