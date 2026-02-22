@@ -171,14 +171,16 @@ export default function RelatorioSaudeContent({ relatorio, loading, error }: Pro
         {/* Seção 5: Canais de Apoio */}
         {relatorio.canais_apoio.length > 0 &&
         <section>
-            <SectionHeader icon={Phone} title="Canais de Apoio" />
-            <div className="space-y-1.5">
-              {relatorio.canais_apoio.map((c, i) =>
-            <div key={i} className="flex items-center gap-2 text-xs text-foreground/70">
-                  <MessageCircle className="w-3 h-3 shrink-0 text-primary" />
-                  {c}
-                </div>
-            )}
+            <div className="rounded-lg border border-red-200/60 bg-red-50/50 dark:bg-red-950/20 dark:border-red-900/30 p-3">
+              <SectionHeader icon={Phone} title="Canais de Apoio" />
+              <div className="space-y-1.5">
+                {relatorio.canais_apoio.map((c, i) =>
+              <div key={i} className="flex items-center gap-2 text-xs text-foreground/70">
+                    <MessageCircle className="w-3 h-3 shrink-0 text-red-400" />
+                    {c}
+                  </div>
+              )}
+              </div>
             </div>
           </section>
         }
