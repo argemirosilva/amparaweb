@@ -321,6 +321,46 @@ function fireCopomCall(userId: string, alertaId: string) {
   })();
 }
 
+// ── Helper: seal ALL active sessions for a user ──
+async function sealAllActiveSessions(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+  reason: string,
+  ip?: string
+): Promise<number> {
+  const { data: activeSessions } = await supabase
+    .from("monitoramento_sessoes")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("status", "ativa");
+
+  if (!activeSessions || activeSessions.length === 0) return 0;
+
+  const now = new Date().toISOString();
+  for (const session of activeSessions) {
+    await supabase
+      .from("monitoramento_sessoes")
+      .update({
+        status: "aguardando_finalizacao",
+        closed_at: now,
+        sealed_reason: reason,
+        finalizado_em: now,
+      })
+      .eq("id", session.id);
+
+    await supabase.from("audit_logs").insert({
+      user_id: userId,
+      action_type: "session_sealed",
+      success: true,
+      ip_address: ip || null,
+      details: { session_id: session.id, sealed_reason: reason },
+    });
+  }
+
+  console.log(`[SEAL] Sealed ${activeSessions.length} active session(s) for user ${userId}, reason: ${reason}`);
+  return activeSessions.length;
+}
+
 // ── Short day keys used throughout the API (doc standard) ──
 const VALID_DAYS = ["seg", "ter", "qua", "qui", "sex", "sab", "dom"];
 // JS getDay() -> short key mapping (0=Sunday)
@@ -721,16 +761,18 @@ async function handleSyncConfig(
         gravacaoFim = periodo.fim;
 
         if (deviceId && agendamento) {
-          // Check existing active session for this user+device
+          // Check existing active session for this user (any device)
           const { data: existingSession } = await supabase
             .from("monitoramento_sessoes")
-            .select("id")
+            .select("id, device_id")
             .eq("user_id", user.id)
-            .eq("device_id", deviceId)
             .eq("status", "ativa")
             .maybeSingle();
 
           if (!existingSession) {
+            // Seal any lingering active sessions before creating new one
+            await sealAllActiveSessions(supabase, user.id, "nova_sessao");
+
             // Calculate window_start_at and window_end_at in UTC
             const [hi, mi] = periodo.inicio.split(":").map(Number);
             const [hf, mf] = periodo.fim.split(":").map(Number);
@@ -1422,33 +1464,8 @@ async function handleCancelarPanico(
     })
     .eq("id", alerta.id);
 
-  // AUTO-SEAL any active monitoring session for this user
-  const { data: activeSession } = await supabase
-    .from("monitoramento_sessoes")
-    .select("id")
-    .eq("user_id", user.id)
-    .eq("status", "ativa")
-    .maybeSingle();
-
-  if (activeSession) {
-    await supabase
-      .from("monitoramento_sessoes")
-      .update({
-        status: "aguardando_finalizacao",
-        closed_at: now.toISOString(),
-        sealed_reason: "panico_cancelado",
-        origem: "botao_panico",
-      })
-      .eq("id", activeSession.id);
-
-    await supabase.from("audit_logs").insert({
-      user_id: user.id,
-      action_type: "session_sealed",
-      success: true,
-      ip_address: ip,
-      details: { session_id: activeSession.id, sealed_reason: "panico_cancelado" },
-    });
-  }
+  // AUTO-SEAL ALL active monitoring sessions for this user
+  await sealAllActiveSessions(supabase, user.id, "panico_cancelado", ip);
 
   // Reset device recording/monitoring flags
   await supabase
@@ -1576,8 +1593,50 @@ async function handleReceberAudio(
   const { data: activeSession } = await sessionQuery.maybeSingle();
 
   if (!activeSession) {
-    // No active session — app must send iniciarGravacao first
-    return errorResponse("Nenhuma sessão de monitoramento ativa. Envie iniciarGravacao antes dos segmentos.", 400);
+    // No active session — save as independent recording instead of rejecting
+    console.log(`[ORPHAN_SEGMENT] No active session for user ${user.id}, saving as independent recording`);
+
+    const { data: gravacao } = await supabase
+      .from("gravacoes")
+      .insert({
+        user_id: user.id,
+        device_id: deviceId,
+        storage_path: storagePath,
+        file_url: fileUrl,
+        duracao_segundos: duracaoSegundos || 30,
+        status: "pendente",
+      })
+      .select("id")
+      .single();
+
+    if (gravacao) {
+      // Fire-and-forget: trigger process-recording
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      fetch(`${supabaseUrl}/functions/v1/process-recording`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${serviceKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ gravacao_id: gravacao.id }),
+      }).catch((e) => console.error("process-recording trigger error:", e));
+
+      await supabase.from("audit_logs").insert({
+        user_id: user.id,
+        action_type: "orphan_segment_saved",
+        success: true,
+        ip_address: ip,
+        details: { gravacao_id: gravacao.id, segmento_idx: segmentoIdx ?? null },
+      });
+    }
+
+    return jsonResponse({
+      success: true,
+      gravacao_id: gravacao?.id,
+      storage_path: storagePath,
+      message: "Segmento salvo como gravação independente (sem sessão ativa).",
+    });
   }
 
   // ── SEGMENT PATH: monitoring session active ──
@@ -1910,16 +1969,18 @@ async function handleReportarStatusGravacao(
 
   // ── Session creation flow (iniciarGravacao) ──
   if (statusGravacao === "iniciada" && deviceId) {
-    // Check if there's already an active session for this device
+    // Check if there's already an active session for this user (any device)
     const { data: existingSession } = await supabase
       .from("monitoramento_sessoes")
       .select("id")
       .eq("user_id", userId)
-      .eq("device_id", deviceId)
       .eq("status", "ativa")
       .maybeSingle();
 
     if (!existingSession) {
+      // Seal any lingering active sessions before creating new one
+      await sealAllActiveSessions(supabase, userId, "nova_sessao", ip);
+
       const { data: newSession } = await supabase
         .from("monitoramento_sessoes")
         .insert({
