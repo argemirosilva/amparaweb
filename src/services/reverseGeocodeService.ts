@@ -143,7 +143,7 @@ async function fetchFromProvider(lat: number, lon: number): Promise<GeoResult> {
   await waitForRateLimit();
   lastRequestTime = Date.now();
 
-  const url = `${NOMINATIM_URL}?lat=${lat}&lon=${lon}&format=json&accept-language=pt-BR&addressdetails=1`;
+  const url = `${NOMINATIM_URL}?lat=${lat}&lon=${lon}&format=json&accept-language=pt-BR&addressdetails=1&zoom=19`;
 
   try {
     const res = await fetchWithTimeout(url, FETCH_TIMEOUT_MS);
