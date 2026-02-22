@@ -1700,6 +1700,23 @@ RETORNE APENAS JSON válido:
         });
       }
 
+      // ========== ANALYSIS PIPELINE (proxy to analysis-worker) ==========
+      case "getMacroLatest":
+      case "runMacro":
+      case "getHeuristicsStatus":
+      case "runMicroAnalysis": {
+        const workerAction = action === "runMicroAnalysis" ? "runMicro" : action;
+        const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+        const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+        const workerRes = await fetch(`${supabaseUrl}/functions/v1/analysis-worker`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${serviceKey}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ action: workerAction, session_token, ...params }),
+        });
+        const workerData = await workerRes.json();
+        return json(workerData, workerRes.status);
+      }
+
       default:
         return json({ error: `Action desconhecida: ${action}` }, 400);
     }
