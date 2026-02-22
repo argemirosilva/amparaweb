@@ -1741,6 +1741,19 @@ RETORNE APENAS JSON válido:
           }).eq("id", activeSession.id);
         }
 
+        // Reset device recording/monitoring flags
+        await supabase
+          .from("device_status")
+          .update({ is_recording: false, is_monitoring: false })
+          .eq("user_id", userId);
+
+        // Deactivate GPS sharing linked to this alert
+        await supabase
+          .from("compartilhamento_gps")
+          .update({ ativo: false })
+          .eq("user_id", userId)
+          .eq("alerta_id", alerta.id);
+
         await supabase.from("audit_logs").insert({
           user_id: userId, action_type: "panic_cancelled_web", success: true,
           details: { alerta_id: alerta.id, tempo_segundos: tempoAte },
