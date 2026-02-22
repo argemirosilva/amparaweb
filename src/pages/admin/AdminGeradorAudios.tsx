@@ -276,17 +276,33 @@ export default function AdminGeradorAudios() {
     setIsRunning(false);
   };
 
-  // Batch analyze
+  // Batch analyze with detailed logs and stall monitoring
   const handleBatchAnalyze = async () => {
     if (!sessionToken) return;
     setAnalyzing(true);
     analyzeCancelRef.current = false;
-    addLog("🧠 Iniciando análise de risco em lote (todas as gravações)...");
+    
+    const BATCH_SIZE = 10;
+    const MAX_CONSECUTIVE_ERRORS = 5;
+    const STALL_TIMEOUT_MS = 90_000; // 90s without progress = stall
+    
+    addLog("🧠 ═══════════════════════════════════════════");
+    addLog("🧠 ANÁLISE EM LOTE — INICIANDO");
+    addLog(`🧠 Batch size: ${BATCH_SIZE} | Timeout stall: ${STALL_TIMEOUT_MS / 1000}s`);
+    addLog("🧠 ═══════════════════════════════════════════");
 
     let totalAnalyzed = 0;
+    let totalErrors = 0;
+    let consecutiveErrors = 0;
+    let batchNumber = 0;
     let remaining = 1;
+    let lastProgressAt = Date.now();
+    const startedAt = Date.now();
 
     while (remaining > 0 && !analyzeCancelRef.current) {
+      batchNumber++;
+      const batchStartTime = Date.now();
+
       try {
         const res = await fetch(
           `${SUPABASE_URL}/functions/v1/run-batch-analysis`,
@@ -296,27 +312,89 @@ export default function AdminGeradorAudios() {
               "Content-Type": "application/json",
               apikey: SUPABASE_KEY,
             },
-            body: JSON.stringify({ batch_size: 5, offset: 0 }),
+            body: JSON.stringify({ batch_size: BATCH_SIZE, auto_chain: false }),
           }
         );
-        const data = await res.json();
-        if (!data.ok) {
-          addLog(`❌ Erro: ${data.message || "desconhecido"}`);
-          break;
+
+        if (!res.ok) {
+          consecutiveErrors++;
+          totalErrors++;
+          addLog(`❌ Lote #${batchNumber}: HTTP ${res.status} — ${res.statusText}`);
+          if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
+            addLog(`🛑 ${MAX_CONSECUTIVE_ERRORS} erros consecutivos. Parando.`);
+            break;
+          }
+          addLog(`⏳ Aguardando 5s antes de retentativa... (${consecutiveErrors}/${MAX_CONSECUTIVE_ERRORS})`);
+          await new Promise(r => setTimeout(r, 5000));
+          continue;
         }
-        totalAnalyzed += data.analyzed || 0;
+
+        const data = await res.json();
+
+        if (!data.ok) {
+          consecutiveErrors++;
+          totalErrors++;
+          addLog(`❌ Lote #${batchNumber}: ${data.message || "erro desconhecido"}`);
+          if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
+            addLog(`🛑 ${MAX_CONSECUTIVE_ERRORS} erros consecutivos. Parando.`);
+            break;
+          }
+          await new Promise(r => setTimeout(r, 3000));
+          continue;
+        }
+
+        const analyzed = data.analyzed || 0;
         remaining = data.remaining || 0;
-        addLog(`🧠 Analisadas: ${data.analyzed} | Restantes: ${remaining} | Total acumulado: ${totalAnalyzed}`);
+        totalAnalyzed += analyzed;
+        const batchDuration = ((Date.now() - batchStartTime) / 1000).toFixed(1);
+        const elapsed = ((Date.now() - startedAt) / 1000 / 60).toFixed(1);
+
+        if (analyzed > 0) {
+          consecutiveErrors = 0;
+          lastProgressAt = Date.now();
+          const rate = (totalAnalyzed / ((Date.now() - startedAt) / 1000) * 60).toFixed(0);
+          const eta = remaining > 0 ? (remaining / (totalAnalyzed / ((Date.now() - startedAt) / 1000)) / 60).toFixed(0) : "0";
+          addLog(`✅ Lote #${batchNumber}: +${analyzed} analisadas em ${batchDuration}s | Restam: ${remaining} | Total: ${totalAnalyzed} | ${rate}/min | ETA: ~${eta}min | Tempo: ${elapsed}min`);
+        } else {
+          addLog(`⚠️ Lote #${batchNumber}: 0 analisadas (${batchDuration}s). Restam: ${remaining}`);
+          // Check stall
+          if (Date.now() - lastProgressAt > STALL_TIMEOUT_MS) {
+            addLog(`🔄 STALL DETECTADO — sem progresso há ${((Date.now() - lastProgressAt) / 1000).toFixed(0)}s. Retentando...`);
+            await new Promise(r => setTimeout(r, 3000));
+          }
+        }
+
         if (data.errors?.length) {
+          totalErrors += data.errors.length;
           data.errors.forEach((e: string) => addLog(`  ⚠️ ${e}`));
         }
+
+        // Small delay to not hammer the function
+        if (remaining > 0 && !analyzeCancelRef.current) {
+          await new Promise(r => setTimeout(r, 500));
+        }
       } catch (err: any) {
-        addLog(`❌ Erro: ${err.message}`);
-        break;
+        consecutiveErrors++;
+        totalErrors++;
+        addLog(`❌ Lote #${batchNumber}: Exceção — ${err.message}`);
+        if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
+          addLog(`🛑 ${MAX_CONSECUTIVE_ERRORS} erros consecutivos. Parando.`);
+          break;
+        }
+        addLog(`⏳ Aguardando 5s antes de retentativa...`);
+        await new Promise(r => setTimeout(r, 5000));
       }
     }
 
-    addLog(`🏁 Análise concluída. ${totalAnalyzed} gravações analisadas.`);
+    const totalTime = ((Date.now() - startedAt) / 1000 / 60).toFixed(1);
+    addLog("🧠 ═══════════════════════════════════════════");
+    addLog(`🏁 ANÁLISE CONCLUÍDA`);
+    addLog(`   ✅ Total analisadas: ${totalAnalyzed}`);
+    addLog(`   ❌ Total erros: ${totalErrors}`);
+    addLog(`   ⏱️ Tempo total: ${totalTime} minutos`);
+    addLog(`   📦 Lotes processados: ${batchNumber}`);
+    if (analyzeCancelRef.current) addLog(`   ⏹ Cancelado pelo usuário`);
+    addLog("🧠 ═══════════════════════════════════════════");
     setAnalyzing(false);
   };
 
