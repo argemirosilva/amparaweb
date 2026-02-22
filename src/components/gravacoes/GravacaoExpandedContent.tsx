@@ -3,7 +3,7 @@ import { toast } from "@/hooks/use-toast";
 import { callWebApi } from "@/services/webApiService";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { FileText, Trash2, Headset } from "lucide-react";
+import { FileText, Trash2, Headset, RotateCcw } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -74,6 +74,7 @@ export default function GravacaoExpandedContent({
 }) {
   const [analise, setAnalise] = useState<AnaliseData | null>(null);
   const [loadedAnalise, setLoadedAnalise] = useState(false);
+  const [reprocessing, setReprocessing] = useState(false);
   const isPlayingRef = useRef(false);
   const isInteractingRef = useRef(false);
   const isAnaliseActiveRef = useRef(false);
@@ -284,6 +285,33 @@ export default function GravacaoExpandedContent({
           </AlertDialog>
         )}
         <SupportShortcut gravacao={gravacao} />
+        {gravacao.status === "processado" && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-xs gap-1 text-muted-foreground hover:text-primary"
+            disabled={reprocessing}
+            onClick={async (e) => {
+              e.stopPropagation();
+              setReprocessing(true);
+              const res = await callWebApi("runMicroAnalysis", sessionToken, { recording_id: gravacao.id });
+              if (res.ok) {
+                // Reload analysis
+                const analiseRes = await callWebApi("getAnalise", sessionToken, { gravacao_id: gravacao.id });
+                if (analiseRes.ok && analiseRes.data.analise) {
+                  setAnalise(analiseRes.data.analise);
+                }
+                toast({ title: "Análise reprocessada", description: "A análise de IA foi atualizada." });
+              } else {
+                toast({ title: "Erro ao reprocessar", description: res.data?.error || "Tente novamente.", variant: "destructive" });
+              }
+              setReprocessing(false);
+            }}
+          >
+            <RotateCcw className={`w-3.5 h-3.5 ${reprocessing ? "animate-spin" : ""}`} />
+            {reprocessing ? "Reprocessando…" : "Reprocessar IA"}
+          </Button>
+        )}
         <span className="text-[10px] text-muted-foreground ml-auto">
           ID: {gravacao.id.slice(0, 8)}
         </span>
