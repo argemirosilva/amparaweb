@@ -277,7 +277,7 @@ export default function GravacoesPage() {
         <div className="space-y-3">
           {groupByDate(gravacoes).map((group) => (
             <div key={group.label} className="space-y-0.5">
-              <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1 pt-1">
+              <h2 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-1 pt-1">
                 {group.label}
               </h2>
               {group.items.map((g) => {
