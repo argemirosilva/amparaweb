@@ -55,7 +55,7 @@ const ENDPOINTS: Endpoint[] = [
   {
     action: "pingMobile",
     fase: 1,
-    description: "Heartbeat do dispositivo (30s normal / 10s pânico). Atualiza status de bateria, gravação, monitoramento. Se latitude/longitude estiverem presentes, registra localização automaticamente (vincula a alerta de pânico ativo se existir). Device único por usuária — novo device_id substitui o anterior.",
+    description: "Heartbeat do dispositivo (1s normal / 1s pânico). Atualiza status de bateria, gravação, monitoramento. Se latitude/longitude estiverem presentes, registra localização automaticamente (vincula a alerta de pânico ativo se existir). Device único por usuária — novo device_id substitui o anterior. O frontend aplica snap-to-road (Mapbox Map Matching API) para exibir o marcador na via mais próxima.",
     auth: "session_token",
     params: [
       { name: "session_token", type: "string", required: true, description: "Token de sessão" },
@@ -169,7 +169,7 @@ const ENDPOINTS: Endpoint[] = [
   {
     action: "enviarLocalizacaoGPS",
     fase: 3,
-    description: "Registra localização GPS. Vincula automaticamente ao alerta de pânico ativo se existir. Validação de device_id quando há pânico/monitoramento ativo.",
+    description: "Registra localização GPS. Vincula automaticamente ao alerta de pânico ativo se existir. Validação de device_id quando há pânico/monitoramento ativo. O frontend aplica snap-to-road para encaixar a posição na via mais próxima e auto-follow para centralizar o mapa automaticamente.",
     auth: "email_usuario",
     params: [
       { name: "email_usuario", type: "string", required: true, description: "Email da usuária" },
@@ -511,8 +511,8 @@ export default function DocApiPage() {
                   Envia <code className="text-primary">pingMobile</code> com status do dispositivo + localização GPS.
                 </p>
                 <ul className="text-xs text-muted-foreground list-disc list-inside ml-2 mt-1">
-                  <li><strong>Normal:</strong> a cada 30 segundos</li>
-                  <li><strong>Pânico:</strong> a cada 10 segundos</li>
+                  <li><strong>Normal:</strong> a cada 1 segundo</li>
+                  <li><strong>Pânico:</strong> a cada 1 segundo</li>
                 </ul>
               </div>
 
@@ -533,8 +533,8 @@ export default function DocApiPage() {
                   Camada React Native/Capacitor que envia coordenadas via <code className="text-primary">enviarLocalizacaoGPS</code>.
                 </p>
                 <ul className="text-xs text-muted-foreground list-disc list-inside ml-2 mt-1">
-                  <li><strong>Normal:</strong> a cada 5 minutos</li>
-                  <li><strong>Pânico:</strong> a cada 30 segundos</li>
+                  <li><strong>Normal:</strong> a cada 1 segundo</li>
+                  <li><strong>Pânico:</strong> a cada 1 segundo</li>
                 </ul>
               </div>
 
@@ -553,13 +553,85 @@ export default function DocApiPage() {
             <div className="rounded-md bg-muted/50 border border-border p-3">
               <p className="text-[10px] font-mono text-muted-foreground uppercase mb-1.5">Resumo de Frequências</p>
               <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
-                <span className="text-muted-foreground">Ping de Status</span>
-                <span className="font-mono text-foreground">30s / 10s (pânico)</span>
+                <span className="text-muted-foreground">Ping de Status + GPS</span>
+                <span className="font-mono text-foreground">1s (contínuo)</span>
                 <span className="text-muted-foreground">Upload de Áudio</span>
                 <span className="font-mono text-foreground">30s (com GPS)</span>
                 <span className="text-muted-foreground">Tracking JS</span>
-                <span className="font-mono text-foreground">5min / 30s (pânico)</span>
+                <span className="font-mono text-foreground">1s (contínuo)</span>
               </div>
+            </div>
+
+            <div className="rounded-md bg-muted/50 border border-border p-3">
+              <p className="text-[10px] font-mono text-muted-foreground uppercase mb-1.5">Processamento Visual no Frontend</p>
+              <div className="space-y-1 text-xs text-muted-foreground">
+                <p><strong>Snap-to-Road:</strong> Cada posição recebida é ajustada via Mapbox Map Matching API para encaixar na via mais próxima (raio de 25m). O sistema utiliza os últimos 5 pontos para maior precisão na correspondência de rota.</p>
+                <p><strong>Auto-Follow (estilo Life360):</strong> O mapa centraliza automaticamente no marcador a cada nova localização com transição suave (800ms). Ao interagir manualmente (arrastar/zoom), o auto-follow pausa por 10s e reativa automaticamente. O botão de centralizar permite reativar o seguimento instantaneamente.</p>
+                <p><strong>Animação de Marcador:</strong> Transição suave entre posições com interpolação easeInOutQuad (800ms), sem saltos bruscos.</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Análise de IA */}
+        <Card>
+          <CardContent className="px-4 py-4 space-y-3">
+            <p className="text-sm font-semibold text-foreground">🧠 Análise de IA — Campos de Retorno</p>
+            <p className="text-xs text-muted-foreground">
+              A análise de cada gravação retorna um JSON com os seguintes campos dentro de <code className="text-primary">analise_completa</code>:
+            </p>
+
+            <div className="space-y-2">
+              <div>
+                <p className="text-xs font-semibold text-foreground">Campos Padrão</p>
+                <ul className="text-xs text-muted-foreground list-disc list-inside ml-2 mt-1">
+                  <li><code className="text-primary">resumo</code> — Resumo da conversa</li>
+                  <li><code className="text-primary">sentimento</code> — negativo, neutro, positivo, misto</li>
+                  <li><code className="text-primary">nivel_risco</code> — critico, alto, moderado, baixo, informativo</li>
+                  <li><code className="text-primary">categorias</code> — Array de categorias detectadas</li>
+                  <li><code className="text-primary">palavras_chave</code> — Termos mais relevantes</li>
+                  <li><code className="text-primary">xingamentos</code> — Xingamentos detectados</li>
+                </ul>
+              </div>
+
+              <div>
+                <p className="text-xs font-semibold text-foreground">Novos Campos — Táticas Manipulativas</p>
+                <ul className="text-xs text-muted-foreground list-disc list-inside ml-2 mt-1">
+                  <li><code className="text-primary">taticas_manipulativas</code> — Array de objetos com: <code className="text-primary">tatica</code>, <code className="text-primary">descricao</code>, <code className="text-primary">evidencia</code>, <code className="text-primary">gravidade</code></li>
+                  <li><code className="text-primary">orientacoes_vitima</code> — Array de strings com orientações práticas para a mulher</li>
+                  <li><code className="text-primary">sinais_alerta</code> — Array de strings com sinais de alerta identificados</li>
+                </ul>
+              </div>
+
+              <div>
+                <p className="text-xs font-semibold text-foreground">Tipos de Táticas Detectadas</p>
+                <ul className="text-xs text-muted-foreground list-disc list-inside ml-2 mt-1">
+                  <li><strong>instrumentalizacao_filhos</strong> — Usar guarda/bem-estar dos filhos como ameaça ou pressão</li>
+                  <li><strong>falsa_demonstracao_afeto</strong> — Declarar amor/preocupação para manter controle</li>
+                  <li><strong>ameaca_juridica_velada</strong> — Mencionar advogado/justiça como intimidação</li>
+                  <li><strong>acusacoes_sem_evidencia</strong> — Boatos, "ouvi dizer", difamação indireta</li>
+                  <li><strong>gaslighting</strong> — Negar intenções claras, "você está exagerando"</li>
+                  <li><strong>vitimizacao_reversa</strong> — Se colocar como parte prejudicada</li>
+                  <li><strong>controle_disfarçado</strong> — Controle sob pretexto de preocupação/conselho</li>
+                </ul>
+              </div>
+            </div>
+
+            <div>
+              <p className="text-xs font-semibold text-foreground mb-1.5">Exemplo de Retorno</p>
+              <CodeBlock
+                code={JSON.stringify({
+                  taticas_manipulativas: [
+                    { tatica: "instrumentalizacao_filhos", descricao: "Usa guarda dos filhos como pressão", evidencia: "\"vou pedir a guarda se você não...\"", gravidade: "alta" }
+                  ],
+                  orientacoes_vitima: [
+                    "Documente por escrito todas as ameaças envolvendo os filhos",
+                    "Acusações baseadas em 'ouvi dizer' não têm validade legal sem provas"
+                  ],
+                  sinais_alerta: ["uso de filhos como barganha", "ameaça jurídica velada"]
+                }, null, 2)}
+                label="analise_completa (novos campos)"
+              />
             </div>
           </CardContent>
         </Card>
