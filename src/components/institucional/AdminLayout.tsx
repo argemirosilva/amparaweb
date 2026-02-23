@@ -16,6 +16,7 @@ import {
   AudioLines,
   Headset,
   BrainCircuit,
+  FileCode2,
 } from "lucide-react";
 import amparaLogo from "@/assets/ampara-logo.png";
 import { useState } from "react";
@@ -27,7 +28,7 @@ const TECNICO_PATHS = [
 ];
 const OPERACIONAL_PATHS = ["/admin", "/admin/relatorios"];
 const SUPORTE_PATHS = ["/admin/suporte", "/admin/curadoria"];
-const SUPER_ADMIN_ONLY_PATHS = ["/admin/integracoes"];
+const SUPER_ADMIN_ONLY_PATHS = ["/admin/integracoes", "/admin/doc-api"];
 const ADMIN_LEVEL_PATHS = ["/admin/curadoria"];
 
 const sidebarItems = [
@@ -40,6 +41,7 @@ const sidebarItems = [
   { label: "Relatórios", path: "/admin/relatorios", icon: FileText },
   { label: "Configurações", path: "/admin/configuracoes", icon: Settings },
   { label: "Integrações", path: "/admin/integracoes", icon: Plug },
+  { label: "Doc API", path: "/admin/doc-api", icon: FileCode2 },
 ];
 
 export default function AdminLayout() {
