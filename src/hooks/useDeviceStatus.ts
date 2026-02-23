@@ -16,6 +16,7 @@ interface DeviceData {
   recordingStartedAt: string | null;
   monitoringStartedAt: string | null;
   panicStartedAt: string | null;
+  lastSegmentIdx: number | null;
 }
 
 interface LocationData {
@@ -49,7 +50,7 @@ export function useDeviceStatus(): DeviceStatusResult {
   const fetchData = useCallback(async () => {
     if (!usuario) return;
     try {
-      const [deviceRes, locationRes, panicRes, monitorRes, recordingRes] = await Promise.all([
+      const [deviceRes, locationRes, panicRes, monitorRes, recordingRes, segmentRes] = await Promise.all([
         supabase
           .from("device_status")
           .select("status, bateria_percentual, is_charging, dispositivo_info, is_recording, is_monitoring, last_ping_at, updated_at")
@@ -87,6 +88,13 @@ export function useDeviceStatus(): DeviceStatusResult {
           .order("created_at", { ascending: false })
           .limit(1)
           .maybeSingle(),
+        supabase
+          .from("gravacoes_segmentos")
+          .select("segmento_idx")
+          .eq("user_id", usuario.id)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
       ]);
 
       if (deviceRes.error) throw deviceRes.error;
@@ -99,6 +107,7 @@ export function useDeviceStatus(): DeviceStatusResult {
             panicStartedAt: panicRes.data?.criado_em ?? null,
             monitoringStartedAt: monitorRes.data?.iniciado_em ?? null,
             recordingStartedAt: recordingRes.data?.created_at ?? null,
+            lastSegmentIdx: segmentRes.data?.segmento_idx ?? null,
           }
         : null;
       setDevice(deviceData);
@@ -167,6 +176,11 @@ export function useDeviceStatus(): DeviceStatusResult {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "gravacoes", filter: `user_id=eq.${usuario.id}` },
+        () => fetchData()
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "gravacoes_segmentos", filter: `user_id=eq.${usuario.id}` },
         () => fetchData()
       )
       .subscribe();
