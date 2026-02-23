@@ -114,12 +114,12 @@ async function sendWhatsAppTemplate(
     if (!res.ok) {
       const err = await res.text();
       console.error(`WhatsApp API error [${res.status}]:`, err);
-      return { ok: false, error: `API ${res.status}: ${err}` };
+      return { ok: false, error: `API ${res.status}: ${err}`, _body: body, _response: err };
     }
-    return { ok: true };
+    return { ok: true, _body: body };
   } catch (e) {
     console.error("WhatsApp send error:", e);
-    return { ok: false, error: e.message };
+    return { ok: false, error: e.message, _body: body };
   }
 }
 
@@ -302,7 +302,19 @@ async function notifyGuardiansAlert(
       console.log("WhatsApp params:", JSON.stringify(params), "phone:", g.telefone_whatsapp);
       const result = await sendWhatsAppTemplate(g.telefone_whatsapp, "ampara2", params);
 
-      // Log
+      // Log payload na tabela payload_integracoes
+      try {
+        await supabase.from("payload_integracoes").insert({
+          integracao: "whatsapp_alert",
+          user_id: userId,
+          protocol_id: alertaId || null,
+          payload: { template: "ampara2", phone: g.telefone_whatsapp, params, body: (result as any)._body },
+          resposta: { ok: result.ok, error: result.error || null },
+          sucesso: result.ok,
+        });
+      } catch (e) { console.error("Failed to log whatsapp payload:", e); }
+
+      // Log audit
       await supabase.from("audit_logs").insert({
         user_id: userId,
         action_type: "whatsapp_alert_sent",
@@ -364,6 +376,17 @@ async function notifyGuardiansResolved(
       ];
       console.log("WhatsApp resolved params:", JSON.stringify(params), "phone:", g.telefone_whatsapp);
       const result = await sendWhatsAppTemplate(g.telefone_whatsapp, "amparasafe", params);
+
+      // Log payload na tabela payload_integracoes
+      try {
+        await supabase.from("payload_integracoes").insert({
+          integracao: "whatsapp_resolved",
+          user_id: userId,
+          payload: { template: "amparasafe", phone: g.telefone_whatsapp, params, body: (result as any)._body },
+          resposta: { ok: result.ok, error: result.error || null },
+          sucesso: result.ok,
+        });
+      } catch (e) { console.error("Failed to log whatsapp resolved payload:", e); }
 
       await supabase.from("audit_logs").insert({
         user_id: userId,
