@@ -68,8 +68,9 @@ export default function AdminLogin() {
         .select("role")
         .eq("user_id", sessionData.usuario.id);
 
+      const adminRoles = ["administrador", "admin_master", "admin_tenant", "operador", "suporte"];
       const hasAdmin = (roles || []).some(
-        (r: any) => r.role === "administrador" || r.role === "admin_master" || r.role === "admin_tenant" || r.role === "operador" || r.role === "suporte"
+        (r: any) => adminRoles.includes(r.role)
       );
 
       if (!hasAdmin) {
