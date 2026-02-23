@@ -157,7 +157,7 @@ export default function AdminCuradoria() {
               <SelectItem value="alto">Alto</SelectItem>
               <SelectItem value="moderado">Moderado</SelectItem>
               <SelectItem value="baixo">Baixo</SelectItem>
-              <SelectItem value="nenhum">Nenhum</SelectItem>
+              
             </SelectContent>
           </Select>
         </div>
