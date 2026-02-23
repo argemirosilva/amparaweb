@@ -195,7 +195,7 @@ export default function DeviceStatusCard() {
             {device.is_recording ? `Gravando ${formatElapsed(elapsed)}` : "Monitorando"}
             {device.origem && (
               <span className="ml-0.5 opacity-70">
-                ({device.origem === "panico" ? "Pânico" : device.origem === "deteccao" ? "Detecção" : device.origem === "manual" ? "Manual" : device.origem === "agendamento" ? "Agendado" : device.origem})
+                ({{ botao_manual: "Manual", manual: "Manual", automatico: "Detecção", deteccao: "Detecção", botao_panico: "Pânico", panico: "Pânico", agendado: "Agendado", agendamento: "Agendado", comando_voz: "Voz" }[device.origem] ?? device.origem})
               </span>
             )}
             {device.is_recording && device.lastSegmentIdx != null && (
