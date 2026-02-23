@@ -42,8 +42,8 @@ export default function AdminLayout() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { logout, usuario } = useAuth();
-  const { roles, hasRole, tenantSigla, isSuporte, isAdministrador } = useAdminRole();
-  const isTecnico = hasRole("administrador") || hasRole("admin_master");
+  const { roles, hasRole, tenantSigla, isSuporte, isAdministrador, isSuperAdmin } = useAdminRole();
+  const isTecnico = hasRole("super_administrador") || hasRole("administrador") || hasRole("admin_master");
   const isOperacional = hasRole("admin_tenant") || hasRole("operador");
   const isSupportOnly = isSuporte && !isTecnico && !isOperacional;
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -93,7 +93,7 @@ export default function AdminLayout() {
               {usuario?.nome_completo || "Administrador"}
             </p>
             <p className="text-xs uppercase" style={{ color: "hsl(220 9% 46%)" }}>
-              {isAdministrador ? "Administrador" : hasRole("admin_master") ? "Técnico" : isSupportOnly ? "Suporte" : "Operacional"}
+              {isSuperAdmin ? "Super Admin" : isAdministrador ? "Administrador" : hasRole("admin_master") ? "Técnico" : isSupportOnly ? "Suporte" : "Operacional"}
             </p>
           </div>
           <button
