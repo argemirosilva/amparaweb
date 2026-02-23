@@ -1,10 +1,10 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import PullToRefresh from "@/components/ui/pull-to-refresh";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
 import { callWebApi } from "@/services/webApiService";
-import { supabase } from "@/integrations/supabase/client";
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import AudioRecorderCard from "@/components/dashboard/AudioRecorderCard";
@@ -172,7 +172,7 @@ function getRetentionCountdown(createdAt: string, retencaoDias: number): string 
 }
 
 export default function GravacoesPage() {
-  const { sessionToken, usuario } = useAuth();
+  const { sessionToken } = useAuth();
   const isMobile = useIsMobile();
   const [gravacoes, setGravacoes] = useState<Gravacao[]>([]);
   const [loading, setLoading] = useState(true);
@@ -185,7 +185,7 @@ export default function GravacoesPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [batchDeleting, setBatchDeleting] = useState(false);
   const perPage = 15;
-  const loadDataRef = useRef<() => Promise<void>>();
+  
 
   const semRiscoIds = gravacoes.filter(g => !g.nivel_risco || g.nivel_risco === "sem_risco").map(g => g.id);
 
@@ -254,8 +254,6 @@ export default function GravacoesPage() {
     setLoading(false);
   }, [sessionToken, page, filterRisco]);
 
-  // Keep ref in sync for realtime callback
-  loadDataRef.current = loadData;
 
   const handleRefresh = useCallback(async () => {
     if (!sessionToken) return;
@@ -272,19 +270,6 @@ export default function GravacoesPage() {
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  // Realtime: auto-refresh when gravacoes change
-  useEffect(() => {
-    if (!usuario) return;
-    const channel = supabase
-      .channel(`gravacoes-page-${usuario.id}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "gravacoes", filter: `user_id=eq.${usuario.id}` },
-        () => loadDataRef.current?.()
-      )
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [usuario]);
 
   const totalPages = Math.max(1, Math.ceil(total / perPage));
 
