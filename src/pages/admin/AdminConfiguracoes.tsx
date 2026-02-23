@@ -2,8 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { Settings, Save, RotateCcw, Plus, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-
-const fontStyle = { fontFamily: "Inter, Roboto, sans-serif" };
+import AdminPageHeader from "@/components/admin/AdminPageHeader";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -41,10 +40,8 @@ const FRIENDLY_LABELS: Record<string, string> = {
 };
 
 const FIELD_HINTS: Record<string, string> = {};
-
 const PHONE_CHIP_KEYS = new Set(["elevenlabs_copom_telefone"]);
 const HIDDEN_KEYS = new Set(["ia_prompt_analise"]);
-
 const CATEGORY_ORDER = ["sistema", "panico", "gps", "notificacoes", "dados", "limites"];
 
 export default function AdminConfiguracoes() {
@@ -64,40 +61,25 @@ export default function AdminConfiguracoes() {
     setLoading(false);
   }
 
-  useEffect(() => {
-    loadSettings();
-  }, [sessionToken]);
+  useEffect(() => { loadSettings(); }, [sessionToken]);
 
   function handleChange(id: string, value: string) {
     setEditedValues((prev) => ({ ...prev, [id]: value }));
   }
 
   function resetField(id: string) {
-    setEditedValues((prev) => {
-      const copy = { ...prev };
-      delete copy[id];
-      return copy;
-    });
+    setEditedValues((prev) => { const copy = { ...prev }; delete copy[id]; return copy; });
   }
 
   async function handleSave(setting: Setting) {
     if (!sessionToken) return;
     const newValue = editedValues[setting.id];
     if (newValue === undefined || newValue === setting.valor) return;
-
     setSaving(setting.id);
-    const { ok, data } = await callAdminApi("updateSetting", sessionToken, {
-      id: setting.id,
-      valor: newValue,
-    });
+    const { ok, data } = await callAdminApi("updateSetting", sessionToken, { id: setting.id, valor: newValue });
     setSaving(null);
-
-    if (ok) {
-      toast.success("Configuração atualizada");
-      loadSettings();
-    } else {
-      toast.error(data.error || "Erro ao salvar");
-    }
+    if (ok) { toast.success("Configuração atualizada"); loadSettings(); }
+    else toast.error(data.error || "Erro ao salvar");
   }
 
   const grouped = CATEGORY_ORDER
@@ -108,16 +90,6 @@ export default function AdminConfiguracoes() {
     }))
     .filter((g) => g.items.length > 0);
 
-  const inputStyle = {
-    border: "1px solid hsl(220 13% 91%)",
-    borderRadius: 6,
-    padding: "8px 12px",
-    fontSize: 13,
-    outline: "none",
-    fontFamily: "Inter, Roboto, sans-serif",
-    color: "hsl(220 13% 18%)",
-  };
-
   function PhoneChipField({ setting }: { setting: Setting }) {
     const currentValue = editedValues[setting.id] ?? setting.valor;
     const phones = currentValue.split(",").map((p) => p.trim()).filter(Boolean);
@@ -125,10 +97,7 @@ export default function AdminConfiguracoes() {
     const inputRef = useRef<HTMLInputElement>(null);
     const isModified = editedValues[setting.id] !== undefined && editedValues[setting.id] !== setting.valor;
 
-    function updatePhones(list: string[]) {
-      handleChange(setting.id, list.join(", "));
-    }
-
+    function updatePhones(list: string[]) { handleChange(setting.id, list.join(", ")); }
     function addPhone() {
       const cleaned = newPhone.replace(/\D/g, "");
       if (cleaned.length >= 10 && !phones.includes(cleaned)) {
@@ -137,49 +106,28 @@ export default function AdminConfiguracoes() {
         inputRef.current?.focus();
       }
     }
-
-    function removePhone(idx: number) {
-      updatePhones(phones.filter((_, i) => i !== idx));
-    }
+    function removePhone(idx: number) { updatePhones(phones.filter((_, i) => i !== idx)); }
 
     return (
       <div className="flex flex-col gap-2">
         <div className="flex flex-wrap gap-1.5">
           {phones.map((p, i) => (
-            <span
-              key={i}
-              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium"
-              style={{ background: "hsl(224 76% 33% / 0.08)", color: "hsl(224 76% 33%)" }}
-            >
+            <span key={i} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
               {p}
-              <button onClick={() => removePhone(i)} className="hover:opacity-70">
-                <X className="w-3 h-3" />
-              </button>
+              <button onClick={() => removePhone(i)} className="hover:opacity-70"><X className="w-3 h-3" /></button>
             </span>
           ))}
         </div>
         <div className="flex items-center gap-2">
-          <input
-            ref={inputRef}
-            type="tel"
-            style={{ ...inputStyle, width: 180 }}
-            value={newPhone}
-            onChange={(e) => setNewPhone(e.target.value)}
-            placeholder="11999998888"
-            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addPhone(); } }}
-          />
-          <button
-            onClick={addPhone}
-            className="flex items-center gap-1 px-3 py-1.5 rounded text-xs font-medium"
-            style={{ background: "hsl(224 76% 33%)", color: "#fff" }}
-          >
+          <input ref={inputRef} type="tel" className="text-sm rounded-md border border-border px-3 py-2 outline-none bg-background text-foreground w-[180px]" value={newPhone} onChange={(e) => setNewPhone(e.target.value)} placeholder="11999998888" onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addPhone(); } }} />
+          <button onClick={addPhone} className="flex items-center gap-1 px-3 py-1.5 rounded text-xs font-medium ampara-gradient-bg text-primary-foreground">
             <Plus className="w-3.5 h-3.5" /> Adicionar
           </button>
         </div>
         {isModified && (
           <div className="flex gap-1">
-            <button onClick={() => resetField(setting.id)} className="p-1.5 rounded hover:bg-gray-100" title="Desfazer"><RotateCcw className="w-3.5 h-3.5" style={{ color: "hsl(220 9% 46%)" }} /></button>
-            <button onClick={() => handleSave(setting)} disabled={saving === setting.id} className="p-1.5 rounded hover:bg-gray-100" title="Salvar"><Save className="w-3.5 h-3.5" style={{ color: "hsl(224 76% 33%)" }} /></button>
+            <button onClick={() => resetField(setting.id)} className="p-1.5 rounded hover:bg-muted" title="Desfazer"><RotateCcw className="w-3.5 h-3.5 text-muted-foreground" /></button>
+            <button onClick={() => handleSave(setting)} disabled={saving === setting.id} className="p-1.5 rounded hover:bg-muted" title="Salvar"><Save className="w-3.5 h-3.5 text-primary" /></button>
           </div>
         )}
       </div>
@@ -190,27 +138,23 @@ export default function AdminConfiguracoes() {
     const currentValue = editedValues[s.id] ?? s.valor;
     const isModified = editedValues[s.id] !== undefined && editedValues[s.id] !== s.valor;
 
-    if (PHONE_CHIP_KEYS.has(s.chave)) {
-      return <PhoneChipField setting={s} />;
-    }
+    if (PHONE_CHIP_KEYS.has(s.chave)) return <PhoneChipField setting={s} />;
 
     if (s.valor === "true" || s.valor === "false") {
       return (
         <div className="flex items-center gap-3">
           <button
             onClick={() => handleChange(s.id, currentValue === "true" ? "false" : "true")}
-            className="relative w-10 h-5 rounded-full transition-colors"
-            style={{ background: currentValue === "true" ? "hsl(224 76% 33%)" : "hsl(220 13% 85%)" }}
+            className="relative w-10 h-5 rounded-full transition-colors shrink-0"
+            style={{ background: currentValue === "true" ? "hsl(var(--primary))" : "hsl(var(--muted-foreground) / 0.3)" }}
           >
             <span className="absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform" style={{ left: currentValue === "true" ? 22 : 2 }} />
           </button>
-          <span className="text-xs" style={{ color: "hsl(220 13% 18%)" }}>
-            {currentValue === "true" ? "Ativado" : "Desativado"}
-          </span>
+          <span className="text-xs text-foreground">{currentValue === "true" ? "Ativado" : "Desativado"}</span>
           {isModified && (
             <div className="flex gap-1 ml-auto">
-              <button onClick={() => resetField(s.id)} className="p-1 rounded hover:bg-gray-100" title="Desfazer"><RotateCcw className="w-3.5 h-3.5" style={{ color: "hsl(220 9% 46%)" }} /></button>
-              <button onClick={() => handleSave(s)} className="p-1 rounded hover:bg-gray-100" title="Salvar"><Save className="w-3.5 h-3.5" style={{ color: "hsl(224 76% 33%)" }} /></button>
+              <button onClick={() => resetField(s.id)} className="p-1 rounded hover:bg-muted" title="Desfazer"><RotateCcw className="w-3.5 h-3.5 text-muted-foreground" /></button>
+              <button onClick={() => handleSave(s)} className="p-1 rounded hover:bg-muted" title="Salvar"><Save className="w-3.5 h-3.5 text-primary" /></button>
             </div>
           )}
         </div>
@@ -225,50 +169,52 @@ export default function AdminConfiguracoes() {
         <div className="flex items-center gap-2">
           <input
             type={isNumber ? "number" : "text"}
-            style={{ ...inputStyle, width: isNumber ? 120 : "100%", maxWidth: 300 }}
+            className="text-sm rounded-md border border-border px-3 py-2 outline-none bg-background text-foreground"
+            style={{ width: isNumber ? 120 : "100%", maxWidth: 300 }}
             value={currentValue}
             onChange={(e) => handleChange(s.id, e.target.value)}
           />
           {isModified && (
             <div className="flex gap-1">
-              <button onClick={() => resetField(s.id)} className="p-1.5 rounded hover:bg-gray-100" title="Desfazer"><RotateCcw className="w-3.5 h-3.5" style={{ color: "hsl(220 9% 46%)" }} /></button>
-              <button onClick={() => handleSave(s)} disabled={saving === s.id} className="p-1.5 rounded hover:bg-gray-100" title="Salvar"><Save className="w-3.5 h-3.5" style={{ color: "hsl(224 76% 33%)" }} /></button>
+              <button onClick={() => resetField(s.id)} className="p-1.5 rounded hover:bg-muted" title="Desfazer"><RotateCcw className="w-3.5 h-3.5 text-muted-foreground" /></button>
+              <button onClick={() => handleSave(s)} disabled={saving === s.id} className="p-1.5 rounded hover:bg-muted" title="Salvar"><Save className="w-3.5 h-3.5 text-primary" /></button>
             </div>
           )}
         </div>
-        {hint && <p className="text-xs" style={{ color: "hsl(220 9% 46%)" }}>{hint}</p>}
+        {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
       </div>
     );
   }
 
   return (
-    <div style={fontStyle}>
-      <div className="mb-6">
-        <p className="text-xs mb-1" style={{ color: "hsl(220 9% 46%)" }}>Admin &gt; Configurações</p>
-        <h1 className="text-xl font-semibold" style={{ color: "hsl(220 13% 18%)" }}>Configurações do Sistema</h1>
-        <p className="text-sm" style={{ color: "hsl(220 9% 46%)" }}>Parâmetros globais que afetam o comportamento do sistema</p>
-      </div>
+    <div>
+      <AdminPageHeader
+        icon={Settings}
+        breadcrumb="Admin › Configurações"
+        title="Configurações do Sistema"
+        description="Parâmetros globais que afetam o comportamento do sistema"
+      />
 
       {loading ? (
-        <div className="rounded-md border p-8 text-center" style={{ background: "hsl(0 0% 100%)", borderColor: "hsl(220 13% 91%)" }}>
-          <p className="text-sm" style={{ color: "hsl(220 9% 46%)" }}>Carregando configurações...</p>
+        <div className="rounded-lg border border-border bg-card shadow-sm p-8 text-center">
+          <p className="text-sm text-muted-foreground">Carregando configurações...</p>
         </div>
       ) : (
         <div className="space-y-6">
           {grouped.map((group) => (
-            <div key={group.category} className="rounded-md border overflow-hidden" style={{ background: "hsl(0 0% 100%)", borderColor: "hsl(220 13% 91%)" }}>
-              <div className="px-4 py-3 border-b flex items-center gap-2" style={{ borderColor: "hsl(220 13% 91%)", background: "hsl(210 17% 98%)" }}>
-                <Settings className="w-4 h-4" style={{ color: "hsl(224 76% 33%)" }} />
-                <h2 className="text-sm font-semibold" style={{ color: "hsl(220 13% 18%)" }}>{group.label}</h2>
+            <div key={group.category} className="rounded-lg border border-border bg-card shadow-sm overflow-hidden">
+              <div className="px-4 py-3 border-b border-border flex items-center gap-2 bg-muted/50">
+                <Settings className="w-4 h-4 text-primary" />
+                <h2 className="text-sm font-semibold text-foreground">{group.label}</h2>
               </div>
-              <div className="divide-y" style={{ borderColor: "hsl(220 13% 91%)" }}>
+              <div className="divide-y divide-border">
                 {group.items.map((s) => (
-                  <div key={s.id} className="px-4 py-4 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6">
+                  <div key={s.id} className="px-4 py-4 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 hover:bg-muted/30 transition-colors">
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium" style={{ color: "hsl(220 13% 18%)" }}>
+                      <p className="text-sm font-medium text-foreground">
                         {FRIENDLY_LABELS[s.chave] || s.chave.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
                       </p>
-                      {s.descricao && <p className="text-xs mt-0.5" style={{ color: "hsl(220 9% 46%)" }}>{s.descricao}</p>}
+                      {s.descricao && <p className="text-xs mt-0.5 text-muted-foreground">{s.descricao}</p>}
                     </div>
                     <div className="sm:w-80 shrink-0">{renderInput(s)}</div>
                   </div>

@@ -11,8 +11,7 @@ import {
   generateMonitoramentoPDF,
   exportCSV,
 } from "@/services/pdfReportService";
-
-const fontStyle = { fontFamily: "Inter, Roboto, sans-serif" };
+import AdminPageHeader from "@/components/admin/AdminPageHeader";
 
 const TABS = [
   { id: "institucional", label: "Institucional", icon: BarChart3 },
@@ -469,34 +468,33 @@ export default function AdminRelatorios() {
   useEffect(() => { setFilterUF(""); setFilterStatus(""); setFilterRisco(""); }, [activeTab]);
 
   return (
-    <div style={fontStyle}>
-      <div className="mb-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-        <div>
-          <p className="text-xs mb-1" style={{ color: "hsl(220 9% 46%)" }}>Admin &gt; Relatórios</p>
-          <h1 className="text-xl font-semibold" style={{ color: "hsl(220 13% 18%)" }}>Relatórios</h1>
-          <p className="text-sm" style={{ color: "hsl(220 9% 46%)" }}>Visualize dados agregados com filtros e exporte em PDF ou CSV</p>
-        </div>
-        <div className="flex gap-2 shrink-0">
-          <button
-            onClick={() => handleExport("pdf")}
-            disabled={generating !== null || loading}
-            className="px-4 py-2 rounded text-xs font-semibold transition-colors flex items-center gap-1.5 disabled:opacity-50"
-            style={{ background: "hsl(224 76% 33%)", color: "#fff" }}
-          >
-            {generating?.endsWith("-pdf") ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
-            Exportar PDF
-          </button>
-          <button
-            onClick={() => handleExport("csv")}
-            disabled={generating !== null || loading}
-            className="px-4 py-2 rounded border text-xs font-medium transition-colors flex items-center gap-1.5 hover:bg-gray-50 disabled:opacity-50"
-            style={{ borderColor: "hsl(224 76% 33%)", color: "hsl(224 76% 33%)" }}
-          >
-            {generating?.endsWith("-csv") ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
-            Exportar CSV
-          </button>
-        </div>
-      </div>
+    <div>
+      <AdminPageHeader
+        icon={FileText}
+        breadcrumb="Admin › Relatórios"
+        title="Relatórios"
+        description="Visualize dados agregados com filtros e exporte em PDF ou CSV"
+        actions={
+          <div className="flex gap-2 shrink-0">
+            <button
+              onClick={() => handleExport("pdf")}
+              disabled={generating !== null || loading}
+              className="px-4 py-2 rounded text-xs font-semibold transition-colors flex items-center gap-1.5 disabled:opacity-50 ampara-gradient-bg text-primary-foreground"
+            >
+              {generating?.endsWith("-pdf") ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+              Exportar PDF
+            </button>
+            <button
+              onClick={() => handleExport("csv")}
+              disabled={generating !== null || loading}
+              className="px-4 py-2 rounded border border-primary text-xs font-medium transition-colors flex items-center gap-1.5 hover:bg-primary/5 disabled:opacity-50 text-primary"
+            >
+              {generating?.endsWith("-csv") ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+              Exportar CSV
+            </button>
+          </div>
+        }
+      />
 
       {/* Period + Tabs */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">

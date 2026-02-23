@@ -10,9 +10,12 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Download, BrainCircuit } from "lucide-react";
+import { BrainCircuit } from "lucide-react";
 import { toast } from "sonner";
 import CuradoriaDetailDrawer from "@/components/curadoria/CuradoriaDetailDrawer";
+import AdminPageHeader from "@/components/admin/AdminPageHeader";
+import AdminFilterBar from "@/components/admin/AdminFilterBar";
+import AdminTableWrapper from "@/components/admin/AdminTableWrapper";
 
 interface CuradoriaItem {
   id: string;
@@ -41,8 +44,7 @@ const RISK_COLORS: Record<string, string> = {
 };
 
 const PAGE_SIZES = [25, 50, 100];
-
-const TOTAL_CAMPOS = 8; // number of evaluable fields
+const TOTAL_CAMPOS = 8;
 
 async function callAdmin(sessionToken: string, action: string, params: any = {}) {
   const { data, error } = await supabase.functions.invoke("admin-api", {
@@ -98,9 +100,6 @@ export default function AdminCuradoria() {
   const total: number = data?.total || 0;
   const totalPages = Math.ceil(total / pageSize);
 
-  // Avaliacoes count per item would require a batch endpoint - skipped for now
-  // Progress tracking is visible inside the drawer per-item
-
   const toggleMutation = useMutation({
     mutationFn: ({ analise_id, cupiado }: { analise_id: string; cupiado: boolean }) =>
       callAdmin(sessionToken!, "toggleCuradoria", { analise_id, cupiado }),
@@ -153,13 +152,14 @@ export default function AdminCuradoria() {
 
   return (
     <div>
-      <div className="flex items-center gap-3 mb-6">
-        <BrainCircuit className="w-6 h-6 text-primary" />
-        <h1 className="text-2xl font-bold text-foreground">Curadoria IA</h1>
-      </div>
+      <AdminPageHeader
+        icon={BrainCircuit}
+        breadcrumb="Admin › Curadoria IA"
+        title="Curadoria IA"
+        description="Avalie e valide análises de inteligência artificial"
+      />
 
-      {/* Filters */}
-      <div className="flex flex-wrap gap-3 mb-4 items-end p-4 rounded-lg bg-card border border-border">
+      <AdminFilterBar>
         <div className="flex flex-col gap-1">
           <label className="text-xs font-medium text-muted-foreground">Nível de Risco</label>
           <Select value={nivelRisco} onValueChange={(v) => { setNivelRisco(v); setPage(0); }}>
@@ -170,7 +170,6 @@ export default function AdminCuradoria() {
               <SelectItem value="alto">Alto</SelectItem>
               <SelectItem value="moderado">Moderado</SelectItem>
               <SelectItem value="baixo">Baixo</SelectItem>
-              
             </SelectContent>
           </Select>
         </div>
@@ -189,13 +188,12 @@ export default function AdminCuradoria() {
           />
           <label className="text-sm text-muted-foreground">Somente curadas</label>
         </div>
-      </div>
+      </AdminFilterBar>
 
-      {/* Table */}
-      <div className="rounded-lg overflow-hidden bg-card border border-border">
+      <AdminTableWrapper>
         <Table>
           <TableHeader>
-            <TableRow>
+            <TableRow className="bg-muted/50">
               <TableHead>Data/hora</TableHead>
               <TableHead>Risco</TableHead>
               <TableHead>Sentimento</TableHead>
@@ -210,7 +208,7 @@ export default function AdminCuradoria() {
             ) : items.map((item) => (
               <TableRow
                 key={item.id}
-                className="cursor-pointer"
+                className="cursor-pointer hover:bg-muted/30 transition-colors"
                 onClick={() => setSelected(item)}
               >
                 <TableCell className="whitespace-nowrap text-sm">{fmtDate(item.created_at)}</TableCell>
@@ -226,7 +224,7 @@ export default function AdminCuradoria() {
             ))}
           </TableBody>
         </Table>
-      </div>
+      </AdminTableWrapper>
 
       {/* Pagination */}
       <div className="flex items-center justify-between mt-4">
@@ -251,7 +249,6 @@ export default function AdminCuradoria() {
         </div>
       </div>
 
-      {/* Detail Drawer */}
       <CuradoriaDetailDrawer
         selected={selected}
         onClose={() => setSelected(null)}

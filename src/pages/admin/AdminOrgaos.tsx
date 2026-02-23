@@ -3,8 +3,9 @@ import { Building2, Plus, Pencil, Trash2, Search, X } from "lucide-react";
 import GovStatusBadge from "@/components/institucional/GovStatusBadge";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-
-const fontStyle = { fontFamily: "Inter, Roboto, sans-serif" };
+import AdminPageHeader from "@/components/admin/AdminPageHeader";
+import AdminFilterBar from "@/components/admin/AdminFilterBar";
+import AdminTableWrapper from "@/components/admin/AdminTableWrapper";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -152,77 +153,72 @@ export default function AdminOrgaos() {
   };
 
   return (
-    <div style={fontStyle}>
-      {/* Header */}
-      <div className="mb-6">
-        <p className="text-xs mb-1" style={{ color: "hsl(220 9% 46%)" }}>Admin &gt; Entidades</p>
-        <h1 className="text-xl font-semibold" style={{ color: "hsl(220 13% 18%)" }}>Gestão de Entidades</h1>
-        <p className="text-sm" style={{ color: "hsl(220 9% 46%)" }}>Cadastro e gestão de entidades conveniadas ao sistema</p>
-      </div>
+    <div>
+      <AdminPageHeader
+        icon={Building2}
+        breadcrumb="Admin › Entidades"
+        title="Gestão de Entidades"
+        description="Cadastro e gestão de entidades conveniadas ao sistema"
+        actions={
+          <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2 rounded text-sm font-semibold ampara-gradient-bg text-primary-foreground">
+            <Plus className="w-4 h-4" /> Nova Entidade
+          </button>
+        }
+      />
 
-      {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-3 mb-6 p-3 rounded-md border" style={{ background: "hsl(0 0% 100%)", borderColor: "hsl(220 13% 91%)" }}>
+      <AdminFilterBar>
         <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "hsl(220 9% 46%)" }} />
-          <input type="text" placeholder="Buscar por nome ou sigla..." value={search} onChange={(e) => setSearch(e.target.value)} style={{ ...inputStyle, paddingLeft: 36 }} />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <input type="text" placeholder="Buscar por nome ou sigla..." value={search} onChange={(e) => setSearch(e.target.value)} className="text-sm rounded-md border border-border px-3 py-2 pl-9 outline-none bg-background text-foreground w-full" />
         </div>
-        <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2 rounded text-sm font-semibold" style={{ background: "hsl(224 76% 33%)", color: "#fff" }}>
-          <Plus className="w-4 h-4" /> Nova Entidade
-        </button>
-      </div>
+      </AdminFilterBar>
 
-      {/* Table */}
-      <div className="rounded-md border overflow-hidden" style={{ background: "hsl(0 0% 100%)", borderColor: "hsl(220 13% 91%)" }}>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr style={{ background: "hsl(210 17% 96%)" }}>
-                {["Entidade", "Sigla", "Responsável", "Cidade/UF", "Max Usuários", "Status", "Ações"].map((h) => (
-                  <th key={h} className="px-4 py-2.5 text-left text-xs font-semibold" style={{ color: "hsl(220 9% 46%)" }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr><td colSpan={7} className="px-4 py-8 text-center text-sm" style={{ color: "hsl(220 9% 46%)" }}>Carregando...</td></tr>
-              ) : filtered.length === 0 ? (
-                <tr><td colSpan={7} className="px-4 py-8 text-center text-sm" style={{ color: "hsl(220 9% 46%)" }}>Nenhuma entidade encontrada</td></tr>
-              ) : (
-                filtered.map((t) => (
-                  <tr key={t.id} className="border-t" style={{ borderColor: "hsl(220 13% 91%)" }}>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <Building2 className="w-4 h-4 shrink-0" style={{ color: "hsl(224 76% 33%)" }} />
-                        <span className="font-medium" style={{ color: "hsl(220 13% 18%)" }}>{t.nome}</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="px-2 py-0.5 rounded text-xs font-semibold" style={{ background: "hsl(224 76% 33% / 0.08)", color: "hsl(224 76% 33%)" }}>{t.sigla}</span>
-                    </td>
-                    <td className="px-4 py-3 text-xs" style={{ color: "hsl(220 13% 18%)" }}>{t.responsavel_nome || "—"}</td>
-                    <td className="px-4 py-3 text-xs" style={{ color: "hsl(220 13% 18%)" }}>{t.cidade && t.uf ? `${t.cidade}/${t.uf}` : "—"}</td>
-                    <td className="px-4 py-3 text-xs" style={{ color: "hsl(220 13% 18%)" }}>{t.max_usuarios}</td>
-                    <td className="px-4 py-3"><GovStatusBadge status={t.ativo ? "verde" : "vermelho"} label={t.ativo ? "Ativo" : "Inativo"} /></td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-1">
-                        <button onClick={() => openEdit(t)} className="p-1.5 rounded hover:bg-gray-100" title="Editar">
-                          <Pencil className="w-3.5 h-3.5" style={{ color: "hsl(224 76% 33%)" }} />
-                        </button>
-                        <button onClick={() => setDeleteConfirm(t.id)} className="p-1.5 rounded hover:bg-gray-100" title="Excluir">
-                          <Trash2 className="w-3.5 h-3.5" style={{ color: "hsl(0 73% 42%)" }} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-        <div className="px-4 py-3 border-t text-xs" style={{ borderColor: "hsl(220 13% 91%)", color: "hsl(220 9% 46%)" }}>
-          {filtered.length} entidade(s) encontrada(s)
-        </div>
-      </div>
+      <AdminTableWrapper footer={<>{filtered.length} entidade(s) encontrada(s)</>}>
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="bg-muted/50">
+              {["Entidade", "Sigla", "Responsável", "Cidade/UF", "Max Usuários", "Status", "Ações"].map((h) => (
+                <th key={h} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground">{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr><td colSpan={7} className="px-4 py-8 text-center text-sm text-muted-foreground">Carregando...</td></tr>
+            ) : filtered.length === 0 ? (
+              <tr><td colSpan={7} className="px-4 py-8 text-center text-sm text-muted-foreground">Nenhuma entidade encontrada</td></tr>
+            ) : (
+              filtered.map((t) => (
+                <tr key={t.id} className="border-t border-border hover:bg-muted/30 transition-colors">
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <Building2 className="w-4 h-4 shrink-0 text-primary" />
+                      <span className="font-medium text-foreground">{t.nome}</span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className="px-2 py-0.5 rounded text-xs font-semibold bg-primary/10 text-primary">{t.sigla}</span>
+                  </td>
+                  <td className="px-4 py-3 text-xs text-foreground">{t.responsavel_nome || "—"}</td>
+                  <td className="px-4 py-3 text-xs text-foreground">{t.cidade && t.uf ? `${t.cidade}/${t.uf}` : "—"}</td>
+                  <td className="px-4 py-3 text-xs text-foreground">{t.max_usuarios}</td>
+                  <td className="px-4 py-3"><GovStatusBadge status={t.ativo ? "verde" : "vermelho"} label={t.ativo ? "Ativo" : "Inativo"} /></td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-1">
+                      <button onClick={() => openEdit(t)} className="p-1.5 rounded hover:bg-muted" title="Editar">
+                        <Pencil className="w-3.5 h-3.5 text-primary" />
+                      </button>
+                      <button onClick={() => setDeleteConfirm(t.id)} className="p-1.5 rounded hover:bg-muted" title="Excluir">
+                        <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </AdminTableWrapper>
 
       {/* Delete Confirm */}
       {deleteConfirm && (
@@ -241,7 +237,7 @@ export default function AdminOrgaos() {
       {/* Create/Edit Dialog */}
       {dialogOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30" onClick={() => setDialogOpen(false)}>
-          <div className="rounded-lg border p-6 max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto" style={{ background: "hsl(0 0% 100%)", borderColor: "hsl(220 13% 91%)", ...fontStyle }} onClick={(e) => e.stopPropagation()}>
+          <div className="rounded-lg border border-border bg-card p-6 max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto shadow-lg" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-semibold" style={{ color: "hsl(220 13% 18%)" }}>{editing ? "Editar Entidade" : "Nova Entidade"}</h3>
               <button onClick={() => setDialogOpen(false)} className="p-1 hover:bg-gray-100 rounded"><X className="w-4 h-4" style={{ color: "hsl(220 9% 46%)" }} /></button>
