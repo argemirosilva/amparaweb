@@ -34,12 +34,12 @@ const sidebarItems = [
   { label: "Dashboard", path: "/admin", icon: LayoutDashboard },
   { label: "Usuários", path: "/admin/usuarios", icon: Users },
   { label: "Suporte", path: "/admin/suporte", icon: Headset },
+  { label: "Curadoria IA", path: "/admin/curadoria", icon: BrainCircuit },
   { label: "Entidades", path: "/admin/orgaos", icon: Building2 },
   { label: "Auditoria", path: "/admin/auditoria", icon: ClipboardCheck },
   { label: "Relatórios", path: "/admin/relatorios", icon: FileText },
   { label: "Configurações", path: "/admin/configuracoes", icon: Settings },
   { label: "Integrações", path: "/admin/integracoes", icon: Plug },
-  { label: "Curadoria IA", path: "/admin/curadoria", icon: BrainCircuit },
 ];
 
 export default function AdminLayout() {
