@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import PullToRefresh from "@/components/ui/pull-to-refresh";
 import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "@/hooks/use-toast";
 import { callWebApi } from "@/services/webApiService";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
@@ -21,7 +22,21 @@ import {
   Monitor,
   HardDrive,
   Trash2,
+  CheckSquare,
+  X,
 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface Gravacao {
   id: string;
@@ -160,8 +175,53 @@ export default function GravacoesPage() {
   const [filterRisco, setFilterRisco] = useState<string>("");
   const [expanded, setExpanded] = useState<string | null>(null);
   const [retencaoDias, setRetencaoDias] = useState<number>(7);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [batchDeleting, setBatchDeleting] = useState(false);
   const perPage = 15;
   const loadDataRef = useRef<() => Promise<void>>();
+
+  const semRiscoIds = gravacoes.filter(g => !g.nivel_risco || g.nivel_risco === "sem_risco").map(g => g.id);
+
+  const toggleSelect = (id: string) => {
+    setSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selected.size === semRiscoIds.length) {
+      setSelected(new Set());
+    } else {
+      setSelected(new Set(semRiscoIds));
+    }
+  };
+
+  const exitSelectMode = () => {
+    setSelectMode(false);
+    setSelected(new Set());
+  };
+
+  const handleBatchDelete = async () => {
+    if (selected.size === 0) return;
+    setBatchDeleting(true);
+    let ok = 0;
+    let fail = 0;
+    for (const id of selected) {
+      const res = await callWebApi("deleteGravacao", sessionToken!, { gravacao_id: id });
+      if (res.ok) ok++; else fail++;
+    }
+    setBatchDeleting(false);
+    exitSelectMode();
+    loadData();
+    toast({
+      title: `${ok} gravação(ões) excluída(s)`,
+      description: fail > 0 ? `${fail} falha(s) ao excluir.` : "Todas removidas com sucesso.",
+      variant: fail > 0 ? "destructive" : undefined,
+    });
+  };
 
   // Fetch user retention setting
   useEffect(() => {
@@ -227,6 +287,44 @@ export default function GravacoesPage() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h1 className="text-2xl font-display font-bold text-foreground">Gravações</h1>
         <div className="flex items-center gap-2 text-sm">
+          {!selectMode && semRiscoIds.length > 0 && (
+            <Button variant="ghost" size="sm" className="text-xs gap-1 text-muted-foreground" onClick={() => setSelectMode(true)}>
+              <CheckSquare className="w-3.5 h-3.5" />
+              Selecionar
+            </Button>
+          )}
+          {selectMode && (
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="sm" className="text-xs gap-1 text-muted-foreground" onClick={toggleSelectAll}>
+                {selected.size === semRiscoIds.length ? "Desmarcar todas" : `Selecionar todas (${semRiscoIds.length})`}
+              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" size="sm" className="text-xs gap-1" disabled={selected.size === 0 || batchDeleting}>
+                    <Trash2 className="w-3.5 h-3.5" />
+                    {batchDeleting ? "Excluindo…" : `Excluir (${selected.size})`}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Excluir {selected.size} gravação(ões)?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Esta ação não pode ser desfeita. As gravações selecionadas e suas análises serão removidas permanentemente.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={handleBatchDelete}>
+                      Excluir {selected.size}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={exitSelectMode}>
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+          )}
           <span className="text-muted-foreground">{total} {total === 1 ? "gravação" : "gravações"}</span>
         </div>
       </div>
@@ -291,8 +389,20 @@ export default function GravacoesPage() {
                     className="ampara-card !p-0 !rounded-lg overflow-hidden relative"
                     style={g.nivel_risco ? { borderLeftWidth: "2px", borderLeftStyle: "solid", borderLeftColor: `${RISCO_COLORS[g.nivel_risco] || "transparent"}90` } : undefined}
                   >
+                    {selectMode && (!g.nivel_risco || g.nivel_risco === "sem_risco") && (
+                      <div className="flex items-center px-2 py-2" onClick={(e) => e.stopPropagation()}>
+                        <Checkbox
+                          checked={selected.has(g.id)}
+                          onCheckedChange={() => toggleSelect(g.id)}
+                        />
+                      </div>
+                    )}
                     <button
                       onClick={() => {
+                        if (selectMode && (!g.nivel_risco || g.nivel_risco === "sem_risco")) {
+                          toggleSelect(g.id);
+                          return;
+                        }
                         const willExpand = !isExpanded;
                         if (willExpand) {
                           window.dispatchEvent(new CustomEvent("waveform-player-stop-all"));
@@ -302,7 +412,7 @@ export default function GravacoesPage() {
                       className="w-full px-2.5 py-2 text-left hover:bg-accent/30 transition-colors"
                     >
                       <div className="flex items-center gap-1">
-                        <Play className="w-3 h-3 shrink-0 text-primary" />
+                        {!selectMode && <Play className="w-3 h-3 shrink-0 text-primary" />}
 
                         <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
                           <div className="flex items-center gap-1.5">
