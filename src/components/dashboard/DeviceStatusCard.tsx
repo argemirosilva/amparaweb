@@ -193,6 +193,11 @@ export default function DeviceStatusCard() {
             </span>
             <Mic className="w-2.5 h-2.5" />
             {device.is_recording ? `Gravando ${formatElapsed(elapsed)}` : "Monitorando"}
+            {device.origem && (
+              <span className="ml-0.5 opacity-70">
+                ({device.origem === "panico" ? "Pânico" : device.origem === "deteccao" ? "Detecção" : device.origem === "manual" ? "Manual" : device.origem === "agendamento" ? "Agendado" : device.origem})
+              </span>
+            )}
             {device.is_recording && device.lastSegmentIdx != null && (
               <span className="ml-auto text-[9px] opacity-60 font-normal">seg #{device.lastSegmentIdx}</span>
             )}

@@ -17,6 +17,7 @@ interface DeviceData {
   monitoringStartedAt: string | null;
   panicStartedAt: string | null;
   lastSegmentIdx: number | null;
+  origem: string | null;
 }
 
 interface LocationData {
@@ -74,7 +75,7 @@ export function useDeviceStatus(): DeviceStatusResult {
           .maybeSingle(),
         supabase
           .from("monitoramento_sessoes")
-          .select("iniciado_em")
+          .select("iniciado_em, origem")
           .eq("user_id", usuario.id)
           .eq("status", "ativa")
           .order("iniciado_em", { ascending: false })
@@ -118,6 +119,7 @@ export function useDeviceStatus(): DeviceStatusResult {
             monitoringStartedAt: monitorRes.data?.iniciado_em ?? null,
             recordingStartedAt: recordingRes.data?.created_at ?? monitorRes.data?.iniciado_em ?? null,
             lastSegmentIdx: segmentRes.data?.segmento_idx ?? null,
+            origem: monitorRes.data?.origem ?? null,
           }
         : null;
       setDevice(deviceData);
