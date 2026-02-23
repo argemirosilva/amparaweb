@@ -73,7 +73,11 @@ export default function MacroReportCard({
     onActiveChange?.(true);
     const res = await callWebApi("runMacro", sessionToken, { window_days: windowDays });
     if (res.ok) {
-      await fetchReport();
+      if (res.data?.skipped) {
+        setError("Nenhuma gravação analisada no período. Envie gravações primeiro.");
+      } else {
+        await fetchReport();
+      }
     } else {
       setError(res.data?.error || "Erro ao gerar relatório");
     }
