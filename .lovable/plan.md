@@ -1,47 +1,59 @@
 
+## Deixar as telas do Admin mais charmosas
 
-## Formatar Transcrição na Curadoria
+### Problema atual
+Todas as paginas admin (Curadoria, Auditoria, Usuarios, Orgaos, Configuracoes, Integracoes, Relatorios) seguem um visual muito basico: textos simples, tabelas sem destaque, headers planos sem hierarquia visual, sem uso de gradientes ou icones estilizados. O resultado e uma interface funcional mas sem personalidade.
 
-### Objetivo
-Limpar e formatar a transcrição anonimizada exibida no drawer de detalhes, removendo timestamps, metadados (como "[00:01:23]", "Speaker 1:", etc.) e exibindo uma frase por linha.
+### Abordagem
+Aplicar um upgrade visual consistente em todas as paginas admin, mantendo a sobriedade institucional mas adicionando elementos que trazem mais charme e profissionalismo:
 
-### Alteracoes
+### Mudancas por componente
 
-**Arquivo: `src/components/curadoria/CuradoriaDetailDrawer.tsx`**
+**1. Criar componente `AdminPageHeader`** (novo arquivo)
+- Header reutilizavel para todas as paginas admin
+- Icone com fundo gradiente (usando GradientIcon)
+- Titulo em destaque + breadcrumb + descricao
+- Borda inferior sutil com gradiente da marca Ampara
 
-1. Criar uma funcao `formatTranscricao(raw: string): string` que:
-   - Remove padroes de timestamp como `[00:01:23]`, `(00:01:23)`, `00:01:23 -`, etc.
-   - Remove prefixos de speaker/falante como `Speaker 1:`, `Falante 1:`, `SPEAKER_00:`, etc.
-   - Separa o texto em frases (por `.`, `!`, `?` ou quebras de linha existentes)
-   - Retorna o texto limpo com uma frase por linha (trim de espacos extras)
+**2. Criar componente `AdminFilterBar`** (novo arquivo)
+- Wrapper estilizado para filtros com fundo sutil, borda arredondada e leve sombra
+- Substitui os wrappers ad-hoc de filtros em cada pagina
 
-2. Aplicar a funcao na exibicao da transcricao (linha 190), substituindo `{selected.transcricao_anonimizada}` por `{formatTranscricao(selected.transcricao_anonimizada)}`
+**3. Criar componente `AdminTableWrapper`** (novo arquivo)
+- Card wrapper para tabelas com sombra sutil, header com fundo levemente tingido, bordas mais suaves
+- Hover nas linhas com transicao suave
 
-3. Tambem aplicar na preview da tabela em `AdminCuradoria.tsx` (linha que faz `.slice(0, 80)`) para que o preview tambem mostre texto limpo.
+**4. Atualizar paginas individuais:**
 
-### Detalhes tecnicos
+- **AdminCuradoria**: Usar AdminPageHeader com icone BrainCircuit, AdminFilterBar, AdminTableWrapper. Adicionar badges coloridos sutis para risco e sentimento na tabela.
+- **AdminAuditoria**: Usar AdminPageHeader com icone ClipboardCheck, melhorar a tabela e filtros.
+- **AdminUsuarios**: Usar AdminPageHeader com icone Users, melhorar visual dos filtros de status (pills mais estilizados).
+- **AdminOrgaos**: Usar AdminPageHeader com icone Building2, melhorar toolbar e tabela.
+- **AdminConfiguracoes**: Usar AdminPageHeader com icone Settings, melhorar os cards de categoria com icones coloridos e bordas laterais.
+- **AdminIntegracoes**: Usar AdminPageHeader com icone Plug, ja tem algum estilo mas uniformizar.
+- **AdminRelatorios**: Usar AdminPageHeader com icone FileText, melhorar KPI cards e tabs.
 
-A funcao de formatacao usara regex para limpar os padroes mais comuns:
+### Detalhes visuais
 
-```typescript
-function formatTranscricao(raw: string): string {
-  if (!raw) return "";
-  let text = raw
-    // Remove timestamps [00:00:00], (00:00:00), 00:00:00 -, etc.
-    .replace(/[\[\(]?\d{1,2}:\d{2}(:\d{2})?[\]\)]?\s*[-–:]?\s*/g, "")
-    // Remove speaker labels: "Speaker 1:", "Falante 1:", "SPEAKER_00:", etc.
-    .replace(/\b(speaker|falante|spk|SPEAKER)[_ ]?\d*\s*[:]\s*/gi, "")
-    // Remove leading dashes/bullets
-    .replace(/^\s*[-–•]\s*/gm, "");
+- Headers: icone com fundo gradiente magenta-roxo (40x40px), titulo maior (text-2xl), descricao em muted
+- Tabelas: sombra `shadow-sm`, header com `bg-muted/50`, hover nas linhas `hover:bg-muted/30`, transicao suave
+- Filtros: card com `bg-card shadow-sm border`, padding uniforme
+- Badges de risco: bolinhas coloridas com texto + dot indicator em vez de texto puro
+- Paginacao: botoes com hover mais marcante
 
-  // Split into sentences and filter empty
-  const sentences = text
-    .split(/(?<=[.!?])\s+|\n+/)
-    .map(s => s.trim())
-    .filter(s => s.length > 0);
+### Arquivos a criar
+- `src/components/admin/AdminPageHeader.tsx`
+- `src/components/admin/AdminFilterBar.tsx`  
+- `src/components/admin/AdminTableWrapper.tsx`
 
-  return sentences.join("\n");
-}
-```
+### Arquivos a modificar
+- `src/pages/admin/AdminCuradoria.tsx`
+- `src/pages/admin/AdminAuditoria.tsx`
+- `src/pages/admin/AdminUsuarios.tsx`
+- `src/pages/admin/AdminOrgaos.tsx`
+- `src/pages/admin/AdminConfiguracoes.tsx`
+- `src/pages/admin/AdminIntegracoes.tsx`
+- `src/pages/admin/AdminRelatorios.tsx`
 
-Impacto minimo: apenas formatacao visual, sem alteracao de dados.
+### Resultado esperado
+Interface admin com aspecto profissional e polido: headers com presenca visual, tabelas com sombras e hovers suaves, filtros organizados em cards, badges coloridos para status, tudo mantendo a coerencia da paleta institucional com toques da identidade Ampara (gradiente magenta-roxo nos icones de header).
