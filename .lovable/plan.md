@@ -1,29 +1,31 @@
 
-## Mostrar Usuários Utilizados por Entidade (ex: 30/50)
+## Documentação API Mobile — v2.1 (Concluído)
 
-### Objetivo
-Na tela de Gestão de Entidades, a coluna "Max Usuários" passará a exibir a quantidade de usuários já vinculados versus o limite, no formato **30/50**.
+### Alterações realizadas
 
-### Alterações
+**1. Removido `createTestTrackingLink`**
+- Removido handler do backend (`mobile-api/index.ts`)
+- Removido case do switch router
+- Não documentado no DocApi.tsx
 
-**1. Backend (`supabase/functions/admin-api/index.ts`)**
-- Na action `listTenants`, após buscar os tenants, fazer uma query agrupada na tabela `user_roles` contando usuários distintos por `tenant_id`.
-- Mesclar a contagem (`usuarios_ativos`) em cada tenant retornado.
+**2. Parâmetros adicionados (Item 2 do plano)**
+- `pingMobile`: adicionado `device_model` (alias de `dispositivo_info`)
+- `acionarPanicoMobile`: adicionado `localizacao` (objeto alternativo para coordenadas)
+- `enviarLocalizacaoGPS`: documentado comportamento de deduplicação via `timestamp_gps`
 
-**2. Frontend (`src/pages/admin/AdminOrgaos.tsx`)**
-- Adicionar o campo `usuarios_ativos` na interface `Tenant`.
-- Alterar a coluna "Max Usuários" para exibir `{t.usuarios_ativos ?? 0}/{t.max_usuarios}`.
-- Adicionar uma indicação visual (cor vermelha) caso o uso esteja no limite ou acima.
+**3. Aliases documentados (Item 3)**
+- `reportarStatusGravacao` agora lista aliases: `iniciarGravacao`, `pararGravacao`, `finalizarGravacao`
+- Removido endpoint separado `iniciarGravacao` — agora é um alias com badge visual
+- Adicionada seção informativa "Aliases de Actions"
 
-### Detalhes Técnicos
+**4. Respostas detalhadas (Item 4)**
+- `receberAudioMobile`: documentados 3 fluxos (sessão ativa, segmento tardio, gravação órfã)
+- `reportarStatusGravacao`: documentados 3 status de resposta (ativa, aguardando_finalizacao, descartada)
+- Campo `notes` adicionado à interface `Endpoint` para notas de implementação
 
-**Backend - Query de contagem:**
-```sql
-SELECT tenant_id, COUNT(DISTINCT user_id) as total
-FROM user_roles
-WHERE tenant_id IS NOT NULL
-GROUP BY tenant_id
-```
-
-**Frontend - Exibição:**
-- Formato: `12/50` (verde/normal) ou `50/50` (vermelho, indicando limite atingido)
+**5. Seções informativas (Item 5)**
+- Nova card "Deduplicação GPS & Janela de Graça (Grace Window)"
+- Nova card "Aliases de Actions" com tabela
+- Rate limiting atualizado com `change_coercion_password`
+- Anti-coerção atualizado com `change_coercion_password`
+- Versão atualizada para v2.1
