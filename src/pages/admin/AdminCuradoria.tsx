@@ -258,6 +258,10 @@ export default function AdminCuradoria() {
         selected={selected}
         onClose={() => setSelected(null)}
         onToggleCupiado={handleToggleCupiado}
+        onAutoCurada={() => {
+          setSelected(null);
+          queryClient.invalidateQueries({ queryKey: ["curadoria"] });
+        }}
       />
     </div>
   );
