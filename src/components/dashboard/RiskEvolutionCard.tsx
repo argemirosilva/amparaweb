@@ -9,7 +9,7 @@ import { Area, AreaChart, ResponsiveContainer, Tooltip, YAxis, XAxis } from "rec
 import MacroReportCard from "@/components/gravacoes/MacroReportCard";
 import { useAuth } from "@/contexts/AuthContext";
 
-type WindowDays = 7 | 15 | 30;
+type WindowDays = 7 | 14 | 30;
 
 interface Assessment {
   risk_score: number;
@@ -119,7 +119,7 @@ export default function RiskEvolutionCard() {
             <Tabs value={String(window)} onValueChange={handleWindowChange}>
               <TabsList className="h-8">
                 <TabsTrigger value="7" className="text-xs px-2 h-6">7d</TabsTrigger>
-                <TabsTrigger value="15" className="text-xs px-2 h-6">15d</TabsTrigger>
+                <TabsTrigger value="14" className="text-xs px-2 h-6">14d</TabsTrigger>
                 <TabsTrigger value="30" className="text-xs px-2 h-6">30d</TabsTrigger>
               </TabsList>
             </Tabs>
