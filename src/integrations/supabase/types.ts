@@ -791,6 +791,7 @@ export type Database = {
           analise_completa: Json | null
           categorias: string[] | null
           created_at: string
+          cupiado: boolean | null
           gravacao_id: string
           id: string
           modelo_usado: string | null
@@ -805,6 +806,7 @@ export type Database = {
           analise_completa?: Json | null
           categorias?: string[] | null
           created_at?: string
+          cupiado?: boolean | null
           gravacao_id: string
           id?: string
           modelo_usado?: string | null
@@ -819,6 +821,7 @@ export type Database = {
           analise_completa?: Json | null
           categorias?: string[] | null
           created_at?: string
+          cupiado?: boolean | null
           gravacao_id?: string
           id?: string
           modelo_usado?: string | null

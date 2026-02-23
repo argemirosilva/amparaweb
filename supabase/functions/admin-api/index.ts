@@ -34,6 +34,35 @@ function getServiceClient() {
   );
 }
 
+function anonymize(text: string): string {
+  if (!text) return "";
+  let t = text;
+  // CPF
+  t = t.replace(/\d{3}\.?\d{3}\.?\d{3}-?\d{2}/g, "*********");
+  // Phone
+  t = t.replace(/\(?\d{2}\)?\s?\d{4,5}-?\d{4}/g, "*********");
+  // Email
+  t = t.replace(/\S+@\S+\.\S+/g, "*********");
+  // CEP
+  t = t.replace(/\d{5}-?\d{3}/g, "*********");
+  // Addresses (Rua/Av/Travessa/Alameda + text until comma or end)
+  t = t.replace(/(Rua|Av\.?|Avenida|Travessa|Alameda|Praça|Estrada)\s+[^,.\n]+[,.]?\s*(n[°ºo]?\s*\d+)?/gi, "*********");
+  // Sequences of capitalized words (likely proper names)
+  t = t.replace(/(?<![.?!]\s)(?:(?:[A-ZÀ-Ú][a-zà-ú]{1,}\s+){1,}[A-ZÀ-Ú][a-zà-ú]{1,})/g, "*********");
+  return t;
+}
+
+function anonymizeJson(obj: any): any {
+  if (typeof obj === "string") return anonymize(obj);
+  if (Array.isArray(obj)) return obj.map(anonymizeJson);
+  if (obj && typeof obj === "object") {
+    const result: any = {};
+    for (const [k, v] of Object.entries(obj)) result[k] = anonymizeJson(v);
+    return result;
+  }
+  return obj;
+}
+
 async function authenticateAdmin(supabase: any, sessionToken: string): Promise<string | null> {
   if (!sessionToken) return null;
   const tokenHash = await hashToken(sessionToken);
@@ -482,6 +511,145 @@ serve(async (req) => {
         details: { target_user_id: targetUserId },
       });
 
+      return json({ success: true });
+    }
+
+    // ========== CURADORIA: LIST ==========
+    if (action === "listCuradoria") {
+      // Check admin/super role
+      const { data: callerRoles } = await supabase.from("user_roles").select("role").eq("user_id", userId);
+      const isCurador = (callerRoles || []).some((r: any) => r.role === "super_administrador" || r.role === "administrador");
+      if (!isCurador) return json({ error: "Acesso restrito a administradores" }, 403);
+
+      const { nivel_risco, data_inicio, data_fim, somente_curadas, offset = 0, limit = 25 } = params;
+
+      let query = supabase
+        .from("gravacoes")
+        .select("id, created_at, duracao_segundos, transcricao, gravacoes_analises!inner(id, nivel_risco, sentimento, categorias, palavras_chave, xingamentos, resumo, cupiado, gravacao_id)", { count: "exact" })
+        .eq("status", "processado")
+        .not("transcricao", "is", null)
+        .order("created_at", { ascending: false })
+        .range(offset, offset + limit - 1);
+
+      if (nivel_risco) query = query.eq("gravacoes_analises.nivel_risco", nivel_risco);
+      if (data_inicio) query = query.gte("created_at", data_inicio);
+      if (data_fim) query = query.lte("created_at", data_fim);
+      if (somente_curadas) query = query.eq("gravacoes_analises.cupiado", true);
+
+      const { data: gravacoes, error: qErr, count } = await query;
+      if (qErr) return json({ error: qErr.message }, 500);
+
+      // Fetch micro results for these recordings
+      const ids = (gravacoes || []).map((g: any) => g.id);
+      let microMap: Record<string, any> = {};
+      if (ids.length > 0) {
+        const { data: micros } = await supabase
+          .from("analysis_micro_results")
+          .select("recording_id, context_classification, cycle_phase, output_json")
+          .in("recording_id", ids)
+          .eq("latest", true);
+        for (const m of micros || []) {
+          microMap[m.recording_id] = m;
+        }
+      }
+
+      const items = (gravacoes || []).map((g: any) => {
+        const a = g.gravacoes_analises;
+        const micro = microMap[g.id];
+        return {
+          id: g.id,
+          analise_id: a?.id,
+          created_at: g.created_at,
+          duracao_segundos: g.duracao_segundos,
+          transcricao_anonimizada: anonymize(g.transcricao || ""),
+          nivel_risco: a?.nivel_risco,
+          sentimento: a?.sentimento,
+          categorias: a?.categorias,
+          palavras_chave: a?.palavras_chave,
+          xingamentos: a?.xingamentos,
+          resumo_anonimizado: anonymize(a?.resumo || ""),
+          cupiado: a?.cupiado || false,
+          context_classification: micro?.context_classification || null,
+          cycle_phase: micro?.cycle_phase || null,
+          output_json_anonimizado: micro?.output_json ? anonymizeJson(micro.output_json) : null,
+        };
+      });
+
+      return json({ items, total: count || 0 });
+    }
+
+    // ========== CURADORIA: EXPORT ==========
+    if (action === "exportCuradoria") {
+      const { data: callerRoles } = await supabase.from("user_roles").select("role").eq("user_id", userId);
+      const isCurador = (callerRoles || []).some((r: any) => r.role === "super_administrador" || r.role === "administrador");
+      if (!isCurador) return json({ error: "Acesso restrito" }, 403);
+
+      const { somente_curadas } = params;
+
+      let query = supabase
+        .from("gravacoes")
+        .select("id, created_at, duracao_segundos, transcricao, gravacoes_analises!inner(id, nivel_risco, sentimento, categorias, palavras_chave, xingamentos, resumo, cupiado)")
+        .eq("status", "processado")
+        .not("transcricao", "is", null)
+        .order("created_at", { ascending: false });
+
+      if (somente_curadas) query = query.eq("gravacoes_analises.cupiado", true);
+
+      const { data: gravacoes, error: qErr } = await query;
+      if (qErr) return json({ error: qErr.message }, 500);
+
+      const ids = (gravacoes || []).map((g: any) => g.id);
+      let microMap: Record<string, any> = {};
+      if (ids.length > 0) {
+        const { data: micros } = await supabase
+          .from("analysis_micro_results")
+          .select("recording_id, context_classification, cycle_phase, output_json")
+          .in("recording_id", ids)
+          .eq("latest", true);
+        for (const m of micros || []) microMap[m.recording_id] = m;
+      }
+
+      const lines = (gravacoes || []).map((g: any) => {
+        const a = g.gravacoes_analises;
+        const micro = microMap[g.id];
+        return JSON.stringify({
+          id: g.id,
+          created_at: g.created_at,
+          duracao_segundos: g.duracao_segundos,
+          transcricao: anonymize(g.transcricao || ""),
+          nivel_risco: a?.nivel_risco,
+          sentimento: a?.sentimento,
+          categorias: a?.categorias,
+          palavras_chave: a?.palavras_chave,
+          xingamentos: a?.xingamentos,
+          resumo: anonymize(a?.resumo || ""),
+          context_classification: micro?.context_classification || null,
+          cycle_phase: micro?.cycle_phase || null,
+          output_json: micro?.output_json ? anonymizeJson(micro.output_json) : null,
+        });
+      });
+
+      return new Response(lines.join("\n"), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/jsonl", "Content-Disposition": "attachment; filename=curadoria_export.jsonl" },
+      });
+    }
+
+    // ========== CURADORIA: TOGGLE ==========
+    if (action === "toggleCuradoria") {
+      const { data: callerRoles } = await supabase.from("user_roles").select("role").eq("user_id", userId);
+      const isCurador = (callerRoles || []).some((r: any) => r.role === "super_administrador" || r.role === "administrador");
+      if (!isCurador) return json({ error: "Acesso restrito" }, 403);
+
+      const { analise_id, cupiado } = params;
+      if (!analise_id) return json({ error: "analise_id obrigatório" }, 400);
+
+      const { error: updErr } = await supabase
+        .from("gravacoes_analises")
+        .update({ cupiado: !!cupiado })
+        .eq("id", analise_id);
+
+      if (updErr) return json({ error: updErr.message }, 500);
       return json({ success: true });
     }
 

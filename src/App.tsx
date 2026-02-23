@@ -38,6 +38,7 @@ import AdminMapa from "./pages/admin/AdminMapa";
 import AdminOrgaos from "./pages/admin/AdminOrgaos";
 import AdminConfiguracoes from "./pages/admin/AdminConfiguracoes";
 import AdminIntegracoes from "./pages/admin/AdminIntegracoes";
+import AdminCuradoria from "./pages/admin/AdminCuradoria";
 import AdminLogin from "./pages/admin/AdminLogin";
 import ConfigurarConta from "./pages/ConfigurarConta";
 import EsqueciSenha from "./pages/EsqueciSenha";
@@ -100,6 +101,7 @@ const App = () => (
               <Route path="/admin/orgaos" element={<AdminOrgaos />} />
               <Route path="/admin/configuracoes" element={<AdminConfiguracoes />} />
               <Route path="/admin/integracoes" element={<AdminIntegracoes />} />
+              <Route path="/admin/curadoria" element={<AdminCuradoria />} />
               <Route path="/admin/gerador-audios-ampara" element={<AdminGeradorAudios />} />
             </Route>
             <Route path="/suporte" element={<Suporte />} />
