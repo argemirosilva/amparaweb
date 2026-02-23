@@ -28,7 +28,7 @@ const sidebarItems = [
   { label: "Órgãos/Tenants", path: "/admin/orgaos", icon: Building2 },
   { label: "Auditoria", path: "/admin/auditoria", icon: Shield },
   { label: "Relatórios", path: "/admin/relatorios", icon: FileText },
-  { label: "Gerador Áudios", path: "/admin/gerador-audios-ampara", icon: AudioLines },
+  
   { label: "Configurações", path: "/admin/configuracoes", icon: Settings },
   { label: "Integrações", path: "/admin/integracoes", icon: Plug },
 ];
