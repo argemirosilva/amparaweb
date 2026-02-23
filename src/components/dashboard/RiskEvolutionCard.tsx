@@ -139,7 +139,7 @@ export default function RiskEvolutionCard() {
               {history.length > 1 && (
                 <div className="h-[60px] -mx-1 overflow-hidden">
                   <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={history} margin={{ top: 2, right: 0, bottom: 0, left: -24 }}>
+                    <AreaChart data={history} margin={{ top: 2, right: 4, bottom: 0, left: -24 }}>
                       <defs>
                         <linearGradient id="riskFillGrad" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="0%" stopColor={CHART_STROKE} stopOpacity={0.15} />
@@ -151,6 +151,26 @@ export default function RiskEvolutionCard() {
                         </linearGradient>
                       </defs>
                       <YAxis domain={[100, 200]} hide />
+                      <XAxis
+                        dataKey="date"
+                        tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }}
+                        tickLine={false}
+                        axisLine={false}
+                        ticks={(() => {
+                          if (history.length === 0) return [];
+                          const dates = history.map(h => h.date);
+                          const first = dates[0];
+                          const last = dates[dates.length - 1];
+                          // Find closest dates to day 7 and day 15 (indices ~6 and ~14)
+                          const mid1 = dates[Math.round((dates.length - 1) * (6 / 29))] || first;
+                          const mid2 = dates[Math.round((dates.length - 1) * (14 / 29))] || last;
+                          return [...new Set([first, mid1, mid2, last])];
+                        })()}
+                        tickFormatter={(val: string) => {
+                          const d = new Date(val + "T00:00:00");
+                          return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+                        }}
+                      />
                       <Tooltip
                         content={({ active, payload }) => {
                           if (!active || !payload?.[0]) return null;
