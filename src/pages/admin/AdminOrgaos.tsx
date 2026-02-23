@@ -261,6 +261,7 @@ export default function AdminOrgaos() {
                   <option value="orgao">Órgão Público</option>
                   <option value="ong">ONG</option>
                   <option value="parceiro">Parceiro</option>
+                  <option value="interno">Interno (Suporte/Técnico)</option>
                 </select>
               </div>
               <div>
