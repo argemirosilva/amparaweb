@@ -167,6 +167,16 @@ serve(async (req) => {
 
     // Call ElevenLabs Outbound Call API for ALL numbers simultaneously
     const callPromises = phoneNumbers.map(async (num: string) => {
+      const callBody = {
+        agent_id: AGENT_ID,
+        agent_phone_number_id: PHONE_NUMBER_ID,
+        to_number: num,
+        conversation_initiation_client_data: {
+          dynamic_variables: dynamicVariables,
+        },
+        first_message: firstMessage,
+      };
+
       try {
         const response = await fetch("https://api.elevenlabs.io/v1/convai/twilio/outbound_call", {
           method: "POST",
@@ -174,26 +184,35 @@ serve(async (req) => {
             "xi-api-key": ELEVENLABS_API_KEY,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            agent_id: AGENT_ID,
-            agent_phone_number_id: PHONE_NUMBER_ID,
-            to_number: num,
-            conversation_initiation_client_data: {
-              dynamic_variables: dynamicVariables,
-            },
-            first_message: firstMessage,
-          }),
+          body: JSON.stringify(callBody),
         });
 
         const responseText = await response.text();
 
-        if (!response.ok) {
+        let result;
+        try { result = JSON.parse(responseText); } catch { result = { raw: responseText }; }
+
+        const success = response.ok;
+
+        // Log payload na tabela payload_integracoes
+        try {
+          const { createClient: createSbLog } = await import("https://esm.sh/@supabase/supabase-js@2");
+          const sbLog = createSbLog(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+          await sbLog.from("payload_integracoes").insert({
+            integracao: "elevenlabs_outbound_call",
+            user_id: userId || null,
+            protocol_id: context?.protocol_id || null,
+            payload: callBody,
+            resposta: result,
+            sucesso: success,
+          });
+        } catch (logErr) { console.error("Failed to log elevenlabs payload:", logErr); }
+
+        if (!success) {
           console.error(`ElevenLabs API error for ${num}:`, response.status, responseText);
           return { phone: num, success: false, status: response.status, error: responseText };
         }
 
-        let result;
-        try { result = JSON.parse(responseText); } catch { result = { raw: responseText }; }
         console.log(`Outbound call initiated to ${num}:`, result);
         return { phone: num, success: true, call: result };
       } catch (e) {

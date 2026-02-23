@@ -1120,6 +1120,39 @@ export type Database = {
           },
         ]
       }
+      payload_integracoes: {
+        Row: {
+          created_at: string
+          id: string
+          integracao: string
+          payload: Json
+          protocol_id: string | null
+          resposta: Json | null
+          sucesso: boolean | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          integracao: string
+          payload: Json
+          protocol_id?: string | null
+          resposta?: Json | null
+          sucesso?: boolean | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          integracao?: string
+          payload?: Json
+          protocol_id?: string | null
+          resposta?: Json | null
+          sucesso?: boolean | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       rate_limit_attempts: {
         Row: {
           action_type: string

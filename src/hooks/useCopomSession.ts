@@ -5,6 +5,7 @@
 
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useConversation } from "@elevenlabs/react";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   collectCopomData,
@@ -145,6 +146,17 @@ export function useCopomSession() {
       // Send context
       conversation.sendContextualUpdate(JSON.stringify(ctx));
       addLog("CONTEXT_SENT", { payload_size: JSON.stringify(ctx).length });
+
+      // Log payload na tabela payload_integracoes
+      try {
+        await supabase.from("payload_integracoes" as any).insert({
+          integracao: "elevenlabs_webrtc",
+          user_id: ctx.victim?.internal_id || null,
+          protocol_id: ctx.protocol_id,
+          payload: ctx,
+          sucesso: true,
+        });
+      } catch (e) { console.error("Failed to log elevenlabs webrtc payload:", e); }
 
       // Trigger the agent
       const triggerMessage =
