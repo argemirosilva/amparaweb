@@ -20,6 +20,7 @@ import amparaLogo from "@/assets/ampara-logo.png";
 import { useState } from "react";
 
 const TECNICO_PATHS = [
+  "/admin", "/admin/relatorios",
   "/admin/usuarios", "/admin/suporte", "/admin/orgaos",
   "/admin/auditoria", "/admin/configuracoes", "/admin/integracoes",
 ];
