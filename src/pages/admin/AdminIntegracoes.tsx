@@ -72,6 +72,8 @@ const FRIENDLY_LABELS: Record<string, string> = {
   whatsapp_phone_id: "Phone Number ID (Meta)",
   whatsapp_template_alerta: "Template de alerta",
   whatsapp_template_resolucao: "Template de resolução",
+  whatsapp_template_ativacao: "Template de ativação/validação",
+  whatsapp_template_suporte: "Template de segurança (suporte)",
 };
 
 const HIDDEN_KEYS = new Set(["ia_prompt_analise"]);
