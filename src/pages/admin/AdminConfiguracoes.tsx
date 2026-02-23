@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Settings, Save, RotateCcw } from "lucide-react";
+import { useEffect, useState, useRef } from "react";
+import { Settings, Save, RotateCcw, Plus, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
@@ -40,11 +40,9 @@ const FRIENDLY_LABELS: Record<string, string> = {
   elevenlabs_copom_telefone: "Telefones chamada de emergência 190/180",
 };
 
-const FIELD_HINTS: Record<string, string> = {
-  elevenlabs_copom_telefone: "Separe múltiplos telefones por vírgula. Ex: 11999998888, 21988887777",
-};
+const FIELD_HINTS: Record<string, string> = {};
 
-const TEXTAREA_KEYS = new Set(["elevenlabs_copom_telefone"]);
+const PHONE_CHIP_KEYS = new Set(["elevenlabs_copom_telefone"]);
 const HIDDEN_KEYS = new Set(["ia_prompt_analise"]);
 
 const CATEGORY_ORDER = ["sistema", "panico", "gps", "notificacoes", "dados", "limites"];
@@ -120,9 +118,81 @@ export default function AdminConfiguracoes() {
     color: "hsl(220 13% 18%)",
   };
 
+  function PhoneChipField({ setting }: { setting: Setting }) {
+    const currentValue = editedValues[setting.id] ?? setting.valor;
+    const phones = currentValue.split(",").map((p) => p.trim()).filter(Boolean);
+    const [newPhone, setNewPhone] = useState("");
+    const inputRef = useRef<HTMLInputElement>(null);
+    const isModified = editedValues[setting.id] !== undefined && editedValues[setting.id] !== setting.valor;
+
+    function updatePhones(list: string[]) {
+      handleChange(setting.id, list.join(", "));
+    }
+
+    function addPhone() {
+      const cleaned = newPhone.replace(/\D/g, "");
+      if (cleaned.length >= 10 && !phones.includes(cleaned)) {
+        updatePhones([...phones, cleaned]);
+        setNewPhone("");
+        inputRef.current?.focus();
+      }
+    }
+
+    function removePhone(idx: number) {
+      updatePhones(phones.filter((_, i) => i !== idx));
+    }
+
+    return (
+      <div className="flex flex-col gap-2">
+        <div className="flex flex-wrap gap-1.5">
+          {phones.map((p, i) => (
+            <span
+              key={i}
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium"
+              style={{ background: "hsl(224 76% 33% / 0.08)", color: "hsl(224 76% 33%)" }}
+            >
+              {p}
+              <button onClick={() => removePhone(i)} className="hover:opacity-70">
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          ))}
+        </div>
+        <div className="flex items-center gap-2">
+          <input
+            ref={inputRef}
+            type="tel"
+            style={{ ...inputStyle, width: 180 }}
+            value={newPhone}
+            onChange={(e) => setNewPhone(e.target.value)}
+            placeholder="11999998888"
+            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addPhone(); } }}
+          />
+          <button
+            onClick={addPhone}
+            className="flex items-center gap-1 px-3 py-1.5 rounded text-xs font-medium"
+            style={{ background: "hsl(224 76% 33%)", color: "#fff" }}
+          >
+            <Plus className="w-3.5 h-3.5" /> Adicionar
+          </button>
+        </div>
+        {isModified && (
+          <div className="flex gap-1">
+            <button onClick={() => resetField(setting.id)} className="p-1.5 rounded hover:bg-gray-100" title="Desfazer"><RotateCcw className="w-3.5 h-3.5" style={{ color: "hsl(220 9% 46%)" }} /></button>
+            <button onClick={() => handleSave(setting)} disabled={saving === setting.id} className="p-1.5 rounded hover:bg-gray-100" title="Salvar"><Save className="w-3.5 h-3.5" style={{ color: "hsl(224 76% 33%)" }} /></button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   function renderInput(s: Setting) {
     const currentValue = editedValues[s.id] ?? s.valor;
     const isModified = editedValues[s.id] !== undefined && editedValues[s.id] !== s.valor;
+
+    if (PHONE_CHIP_KEYS.has(s.chave)) {
+      return <PhoneChipField setting={s} />;
+    }
 
     if (s.valor === "true" || s.valor === "false") {
       return (
@@ -147,28 +217,18 @@ export default function AdminConfiguracoes() {
       );
     }
 
-    const isTextarea = TEXTAREA_KEYS.has(s.chave);
-    const isNumber = !isTextarea && !isNaN(Number(s.valor));
+    const isNumber = !isNaN(Number(s.valor));
     const hint = FIELD_HINTS[s.chave];
 
     return (
       <div className="flex flex-col gap-1">
         <div className="flex items-center gap-2">
-          {isTextarea ? (
-            <textarea
-              style={{ ...inputStyle, width: "100%", maxWidth: 340, minHeight: 56, resize: "vertical", fontSize: 13 }}
-              value={currentValue}
-              onChange={(e) => handleChange(s.id, e.target.value)}
-              placeholder="11999998888, 21988887777"
-            />
-          ) : (
-            <input
-              type={isNumber ? "number" : "text"}
-              style={{ ...inputStyle, width: isNumber ? 120 : "100%", maxWidth: 300 }}
-              value={currentValue}
-              onChange={(e) => handleChange(s.id, e.target.value)}
-            />
-          )}
+          <input
+            type={isNumber ? "number" : "text"}
+            style={{ ...inputStyle, width: isNumber ? 120 : "100%", maxWidth: 300 }}
+            value={currentValue}
+            onChange={(e) => handleChange(s.id, e.target.value)}
+          />
           {isModified && (
             <div className="flex gap-1">
               <button onClick={() => resetField(s.id)} className="p-1.5 rounded hover:bg-gray-100" title="Desfazer"><RotateCcw className="w-3.5 h-3.5" style={{ color: "hsl(220 9% 46%)" }} /></button>
