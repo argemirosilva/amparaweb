@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMapbox } from "@/hooks/useMapbox";
-import { MapPin, AlertTriangle, Smartphone, Users, RefreshCw, BarChart3, Mic, Clock } from "lucide-react";
+import { MapPin, AlertTriangle, Smartphone, Users, RefreshCw, BarChart3, Mic, Clock, ChevronDown } from "lucide-react";
 import GovKpiCard from "@/components/institucional/GovKpiCard";
 import GovStatusBadge from "@/components/institucional/GovStatusBadge";
 import WordCloudCard from "@/components/institucional/WordCloudCard";
@@ -723,14 +723,46 @@ export default function AdminMapa() {
           <h1 className="text-xl font-semibold" style={titleStyle}>Dashboard</h1>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex gap-1">
-            {([["7d", "7 dias"], ["30d", "30 dias"], ["6m", "6 meses"], ...Array.from({ length: new Date().getFullYear() - 2024 }, (_, i) => { const y = String(new Date().getFullYear() - i); return [y, y] as [string, string]; })] as [string, string][]).map(([key, label]) => (
+          <div className="flex gap-1 items-center">
+            {([["7d", "7 dias"], ["30d", "30 dias"], ["6m", "6 meses"]] as [string, string][]).map(([key, label]) => (
               <button key={key} onClick={() => setPeriod(key)}
                 className="px-3 py-1.5 text-xs rounded-md border transition-colors"
                 style={{ borderColor: period === key ? "hsl(224 76% 33%)" : "hsl(220 13% 91%)", background: period === key ? "hsl(224 76% 33%)" : "transparent", color: period === key ? "#fff" : "hsl(220 9% 46%)", fontWeight: period === key ? 600 : 400 }}>
                 {label}
               </button>
             ))}
+            {(() => {
+              const currentYear = new Date().getFullYear();
+              const years = Array.from({ length: currentYear - 2024 }, (_, i) => String(currentYear - i));
+              const isYearSelected = years.includes(period);
+              if (years.length <= 1) {
+                return years.map(y => (
+                  <button key={y} onClick={() => setPeriod(y)}
+                    className="px-3 py-1.5 text-xs rounded-md border transition-colors"
+                    style={{ borderColor: period === y ? "hsl(224 76% 33%)" : "hsl(220 13% 91%)", background: period === y ? "hsl(224 76% 33%)" : "transparent", color: period === y ? "#fff" : "hsl(220 9% 46%)", fontWeight: period === y ? 600 : 400 }}>
+                    {y}
+                  </button>
+                ));
+              }
+              return (
+                <div className="relative">
+                  <select
+                    value={isYearSelected ? period : ""}
+                    onChange={(e) => { if (e.target.value) setPeriod(e.target.value); }}
+                    className="appearance-none pl-3 pr-7 py-1.5 text-xs rounded-md border transition-colors cursor-pointer outline-none"
+                    style={{
+                      borderColor: isYearSelected ? "hsl(224 76% 33%)" : "hsl(220 13% 91%)",
+                      background: isYearSelected ? "hsl(224 76% 33%)" : "transparent",
+                      color: isYearSelected ? "#fff" : "hsl(220 9% 46%)",
+                      fontWeight: isYearSelected ? 600 : 400,
+                    }}>
+                    {!isYearSelected && <option value="" disabled>Ano</option>}
+                    {years.map(y => <option key={y} value={y} style={{ color: "hsl(220 13% 18%)", background: "#fff" }}>{y}</option>)}
+                  </select>
+                  <ChevronDown className="absolute right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 pointer-events-none" style={{ color: isYearSelected ? "#fff" : "hsl(220 9% 46%)" }} />
+                </div>
+              );
+            })()}
           </div>
           <button onClick={fetchData} disabled={loading}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-md border text-xs font-medium transition-colors hover:bg-gray-50 disabled:opacity-50"
