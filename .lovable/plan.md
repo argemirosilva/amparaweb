@@ -1,113 +1,47 @@
 
 
-## Avaliacao Isolada por Campo na Curadoria
+## Formatar Transcrição na Curadoria
 
 ### Objetivo
+Limpar e formatar a transcrição anonimizada exibida no drawer de detalhes, removendo timestamps, metadados (como "[00:01:23]", "Speaker 1:", etc.) e exibindo uma frase por linha.
 
-Transformar o drawer de detalhes da curadoria em uma interface de avaliacao granular, onde cada aspecto da analise da IA (risco, sentimento, taticas, ciclo, etc.) pode ser avaliado individualmente com aprovacao/rejeicao, correcao de valor e notas do curador.
+### Alteracoes
 
----
+**Arquivo: `src/components/curadoria/CuradoriaDetailDrawer.tsx`**
 
-### 1. Nova tabela: `curadoria_avaliacoes`
+1. Criar uma funcao `formatTranscricao(raw: string): string` que:
+   - Remove padroes de timestamp como `[00:01:23]`, `(00:01:23)`, `00:01:23 -`, etc.
+   - Remove prefixos de speaker/falante como `Speaker 1:`, `Falante 1:`, `SPEAKER_00:`, etc.
+   - Separa o texto em frases (por `.`, `!`, `?` ou quebras de linha existentes)
+   - Retorna o texto limpo com uma frase por linha (trim de espacos extras)
 
-Armazena a avaliacao do curador para cada campo de cada analise.
+2. Aplicar a funcao na exibicao da transcricao (linha 190), substituindo `{selected.transcricao_anonimizada}` por `{formatTranscricao(selected.transcricao_anonimizada)}`
 
-```sql
-CREATE TABLE curadoria_avaliacoes (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  analise_id uuid NOT NULL REFERENCES gravacoes_analises(id) ON DELETE CASCADE,
-  campo text NOT NULL,           -- ex: 'nivel_risco', 'sentimento', 'taticas_manipulativas', etc.
-  status text NOT NULL DEFAULT 'pendente',  -- 'correto', 'incorreto', 'pendente'
-  valor_corrigido jsonb,         -- valor correto sugerido pelo curador (null = sem correcao)
-  nota text,                     -- observacao livre do curador
-  avaliado_por uuid REFERENCES usuarios(id),
-  avaliado_em timestamptz DEFAULT now(),
-  UNIQUE(analise_id, campo)
-);
+3. Tambem aplicar na preview da tabela em `AdminCuradoria.tsx` (linha que faz `.slice(0, 80)`) para que o preview tambem mostre texto limpo.
 
-CREATE INDEX idx_curadoria_avaliacoes_analise ON curadoria_avaliacoes(analise_id);
-```
+### Detalhes tecnicos
 
-### 2. Backend -- novos actions na admin-api
+A funcao de formatacao usara regex para limpar os padroes mais comuns:
 
-- **`getAvaliacoes`**: Retorna todas as avaliacoes de uma analise (por `analise_id`)
-- **`saveAvaliacao`**: Upsert de uma avaliacao para um campo especifico (analise_id, campo, status, valor_corrigido, nota)
+```typescript
+function formatTranscricao(raw: string): string {
+  if (!raw) return "";
+  let text = raw
+    // Remove timestamps [00:00:00], (00:00:00), 00:00:00 -, etc.
+    .replace(/[\[\(]?\d{1,2}:\d{2}(:\d{2})?[\]\)]?\s*[-–:]?\s*/g, "")
+    // Remove speaker labels: "Speaker 1:", "Falante 1:", "SPEAKER_00:", etc.
+    .replace(/\b(speaker|falante|spk|SPEAKER)[_ ]?\d*\s*[:]\s*/gi, "")
+    // Remove leading dashes/bullets
+    .replace(/^\s*[-–•]\s*/gm, "");
 
-### 3. Front-end -- Drawer com abas por aspecto
+  // Split into sentences and filter empty
+  const sentences = text
+    .split(/(?<=[.!?])\s+|\n+/)
+    .map(s => s.trim())
+    .filter(s => s.length > 0);
 
-O drawer de detalhes sera reorganizado em **abas** (usando o componente `Tabs` existente):
-
-| Aba | Conteudo | Campos avaliaveis |
-|-----|----------|-------------------|
-| **Geral** | Transcricao e resumo anonimizados, data, duracao | - |
-| **Risco** | Nivel de risco, justificativa, sinais de alerta | `nivel_risco`, `sinais_alerta` |
-| **Sentimento** | Sentimento detectado, categorias, palavras-chave | `sentimento`, `categorias` |
-| **Taticas** | Taticas manipulativas com evidencias e gravidade | `taticas_manipulativas` |
-| **Ciclo** | Fase do ciclo, classificacao de contexto, tipos de violencia | `cycle_phase`, `context_classification`, `tipos_violencia` |
-| **JSON** | Output JSON completo (colapsavel, somente leitura) | - |
-
-### 4. Componente de avaliacao por campo
-
-Cada campo avaliavel tera um bloco visual padrao:
-
-```text
-+----------------------------------------------+
-| [Campo: Nivel de Risco]                      |
-| Valor da IA: [critico]                       |
-|                                              |
-| Avaliacao: (o) Correto  (o) Incorreto       |
-|                                              |
-| Valor corrigido: [dropdown com opcoes]       |
-| (visivel apenas se "Incorreto")              |
-|                                              |
-| Nota: [textarea livre]                       |
-|                                              |
-| [Salvar avaliacao]                           |
-+----------------------------------------------+
-```
-
-- Radio group para Correto/Incorreto
-- Campo de correcao contextual (dropdown para campos com opcoes fixas como risco/sentimento, textarea para campos livres)
-- Textarea para nota do curador
-- Botao salvar por campo (ou auto-save)
-
-### 5. Campos avaliaveis e tipos de correcao
-
-| Campo | Tipo de correcao |
-|-------|-----------------|
-| `nivel_risco` | Select: critico, alto, moderado, baixo, nenhum |
-| `sentimento` | Select: positivo, negativo, neutro, misto |
-| `categorias` | Input de tags (texto livre separado por virgula) |
-| `sinais_alerta` | Textarea (lista de sinais) |
-| `taticas_manipulativas` | Textarea JSON (lista de taticas corrigidas) |
-| `cycle_phase` | Select: tensao, explosao, lua_de_mel, calmaria, nao_identificado |
-| `context_classification` | Select: saudavel, rispido_nao_abusivo, potencial_abuso_leve, padrao_consistente_abuso, ameaca_risco, risco_elevado_escalada |
-| `tipos_violencia` | Input de tags |
-
-### 6. Exportacao enriquecida
-
-O export `.jsonl` incluira as avaliacoes do curador junto aos dados anonimizados, criando um dataset com ground truth para fine-tuning:
-
-```json
-{
-  "transcricao": "...",
-  "output_ia": { ... },
-  "avaliacoes": {
-    "nivel_risco": { "status": "incorreto", "valor_corrigido": "moderado", "nota": "..." },
-    "sentimento": { "status": "correto" }
-  }
+  return sentences.join("\n");
 }
 ```
 
-### 7. Indicador visual na tabela principal
-
-Adicionar uma coluna "Avaliada" na tabela, mostrando o progresso de avaliacao (ex: "4/6 campos") para cada transcricao, permitindo identificar rapidamente quais ainda precisam de revisao.
-
----
-
-### Arquivos a modificar
-
-- **Migracao SQL**: Criar tabela `curadoria_avaliacoes`
-- **`supabase/functions/admin-api/index.ts`**: Adicionar actions `getAvaliacoes`, `saveAvaliacao`; enriquecer `exportCuradoria` com avaliacoes
-- **`src/pages/admin/AdminCuradoria.tsx`**: Reorganizar drawer com Tabs, adicionar componente de avaliacao por campo, coluna de progresso na tabela
-
+Impacto minimo: apenas formatacao visual, sem alteracao de dados.
