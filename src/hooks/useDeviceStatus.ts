@@ -156,53 +156,77 @@ export function useDeviceStatus(): DeviceStatusResult {
     fetchData();
   }, [fetchData]);
 
+  // Refetch when tab becomes visible (handles silent Realtime disconnects)
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") {
+        fetchData();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, [fetchData]);
+
   // Realtime subscriptions — re-fetch on any relevant change
   useEffect(() => {
     if (!usuario) return;
 
-    const channel = supabase
-      .channel(`device-status-${usuario.id}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "device_status", filter: `user_id=eq.${usuario.id}` },
-        () => fetchData()
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "alertas_panico", filter: `user_id=eq.${usuario.id}` },
-        () => fetchData()
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "monitoramento_sessoes", filter: `user_id=eq.${usuario.id}` },
-        () => fetchData()
-      )
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "localizacoes", filter: `user_id=eq.${usuario.id}` },
-        () => fetchData()
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "gravacoes", filter: `user_id=eq.${usuario.id}` },
-        () => fetchData()
-      )
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "gravacoes_segmentos", filter: `user_id=eq.${usuario.id}` },
-        () => fetchData()
-      )
-      .subscribe();
+    const subscribe = () =>
+      supabase
+        .channel(`device-status-${usuario.id}`)
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "device_status", filter: `user_id=eq.${usuario.id}` },
+          () => fetchData()
+        )
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "alertas_panico", filter: `user_id=eq.${usuario.id}` },
+          () => fetchData()
+        )
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "monitoramento_sessoes", filter: `user_id=eq.${usuario.id}` },
+          () => fetchData()
+        )
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "localizacoes", filter: `user_id=eq.${usuario.id}` },
+          () => fetchData()
+        )
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "gravacoes", filter: `user_id=eq.${usuario.id}` },
+          () => fetchData()
+        )
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "gravacoes_segmentos", filter: `user_id=eq.${usuario.id}` },
+          () => fetchData()
+        )
+        .subscribe();
+
+    let channel = subscribe();
+
+    // Re-subscribe when tab comes back (Realtime may have silently disconnected)
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") {
+        supabase.removeChannel(channel);
+        channel = subscribe();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibility);
 
     return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
       supabase.removeChannel(channel);
     };
   }, [usuario, fetchData]);
 
-  // Adaptive polling: 5s when active (recording/panic), 30s otherwise
+  // Adaptive polling: 1s active, 5s idle
   const isActive = !!(device?.is_recording || device?.is_monitoring || device?.panicActive);
   useEffect(() => {
-    const interval = isActive ? 1_000 : 30_000;
+    const interval = isActive ? 1_000 : 5_000;
     const id = setInterval(fetchData, interval);
     return () => clearInterval(id);
   }, [fetchData, isActive]);
