@@ -26,7 +26,7 @@ const TECNICO_PATHS = [
   "/admin/auditoria", "/admin/configuracoes",
 ];
 const OPERACIONAL_PATHS = ["/admin", "/admin/relatorios"];
-const SUPORTE_PATHS = ["/admin/suporte"];
+const SUPORTE_PATHS = ["/admin/suporte", "/admin/curadoria"];
 const SUPER_ADMIN_ONLY_PATHS = ["/admin/integracoes"];
 const ADMIN_LEVEL_PATHS = ["/admin/curadoria"];
 
@@ -124,7 +124,7 @@ export default function AdminLayout() {
             {sidebarItems
               .filter((item) => {
                 if (SUPER_ADMIN_ONLY_PATHS.includes(item.path)) return isSuperAdmin;
-                if (ADMIN_LEVEL_PATHS.includes(item.path)) return isSuperAdmin || isAdministrador;
+                if (ADMIN_LEVEL_PATHS.includes(item.path)) return isSuperAdmin || isAdministrador || isSuporte;
                 if (isSupportOnly) return SUPORTE_PATHS.includes(item.path);
                 if (isTecnico) return TECNICO_PATHS.includes(item.path);
                 if (isOperacional) return OPERACIONAL_PATHS.includes(item.path);

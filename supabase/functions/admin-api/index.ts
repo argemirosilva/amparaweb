@@ -518,7 +518,7 @@ serve(async (req) => {
     if (action === "listCuradoria") {
       // Check admin/super role
       const { data: callerRoles } = await supabase.from("user_roles").select("role").eq("user_id", userId);
-      const isCurador = (callerRoles || []).some((r: any) => r.role === "super_administrador" || r.role === "administrador");
+      const isCurador = (callerRoles || []).some((r: any) => r.role === "super_administrador" || r.role === "administrador" || r.role === "suporte");
       if (!isCurador) return json({ error: "Acesso restrito a administradores" }, 403);
 
       const { nivel_risco, data_inicio, data_fim, somente_curadas, offset = 0, limit = 25 } = params;
@@ -581,7 +581,7 @@ serve(async (req) => {
     // ========== CURADORIA: EXPORT ==========
     if (action === "exportCuradoria") {
       const { data: callerRoles } = await supabase.from("user_roles").select("role").eq("user_id", userId);
-      const isCurador = (callerRoles || []).some((r: any) => r.role === "super_administrador" || r.role === "administrador");
+      const isCurador = (callerRoles || []).some((r: any) => r.role === "super_administrador" || r.role === "administrador" || r.role === "suporte");
       if (!isCurador) return json({ error: "Acesso restrito" }, 403);
 
       const { somente_curadas } = params;
@@ -658,7 +658,7 @@ serve(async (req) => {
     // ========== CURADORIA: TOGGLE ==========
     if (action === "toggleCuradoria") {
       const { data: callerRoles } = await supabase.from("user_roles").select("role").eq("user_id", userId);
-      const isCurador = (callerRoles || []).some((r: any) => r.role === "super_administrador" || r.role === "administrador");
+      const isCurador = (callerRoles || []).some((r: any) => r.role === "super_administrador" || r.role === "administrador" || r.role === "suporte");
       if (!isCurador) return json({ error: "Acesso restrito" }, 403);
 
       const { analise_id, cupiado } = params;
@@ -676,7 +676,7 @@ serve(async (req) => {
     // ========== CURADORIA: GET AVALIACOES ==========
     if (action === "getAvaliacoes") {
       const { data: callerRoles } = await supabase.from("user_roles").select("role").eq("user_id", userId);
-      const isCurador = (callerRoles || []).some((r: any) => r.role === "super_administrador" || r.role === "administrador");
+      const isCurador = (callerRoles || []).some((r: any) => r.role === "super_administrador" || r.role === "administrador" || r.role === "suporte");
       if (!isCurador) return json({ error: "Acesso restrito" }, 403);
 
       const { analise_id } = params;
@@ -694,7 +694,7 @@ serve(async (req) => {
     // ========== CURADORIA: SAVE AVALIACAO ==========
     if (action === "saveAvaliacao") {
       const { data: callerRoles } = await supabase.from("user_roles").select("role").eq("user_id", userId);
-      const isCurador = (callerRoles || []).some((r: any) => r.role === "super_administrador" || r.role === "administrador");
+      const isCurador = (callerRoles || []).some((r: any) => r.role === "super_administrador" || r.role === "administrador" || r.role === "suporte");
       if (!isCurador) return json({ error: "Acesso restrito" }, 403);
 
       const { analise_id, campo, status: avStatus, valor_corrigido, nota } = params;
