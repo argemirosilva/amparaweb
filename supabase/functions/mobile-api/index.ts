@@ -2107,7 +2107,12 @@ async function handleReportarStatusGravacao(
       });
     }
 
-    // Session already exists, just acknowledge
+    // Session already exists — ensure device_status reflects recording state
+    await supabase
+      .from("device_status")
+      .update({ is_recording: true })
+      .eq("user_id", userId);
+
     return jsonResponse({
       success: true,
       message: "Sessão de gravação já ativa",
