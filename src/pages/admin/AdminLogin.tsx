@@ -95,12 +95,6 @@ export default function AdminLogin() {
         {/* Header */}
         <div className="text-center mb-6">
           <img src={amparaLogo} alt="AMPARA" className="h-20 object-contain mx-auto mb-4" />
-          <h1
-            className="text-xl font-semibold tracking-tight"
-            style={{ color: "hsl(220 13% 18%)" }}
-          >
-            Painel Administrativo
-          </h1>
           <p className="text-sm mt-1" style={{ color: "hsl(220 9% 46%)" }}>
             Acesso restrito a gestores e operadores
           </p>
