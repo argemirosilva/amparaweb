@@ -203,15 +203,14 @@ export default function AdminCuradoria() {
               <TableHead>Duração</TableHead>
               <TableHead>Risco</TableHead>
               <TableHead>Sentimento</TableHead>
-              <TableHead>Transcrição (preview)</TableHead>
               <TableHead className="text-center">Curada</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
+              <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
             ) : items.length === 0 ? (
-              <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Nenhuma transcrição encontrada</TableCell></TableRow>
+              <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Nenhuma transcrição encontrada</TableCell></TableRow>
             ) : items.map((item) => (
               <TableRow
                 key={item.id}
@@ -228,9 +227,6 @@ export default function AdminCuradoria() {
                   )}
                 </TableCell>
                 <TableCell className="text-sm capitalize">{item.sentimento || "—"}</TableCell>
-                <TableCell className="text-sm max-w-xs truncate text-foreground">
-                  {(() => { const t = formatTranscricao(item.transcricao_anonimizada); return t.slice(0, 80) + (t.length > 80 ? "…" : ""); })()}
-                </TableCell>
                 <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
                   <Checkbox
                     checked={item.cupiado}
