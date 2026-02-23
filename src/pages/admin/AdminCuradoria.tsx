@@ -217,13 +217,7 @@ export default function AdminCuradoria() {
                 onClick={() => setSelected(item)}
               >
                 <TableCell className="whitespace-nowrap text-sm">{fmtDate(item.created_at)}</TableCell>
-                <TableCell>
-                  {item.nivel_risco && (
-                    <Badge className={RISK_COLORS[item.nivel_risco] || "bg-gray-300"}>
-                      {item.nivel_risco}
-                    </Badge>
-                  )}
-                </TableCell>
+                <TableCell className="text-sm capitalize">{item.nivel_risco || "—"}</TableCell>
                 <TableCell className="text-sm capitalize">{item.sentimento || "—"}</TableCell>
                 <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
                   <Checkbox
