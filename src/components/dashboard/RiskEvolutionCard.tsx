@@ -159,12 +159,10 @@ export default function RiskEvolutionCard() {
                         ticks={(() => {
                           if (history.length === 0) return [];
                           const dates = history.map(h => h.date);
-                          const first = dates[0];
-                          const last = dates[dates.length - 1];
-                          // Find closest dates to day 7 and day 15 (indices ~6 and ~14)
-                          const mid1 = dates[Math.round((dates.length - 1) * (6 / 29))] || first;
-                          const mid2 = dates[Math.round((dates.length - 1) * (14 / 29))] || last;
-                          return [...new Set([first, mid1, mid2, last])];
+                          // Pick every ~7 days: index 0, 7, 14, 21, 28 (last)
+                          const indices = [0, 7, 14, 21, dates.length - 1];
+                          const unique = [...new Set(indices.map(i => dates[Math.min(i, dates.length - 1)]))];
+                          return unique;
                         })()}
                         tickFormatter={(val: string) => {
                           const d = new Date(val + "T00:00:00");
