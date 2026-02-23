@@ -96,7 +96,7 @@ export default function AdminLogin() {
         <div className="text-center mb-6">
           <img src={amparaLogo} alt="AMPARA" className="h-20 object-contain mx-auto mb-4" />
           <p className="text-sm mt-1" style={{ color: "hsl(220 9% 46%)" }}>
-            Acesso restrito a gestores e operadores
+            Acesso restrito a gestores, operadores e suporte
           </p>
         </div>
 
