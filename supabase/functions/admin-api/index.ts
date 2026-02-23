@@ -90,7 +90,8 @@ serve(async (req) => {
         return json({ error: "Órgão é obrigatório" }, 400);
       }
 
-      const validRole = role === "admin_tenant" ? "admin_tenant" : "operador";
+      const validRoles = ["admin_tenant", "operador", "suporte"];
+      const validRole = validRoles.includes(role) ? role : "operador";
 
       // Check if email already exists
       const { data: existing } = await supabase

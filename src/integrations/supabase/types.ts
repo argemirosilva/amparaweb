@@ -1914,7 +1914,7 @@ export type Database = {
       unaccent: { Args: { "": string }; Returns: string }
     }
     Enums: {
-      admin_role: "admin_master" | "admin_tenant" | "operador"
+      admin_role: "admin_master" | "admin_tenant" | "operador" | "suporte"
       support_access_scope:
         | "read_metadata"
         | "read_transcription"
@@ -2091,7 +2091,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      admin_role: ["admin_master", "admin_tenant", "operador"],
+      admin_role: ["admin_master", "admin_tenant", "operador", "suporte"],
       support_access_scope: [
         "read_metadata",
         "read_transcription",

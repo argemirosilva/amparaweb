@@ -739,8 +739,9 @@ export default function AdminUsuarios() {
                     className="w-full px-3 py-2 rounded-md border text-sm outline-none cursor-pointer"
                     style={{ borderColor: "hsl(220 13% 87%)", color: "hsl(220 13% 18%)" }}
                   >
-                    <option value="operador">Operador</option>
+                     <option value="operador">Operador</option>
                     <option value="admin_tenant">Administrador do Órgão</option>
+                    <option value="suporte">Suporte</option>
                   </select>
                 </div>
 
