@@ -112,9 +112,11 @@ serve(async (req) => {
       dynamicVariables.AGRESSOR_NOME = context.aggressor?.name || context.aggressor?.name_masked || "";
       
       dynamicVariables.RELACAO = context.victim_aggressor_relation || "";
-      // Remove protocol (https://) and www for cleaner speech
+      // Force production domain and remove protocol for cleaner speech
       const rawLink = context.monitoring_link || "";
-      dynamicVariables.LINK_MONITORAMENTO = rawLink.replace(/^https?:\/\/(www\.)?/, "");
+      const pathMatch = rawLink.match(/\/([a-z0-9]{4,10})$/i);
+      const code = pathMatch ? pathMatch[1] : rawLink;
+      dynamicVariables.LINK_MONITORAMENTO = code ? `amparamulher.com.br/${code}` : "";
 
       // Security info about aggressor
       dynamicVariables.AGRESSOR_TEM_ARMA = context.aggressor?.tem_arma ? "sim" : "não";
