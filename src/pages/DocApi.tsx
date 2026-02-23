@@ -15,6 +15,8 @@ interface Endpoint {
   auth: "session_token" | "email_usuario" | "refresh_token" | "nenhuma" | "session_token ou email_usuario";
   params: { name: string; type: string; required: boolean; description: string }[];
   response: Record<string, unknown>;
+  aliases?: string[];
+  notes?: string[];
 }
 
 const ENDPOINTS: Endpoint[] = [
@@ -55,7 +57,7 @@ const ENDPOINTS: Endpoint[] = [
   {
     action: "pingMobile",
     fase: 1,
-    description: "Heartbeat do dispositivo (1s normal / 1s pânico). Atualiza status de bateria, gravação, monitoramento. Se latitude/longitude estiverem presentes, registra localização automaticamente (vincula a alerta de pânico ativo se existir). Device único por usuária — novo device_id substitui o anterior. O frontend aplica snap-to-road (Mapbox Map Matching API) para exibir o marcador na via mais próxima.",
+    description: "Heartbeat do dispositivo (1s normal / 1s pânico). Atualiza status de bateria, gravação, monitoramento. Se latitude/longitude estiverem presentes, registra localização automaticamente (vincula a alerta de pânico ativo se existir). Device único por usuária — novo device_id substitui o anterior. O frontend aplica snap-to-road (Mapbox Map Matching API) para exibir o marcador na via mais próxima. ⚠️ Deduplicação GPS: se timestamp_gps já existir para a usuária, o registro é ignorado silenciosamente.",
     auth: "session_token",
     params: [
       { name: "session_token", type: "string", required: true, description: "Token de sessão" },
@@ -64,18 +66,23 @@ const ENDPOINTS: Endpoint[] = [
       { name: "is_charging", type: "boolean", required: false, description: "Se está carregando" },
       { name: "is_recording", type: "boolean", required: false, description: "Se está gravando" },
       { name: "is_monitoring", type: "boolean", required: false, description: "Se está monitorando" },
-      { name: "dispositivo_info", type: "string", required: false, description: "Ex: 'Samsung Galaxy S21'" },
+      { name: "dispositivo_info", type: "string", required: false, description: "Ex: 'Samsung Galaxy S21'. Identificação do modelo do dispositivo." },
+      { name: "device_model", type: "string", required: false, description: "Alias de dispositivo_info. Aceito como fallback caso dispositivo_info não seja enviado." },
       { name: "versao_app", type: "string", required: false, description: "Versão do app. Ex: '1.2.3'" },
       { name: "timezone", type: "string", required: false, description: "Ex: 'America/Sao_Paulo'" },
       { name: "timezone_offset_minutes", type: "number", required: false, description: "Offset em minutos. Ex: -180" },
       { name: "latitude", type: "number", required: false, description: "Latitude GPS (se presente, registra localização)" },
       { name: "longitude", type: "number", required: false, description: "Longitude GPS (se presente, registra localização)" },
       { name: "location_accuracy", type: "number", required: false, description: "Precisão GPS em metros" },
-      { name: "location_timestamp", type: "string|number", required: false, description: "Timestamp ISO ou Unix millis do GPS" },
+      { name: "location_timestamp", type: "string|number", required: false, description: "Timestamp ISO ou Unix millis do GPS. Usado para deduplicação." },
       { name: "speed", type: "number", required: false, description: "Velocidade m/s" },
       { name: "heading", type: "number", required: false, description: "Direção em graus" },
     ],
     response: { success: true, status: "online", servidor_timestamp: "ISO8601" },
+    notes: [
+      "device_model é aceito como fallback de dispositivo_info — se ambos forem enviados, dispositivo_info tem prioridade.",
+      "GPS com timestamp_gps duplicado é ignorado silenciosamente (deduplicação).",
+    ],
   },
   {
     action: "syncConfigMobile",
@@ -169,7 +176,7 @@ const ENDPOINTS: Endpoint[] = [
   {
     action: "enviarLocalizacaoGPS",
     fase: 3,
-    description: "Registra localização GPS. Vincula automaticamente ao alerta de pânico ativo se existir. Validação de device_id quando há pânico/monitoramento ativo. O frontend aplica snap-to-road para encaixar a posição na via mais próxima e auto-follow para centralizar o mapa automaticamente.",
+    description: "Registra localização GPS. Vincula automaticamente ao alerta de pânico ativo se existir. Validação de device_id quando há pânico/monitoramento ativo. O frontend aplica snap-to-road para encaixar a posição na via mais próxima e auto-follow para centralizar o mapa automaticamente. ⚠️ Deduplicação GPS: se timestamp_gps já existir para a usuária, o registro é ignorado silenciosamente — o app deve garantir timestamps únicos.",
     auth: "email_usuario",
     params: [
       { name: "email_usuario", type: "string", required: true, description: "Email da usuária" },
@@ -181,9 +188,14 @@ const ENDPOINTS: Endpoint[] = [
       { name: "bateria_percentual", type: "number", required: false, description: "Nível da bateria" },
       { name: "speed", type: "number", required: false, description: "Velocidade m/s" },
       { name: "heading", type: "number", required: false, description: "Direção em graus" },
-      { name: "timestamp_gps", type: "string", required: false, description: "Timestamp ISO do GPS" },
+      { name: "timestamp_gps", type: "string", required: false, description: "Timestamp ISO do GPS. Usado para deduplicação — timestamps repetidos são ignorados." },
     ],
     response: { success: true, message: "Localização registrada", alerta_id: "uuid | null", servidor_timestamp: "ISO8601" },
+    notes: [
+      "Deduplicação: se já existir um registro com o mesmo timestamp_gps para a usuária, a inserção é silenciosamente ignorada (sem erro).",
+      "Se há pânico ou monitoramento ativo e device_id não é fornecido, retorna erro DEVICE_ID_REQUIRED.",
+      "Se device_id informado não bate com o do pânico ativo, retorna erro DEVICE_MISMATCH.",
+    ],
   },
   {
     action: "acionarPanicoMobile",
@@ -194,10 +206,14 @@ const ENDPOINTS: Endpoint[] = [
       { name: "email_usuario", type: "string", required: true, description: "Email da usuária" },
       { name: "device_id", type: "string", required: false, description: "ID do dispositivo" },
       { name: "tipo_acionamento", type: "string", required: false, description: "botao_panico | comando_voz. Default: 'botao_panico'" },
-      { name: "latitude", type: "number", required: false, description: "Latitude" },
-      { name: "longitude", type: "number", required: false, description: "Longitude" },
+      { name: "latitude", type: "number", required: false, description: "Latitude (pode ser enviada na raiz ou dentro do objeto 'localizacao')" },
+      { name: "longitude", type: "number", required: false, description: "Longitude (pode ser enviada na raiz ou dentro do objeto 'localizacao')" },
+      { name: "localizacao", type: "object", required: false, description: "Formato alternativo: { latitude: number, longitude: number }. O backend aceita coordenadas tanto da raiz quanto deste objeto." },
     ],
     response: { success: true, alerta_id: "uuid", protocolo: "AMP-YYYYMMDD-XXXXXX", rede_apoio_notificada: true, autoridades_acionadas: true },
+    notes: [
+      "Coordenadas podem ser enviadas de duas formas: campos latitude/longitude na raiz do payload, OU dentro de um objeto 'localizacao'. O backend prioriza os campos raiz e usa localizacao como fallback.",
+    ],
   },
   {
     action: "cancelarPanicoMobile",
@@ -226,22 +242,31 @@ const ENDPOINTS: Endpoint[] = [
 
   // ── Fase 4: Áudio & Monitoramento ──
   {
-    action: "iniciarGravacao",
+    action: "reportarStatusGravacao",
     fase: 4,
-    description: "Inicia uma sessão de gravação. Cria sessão em monitoramento_sessoes com status 'ativa'. Se já existir sessão ativa para o device, retorna a existente. Alias de reportarStatusGravacao com status_gravacao='iniciada'.",
+    description: "Reporta mudança de estado da gravação. Finalização condicional: motivo_parada 'botao_manual', 'manual' ou 'parada_panico' sela imediatamente. Outros motivos mantêm sessão ativa para o cron. Gravações com 0 segmentos são descartadas automaticamente.",
     auth: "email_usuario",
+    aliases: ["iniciarGravacao", "pararGravacao", "finalizarGravacao"],
     params: [
       { name: "email_usuario", type: "string", required: true, description: "Email da usuária" },
-      { name: "device_id", type: "string", required: true, description: "ID do dispositivo" },
-      { name: "status_gravacao", type: "string", required: true, description: "Fixo: 'iniciada'" },
+      { name: "device_id", type: "string", required: false, description: "ID do dispositivo" },
+      { name: "status_gravacao", type: "string", required: true, description: "iniciada | pausada | retomada | finalizada | enviando | erro" },
       { name: "origem_gravacao", type: "string", required: false, description: "automatico | botao_panico | agendado | comando_voz | botao_manual" },
+      { name: "motivo_parada", type: "string", required: false, description: "Motivo da parada. Valores que selam imediatamente: 'botao_manual', 'manual', 'parada_panico'." },
+      { name: "total_segmentos", type: "number", required: false, description: "Total de segmentos enviados (0 = descarta sessão)" },
     ],
-    response: { success: true, message: "Sessão de gravação iniciada", sessao_id: "uuid", origem_gravacao: "automatico", servidor_timestamp: "ISO8601" },
+    response: { success: true, message: "Status da gravação atualizado", sessao_id: "uuid", status: "aguardando_finalizacao | ativa | descartada", servidor_timestamp: "ISO8601" },
+    notes: [
+      "Os aliases iniciarGravacao, pararGravacao e finalizarGravacao são roteados para o mesmo handler no backend. O app pode usar qualquer um deles com os mesmos parâmetros.",
+      "Status 'aguardando_finalizacao': retornado quando motivo_parada é 'botao_manual', 'manual' ou 'parada_panico' — a sessão é selada imediatamente.",
+      "Status 'ativa': retornado para outros motivos de parada — a sessão permanece aberta e será selada pelo cron de manutenção.",
+      "Status 'descartada': retornado quando total_segmentos === 0 — a sessão é removida do banco.",
+    ],
   },
   {
     action: "receberAudioMobile",
     fase: 4,
-    description: "Recebe segmento de áudio. Requer sessão de monitoramento ativa (enviar iniciarGravacao antes). Suporta JSON com file_url OU multipart/form-data com upload binário direto para R2. Idempotente via segmento_idx.",
+    description: "Recebe segmento de áudio. Suporta JSON com file_url OU multipart/form-data com upload binário direto para R2. Idempotente via segmento_idx. O backend possui 3 fluxos de resposta: sessão ativa (normal), segmento tardio (grace window 60s), e gravação órfã (sem sessão).",
     auth: "session_token ou email_usuario",
     params: [
       { name: "session_token", type: "string", required: false, description: "Token de sessão (alternativa a email_usuario)" },
@@ -250,11 +275,17 @@ const ENDPOINTS: Endpoint[] = [
       { name: "device_id", type: "string", required: false, description: "ID do dispositivo" },
       { name: "duracao_segundos", type: "number", required: false, description: "Duração em segundos" },
       { name: "tamanho_mb", type: "number", required: false, description: "Tamanho em MB" },
-      { name: "segmento_idx", type: "number", required: false, description: "Índice do segmento (para idempotência)" },
+      { name: "segmento_idx", type: "number", required: false, description: "Índice do segmento (para idempotência — enviar o mesmo idx na mesma sessão retorna o segmento existente)" },
       { name: "timezone", type: "string", required: false, description: "Timezone" },
       { name: "timezone_offset_minutes", type: "number", required: false, description: "Offset em minutos" },
     ],
     response: { success: true, segmento_id: "uuid", monitor_session_id: "uuid", storage_path: "user_id/date/file.mp4", message: "Segmento de monitoramento salvo." },
+    notes: [
+      "Fluxo 1 — Sessão ativa: segmento é anexado à sessão de monitoramento ativa. Resposta: { message: 'Segmento de monitoramento salvo.' }",
+      "Fluxo 2 — Segmento tardio (Grace Window 60s): se a sessão foi selada há menos de 60 segundos, o segmento é anexado a ela. Resposta: { message: 'Segmento tardio anexado à sessão recém-finalizada.' }",
+      "Fluxo 3 — Gravação órfã: sem sessão ativa ou recente, o segmento é salvo como gravação independente e enviado para processamento automático. Resposta: { gravacao_id: 'uuid', message: 'Segmento salvo como gravação independente (sem sessão ativa).' }",
+      "Idempotência: se segmento_idx já existe na mesma sessão, retorna o segmento existente sem duplicar.",
+    ],
   },
   {
     action: "getAudioSignedUrl",
@@ -303,21 +334,6 @@ const ENDPOINTS: Endpoint[] = [
       { name: "app_state", type: "string", required: false, description: "Estado do app (foreground, background, etc)" },
     ],
     response: { success: true, message: "Status de monitoramento atualizado", servidor_timestamp: "ISO8601" },
-  },
-  {
-    action: "reportarStatusGravacao",
-    fase: 4,
-    description: "Reporta mudança de estado da gravação. Também acessível via aliases: iniciarGravacao, pararGravacao, finalizarGravacao. Finalização condicional: motivo_parada 'botao_manual' ou 'parada_panico' sela imediatamente. Outros motivos mantêm sessão ativa para o cron. Gravações com 0 segmentos são descartadas automaticamente.",
-    auth: "email_usuario",
-    params: [
-      { name: "email_usuario", type: "string", required: true, description: "Email da usuária" },
-      { name: "device_id", type: "string", required: false, description: "ID do dispositivo" },
-      { name: "status_gravacao", type: "string", required: true, description: "iniciada | pausada | retomada | finalizada | enviando | erro" },
-      { name: "origem_gravacao", type: "string", required: false, description: "automatico | botao_panico | agendado | comando_voz | botao_manual" },
-      { name: "motivo_parada", type: "string", required: false, description: "Motivo da parada. Valores que selam imediatamente: 'botao_manual', 'manual', 'parada_panico'." },
-      { name: "total_segmentos", type: "number", required: false, description: "Total de segmentos enviados (0 = descarta sessão)" },
-    ],
-    response: { success: true, message: "Status da gravação atualizado", sessao_id: "uuid", status: "aguardando_finalizacao | ativa | descartada", servidor_timestamp: "ISO8601" },
   },
 ];
 
@@ -379,9 +395,14 @@ function EndpointCard({ endpoint }: { endpoint: Endpoint }) {
       <CollapsibleTrigger asChild>
         <Card className="cursor-pointer hover:bg-accent/30 transition-colors">
           <CardContent className="px-4 py-3 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3 flex-1 min-w-0">
+            <div className="flex items-center gap-3 flex-1 min-w-0 flex-wrap">
               <code className="text-sm font-mono font-semibold text-primary">{endpoint.action}</code>
               <Badge variant={authColor} className="text-[10px] shrink-0">{authLabel}</Badge>
+              {endpoint.aliases && endpoint.aliases.length > 0 && (
+                <span className="text-[10px] text-muted-foreground">
+                  aliases: {endpoint.aliases.map(a => <code key={a} className="text-primary mx-0.5">{a}</code>)}
+                </span>
+              )}
             </div>
             <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform shrink-0 ${open ? "rotate-180" : ""}`} />
           </CardContent>
@@ -390,6 +411,19 @@ function EndpointCard({ endpoint }: { endpoint: Endpoint }) {
       <CollapsibleContent>
         <div className="px-1 pb-4 pt-2 space-y-3">
           <p className="text-sm text-muted-foreground">{endpoint.description}</p>
+
+          {/* Aliases info */}
+          {endpoint.aliases && endpoint.aliases.length > 0 && (
+            <div className="rounded-md bg-primary/10 border border-primary/20 p-3">
+              <p className="text-xs font-semibold text-foreground mb-1">🔀 Aliases disponíveis</p>
+              <p className="text-xs text-muted-foreground">
+                Esta action pode ser chamada usando qualquer um destes nomes: {" "}
+                <code className="text-primary">{endpoint.action}</code>
+                {endpoint.aliases.map(a => <span key={a}>, <code className="text-primary">{a}</code></span>)}
+                . Todos executam o mesmo handler com os mesmos parâmetros.
+              </p>
+            </div>
+          )}
 
           <div>
             <p className="text-xs font-semibold text-foreground mb-1.5">Parâmetros</p>
@@ -426,6 +460,18 @@ function EndpointCard({ endpoint }: { endpoint: Endpoint }) {
             <p className="text-xs font-semibold text-foreground mb-1.5">Exemplo de Response</p>
             <CodeBlock code={JSON.stringify(endpoint.response, null, 2)} label="Response JSON" />
           </div>
+
+          {/* Notes */}
+          {endpoint.notes && endpoint.notes.length > 0 && (
+            <div>
+              <p className="text-xs font-semibold text-foreground mb-1.5">📝 Notas de implementação</p>
+              <ul className="text-xs text-muted-foreground space-y-1 list-disc list-inside">
+                {endpoint.notes.map((note, i) => (
+                  <li key={i}>{note}</li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       </CollapsibleContent>
     </Collapsible>
@@ -491,7 +537,72 @@ export default function DocApiPage() {
               <li><strong>Login:</strong> 5 tentativas / 15 minutos (por email + IP)</li>
               <li><strong>Validar senha:</strong> 5 tentativas / 15 minutos</li>
               <li><strong>Alterar senha:</strong> 5 tentativas / 15 minutos</li>
+              <li><strong>Alterar senha de coação:</strong> 5 tentativas / 15 minutos</li>
             </ul>
+          </CardContent>
+        </Card>
+
+        {/* Deduplicação GPS & Grace Window */}
+        <Card>
+          <CardContent className="px-4 py-4 space-y-3">
+            <p className="text-sm font-semibold text-foreground">🔄 Deduplicação GPS & Janela de Graça (Grace Window)</p>
+            
+            <div className="space-y-3">
+              <div>
+                <p className="text-xs font-semibold text-foreground">Deduplicação de GPS</p>
+                <p className="text-xs text-muted-foreground">
+                  Tanto <code className="text-primary">pingMobile</code> quanto <code className="text-primary">enviarLocalizacaoGPS</code> verificam 
+                  se já existe um registro com o mesmo <code className="text-primary">timestamp_gps</code> para a usuária.
+                  Se existir, a inserção é <strong>silenciosamente ignorada</strong> (sem erro). O app deve garantir que cada leitura 
+                  GPS tenha um timestamp único para evitar perda de dados.
+                </p>
+              </div>
+
+              <div>
+                <p className="text-xs font-semibold text-foreground">Janela de Graça para Áudio (60 segundos)</p>
+                <p className="text-xs text-muted-foreground">
+                  Quando o app envia um segmento de áudio via <code className="text-primary">receberAudioMobile</code> e não há sessão 
+                  de monitoramento ativa, o backend verifica se existe uma sessão <strong>selada nos últimos 60 segundos</strong>.
+                  Se encontrar, o segmento é anexado a essa sessão (segmento tardio). Caso contrário, é salvo como 
+                  gravação independente (órfã) e enviado para processamento automático.
+                </p>
+                <div className="rounded-md bg-muted/50 border border-border p-2 mt-2">
+                  <p className="text-[10px] font-mono text-muted-foreground uppercase mb-1">Fluxo de decisão</p>
+                  <pre className="text-xs font-mono text-foreground whitespace-pre-wrap">{`1. Sessão ativa encontrada? → Anexar segmento (normal)
+2. Sessão selada há < 60s? → Anexar como tardio (grace window)
+3. Nenhuma sessão? → Salvar como gravação independente (órfã)`}</pre>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Aliases de Actions */}
+        <Card>
+          <CardContent className="px-4 py-4 space-y-2">
+            <p className="text-sm font-semibold text-foreground">🔀 Aliases de Actions</p>
+            <p className="text-xs text-muted-foreground">
+              Algumas actions possuem aliases — nomes alternativos que executam exatamente o mesmo handler no backend.
+              O app pode usar qualquer um dos nomes listados abaixo:
+            </p>
+            <div className="rounded-md border border-border overflow-hidden">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="bg-muted/50">
+                    <th className="text-left px-3 py-1.5 font-medium text-muted-foreground">Action Principal</th>
+                    <th className="text-left px-3 py-1.5 font-medium text-muted-foreground">Aliases</th>
+                    <th className="text-left px-3 py-1.5 font-medium text-muted-foreground">Uso recomendado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="border-t border-border">
+                    <td className="px-3 py-1.5 font-mono text-primary">reportarStatusGravacao</td>
+                    <td className="px-3 py-1.5 font-mono text-primary">iniciarGravacao, pararGravacao, finalizarGravacao</td>
+                    <td className="px-3 py-1.5 text-muted-foreground">Usar o alias que melhor descreve a intenção (ex: iniciarGravacao com status_gravacao='iniciada')</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </CardContent>
         </Card>
 
@@ -641,7 +752,7 @@ export default function DocApiPage() {
           <CardContent className="px-4 py-4 space-y-2">
             <p className="text-sm font-semibold text-foreground">⚠️ Comportamento Anti-Coerção</p>
             <p className="text-xs text-muted-foreground">
-              Quando a <strong>senha de coação</strong> é usada no login, change_password ou validate_password,
+              Quando a <strong>senha de coação</strong> é usada no login, change_password, change_coercion_password ou validate_password,
               o sistema retorna <code className="text-primary">success: true</code> mas registra silenciosamente
               o evento nos logs de auditoria. Nenhuma alteração real é feita no banco. O campo <code className="text-primary">loginTipo</code> retorna
               <code className="text-primary">"coacao"</code> — o app deve tratar isso de forma discreta.
@@ -669,7 +780,7 @@ export default function DocApiPage() {
         {/* Footer */}
         <div className="border-t border-border pt-4">
           <p className="text-xs text-muted-foreground text-center">
-            AMPARA Mobile API v2.0 — Última atualização: {new Date().toLocaleDateString("pt-BR")}
+            AMPARA Mobile API v2.1 — Última atualização: {new Date().toLocaleDateString("pt-BR")}
           </p>
         </div>
       </div>
