@@ -441,22 +441,25 @@ async function runMacro(supabase: any, jobId: string, payload: any): Promise<any
     return { skipped: true, reason: "No micro results in window" };
   }
 
-  const macroPrompt = `Você é uma especialista em proteção à mulher. Analise os dados agregados e gere um resumo CONCISO e DIRETO.
+  const macroPrompt = `Você é uma especialista em proteção à mulher e relações conjugais. Analise os dados agregados abaixo e gere um relatório detalhado e acolhedor.
 
-PRINCÍPIO: Foco na PROTEÇÃO DA MULHER. Na dúvida, proteja-a.
+PRINCÍPIO: Foco na PROTEÇÃO DA MULHER. Na dúvida, proteja-a. Seja empática e gentil na comunicação.
 
 DADOS (últimos ${window_days} dias):
 ${JSON.stringify(aggregates, null, 2)}
 
 INSTRUÇÕES:
-- Seja objetiva e breve. Máximo 3-4 frases no resumo.
-- Orientações curtas e práticas (máx 3).
+- No "panorama_narrativo": escreva 5-8 frases descrevendo a situação geral, padrões observados, evolução emocional, tipos de violência detectados e dinâmica do relacionamento. Seja detalhada mas acessível.
+- No "resumo": escreva 2-3 frases como um resumo curto do panorama.
+- Nas "orientacoes": forneça 4-6 sugestões GENTIS e ACOLHEDORAS, como conselhos de uma amiga próxima, nunca como ordens. Use linguagem como "pode ser útil...", "considere...", "que tal tentar...", "uma opção seria...". Foque em ações práticas e realistas.
+- NÃO inclua score numérico em nenhum campo.
 - Só inclua canais de apoio se o nível for alto ou crítico.
 
 RETORNE APENAS JSON:
 {
-  "resumo": "3-4 frases diretas sobre a situação atual, incluindo padrões e riscos identificados.",
-  "orientacoes": ["ação curta 1", "ação curta 2"],
+  "panorama_narrativo": "5-8 frases detalhadas sobre a situação, padrões e dinâmica.",
+  "resumo": "2-3 frases resumindo a situação atual.",
+  "orientacoes": ["sugestão gentil 1", "sugestão gentil 2", "sugestão gentil 3", "sugestão gentil 4"],
   "canais_apoio": [],
   "nivel_alerta": "baixo|moderado|alto|critico"
 }`;
