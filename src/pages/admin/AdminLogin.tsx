@@ -205,11 +205,6 @@ export default function AdminLogin() {
           <img src={orizonLogo} alt="Orizon Tech" className="h-6 object-contain" />
         </div>
 
-        <p className="text-center text-xs mt-3" style={{ color: "hsl(220 9% 60%)" }}>
-          Sistema protegido por autenticação segura.
-          <br />
-          Tentativas indevidas são registradas.
-        </p>
       </div>
     </div>
   );
