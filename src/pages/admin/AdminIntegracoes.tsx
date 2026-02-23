@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Save, RotateCcw, Plug, Mic, Brain, Phone, MessageCircle } from "lucide-react";
+import { Save, RotateCcw, Plug, Mic, Brain, Phone, MessageCircle, Mail } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
@@ -28,6 +28,13 @@ interface Setting {
 }
 
 const INTEGRATION_CATEGORIES = [
+  {
+    key: "integracao_email",
+    label: "E-mail SMTP — Localweb",
+    description: "Serviço de envio de e-mails transacionais (verificação, convite, recuperação de senha) via SMTP SSL.",
+    icon: Mail,
+    color: "hsl(24 80% 50%)",
+  },
   {
     key: "integracao_agreggar",
     label: "Agreggar — Transcrição de Áudio",
@@ -59,6 +66,12 @@ const INTEGRATION_CATEGORIES = [
 ];
 
 const FRIENDLY_LABELS: Record<string, string> = {
+  smtp_ativa: "Integração ativa",
+  smtp_host: "Servidor SMTP",
+  smtp_port: "Porta",
+  smtp_user: "Usuário (e-mail)",
+  smtp_pass: "Senha",
+  smtp_from: "E-mail remetente (From)",
   agreggar_api_url: "URL da API",
   agreggar_ativa: "Integração ativa",
   ia_modelo_analise: "Modelo de análise",
@@ -179,13 +192,16 @@ export default function AdminIntegracoes() {
 
 
 
+    const isPassword = s.chave === "smtp_pass";
+
     return (
       <div className="flex items-center gap-2">
         <input
-          type="text"
+          type={isPassword ? "password" : "text"}
           style={inputStyle}
           value={currentValue}
           onChange={(e) => handleChange(s.id, e.target.value)}
+          autoComplete={isPassword ? "new-password" : "off"}
         />
         {isModified && (
           <div className="flex gap-1 shrink-0">

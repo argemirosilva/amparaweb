@@ -1,3 +1,4 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
 
@@ -55,6 +56,68 @@ function buildResetHtml(nome: string, link: string): string {
   `;
 }
 
+async function loadSmtpConfig(): Promise<{
+  host: string; port: number; user: string; pass: string; from: string; ativa: boolean;
+} | null> {
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+  );
+
+  const { data, error } = await supabase
+    .from("admin_settings")
+    .select("chave, valor")
+    .eq("categoria", "integracao_email");
+
+  if (error || !data || data.length === 0) {
+    console.error("Failed to load SMTP settings from DB:", error);
+    return null;
+  }
+
+  const map: Record<string, string> = {};
+  for (const row of data) {
+    map[row.chave] = row.valor;
+  }
+
+  if (map.smtp_ativa === "false") {
+    console.log("SMTP integration is disabled in admin_settings");
+    return null;
+  }
+
+  const host = map.smtp_host;
+  const user = map.smtp_user;
+  const pass = map.smtp_pass;
+
+  if (!host || !user || !pass) {
+    // Fallback to env vars for backwards compat
+    const envHost = Deno.env.get("SMTP_HOST");
+    const envUser = Deno.env.get("SMTP_USER");
+    const envPass = Deno.env.get("SMTP_PASS");
+    if (envHost && envUser && envPass) {
+      console.log("Using SMTP credentials from env vars (DB values empty)");
+      return {
+        host: envHost,
+        port: parseInt(Deno.env.get("SMTP_PORT") || "465"),
+        user: envUser,
+        pass: envPass,
+        from: envUser,
+        ativa: true,
+      };
+    }
+    console.error("SMTP credentials not configured in DB or env");
+    return null;
+  }
+
+  return {
+    host,
+    port: parseInt(map.smtp_port || "465"),
+    user,
+    pass,
+    from: map.smtp_from || user,
+    ativa: true,
+  };
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -69,13 +132,8 @@ serve(async (req) => {
       });
     }
 
-    const SMTP_HOST = Deno.env.get("SMTP_HOST");
-    const SMTP_PORT = parseInt(Deno.env.get("SMTP_PORT") || "465");
-    const SMTP_USER = Deno.env.get("SMTP_USER");
-    const SMTP_PASS = Deno.env.get("SMTP_PASS");
-
-    if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS) {
-      console.error("SMTP credentials not configured");
+    const smtp = await loadSmtpConfig();
+    if (!smtp) {
       return new Response(JSON.stringify({ error: "Configuração de email não encontrada" }), {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -101,7 +159,6 @@ serve(async (req) => {
       subject = "Redefinir senha — AMPARA Mulher";
       htmlBody = buildResetHtml(nome || "", link);
     } else {
-      // Default: verification code
       if (!codigo) {
         return new Response(JSON.stringify({ error: "Código é obrigatório" }), {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -113,18 +170,18 @@ serve(async (req) => {
 
     const client = new SMTPClient({
       connection: {
-        hostname: SMTP_HOST,
-        port: SMTP_PORT,
+        hostname: smtp.host,
+        port: smtp.port,
         tls: true,
         auth: {
-          username: SMTP_USER,
-          password: SMTP_PASS,
+          username: smtp.user,
+          password: smtp.pass,
         },
       },
     });
 
     await client.send({
-      from: SMTP_USER,
+      from: smtp.from,
       to: email,
       subject,
       content: "auto",
