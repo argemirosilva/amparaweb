@@ -19,7 +19,11 @@ import {
 import amparaLogo from "@/assets/ampara-logo.png";
 import { useState } from "react";
 
-const TECNICO_PATHS = ["/admin/configuracoes", "/admin/integracoes", "/admin/gerador-audios-ampara"];
+const TECNICO_PATHS = [
+  "/admin/usuarios", "/admin/suporte", "/admin/orgaos",
+  "/admin/auditoria", "/admin/configuracoes", "/admin/integracoes",
+];
+const OPERACIONAL_PATHS = ["/admin", "/admin/relatorios"];
 const SUPORTE_PATHS = ["/admin/suporte"];
 
 const sidebarItems = [
@@ -29,7 +33,6 @@ const sidebarItems = [
   { label: "Entidades", path: "/admin/orgaos", icon: Building2 },
   { label: "Auditoria", path: "/admin/auditoria", icon: ClipboardCheck },
   { label: "Relatórios", path: "/admin/relatorios", icon: FileText },
-  
   { label: "Configurações", path: "/admin/configuracoes", icon: Settings },
   { label: "Integrações", path: "/admin/integracoes", icon: Plug },
 ];
@@ -40,7 +43,8 @@ export default function AdminLayout() {
   const { logout, usuario } = useAuth();
   const { roles, hasRole, tenantSigla, isSuporte } = useAdminRole();
   const isTecnico = hasRole("admin_master");
-  const isSupportOnly = isSuporte && !hasRole("admin_master") && !hasRole("admin_tenant") && !hasRole("operador");
+  const isOperacional = hasRole("admin_tenant") || hasRole("operador");
+  const isSupportOnly = isSuporte && !isTecnico && !isOperacional;
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const handleLogout = async () => {
@@ -115,8 +119,9 @@ export default function AdminLayout() {
             {sidebarItems
               .filter((item) => {
                 if (isSupportOnly) return SUPORTE_PATHS.includes(item.path);
-                if (TECNICO_PATHS.includes(item.path) && !isTecnico) return false;
-                return true;
+                if (isTecnico) return TECNICO_PATHS.includes(item.path);
+                if (isOperacional) return OPERACIONAL_PATHS.includes(item.path);
+                return false;
               })
               .map((item) => {
               const isActive = pathname === item.path || (item.path !== "/admin" && pathname.startsWith(item.path));
