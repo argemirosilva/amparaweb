@@ -14,6 +14,26 @@ import {
 import { format, subDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
+/**
+ * Paginated fetch: retrieves ALL rows from a Supabase query,
+ * bypassing the default 1000-row limit.
+ */
+async function fetchAllRows<T = any>(
+  buildQuery: (from: number, to: number) => any,
+  pageSize = 1000,
+): Promise<T[]> {
+  const all: T[] = [];
+  let from = 0;
+  while (true) {
+    const { data, error } = await buildQuery(from, from + pageSize - 1);
+    if (error || !data) break;
+    all.push(...data);
+    if (data.length < pageSize) break;
+    from += pageSize;
+  }
+  return all;
+}
+
 const fontStyle = { fontFamily: "Inter, Roboto, sans-serif" };
 
 const BRAZIL_GEOJSON_URL =
@@ -191,14 +211,17 @@ export default function AdminMapa() {
     const since = new Date(Date.now() - periodHours * 60 * 60 * 1000).toISOString();
 
     const [
-      { data: users }, { data: deviceData }, { data: alertData }, { data: locations }, { data: gravacoesData },
+      { data: users }, { data: deviceData }, { data: alertData }, { data: locations },
     ] = await Promise.all([
       supabase.from("usuarios").select("id, nome_completo, endereco_uf, endereco_cidade, endereco_lat, endereco_lon, status"),
       supabase.from("device_status").select("*").order("updated_at", { ascending: false }),
       supabase.from("alertas_panico").select("*").eq("status", "ativo").order("criado_em", { ascending: false }).limit(50),
       supabase.from("localizacoes").select("user_id, latitude, longitude, created_at").gte("created_at", since).order("created_at", { ascending: false }).limit(200),
-      supabase.from("gravacoes").select("user_id, created_at, duracao_segundos").gte("created_at", since),
     ]);
+
+    const gravacoesData = await fetchAllRows((from, to) =>
+      supabase.from("gravacoes").select("user_id, created_at, duracao_segundos").gte("created_at", since).range(from, to)
+    );
 
     const userMap: Record<string, { nome: string; uf: string; cidade: string; lat: number | null; lng: number | null }> = {};
     (users || []).forEach((u) => { userMap[u.id] = { nome: u.nome_completo, uf: u.endereco_uf || "", cidade: u.endereco_cidade || "", lat: u.endereco_lat, lng: u.endereco_lon }; });
@@ -283,9 +306,9 @@ export default function AdminMapa() {
 
     // Compute UF event trends
     {
-      const [{ data: recentEvents }, { data: olderEvents }] = await Promise.all([
-        supabase.from("gravacoes_analises").select("user_id").gte("created_at", midpoint),
-        supabase.from("gravacoes_analises").select("user_id").gte("created_at", since).lt("created_at", midpoint),
+      const [recentEvents, olderEvents] = await Promise.all([
+        fetchAllRows((from, to) => supabase.from("gravacoes_analises").select("user_id").gte("created_at", midpoint).range(from, to)),
+        fetchAllRows((from, to) => supabase.from("gravacoes_analises").select("user_id").gte("created_at", since).lt("created_at", midpoint).range(from, to)),
       ]);
       const recentByUf: Record<string, number> = {};
       const olderByUf: Record<string, number> = {};
@@ -318,10 +341,9 @@ export default function AdminMapa() {
     setRecTrends(rTrends);
 
     // ── Risk stats per UF/município ──
-    const { data: analisesData } = await supabase
-      .from("gravacoes_analises")
-      .select("user_id, nivel_risco")
-      .gte("created_at", since);
+    const analisesData = await fetchAllRows((from, to) =>
+      supabase.from("gravacoes_analises").select("user_id, nivel_risco").gte("created_at", since).range(from, to)
+    );
 
     const riskByUf: Record<string, { total: number; altoCritico: number }> = {};
     const riskByMun: Record<string, Record<string, { total: number; altoCritico: number }>> = {};
@@ -342,10 +364,9 @@ export default function AdminMapa() {
     setMunRiskStats(riskByMun);
 
     // ── Panic stats per UF/município ──
-    const { data: allPanicData } = await supabase
-      .from("alertas_panico")
-      .select("user_id")
-      .gte("criado_em", since);
+    const allPanicData = await fetchAllRows((from, to) =>
+      supabase.from("alertas_panico").select("user_id").gte("criado_em", since).range(from, to)
+    );
 
     const panicoByUf: Record<string, number> = {};
     const panicoByMun: Record<string, Record<string, number>> = {};
@@ -396,25 +417,31 @@ export default function AdminMapa() {
     const since = new Date(Date.now() - periodDays * 24 * 60 * 60 * 1000).toISOString();
 
     async function loadAnalytics() {
+      // Count queries (no 1000 limit issue - these use head:true or count:exact)
       const [
         { count: monitoradas }, { count: eventos }, { count: emergencias }, { data: deviceData },
-        { data: eventosData }, { data: panicData }, { data: riskData }, { data: usersData }, { data: auditData },
-        { data: gravacoesData, count: totalGravacoes },
+        { data: usersData }, { data: auditData },
+        { count: totalGravacoes },
       ] = await Promise.all([
         supabase.from("usuarios").select("*", { count: "exact", head: true }).eq("status", "ativo"),
         supabase.from("gravacoes_analises").select("*", { count: "exact", head: true }).gte("created_at", since),
         supabase.from("alertas_panico").select("*", { count: "exact", head: true }).gte("criado_em", since),
         supabase.from("device_status").select("status"),
-        supabase.from("gravacoes_analises").select("created_at").gte("created_at", since),
-        supabase.from("alertas_panico").select("criado_em, tipo_acionamento").gte("criado_em", since),
-        supabase.from("gravacoes_analises").select("nivel_risco").gte("created_at", since),
         supabase.from("usuarios").select("endereco_uf, status"),
         supabase.from("audit_logs").select("action_type, success, created_at").gte("created_at", since),
-        supabase.from("gravacoes").select("duracao_segundos", { count: "exact" }).gte("created_at", since),
+        supabase.from("gravacoes").select("*", { count: "exact", head: true }).gte("created_at", since),
+      ]);
+
+      // Paginated queries for data that may exceed 1000 rows
+      const [eventosData, panicData, riskData, gravacoesData] = await Promise.all([
+        fetchAllRows((from, to) => supabase.from("gravacoes_analises").select("created_at").gte("created_at", since).range(from, to)),
+        fetchAllRows((from, to) => supabase.from("alertas_panico").select("criado_em, tipo_acionamento").gte("criado_em", since).range(from, to)),
+        fetchAllRows((from, to) => supabase.from("gravacoes_analises").select("nivel_risco").gte("created_at", since).range(from, to)),
+        fetchAllRows((from, to) => supabase.from("gravacoes").select("duracao_segundos").gte("created_at", since).range(from, to)),
       ]);
 
       const onlineCount = (deviceData || []).filter(d => d.status === "online").length;
-      const totalSegundos = (gravacoesData || []).reduce((sum, g) => sum + (g.duracao_segundos || 0), 0);
+      const totalSegundos = gravacoesData.reduce((sum, g) => sum + (g.duracao_segundos || 0), 0);
       const totalHoras = Math.round((totalSegundos / 3600) * 10) / 10;
       setKpis({ monitoradas: monitoradas || 0, eventos: eventos || 0, emergencias: emergencias || 0, dispositivosOnline: onlineCount, totalGravacoes: totalGravacoes || 0, totalHorasGravacao: totalHoras });
 
