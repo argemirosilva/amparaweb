@@ -69,7 +69,7 @@ export default function AdminOrgaos() {
     setLoading(true);
     const { ok, data } = await callAdminApi("listTenants", sessionToken);
     if (ok) setTenants(data.tenants || []);
-    else toast.error(data.error || "Erro ao carregar órgãos");
+    else toast.error(data.error || "Erro ao carregar entidades");
     setLoading(false);
   }
 
@@ -114,7 +114,7 @@ export default function AdminOrgaos() {
     }
     setSaving(false);
     if (result.ok) {
-      toast.success(editing ? "Órgão atualizado" : "Órgão criado");
+      toast.success(editing ? "Entidade atualizada" : "Entidade criada");
       setDialogOpen(false);
       loadTenants();
     } else {
@@ -126,7 +126,7 @@ export default function AdminOrgaos() {
     if (!sessionToken) return;
     const { ok, data } = await callAdminApi("deleteTenant", sessionToken, { id });
     if (ok) {
-      toast.success("Órgão excluído");
+      toast.success("Entidade excluída");
       loadTenants();
     } else {
       toast.error(data.error || "Erro ao excluir");
@@ -155,9 +155,9 @@ export default function AdminOrgaos() {
     <div style={fontStyle}>
       {/* Header */}
       <div className="mb-6">
-        <p className="text-xs mb-1" style={{ color: "hsl(220 9% 46%)" }}>Admin &gt; Órgãos/Tenants</p>
-        <h1 className="text-xl font-semibold" style={{ color: "hsl(220 13% 18%)" }}>Gestão de Órgãos</h1>
-        <p className="text-sm" style={{ color: "hsl(220 9% 46%)" }}>Cadastro e gestão de órgãos conveniados ao sistema</p>
+        <p className="text-xs mb-1" style={{ color: "hsl(220 9% 46%)" }}>Admin &gt; Entidades</p>
+        <h1 className="text-xl font-semibold" style={{ color: "hsl(220 13% 18%)" }}>Gestão de Entidades</h1>
+        <p className="text-sm" style={{ color: "hsl(220 9% 46%)" }}>Cadastro e gestão de entidades conveniadas ao sistema</p>
       </div>
 
       {/* Toolbar */}
@@ -167,7 +167,7 @@ export default function AdminOrgaos() {
           <input type="text" placeholder="Buscar por nome ou sigla..." value={search} onChange={(e) => setSearch(e.target.value)} style={{ ...inputStyle, paddingLeft: 36 }} />
         </div>
         <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2 rounded text-sm font-semibold" style={{ background: "hsl(224 76% 33%)", color: "#fff" }}>
-          <Plus className="w-4 h-4" /> Novo Órgão
+          <Plus className="w-4 h-4" /> Nova Entidade
         </button>
       </div>
 
@@ -177,7 +177,7 @@ export default function AdminOrgaos() {
           <table className="w-full text-sm">
             <thead>
               <tr style={{ background: "hsl(210 17% 96%)" }}>
-                {["Órgão", "Sigla", "Responsável", "Cidade/UF", "Max Usuários", "Status", "Ações"].map((h) => (
+                {["Entidade", "Sigla", "Responsável", "Cidade/UF", "Max Usuários", "Status", "Ações"].map((h) => (
                   <th key={h} className="px-4 py-2.5 text-left text-xs font-semibold" style={{ color: "hsl(220 9% 46%)" }}>{h}</th>
                 ))}
               </tr>
@@ -186,7 +186,7 @@ export default function AdminOrgaos() {
               {loading ? (
                 <tr><td colSpan={7} className="px-4 py-8 text-center text-sm" style={{ color: "hsl(220 9% 46%)" }}>Carregando...</td></tr>
               ) : filtered.length === 0 ? (
-                <tr><td colSpan={7} className="px-4 py-8 text-center text-sm" style={{ color: "hsl(220 9% 46%)" }}>Nenhum órgão encontrado</td></tr>
+                <tr><td colSpan={7} className="px-4 py-8 text-center text-sm" style={{ color: "hsl(220 9% 46%)" }}>Nenhuma entidade encontrada</td></tr>
               ) : (
                 filtered.map((t) => (
                   <tr key={t.id} className="border-t" style={{ borderColor: "hsl(220 13% 91%)" }}>
@@ -220,7 +220,7 @@ export default function AdminOrgaos() {
           </table>
         </div>
         <div className="px-4 py-3 border-t text-xs" style={{ borderColor: "hsl(220 13% 91%)", color: "hsl(220 9% 46%)" }}>
-          {filtered.length} órgão(s) encontrado(s)
+          {filtered.length} entidade(s) encontrada(s)
         </div>
       </div>
 
@@ -229,7 +229,7 @@ export default function AdminOrgaos() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30" onClick={() => setDeleteConfirm(null)}>
           <div className="rounded-lg border p-6 max-w-sm w-full mx-4" style={{ background: "hsl(0 0% 100%)", borderColor: "hsl(220 13% 91%)" }} onClick={(e) => e.stopPropagation()}>
             <h3 className="text-sm font-semibold mb-2" style={{ color: "hsl(220 13% 18%)" }}>Confirmar exclusão</h3>
-            <p className="text-xs mb-4" style={{ color: "hsl(220 9% 46%)" }}>Tem certeza que deseja excluir este órgão? Esta ação não pode ser desfeita.</p>
+            <p className="text-xs mb-4" style={{ color: "hsl(220 9% 46%)" }}>Tem certeza que deseja excluir esta entidade? Esta ação não pode ser desfeita.</p>
             <div className="flex gap-2 justify-end">
               <button onClick={() => setDeleteConfirm(null)} className="px-3 py-1.5 text-xs rounded border" style={{ borderColor: "hsl(220 13% 91%)", color: "hsl(220 9% 46%)" }}>Cancelar</button>
               <button onClick={() => handleDelete(deleteConfirm)} className="px-3 py-1.5 text-xs rounded font-semibold" style={{ background: "hsl(0 73% 42%)", color: "#fff" }}>Excluir</button>
@@ -243,7 +243,7 @@ export default function AdminOrgaos() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30" onClick={() => setDialogOpen(false)}>
           <div className="rounded-lg border p-6 max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto" style={{ background: "hsl(0 0% 100%)", borderColor: "hsl(220 13% 91%)", ...fontStyle }} onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold" style={{ color: "hsl(220 13% 18%)" }}>{editing ? "Editar Órgão" : "Novo Órgão"}</h3>
+              <h3 className="text-sm font-semibold" style={{ color: "hsl(220 13% 18%)" }}>{editing ? "Editar Entidade" : "Nova Entidade"}</h3>
               <button onClick={() => setDialogOpen(false)} className="p-1 hover:bg-gray-100 rounded"><X className="w-4 h-4" style={{ color: "hsl(220 9% 46%)" }} /></button>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -307,7 +307,7 @@ export default function AdminOrgaos() {
             <div className="flex gap-2 justify-end mt-5">
               <button onClick={() => setDialogOpen(false)} className="px-4 py-2 text-xs rounded border" style={{ borderColor: "hsl(220 13% 91%)", color: "hsl(220 9% 46%)" }}>Cancelar</button>
               <button onClick={handleSave} disabled={saving || !form.nome || !form.sigla} className="px-4 py-2 text-xs rounded font-semibold disabled:opacity-50" style={{ background: "hsl(224 76% 33%)", color: "#fff" }}>
-                {saving ? "Salvando..." : editing ? "Salvar Alterações" : "Criar Órgão"}
+                {saving ? "Salvando..." : editing ? "Salvar Alterações" : "Criar Entidade"}
               </button>
             </div>
           </div>

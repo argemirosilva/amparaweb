@@ -25,7 +25,7 @@ const sidebarItems = [
   { label: "Dashboard", path: "/admin", icon: LayoutDashboard },
   { label: "Usuários", path: "/admin/usuarios", icon: Users },
   { label: "Suporte", path: "/admin/suporte", icon: Headset },
-  { label: "Órgãos/Tenants", path: "/admin/orgaos", icon: Building2 },
+  { label: "Entidades", path: "/admin/orgaos", icon: Building2 },
   { label: "Auditoria", path: "/admin/auditoria", icon: Shield },
   { label: "Relatórios", path: "/admin/relatorios", icon: FileText },
   
