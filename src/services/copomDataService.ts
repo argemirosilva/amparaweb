@@ -175,12 +175,13 @@ export async function collectCopomData(
     agressorData = data;
   }
 
-  // 5. Fetch GPS sharing link
+  // 5. Fetch GPS sharing link (only active and not expired)
   const { data: share } = await supabase
     .from("compartilhamento_gps")
     .select("codigo")
     .eq("user_id", userId)
     .eq("ativo", true)
+    .gte("expira_em", new Date().toISOString())
     .order("criado_em", { ascending: false })
     .limit(1)
     .maybeSingle();
