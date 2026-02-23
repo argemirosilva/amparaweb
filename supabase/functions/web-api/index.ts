@@ -919,7 +919,7 @@ serve(async (req) => {
 
         let query = supabase
           .from("gravacoes")
-          .select("id, created_at, duracao_segundos, tamanho_mb, status, storage_path, transcricao, device_id, timezone", { count: "exact" })
+          .select("id, created_at, duracao_segundos, tamanho_mb, status, storage_path, transcricao, device_id, timezone, monitor_session_id, monitoramento_sessoes(iniciado_em)", { count: "exact" })
           .eq("user_id", userId)
           .order("created_at", { ascending: false })
           .range(offset, offset + per_page - 1);
@@ -945,10 +945,16 @@ serve(async (req) => {
           }
         }
 
-        const enriched = (data || []).map((g: any) => ({
-          ...g,
-          nivel_risco: analiseMap[g.id] || null,
-        }));
+        const enriched = (data || []).map((g: any) => {
+          // Use session start time as the real recording start time
+          const iniciado_em = g.monitoramento_sessoes?.iniciado_em || null;
+          const { monitoramento_sessoes: _ms, monitor_session_id: _mid, ...rest } = g;
+          return {
+            ...rest,
+            nivel_risco: analiseMap[g.id] || null,
+            iniciado_em,
+          };
+        });
 
         return json({ success: true, gravacoes: enriched, total: count || 0, page, per_page });
       }
