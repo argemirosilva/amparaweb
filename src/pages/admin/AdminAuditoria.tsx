@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
-import { X, CalendarIcon } from "lucide-react";
+import { X, CalendarIcon, ClipboardCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-
-const fontStyle = { fontFamily: "Inter, Roboto, sans-serif" };
+import AdminPageHeader from "@/components/admin/AdminPageHeader";
+import AdminFilterBar from "@/components/admin/AdminFilterBar";
+import AdminTableWrapper from "@/components/admin/AdminTableWrapper";
 
 const ADMIN_ACTION_TYPES = [
   "admin_login",
@@ -106,19 +107,19 @@ export default function AdminAuditoria() {
   }, [filterAction, dateFrom, dateTo]);
 
   return (
-    <div style={fontStyle}>
-      <div className="mb-6">
-        <p className="text-xs mb-1" style={{ color: "hsl(220 9% 46%)" }}>Admin &gt; Auditoria</p>
-        <h1 className="text-xl font-semibold" style={{ color: "hsl(220 13% 18%)" }}>Auditoria Administrativa</h1>
-        <p className="text-sm mt-1" style={{ color: "hsl(220 9% 46%)" }}>Registros de ações realizadas por administradores</p>
-      </div>
+    <div>
+      <AdminPageHeader
+        icon={ClipboardCheck}
+        breadcrumb="Admin › Auditoria"
+        title="Auditoria Administrativa"
+        description="Registros de ações realizadas por administradores"
+      />
 
-      <div className="mb-4 flex flex-wrap gap-3">
+      <AdminFilterBar>
         <select
           value={filterAction}
           onChange={(e) => setFilterAction(e.target.value)}
-          className="text-sm rounded-md border px-3 py-2 outline-none"
-          style={{ borderColor: "hsl(220 13% 91%)", color: "hsl(220 13% 18%)", fontFamily: "Inter, Roboto, sans-serif" }}
+          className="text-sm rounded-md border border-border px-3 py-2 outline-none bg-background text-foreground"
         >
           <option value="all">Todas as ações</option>
           {ADMIN_ACTION_TYPES.map((a) => (
@@ -130,8 +131,7 @@ export default function AdminAuditoria() {
           value={filterUserText}
           onChange={(e) => setFilterUserText(e.target.value)}
           placeholder="Filtrar por nome do usuário…"
-          className="text-sm rounded-md border px-3 py-2 outline-none w-64"
-          style={{ borderColor: "hsl(220 13% 91%)", color: "hsl(220 13% 18%)", fontFamily: "Inter, Roboto, sans-serif" }}
+          className="text-sm rounded-md border border-border px-3 py-2 outline-none w-64 bg-background text-foreground"
         />
         <Popover>
           <PopoverTrigger asChild>
@@ -156,114 +156,104 @@ export default function AdminAuditoria() {
           </PopoverContent>
         </Popover>
         {(dateFrom || dateTo) && (
-          <button onClick={() => { setDateFrom(undefined); setDateTo(undefined); }} className="text-xs font-medium px-2 py-1 rounded" style={{ color: "hsl(0 72% 51%)" }}>
+          <button onClick={() => { setDateFrom(undefined); setDateTo(undefined); }} className="text-xs font-medium px-2 py-1 rounded text-destructive">
             Limpar datas
           </button>
         )}
-      </div>
+      </AdminFilterBar>
 
-      <div
-        className="rounded-md border overflow-hidden"
-        style={{ background: "hsl(0 0% 100%)", borderColor: "hsl(220 13% 91%)" }}
-      >
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr style={{ background: "hsl(210 17% 96%)" }}>
-                {["Data/hora", "Usuário", "Ação", "IP", "Status", ""].map((h) => (
-                  <th key={h} className="px-4 py-2.5 text-left text-xs font-semibold" style={{ color: "hsl(220 9% 46%)" }}>
-                    {h}
-                  </th>
-                ))}
+      <AdminTableWrapper>
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="bg-muted/50">
+              {["Data/hora", "Usuário", "Ação", "IP", "Status", ""].map((h) => (
+                <th key={h} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground">
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr>
+                <td colSpan={6} className="px-4 py-8 text-center text-sm text-muted-foreground">
+                  Carregando…
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-sm" style={{ color: "hsl(220 9% 46%)" }}>
-                    Carregando…
+            ) : (() => {
+              const filtered = filterUserText.trim()
+                ? logs.filter((l) => l.user_name?.toLowerCase().includes(filterUserText.toLowerCase()))
+                : logs;
+              return filtered.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="px-4 py-8 text-center text-sm text-muted-foreground">
+                  Nenhum registro encontrado.
+                </td>
+              </tr>
+            ) : (
+              filtered.map((l) => (
+                <tr key={l.id} className="border-t border-border hover:bg-muted/30 transition-colors">
+                  <td className="px-4 py-3 text-xs text-muted-foreground">
+                    {new Date(l.created_at).toLocaleString("pt-BR")}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-foreground">
+                    {l.user_name || "—"}
+                  </td>
+                  <td className="px-4 py-3 font-medium text-foreground">
+                    {ACTION_LABELS[l.action_type] || l.action_type}
+                  </td>
+                  <td className="px-4 py-3 text-xs font-mono text-muted-foreground">
+                    {l.ip_address || "—"}
+                  </td>
+                  <td className="px-4 py-3">
+                    <span
+                      className="inline-block w-2 h-2 rounded-full"
+                      style={{ background: l.success ? "hsl(var(--risco-sem-risco))" : "hsl(var(--destructive))" }}
+                    />
+                  </td>
+                  <td className="px-4 py-3">
+                    <button
+                      onClick={() => setSelected(l)}
+                      className="text-xs font-medium text-primary hover:underline"
+                    >
+                      Ver detalhes
+                    </button>
                   </td>
                 </tr>
-              ) : (() => {
-                const filtered = filterUserText.trim()
-                  ? logs.filter((l) => l.user_name?.toLowerCase().includes(filterUserText.toLowerCase()))
-                  : logs;
-                return filtered.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-sm" style={{ color: "hsl(220 9% 46%)" }}>
-                    Nenhum registro encontrado.
-                  </td>
-                </tr>
-              ) : (
-                filtered.map((l) => (
-                  <tr key={l.id} className="border-t" style={{ borderColor: "hsl(220 13% 91%)" }}>
-                    <td className="px-4 py-3 text-xs" style={{ color: "hsl(220 9% 46%)" }}>
-                      {new Date(l.created_at).toLocaleString("pt-BR")}
-                    </td>
-                    <td className="px-4 py-3 text-sm" style={{ color: "hsl(220 13% 18%)" }}>
-                      {l.user_name || "—"}
-                    </td>
-                    <td className="px-4 py-3 font-medium" style={{ color: "hsl(220 13% 18%)" }}>
-                      {ACTION_LABELS[l.action_type] || l.action_type}
-                    </td>
-                    <td className="px-4 py-3 text-xs font-mono" style={{ color: "hsl(220 9% 46%)" }}>
-                      {l.ip_address || "—"}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className="inline-block w-2 h-2 rounded-full"
-                        style={{ background: l.success ? "hsl(142 64% 24%)" : "hsl(0 73% 42%)" }}
-                      />
-                    </td>
-                    <td className="px-4 py-3">
-                      <button
-                        onClick={() => setSelected(l)}
-                        className="text-xs font-medium"
-                        style={{ color: "hsl(224 76% 33%)" }}
-                      >
-                        Ver detalhes
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              ); })()}
-            </tbody>
-          </table>
-        </div>
-      </div>
+              ))
+            ); })()}
+          </tbody>
+        </table>
+      </AdminTableWrapper>
 
       {/* Modal */}
       {selected && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30" onClick={() => setSelected(null)}>
           <div
-            className="rounded-md border p-6 max-w-lg w-full mx-4"
-            style={{ background: "hsl(0 0% 100%)", borderColor: "hsl(220 13% 91%)" }}
+            className="rounded-lg border border-border bg-card p-6 max-w-lg w-full mx-4 shadow-lg"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-base font-semibold" style={{ color: "hsl(220 13% 18%)" }}>
+              <h2 className="text-base font-semibold text-foreground">
                 Detalhes do Registro
               </h2>
               <button onClick={() => setSelected(null)}>
-                <X className="w-5 h-5" style={{ color: "hsl(220 9% 46%)" }} />
+                <X className="w-5 h-5 text-muted-foreground" />
               </button>
             </div>
 
             <div className="space-y-3 text-sm">
               <div>
-                <p className="text-xs font-medium" style={{ color: "hsl(220 9% 46%)" }}>Ação</p>
-                <p style={{ color: "hsl(220 13% 18%)" }}>{selected.action_type}</p>
+                <p className="text-xs font-medium text-muted-foreground">Ação</p>
+                <p className="text-foreground">{selected.action_type}</p>
               </div>
               <div>
-                <p className="text-xs font-medium" style={{ color: "hsl(220 9% 46%)" }}>Data/hora</p>
-                <p style={{ color: "hsl(220 13% 18%)" }}>{new Date(selected.created_at).toLocaleString("pt-BR")}</p>
+                <p className="text-xs font-medium text-muted-foreground">Data/hora</p>
+                <p className="text-foreground">{new Date(selected.created_at).toLocaleString("pt-BR")}</p>
               </div>
               <div>
-                <p className="text-xs font-medium" style={{ color: "hsl(220 9% 46%)" }}>Metadata</p>
-                <pre
-                  className="text-xs p-3 rounded overflow-auto max-h-40"
-                  style={{ background: "hsl(210 17% 96%)", color: "hsl(220 13% 18%)" }}
-                >
+                <p className="text-xs font-medium text-muted-foreground">Metadata</p>
+                <pre className="text-xs p-3 rounded overflow-auto max-h-40 bg-muted text-foreground">
                   {JSON.stringify(selected.details, null, 2) || "—"}
                 </pre>
               </div>

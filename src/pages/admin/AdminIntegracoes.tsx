@@ -2,8 +2,7 @@ import { useEffect, useState } from "react";
 import { Save, RotateCcw, Plug, Mic, Brain, Phone, MessageCircle, Mail } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-
-const fontStyle = { fontFamily: "Inter, Roboto, sans-serif" };
+import AdminPageHeader from "@/components/admin/AdminPageHeader";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -218,14 +217,13 @@ export default function AdminIntegracoes() {
   }
 
   return (
-    <div style={fontStyle}>
-      <div className="mb-6">
-        <p className="text-xs mb-1" style={{ color: "hsl(220 9% 46%)" }}>Admin &gt; Integrações</p>
-        <h1 className="text-xl font-semibold" style={{ color: "hsl(220 13% 18%)" }}>Integrações</h1>
-        <p className="text-sm" style={{ color: "hsl(220 9% 46%)" }}>
-          Configure os serviços externos conectados ao sistema
-        </p>
-      </div>
+    <div>
+      <AdminPageHeader
+        icon={Plug}
+        breadcrumb="Admin › Integrações"
+        title="Integrações"
+        description="Configure os serviços externos conectados ao sistema"
+      />
 
       {loading ? (
         <div
