@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Eye, EyeOff, Loader2, ShieldCheck } from "lucide-react";
 import amparaLogo from "@/assets/ampara-logo.png";
 import amparaIcon from "@/assets/ampara-icon-transparent.png";
+import orizonLogo from "@/assets/orizon-tech-logo.png";
 
 const fontStyle = { fontFamily: "Inter, Roboto, sans-serif" };
 
@@ -199,7 +200,12 @@ export default function AdminLogin() {
           </form>
         </div>
 
-        <p className="text-center text-xs mt-4" style={{ color: "hsl(220 9% 60%)" }}>
+        <div className="flex flex-col items-center gap-1 mt-6">
+          <span className="text-xs" style={{ color: "hsl(220 9% 60%)" }}>powered by</span>
+          <img src={orizonLogo} alt="Orizon Tech" className="h-6 object-contain" />
+        </div>
+
+        <p className="text-center text-xs mt-3" style={{ color: "hsl(220 9% 60%)" }}>
           Sistema protegido por autenticação segura.
           <br />
           Tentativas indevidas são registradas.
