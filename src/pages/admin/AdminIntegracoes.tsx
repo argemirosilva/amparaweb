@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Save, RotateCcw, Plug, Mic, Brain, Phone } from "lucide-react";
+import { Save, RotateCcw, Plug, Mic, Brain, Phone, MessageCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
@@ -49,6 +49,13 @@ const INTEGRATION_CATEGORIES = [
     icon: Phone,
     color: "hsl(150 60% 40%)",
   },
+  {
+    key: "integracao_whatsapp",
+    label: "WhatsApp Business — Notificações",
+    description: "Envio de alertas e notificações para guardiões via API do WhatsApp Business (Meta).",
+    icon: MessageCircle,
+    color: "hsl(142 70% 45%)",
+  },
 ];
 
 const FRIENDLY_LABELS: Record<string, string> = {
@@ -61,6 +68,10 @@ const FRIENDLY_LABELS: Record<string, string> = {
   elevenlabs_agent_id: "Agent ID",
   elevenlabs_ativa: "Integração ativa",
   elevenlabs_copom_telefone: "Telefone COPOM (destino)",
+  whatsapp_ativa: "Integração ativa",
+  whatsapp_phone_id: "Phone Number ID (Meta)",
+  whatsapp_template_alerta: "Template de alerta",
+  whatsapp_template_resolucao: "Template de resolução",
 };
 
 const TEXTAREA_KEYS = new Set(["ia_prompt_analise"]);
