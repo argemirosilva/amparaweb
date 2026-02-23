@@ -92,7 +92,7 @@ export default function AdminLayout() {
               {usuario?.nome_completo || "Administrador"}
             </p>
             <p className="text-xs uppercase" style={{ color: "hsl(220 9% 46%)" }}>
-              {hasRole("admin_master") ? "Técnico" : isSupportOnly ? "Suporte" : "Operacional"}
+              {isAdministrador ? "Administrador" : hasRole("admin_master") ? "Técnico" : isSupportOnly ? "Suporte" : "Operacional"}
             </p>
           </div>
           <button
