@@ -60,7 +60,6 @@ const FRIENDLY_LABELS: Record<string, string> = {
   ia_prompt_analise: "Prompt de análise",
   elevenlabs_agent_id: "Agent ID",
   elevenlabs_ativa: "Integração ativa",
-  elevenlabs_telefonia_ativa: "Telefonia ativa",
   elevenlabs_copom_telefone: "Telefone COPOM (destino)",
 };
 
