@@ -609,9 +609,28 @@ serve(async (req) => {
         for (const m of micros || []) microMap[m.recording_id] = m;
       }
 
+      // Fetch avaliacoes for enriched export
+      const allAnaliseIds = (gravacoes || []).map((g: any) => g.gravacoes_analises?.id).filter(Boolean);
+      let avaliacoesMap: Record<string, any[]> = {};
+      if (allAnaliseIds.length > 0) {
+        const { data: avs } = await supabase
+          .from("curadoria_avaliacoes")
+          .select("analise_id, campo, status, valor_corrigido, nota")
+          .in("analise_id", allAnaliseIds);
+        for (const av of avs || []) {
+          if (!avaliacoesMap[av.analise_id]) avaliacoesMap[av.analise_id] = [];
+          avaliacoesMap[av.analise_id].push(av);
+        }
+      }
+
       const lines = (gravacoes || []).map((g: any) => {
         const a = g.gravacoes_analises;
         const micro = microMap[g.id];
+        const avList = avaliacoesMap[a?.id] || [];
+        const avaliacoes: Record<string, any> = {};
+        for (const av of avList) {
+          avaliacoes[av.campo] = { status: av.status, valor_corrigido: av.valor_corrigido, nota: av.nota };
+        }
         return JSON.stringify({
           id: g.id,
           created_at: g.created_at,
@@ -626,6 +645,7 @@ serve(async (req) => {
           context_classification: micro?.context_classification || null,
           cycle_phase: micro?.cycle_phase || null,
           output_json: micro?.output_json ? anonymizeJson(micro.output_json) : null,
+          avaliacoes: Object.keys(avaliacoes).length > 0 ? avaliacoes : undefined,
         });
       });
 
@@ -650,6 +670,50 @@ serve(async (req) => {
         .eq("id", analise_id);
 
       if (updErr) return json({ error: updErr.message }, 500);
+      return json({ success: true });
+    }
+
+    // ========== CURADORIA: GET AVALIACOES ==========
+    if (action === "getAvaliacoes") {
+      const { data: callerRoles } = await supabase.from("user_roles").select("role").eq("user_id", userId);
+      const isCurador = (callerRoles || []).some((r: any) => r.role === "super_administrador" || r.role === "administrador");
+      if (!isCurador) return json({ error: "Acesso restrito" }, 403);
+
+      const { analise_id } = params;
+      if (!analise_id) return json({ error: "analise_id obrigatório" }, 400);
+
+      const { data, error: qErr } = await supabase
+        .from("curadoria_avaliacoes")
+        .select("*")
+        .eq("analise_id", analise_id);
+
+      if (qErr) return json({ error: qErr.message }, 500);
+      return json({ avaliacoes: data || [] });
+    }
+
+    // ========== CURADORIA: SAVE AVALIACAO ==========
+    if (action === "saveAvaliacao") {
+      const { data: callerRoles } = await supabase.from("user_roles").select("role").eq("user_id", userId);
+      const isCurador = (callerRoles || []).some((r: any) => r.role === "super_administrador" || r.role === "administrador");
+      if (!isCurador) return json({ error: "Acesso restrito" }, 403);
+
+      const { analise_id, campo, status: avStatus, valor_corrigido, nota } = params;
+      if (!analise_id || !campo) return json({ error: "analise_id e campo são obrigatórios" }, 400);
+      if (!["correto", "incorreto", "pendente"].includes(avStatus)) return json({ error: "status inválido" }, 400);
+
+      const { error: upsertErr } = await supabase
+        .from("curadoria_avaliacoes")
+        .upsert({
+          analise_id,
+          campo,
+          status: avStatus,
+          valor_corrigido: valor_corrigido ?? null,
+          nota: nota ?? null,
+          avaliado_por: userId,
+          avaliado_em: new Date().toISOString(),
+        }, { onConflict: "analise_id,campo" });
+
+      if (upsertErr) return json({ error: upsertErr.message }, 500);
       return json({ success: true });
     }
 

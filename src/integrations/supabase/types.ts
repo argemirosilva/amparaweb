@@ -652,6 +652,54 @@ export type Database = {
           },
         ]
       }
+      curadoria_avaliacoes: {
+        Row: {
+          analise_id: string
+          avaliado_em: string | null
+          avaliado_por: string | null
+          campo: string
+          id: string
+          nota: string | null
+          status: string
+          valor_corrigido: Json | null
+        }
+        Insert: {
+          analise_id: string
+          avaliado_em?: string | null
+          avaliado_por?: string | null
+          campo: string
+          id?: string
+          nota?: string | null
+          status?: string
+          valor_corrigido?: Json | null
+        }
+        Update: {
+          analise_id?: string
+          avaliado_em?: string | null
+          avaliado_por?: string | null
+          campo?: string
+          id?: string
+          nota?: string | null
+          status?: string
+          valor_corrigido?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "curadoria_avaliacoes_analise_id_fkey"
+            columns: ["analise_id"]
+            isOneToOne: false
+            referencedRelation: "gravacoes_analises"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "curadoria_avaliacoes_avaliado_por_fkey"
+            columns: ["avaliado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       device_status: {
         Row: {
           bateria_percentual: number | null
