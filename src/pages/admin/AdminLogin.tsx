@@ -93,7 +93,7 @@ export default function AdminLogin() {
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-6">
-          <img src={amparaLogo} alt="AMPARA" className="h-12 object-contain mx-auto mb-4" />
+          <img src={amparaLogo} alt="AMPARA" className="h-20 object-contain mx-auto mb-4" />
           <h1
             className="text-xl font-semibold tracking-tight"
             style={{ color: "hsl(220 13% 18%)" }}
