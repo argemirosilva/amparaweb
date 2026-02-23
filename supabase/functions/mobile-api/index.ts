@@ -1628,8 +1628,63 @@ async function handleReceberAudio(
   const { data: activeSession } = await sessionQuery.maybeSingle();
 
   if (!activeSession) {
-    // No active session — save as independent recording instead of rejecting
-    console.log(`[ORPHAN_SEGMENT] No active session for user ${user.id}, saving as independent recording`);
+    // ── GRACE WINDOW: try to attach to a recently-sealed session (≤60s) ──
+    const graceCutoff = new Date(Date.now() - 60_000).toISOString();
+    let recentQuery = supabase
+      .from("monitoramento_sessoes")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("status", "aguardando_finalizacao")
+      .gte("closed_at", graceCutoff)
+      .order("closed_at", { ascending: false })
+      .limit(1);
+
+    if (deviceId) {
+      recentQuery = recentQuery.eq("device_id", deviceId);
+    }
+
+    const { data: recentSession } = await recentQuery.maybeSingle();
+
+    if (recentSession) {
+      // Attach this late segment to the recently-sealed session
+      console.log(`[LATE_SEGMENT] Attaching segment to recently-sealed session ${recentSession.id} for user ${user.id}`);
+
+      const { data: segmento } = await supabase
+        .from("gravacoes_segmentos")
+        .insert({
+          user_id: user.id,
+          monitor_session_id: recentSession.id,
+          device_id: deviceId,
+          file_url: fileUrl,
+          storage_path: storagePath,
+          segmento_idx: segmentoIdx ?? null,
+          duracao_segundos: duracaoSegundos,
+          tamanho_mb: tamanhoMb,
+          timezone,
+          timezone_offset_minutes: tzOffset ?? null,
+        })
+        .select("id")
+        .single();
+
+      await supabase.from("audit_logs").insert({
+        user_id: user.id,
+        action_type: "late_segment_attached",
+        success: true,
+        ip_address: ip,
+        details: { session_id: recentSession.id, segmento_idx: segmentoIdx ?? null },
+      });
+
+      return jsonResponse({
+        success: true,
+        segmento_id: segmento?.id,
+        monitor_session_id: recentSession.id,
+        storage_path: storagePath,
+        message: "Segmento tardio anexado à sessão recém-finalizada.",
+      });
+    }
+
+    // No recent session either — save as independent recording (true orphan)
+    console.log(`[ORPHAN_SEGMENT] No active or recent session for user ${user.id}, saving as independent recording`);
 
     const { data: gravacao } = await supabase
       .from("gravacoes")
