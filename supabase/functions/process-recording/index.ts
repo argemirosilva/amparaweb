@@ -117,7 +117,12 @@ Objetivo:
 Regras:
 1) Análise Contextual: tom geral, desequilíbrios de poder, tentativas de controle, frequência de desqualificações.
 2) Identificação de Escalada: aumento na intensidade, linguagem possessiva, transição de brincadeiras para intimidação.
-3) Classificação: saudavel, rispido_nao_abusivo, potencial_abuso_leve, padrao_consistente_abuso, ameaca_risco, risco_elevado_escalada.
+3) Classificação (classificacao_contexto): saudavel, rispido_nao_abusivo, potencial_abuso_leve, padrao_consistente_abuso, ameaca_risco, risco_elevado_escalada.
+
+ATENÇÃO CRÍTICA sobre nivel_risco vs classificacao_contexto:
+- nivel_risco DEVE ser OBRIGATORIAMENTE um destes 4 valores: sem_risco, moderado, alto, critico. NUNCA use outros valores.
+- classificacao_contexto é um campo SEPARADO que descreve o tipo de interação. NÃO confunda com nivel_risco.
+- Exemplo: uma conversa com classificacao_contexto="risco_elevado_escalada" deve ter nivel_risco="critico" (e NÃO "risco_elevado_escalada").
 4) Extração de Xingamentos: TODOS os insultos direcionados à mulher. Normalize para minúsculas.
 5) TÁTICAS MANIPULATIVAS: instrumentalizacao_filhos, falsa_demonstracao_afeto, ameaca_juridica_velada, acusacao_sem_evidencia, gaslighting, vitimizacao_reversa, controle_disfarçado_preocupacao.
 6) ORIENTAÇÕES PARA A MULHER: alertas, sugestões de ação e frases de validação emocional personalizadas.
