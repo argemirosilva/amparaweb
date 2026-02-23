@@ -46,7 +46,7 @@ async function requireAdmin(supabase: any, userId: string): Promise<boolean> {
     .select("role")
     .eq("user_id", userId);
   return (roles || []).some(
-    (r: any) => r.role === "admin_master" || r.role === "admin_tenant" || r.role === "operador"
+    (r: any) => r.role === "admin_master" || r.role === "admin_tenant" || r.role === "operador" || r.role === "suporte" || r.role === "super_administrador" || r.role === "administrador"
   );
 }
 
