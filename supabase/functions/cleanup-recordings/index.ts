@@ -49,6 +49,30 @@ serve(async (req) => {
   );
 
   try {
+    // ── Limpeza de localizações antigas (>24h) ──
+    const cutoff24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
+    const { count: locCount, error: locCountErr } = await supabase
+      .from("localizacoes")
+      .select("*", { count: "exact", head: true })
+      .lt("created_at", cutoff24h);
+
+    let locDeleted = 0;
+    if (!locCountErr && (locCount ?? 0) > 0) {
+      const { error: locDelErr } = await supabase
+        .from("localizacoes")
+        .delete()
+        .lt("created_at", cutoff24h);
+
+      if (locDelErr) {
+        console.error("Erro ao limpar localizacoes:", locDelErr);
+      } else {
+        locDeleted = locCount ?? 0;
+        console.log(`Localizações limpas: ${locDeleted}`);
+      }
+    }
+
+    // ── Limpeza de gravações sem_risco ──
     // Get all users with their retention settings
     const { data: users, error: usersErr } = await supabase
       .from("usuarios")
@@ -101,11 +125,11 @@ serve(async (req) => {
     await supabase.from("audit_logs").insert({
       action_type: "cleanup_sem_risco",
       success: true,
-      details: { deleted: totalDeleted, errors: totalErrors },
+      details: { deleted: totalDeleted, errors: totalErrors, localizacoes_deleted: locDeleted },
     });
 
-    console.log(`Cleanup done: ${totalDeleted} deleted, ${totalErrors} errors.`);
-    return json({ success: true, deleted: totalDeleted, errors: totalErrors });
+    console.log(`Cleanup done: gravacoes=${totalDeleted} erros=${totalErrors} localizacoes=${locDeleted}`);
+    return json({ success: true, deleted: totalDeleted, errors: totalErrors, localizacoes_deleted: locDeleted });
   } catch (err) {
     console.error("cleanup-recordings error:", err);
     return json({ error: "Erro interno na limpeza" }, 500);
