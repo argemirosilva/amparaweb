@@ -159,10 +159,19 @@ export default function RiskEvolutionCard() {
                         ticks={(() => {
                           if (history.length === 0) return [];
                           const dates = history.map(h => h.date);
-                          // Pick every ~7 days: index 0, 7, 14, 21, 28 (last)
-                          const indices = [0, 7, 14, 21, dates.length - 1];
-                          const unique = [...new Set(indices.map(i => dates[Math.min(i, dates.length - 1)]))];
-                          return unique;
+                          const uniqueDates = [...new Set(dates)];
+                          if (uniqueDates.length <= 5) return uniqueDates;
+                          // Distribute ~4-5 evenly spaced ticks across unique dates
+                          const step = Math.max(1, Math.floor((uniqueDates.length - 1) / 4));
+                          const picks: string[] = [];
+                          for (let i = 0; i < uniqueDates.length - 1; i += step) {
+                            picks.push(uniqueDates[i]);
+                          }
+                          // Always include last date
+                          if (picks[picks.length - 1] !== uniqueDates[uniqueDates.length - 1]) {
+                            picks.push(uniqueDates[uniqueDates.length - 1]);
+                          }
+                          return picks;
                         })()}
                         tickFormatter={(val: string) => {
                           const d = new Date(val + "T00:00:00");
