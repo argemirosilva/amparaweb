@@ -1,115 +1,113 @@
 
 
-## Tela de Curadoria de Transcrições para Treinamento de IA
+## Avaliacao Isolada por Campo na Curadoria
 
 ### Objetivo
 
-Criar uma nova tela administrativa (`/admin/curadoria`) que exiba transcrições e resultados de análise de forma **anonimizada**, servindo como base de dados curada para futuro treinamento do modelo de IA. Dados sensíveis (nomes, telefones, documentos, enderecos) serao substituidos por `*********` antes de chegar ao front-end.
+Transformar o drawer de detalhes da curadoria em uma interface de avaliacao granular, onde cada aspecto da analise da IA (risco, sentimento, taticas, ciclo, etc.) pode ser avaliado individualmente com aprovacao/rejeicao, correcao de valor e notas do curador.
 
 ---
 
-### Arquitetura
+### 1. Nova tabela: `curadoria_avaliacoes`
 
-A anonimizacao sera feita **no backend** (edge function) para garantir que dados sensíveis nunca cheguem ao navegador do curador.
-
-```text
-+-----------------+       +------------------+       +------------------+
-|  AdminCuradoria |  -->  |  admin-api       |  -->  |  gravacoes +     |
-|  (React page)   |       |  action:          |       |  gravacoes_      |
-|                 |       |  listCuradoria   |       |  analises +      |
-|                 |       |  (anonimiza no   |       |  analysis_micro  |
-|                 |       |   servidor)      |       |  _results        |
-+-----------------+       +------------------+       +------------------+
-```
-
----
-
-### Etapas
-
-**1. Backend -- novo action `listCuradoria` na admin-api**
-
-Adicionar ao `supabase/functions/admin-api/index.ts` um novo action que:
-
-- Autentica o admin (reusa `authenticateAdmin`)
-- Consulta `gravacoes` com status `processado` + join com `gravacoes_analises` (via `gravacao_id`)
-- Opcionalmente filtra por `nivel_risco`, intervalo de datas e flag `cupiado`
-- Aplica funcao de anonimizacao regex sobre a `transcricao` e o `resumo` antes de retornar:
-  - CPF (`\d{3}\.?\d{3}\.?\d{3}-?\d{2}`) -> `*********`
-  - Telefone (`\(?\d{2}\)?\s?\d{4,5}-?\d{4}`) -> `*********`
-  - E-mail (`\S+@\S+\.\S+`) -> `*********`
-  - Nomes proprios: substituir tokens capitalizados com 2+ caracteres que aparecem em sequencia (ex: "Maria Silva") -> `*********`
-  - CEP (`\d{5}-?\d{3}`) -> `*********`
-  - Enderecos: padroes como "Rua ..., n" / "Av. ..." -> `*********`
-- Paginacao (offset/limit)
-- Retorna array de objetos com: `id`, `created_at`, `duracao_segundos`, `transcricao_anonimizada`, `nivel_risco`, `sentimento`, `categorias`, `palavras_chave`, `xingamentos`, `resumo_anonimizado`, `context_classification`, `cycle_phase`, `output_json_anonimizado` (do micro result, se existir)
-
-**2. Backend -- novo action `exportCuradoria`**
-
-- Retorna os mesmos dados em formato JSON estruturado (array completo, sem paginacao) para download como `.jsonl` (um JSON por linha), ideal para fine-tuning de modelos
-
-**3. Backend -- novo action `toggleCuradoria`**
-
-- Marca/desmarca uma gravacao como "curada" (novo campo `cupiado boolean default false` na tabela `gravacoes_analises`)
-- Permite ao curador selecionar quais amostras sao boas para treinamento
-
-**4. Migracao SQL**
-
-- Adicionar coluna `cupiado` (`boolean default false`) em `gravacoes_analises`
-- Criar indice para facilitar filtro
+Armazena a avaliacao do curador para cada campo de cada analise.
 
 ```sql
-ALTER TABLE gravacoes_analises ADD COLUMN IF NOT EXISTS cupiado boolean DEFAULT false;
-CREATE INDEX IF NOT EXISTS idx_gravacoes_analises_cupiado ON gravacoes_analises(cupiado);
+CREATE TABLE curadoria_avaliacoes (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  analise_id uuid NOT NULL REFERENCES gravacoes_analises(id) ON DELETE CASCADE,
+  campo text NOT NULL,           -- ex: 'nivel_risco', 'sentimento', 'taticas_manipulativas', etc.
+  status text NOT NULL DEFAULT 'pendente',  -- 'correto', 'incorreto', 'pendente'
+  valor_corrigido jsonb,         -- valor correto sugerido pelo curador (null = sem correcao)
+  nota text,                     -- observacao livre do curador
+  avaliado_por uuid REFERENCES usuarios(id),
+  avaliado_em timestamptz DEFAULT now(),
+  UNIQUE(analise_id, campo)
+);
+
+CREATE INDEX idx_curadoria_avaliacoes_analise ON curadoria_avaliacoes(analise_id);
 ```
 
-**5. Front-end -- nova pagina `src/pages/admin/AdminCuradoria.tsx`**
+### 2. Backend -- novos actions na admin-api
 
-Componentes e funcionalidades:
+- **`getAvaliacoes`**: Retorna todas as avaliacoes de uma analise (por `analise_id`)
+- **`saveAvaliacao`**: Upsert de uma avaliacao para um campo especifico (analise_id, campo, status, valor_corrigido, nota)
 
-- **Filtros superiores**: nivel de risco (dropdown), intervalo de datas, checkbox "somente curadas"
-- **Tabela principal** com colunas:
-  - Data/hora
-  - Duracao
-  - Nivel de risco (badge colorido)
-  - Sentimento
-  - Preview da transcricao (primeiros 80 chars anonimizados)
-  - Botao cupiado (checkbox)
-- **Drawer/modal de detalhes** ao clicar em uma linha:
-  - Transcricao completa anonimizada (texto formatado)
-  - Resumo anonimizado
-  - Categorias, palavras-chave, xingamentos (badges)
-  - Classificacao de contexto e fase do ciclo
-  - Output JSON completo do micro result (colapsavel, para inspecao tecnica)
-  - Botao "Marcar como curada" / "Desmarcar"
-- **Botao de exportacao** (download `.jsonl` das amostras filtradas/curadas)
-- Paginacao com 25/50/100 por pagina (mesmo padrao de AdminUsuarios)
+### 3. Front-end -- Drawer com abas por aspecto
 
-**6. Rota e sidebar**
+O drawer de detalhes sera reorganizado em **abas** (usando o componente `Tabs` existente):
 
-- Adicionar rota `/admin/curadoria` em `App.tsx`
-- Adicionar item "Curadoria IA" no sidebar do `AdminLayout.tsx` com icone `BrainCircuit` (lucide)
-- Visivel apenas para `super_administrador` e `administrador` (adicionar path ao filtro existente)
+| Aba | Conteudo | Campos avaliaveis |
+|-----|----------|-------------------|
+| **Geral** | Transcricao e resumo anonimizados, data, duracao | - |
+| **Risco** | Nivel de risco, justificativa, sinais de alerta | `nivel_risco`, `sinais_alerta` |
+| **Sentimento** | Sentimento detectado, categorias, palavras-chave | `sentimento`, `categorias` |
+| **Taticas** | Taticas manipulativas com evidencias e gravidade | `taticas_manipulativas` |
+| **Ciclo** | Fase do ciclo, classificacao de contexto, tipos de violencia | `cycle_phase`, `context_classification`, `tipos_violencia` |
+| **JSON** | Output JSON completo (colapsavel, somente leitura) | - |
+
+### 4. Componente de avaliacao por campo
+
+Cada campo avaliavel tera um bloco visual padrao:
+
+```text
++----------------------------------------------+
+| [Campo: Nivel de Risco]                      |
+| Valor da IA: [critico]                       |
+|                                              |
+| Avaliacao: (o) Correto  (o) Incorreto       |
+|                                              |
+| Valor corrigido: [dropdown com opcoes]       |
+| (visivel apenas se "Incorreto")              |
+|                                              |
+| Nota: [textarea livre]                       |
+|                                              |
+| [Salvar avaliacao]                           |
++----------------------------------------------+
+```
+
+- Radio group para Correto/Incorreto
+- Campo de correcao contextual (dropdown para campos com opcoes fixas como risco/sentimento, textarea para campos livres)
+- Textarea para nota do curador
+- Botao salvar por campo (ou auto-save)
+
+### 5. Campos avaliaveis e tipos de correcao
+
+| Campo | Tipo de correcao |
+|-------|-----------------|
+| `nivel_risco` | Select: critico, alto, moderado, baixo, nenhum |
+| `sentimento` | Select: positivo, negativo, neutro, misto |
+| `categorias` | Input de tags (texto livre separado por virgula) |
+| `sinais_alerta` | Textarea (lista de sinais) |
+| `taticas_manipulativas` | Textarea JSON (lista de taticas corrigidas) |
+| `cycle_phase` | Select: tensao, explosao, lua_de_mel, calmaria, nao_identificado |
+| `context_classification` | Select: saudavel, rispido_nao_abusivo, potencial_abuso_leve, padrao_consistente_abuso, ameaca_risco, risco_elevado_escalada |
+| `tipos_violencia` | Input de tags |
+
+### 6. Exportacao enriquecida
+
+O export `.jsonl` incluira as avaliacoes do curador junto aos dados anonimizados, criando um dataset com ground truth para fine-tuning:
+
+```json
+{
+  "transcricao": "...",
+  "output_ia": { ... },
+  "avaliacoes": {
+    "nivel_risco": { "status": "incorreto", "valor_corrigido": "moderado", "nota": "..." },
+    "sentimento": { "status": "correto" }
+  }
+}
+```
+
+### 7. Indicador visual na tabela principal
+
+Adicionar uma coluna "Avaliada" na tabela, mostrando o progresso de avaliacao (ex: "4/6 campos") para cada transcricao, permitindo identificar rapidamente quais ainda precisam de revisao.
 
 ---
 
-### Detalhes Tecnicos
+### Arquivos a modificar
 
-**Funcao de anonimizacao (backend)**
-
-```text
-function anonymize(text: string): string
-  1. Regex para CPF, telefone, email, CEP -> "*********"
-  2. Regex para enderecos (Rua/Av/Travessa + texto ate virgula/numero) -> "*********"  
-  3. Regex para sequencias de palavras capitalizadas (2+ tokens) -> "*********"
-  4. Retorna texto limpo
-```
-
-**Seguranca**
-- Acesso restrito a `super_administrador` e `administrador` via `authenticateAdmin`
-- Dados nunca saem do servidor sem anonimizacao
-- O audio original NAO sera exposto nesta tela (somente texto)
-
-**Estilo visual**
-- Seguira o mesmo padrao visual das demais telas admin (fundo cinza claro, cards brancos, fonte Inter)
-- Badges de risco reutilizarao as cores ja definidas no sistema
+- **Migracao SQL**: Criar tabela `curadoria_avaliacoes`
+- **`supabase/functions/admin-api/index.ts`**: Adicionar actions `getAvaliacoes`, `saveAvaliacao`; enriquecer `exportCuradoria` com avaliacoes
+- **`src/pages/admin/AdminCuradoria.tsx`**: Reorganizar drawer com Tabs, adicionar componente de avaliacao por campo, coluna de progresso na tabela
 
