@@ -153,6 +153,7 @@ export default function RiskEvolutionCard() {
                       <YAxis domain={[100, 200]} hide />
                       <XAxis
                         dataKey="date"
+                        padding={{ left: 0, right: 0 }}
                         tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }}
                         tickLine={false}
                         axisLine={false}
