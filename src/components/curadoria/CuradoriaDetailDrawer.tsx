@@ -187,36 +187,7 @@ export default function CuradoriaDetailDrawer({ selected, onClose, onToggleCupia
               </div>
               <div>
                 <h3 className="text-sm font-semibold text-foreground mb-1">Transcrição Anonimizada</h3>
-                <div className="space-y-2 p-3 rounded-lg bg-muted/50 max-h-80 overflow-y-auto">
-                  {selected.transcricao_anonimizada
-                    ?.split("\n")
-                    .filter((line) => line.trim())
-                    .map((line, i) => {
-                      const match = line.match(/^\[?(Pessoa\s*\d+|Falante\s*\d+|Speaker\s*\d+|P\d+)\]?\s*[:\-–]\s*/i);
-                      const speaker = match ? match[1] : null;
-                      const text = match ? line.slice(match[0].length).trim() : line.trim();
-                      const isEven = speaker ? /[02468]/.test(speaker.replace(/\D/g, "") || "0") : i % 2 === 0;
-
-                      return (
-                        <div key={i} className={`flex ${isEven ? "justify-start" : "justify-end"}`}>
-                          <div
-                            className={`max-w-[80%] rounded-xl px-3 py-2 text-sm ${
-                              isEven
-                                ? "bg-accent text-accent-foreground rounded-tl-sm"
-                                : "bg-primary/15 text-foreground rounded-tr-sm"
-                            }`}
-                          >
-                            {speaker && (
-                              <span className="block text-[10px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5">
-                                {speaker}
-                              </span>
-                            )}
-                            {text}
-                          </div>
-                        </div>
-                      );
-                    })}
-                </div>
+                <p className="text-sm whitespace-pre-wrap p-3 rounded bg-muted text-foreground">{selected.transcricao_anonimizada}</p>
               </div>
               <div>
                 <h3 className="text-sm font-semibold text-foreground mb-1">Resumo Anonimizado</h3>
