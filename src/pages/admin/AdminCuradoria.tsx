@@ -53,6 +53,19 @@ async function callAdmin(sessionToken: string, action: string, params: any = {})
   return data;
 }
 
+function formatTranscricao(raw: string): string {
+  if (!raw) return "";
+  let text = raw
+    .replace(/[\[\(]?\d{1,2}:\d{2}(:\d{2})?[\]\)]?\s*[-–:]?\s*/g, "")
+    .replace(/\b(speaker|falante|spk|SPEAKER)[_ ]?\d*\s*[:]\s*/gi, "")
+    .replace(/^\s*[-–•]\s*/gm, "");
+  const sentences = text
+    .split(/(?<=[.!?])\s+|\n+/)
+    .map(s => s.trim())
+    .filter(s => s.length > 0);
+  return sentences.join("\n");
+}
+
 export default function AdminCuradoria() {
   const { sessionToken } = useAuth();
   const queryClient = useQueryClient();
@@ -216,7 +229,7 @@ export default function AdminCuradoria() {
                 </TableCell>
                 <TableCell className="text-sm capitalize">{item.sentimento || "—"}</TableCell>
                 <TableCell className="text-sm max-w-xs truncate text-foreground">
-                  {item.transcricao_anonimizada.slice(0, 80)}{item.transcricao_anonimizada.length > 80 ? "…" : ""}
+                  {(() => { const t = formatTranscricao(item.transcricao_anonimizada); return t.slice(0, 80) + (t.length > 80 ? "…" : ""); })()}
                 </TableCell>
                 <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
                   <Checkbox
