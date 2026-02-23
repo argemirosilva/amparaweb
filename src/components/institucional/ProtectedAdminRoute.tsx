@@ -50,7 +50,7 @@ export default function ProtectedAdminRoute({ children, requiredRole }: Protecte
     );
   }
 
-  if (requiredRole && !hasRole(requiredRole)) {
+  if (requiredRole && !hasRole(requiredRole) && !hasRole("super_administrador") && !hasRole("administrador")) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: "hsl(210 17% 96%)", ...fontStyle }}>
         <div
