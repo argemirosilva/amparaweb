@@ -88,7 +88,7 @@ export default function AdminLogin() {
   return (
     <div
       className="min-h-[100dvh] flex items-center justify-center p-4"
-      style={{ background: "hsl(210 17% 96%)", ...fontStyle }}
+      style={{ background: "hsl(0 0% 100%)", ...fontStyle }}
     >
       <div className="w-full max-w-md">
         {/* Header */}
@@ -108,7 +108,7 @@ export default function AdminLogin() {
         {/* Card */}
         <div
           className="rounded-md border p-6"
-          style={{ background: "hsl(0 0% 100%)", borderColor: "hsl(220 13% 91%)" }}
+          style={{ background: "hsl(210 17% 96%)", borderColor: "hsl(220 13% 91%)" }}
         >
           <div className="flex items-center gap-2 mb-5 pb-4" style={{ borderBottom: "1px solid hsl(220 13% 91%)" }}>
             <ShieldCheck className="w-4 h-4" style={{ color: "hsl(224 76% 33%)" }} />
