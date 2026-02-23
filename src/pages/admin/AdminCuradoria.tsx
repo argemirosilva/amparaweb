@@ -200,7 +200,6 @@ export default function AdminCuradoria() {
           <TableHeader>
             <TableRow>
               <TableHead>Data/hora</TableHead>
-              <TableHead>Duração</TableHead>
               <TableHead>Risco</TableHead>
               <TableHead>Sentimento</TableHead>
               <TableHead className="text-center">Curada</TableHead>
@@ -208,9 +207,9 @@ export default function AdminCuradoria() {
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
+              <TableRow><TableCell colSpan={4} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
             ) : items.length === 0 ? (
-              <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Nenhuma transcrição encontrada</TableCell></TableRow>
+              <TableRow><TableCell colSpan={4} className="text-center py-8 text-muted-foreground">Nenhuma transcrição encontrada</TableCell></TableRow>
             ) : items.map((item) => (
               <TableRow
                 key={item.id}
@@ -218,7 +217,6 @@ export default function AdminCuradoria() {
                 onClick={() => setSelected(item)}
               >
                 <TableCell className="whitespace-nowrap text-sm">{fmtDate(item.created_at)}</TableCell>
-                <TableCell className="text-sm">{fmtDuration(item.duracao_segundos)}</TableCell>
                 <TableCell>
                   {item.nivel_risco && (
                     <Badge className={RISK_COLORS[item.nivel_risco] || "bg-gray-300"}>
