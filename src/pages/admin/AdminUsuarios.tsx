@@ -52,7 +52,7 @@ export default function AdminUsuarios() {
 
   // Edit user state
   const [editMode, setEditMode] = useState(false);
-  const [editForm, setEditForm] = useState({ nome_completo: "", email: "", status: "", tenant_id: "" });
+  const [editForm, setEditForm] = useState({ nome_completo: "", email: "", status: "", tenant_id: "", role: "" });
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError] = useState("");
 
@@ -492,6 +492,20 @@ export default function AdminUsuarios() {
                   </select>
                 </div>
                 <div>
+                  <label className="block text-xs font-medium mb-1" style={{ color: "hsl(220 9% 46%)" }}>Nível de acesso</label>
+                  <select
+                    value={editForm.role}
+                    onChange={(e) => setEditForm((f) => ({ ...f, role: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-md border text-sm outline-none cursor-pointer"
+                    style={{ borderColor: "hsl(220 13% 87%)", color: "hsl(220 13% 18%)" }}
+                  >
+                    <option value="">Usuária (sem acesso admin)</option>
+                    <option value="admin_master">Técnico</option>
+                    <option value="operador">Operacional</option>
+                    <option value="suporte">Suporte</option>
+                  </select>
+                </div>
+                <div>
                   <label className="block text-xs font-medium mb-1" style={{ color: "hsl(220 9% 46%)" }}>Status</label>
                   <select
                     value={editForm.status}
@@ -523,7 +537,7 @@ export default function AdminUsuarios() {
                         const res = await fetch(`${SUPABASE_URL}/functions/v1/admin-api`, {
                           method: "POST",
                           headers: { "Content-Type": "application/json", apikey: SUPABASE_KEY },
-                          body: JSON.stringify({
+                         body: JSON.stringify({
                             action: "updateUser",
                             session_token: sessionToken,
                             user_id: drawerUser.id,
@@ -531,6 +545,7 @@ export default function AdminUsuarios() {
                             email: editForm.email.trim(),
                             status: editForm.status,
                             tenant_id: editForm.tenant_id || null,
+                            role: editForm.role || null,
                           }),
                         });
                         const data = await res.json();
@@ -586,6 +601,7 @@ export default function AdminUsuarios() {
                         email: drawerUser.email,
                         status: drawerUser.status,
                         tenant_id: userTenantId,
+                        role: drawerUser.role || "",
                       });
                       setEditError("");
                       setEditMode(true);

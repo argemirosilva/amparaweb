@@ -252,7 +252,7 @@ serve(async (req) => {
 
     // ========== UPDATE USER ==========
     if (action === "updateUser") {
-      const { user_id: targetUserId, nome_completo, email, status, tenant_id } = params;
+      const { user_id: targetUserId, nome_completo, email, status, tenant_id, role } = params;
 
       if (!targetUserId) return json({ error: "ID do usuário não informado" }, 400);
       if (!nome_completo?.trim()) return json({ error: "Nome é obrigatório" }, 400);
@@ -289,14 +289,13 @@ serve(async (req) => {
         return json({ error: "Erro ao atualizar: " + updateError.message }, 500);
       }
 
-      // Update tenant association
-      if (tenant_id) {
-        // Remove existing roles and set new one
-        await supabase.from("user_roles").delete().eq("user_id", targetUserId);
+      // Update role / tenant association
+      await supabase.from("user_roles").delete().eq("user_id", targetUserId);
+      if (role) {
         await supabase.from("user_roles").insert({
           user_id: targetUserId,
-          role: "operador",
-          tenant_id: tenant_id,
+          role: role,
+          tenant_id: tenant_id || null,
         });
       }
 
