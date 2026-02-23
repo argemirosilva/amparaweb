@@ -9,6 +9,9 @@ import {
   AlertTriangle,
   Shield,
   Phone,
+  MessageCircleWarning,
+  Lightbulb,
+  BookOpen,
 } from "lucide-react";
 
 interface MacroReport {
@@ -19,6 +22,7 @@ interface MacroReport {
     resumo?: string;
     panorama_narrativo?: string;
     orientacoes?: string[];
+    principais_ofensas?: string[];
     canais_apoio?: string[];
     nivel_alerta?: string;
   };
@@ -27,11 +31,11 @@ interface MacroReport {
   };
 }
 
-const ALERTA_CONFIG: Record<string, { color: string; bg: string; label: string }> = {
-  baixo: { color: "text-emerald-600", bg: "bg-emerald-500/10", label: "Baixo" },
-  moderado: { color: "text-amber-600", bg: "bg-amber-500/10", label: "Moderado" },
-  alto: { color: "text-orange-600", bg: "bg-orange-500/10", label: "Alto" },
-  critico: { color: "text-red-600", bg: "bg-red-500/10", label: "Crítico" },
+const ALERTA_CONFIG: Record<string, { color: string; bg: string; border: string; label: string }> = {
+  baixo: { color: "text-emerald-700", bg: "bg-emerald-50", border: "border-emerald-200", label: "Baixo" },
+  moderado: { color: "text-amber-700", bg: "bg-amber-50", border: "border-amber-200", label: "Moderado" },
+  alto: { color: "text-orange-700", bg: "bg-orange-50", border: "border-orange-200", label: "Alto" },
+  critico: { color: "text-red-700", bg: "bg-red-50", border: "border-red-200", label: "Crítico" },
 };
 
 export default function MacroReportCard({
@@ -86,8 +90,8 @@ export default function MacroReportCard({
 
   if (loading && !loaded) {
     return (
-      <div className="flex items-center gap-2 py-2">
-        <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />
+      <div className="flex items-center gap-2 py-4 justify-center">
+        <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
         <span className="text-xs text-muted-foreground">Carregando resumo...</span>
       </div>
     );
@@ -95,10 +99,12 @@ export default function MacroReportCard({
 
   if (!report && loaded) {
     return (
-      <div className="rounded-xl border border-dashed border-border p-4 flex flex-col items-center gap-2">
-        <FileBarChart className="w-5 h-5 text-muted-foreground" />
-        <p className="text-xs text-muted-foreground text-center">
-          Nenhum resumo disponível ainda.
+      <div className="rounded-xl border border-dashed border-border p-5 flex flex-col items-center gap-3">
+        <div className="w-10 h-10 rounded-full bg-muted/50 flex items-center justify-center">
+          <FileBarChart className="w-5 h-5 text-muted-foreground" />
+        </div>
+        <p className="text-xs text-muted-foreground text-center leading-relaxed">
+          Nenhum resumo disponível para este período.
         </p>
         <Button
           variant="outline"
@@ -108,9 +114,9 @@ export default function MacroReportCard({
           disabled={generating}
         >
           {generating ? <Loader2 className="w-3 h-3 animate-spin" /> : <FileBarChart className="w-3 h-3" />}
-          Gerar relatório (últimos {windowDays} dias)
+          Gerar relatório ({windowDays} dias)
         </Button>
-        {error && <p className="text-xs text-destructive">{error}</p>}
+        {error && <p className="text-xs text-destructive text-center">{error}</p>}
       </div>
     );
   }
@@ -121,29 +127,25 @@ export default function MacroReportCard({
   const alerta = ALERTA_CONFIG[output.nivel_alerta || "baixo"] || ALERTA_CONFIG.baixo;
   const updatedAt = new Date(report.created_at);
   const isStale = Date.now() - updatedAt.getTime() > 3 * 24 * 60 * 60 * 1000;
-  const resumoText = output.resumo || output.panorama_narrativo;
+  const panorama = output.panorama_narrativo;
+  const resumo = output.resumo;
 
   return (
-    <div className="rounded-xl border border-border bg-card/50 overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center gap-3 p-3">
-        <div className={`w-8 h-8 rounded-lg ${alerta.bg} flex items-center justify-center shrink-0`}>
-          <Shield className={`w-4 h-4 ${alerta.color}`} />
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <Badge className={`${alerta.bg} ${alerta.color} text-[10px] border-0`}>
-              {alerta.label}
+    <div className="space-y-3">
+      {/* Header bar */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Badge className={`${alerta.bg} ${alerta.color} text-[10px] border ${alerta.border} font-medium`}>
+            {alerta.label}
+          </Badge>
+          {isStale && (
+            <Badge variant="outline" className="text-[10px] text-amber-600 border-amber-200">
+              Desatualizado
             </Badge>
-            {isStale && (
-              <Badge variant="outline" className="text-[10px] text-amber-600 border-amber-200">
-                Desatualizado
-              </Badge>
-            )}
-          </div>
-          <p className="text-[10px] text-muted-foreground mt-0.5">
+          )}
+          <span className="text-[10px] text-muted-foreground">
             {updatedAt.toLocaleDateString("pt-BR")} · {report.aggregates_json.total_gravacoes_analisadas || 0} gravações
-          </p>
+          </span>
         </div>
         <Button
           variant="ghost"
@@ -157,45 +159,78 @@ export default function MacroReportCard({
         </Button>
       </div>
 
-      {/* Resumo */}
-      {resumoText && (
-        <div className="px-3 pb-2">
-          <p className="text-xs text-foreground/90 leading-relaxed">{resumoText}</p>
+      {/* Panorama */}
+      {panorama && (
+        <div className="rounded-lg bg-muted/30 border border-border/50 p-3 space-y-1.5">
+          <div className="flex items-center gap-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+            <BookOpen className="w-3 h-3" />
+            Panorama
+          </div>
+          <p className="text-xs text-foreground/90 leading-relaxed">{panorama}</p>
         </div>
+      )}
+
+      {/* Resumo (if different from panorama) */}
+      {resumo && resumo !== panorama && (
+        <p className="text-xs text-muted-foreground italic leading-relaxed px-1">
+          {resumo}
+        </p>
       )}
 
       {/* Orientações */}
       {output.orientacoes && output.orientacoes.length > 0 && (
-        <div className="px-3 pb-2">
-          <ul className="space-y-1">
+        <div className="rounded-lg bg-primary/[0.03] border border-primary/10 p-3 space-y-2">
+          <div className="flex items-center gap-1.5 text-[10px] font-semibold text-primary/70 uppercase tracking-wider">
+            <Lightbulb className="w-3 h-3" />
+            Orientações
+          </div>
+          <ul className="space-y-1.5">
             {output.orientacoes.map((o, i) => (
-              <li key={i} className="text-xs text-foreground flex items-start gap-1.5">
-                <span className="text-primary mt-0.5 shrink-0">•</span>{o}
+              <li key={i} className="text-xs text-foreground/85 leading-relaxed flex items-start gap-2">
+                <span className="text-primary/50 mt-0.5 shrink-0 text-[10px]">✦</span>
+                {o}
               </li>
             ))}
           </ul>
         </div>
       )}
 
-      {/* Canais de apoio - só se alto/crítico */}
-      {output.canais_apoio && output.canais_apoio.length > 0 && (
-        <div className="px-3 pb-3">
+      {/* Principais ofensas */}
+      {output.principais_ofensas && output.principais_ofensas.length > 0 && (
+        <div className="rounded-lg bg-destructive/[0.03] border border-destructive/10 p-3 space-y-2">
+          <div className="flex items-center gap-1.5 text-[10px] font-semibold text-destructive/70 uppercase tracking-wider">
+            <MessageCircleWarning className="w-3 h-3" />
+            Ofensas identificadas
+          </div>
           <div className="flex flex-wrap gap-1.5">
-            {output.canais_apoio.map((c, i) => (
-              <Badge key={i} variant="outline" className="text-[10px] bg-primary/5">
-                <Phone className="w-2.5 h-2.5 mr-1" />{c}
+            {output.principais_ofensas.map((o, i) => (
+              <Badge
+                key={i}
+                variant="outline"
+                className="text-[10px] bg-destructive/5 text-destructive/80 border-destructive/15"
+              >
+                {o}
               </Badge>
             ))}
           </div>
         </div>
       )}
 
-      {error && (
-        <div className="px-3 pb-2">
-          <p className="text-xs text-destructive flex items-center gap-1">
-            <AlertTriangle className="w-3 h-3" />{error}
-          </p>
+      {/* Canais de apoio */}
+      {output.canais_apoio && output.canais_apoio.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {output.canais_apoio.map((c, i) => (
+            <Badge key={i} variant="outline" className="text-[10px] bg-primary/5 border-primary/20">
+              <Phone className="w-2.5 h-2.5 mr-1" />{c}
+            </Badge>
+          ))}
         </div>
+      )}
+
+      {error && (
+        <p className="text-xs text-destructive flex items-center gap-1">
+          <AlertTriangle className="w-3 h-3" />{error}
+        </p>
       )}
     </div>
   );

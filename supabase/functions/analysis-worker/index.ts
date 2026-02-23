@@ -345,11 +345,21 @@ async function computeAggregates(supabase: any, userId: string, windowDays: numb
   const now = new Date();
   const start = new Date(now.getTime() - windowDays * 24 * 60 * 60 * 1000);
 
+  // New micro results
   const { data: microResults } = await supabase
     .from("analysis_micro_results")
-    .select("risk_level, context_classification, cycle_phase, output_json, created_at")
+    .select("risk_level, context_classification, cycle_phase, output_json, created_at, recording_id")
     .eq("user_id", userId).eq("latest", true).eq("status", "success")
     .gte("created_at", start.toISOString()).order("created_at", { ascending: true });
+
+  // Legacy analyses (gravacoes_analises) — include recordings NOT already covered by micro
+  const microRecIds = new Set((microResults || []).map((r: any) => r.recording_id).filter(Boolean));
+  const { data: legacyAnalyses } = await supabase
+    .from("gravacoes_analises")
+    .select("gravacao_id, nivel_risco, sentimento, categorias, xingamentos, palavras_chave, resumo, analise_completa, created_at")
+    .eq("user_id", userId)
+    .gte("created_at", start.toISOString())
+    .order("created_at", { ascending: true });
 
   const { data: alertas } = await supabase
     .from("alertas_panico")
@@ -362,7 +372,7 @@ async function computeAggregates(supabase: any, userId: string, windowDays: numb
   if (vinculos?.length) {
     const { data: ag } = await supabase
       .from("agressores")
-      .select("forca_seguranca, tem_arma_em_casa, flags, risk_level, risk_score")
+      .select("forca_seguranca, tem_arma_em_casa, flags, risk_level, risk_score, xingamentos_frequentes")
       .eq("id", vinculos[0].agressor_id).maybeSingle();
     if (ag) agressorInfo = ag;
   }
@@ -373,54 +383,78 @@ async function computeAggregates(supabase: any, userId: string, windowDays: numb
     .select("risk_score, risk_level")
     .eq("usuario_id", userId).order("computed_at", { ascending: false }).limit(1).maybeSingle();
 
-  const results = microResults || [];
   const sentimentos: Record<string, number> = {};
   const tiposViolencia: Record<string, number> = {};
   const padroes: Record<string, number> = {};
   const palavras: Record<string, number> = {};
   const niveisRisco: Record<string, number> = {};
   const fasesCiclo: Record<string, number> = {};
+  const xingamentos: Record<string, number> = {};
   let transicoes = 0, encurtamento = false;
+  let totalAnalyzed = 0;
 
-  for (const r of results) {
+  // Process new micro results
+  for (const r of (microResults || [])) {
+    totalAnalyzed++;
     const oj = r.output_json as any;
-    // Sentimentos
     const sent = (oj?.sentimento || "neutro");
     sentimentos[sent] = (sentimentos[sent] || 0) + 1;
-    // Tipos violencia
     for (const t of (oj?.tipos_violencia || [])) {
       if (t !== "nenhuma") tiposViolencia[t] = (tiposViolencia[t] || 0) + 1;
     }
-    // Padroes
     for (const p of (oj?.padroes_detectados || [])) {
       const n = typeof p === "string" ? p : p?.padrao || "";
       if (n) padroes[n] = (padroes[n] || 0) + 1;
     }
-    // Palavras
     for (const pw of (oj?.palavras_chave || [])) {
       palavras[pw] = (palavras[pw] || 0) + 1;
     }
-    // Risk level
+    for (const x of (oj?.xingamentos || [])) {
+      xingamentos[x] = (xingamentos[x] || 0) + 1;
+    }
     niveisRisco[r.risk_level] = (niveisRisco[r.risk_level] || 0) + 1;
-    // Cycle
     fasesCiclo[r.cycle_phase] = (fasesCiclo[r.cycle_phase] || 0) + 1;
     if (oj?.ciclo_violencia?.transicao_detectada) transicoes++;
     if (oj?.ciclo_violencia?.encurtamento_ciclo) encurtamento = true;
+  }
+
+  // Process legacy analyses (not already covered by micro)
+  for (const la of (legacyAnalyses || [])) {
+    if (microRecIds.has(la.gravacao_id)) continue; // skip duplicates
+    totalAnalyzed++;
+    const sent = la.sentimento || "neutro";
+    sentimentos[sent] = (sentimentos[sent] || 0) + 1;
+    for (const cat of (la.categorias || [])) {
+      if (cat !== "nenhuma") tiposViolencia[cat] = (tiposViolencia[cat] || 0) + 1;
+    }
+    for (const pw of (la.palavras_chave || [])) {
+      palavras[pw] = (palavras[pw] || 0) + 1;
+    }
+    for (const x of (la.xingamentos || [])) {
+      xingamentos[x] = (xingamentos[x] || 0) + 1;
+    }
+    const nivel = la.nivel_risco || "sem_risco";
+    niveisRisco[nivel] = (niveisRisco[nivel] || 0) + 1;
+  }
+
+  // Also include aggressor's frequent insults
+  for (const x of (agressorInfo.xingamentos_frequentes || [])) {
+    if (!xingamentos[x]) xingamentos[x] = 1;
   }
 
   const topN = (obj: Record<string, number>, n: number) =>
     Object.entries(obj).sort((a, b) => b[1] - a[1]).slice(0, n).map(([k, v]) => ({ nome: k, contagem: v }));
 
   return {
-    total_gravacoes_analisadas: results.length,
+    total_gravacoes_analisadas: totalAnalyzed,
     alertas_panico: (alertas || []).length,
     distribuicao_sentimentos: sentimentos,
     tipos_violencia_detectados: topN(tiposViolencia, 10),
     padroes_recorrentes: topN(padroes, 10),
     palavras_chave_frequentes: topN(palavras, 15),
+    xingamentos_frequentes: topN(xingamentos, 10),
     niveis_risco_gravacoes: niveisRisco,
     informacoes_agressor: agressorInfo,
-    ultimo_risk_score: riskData?.risk_score ?? null,
     ultimo_risk_level: riskData?.risk_level ?? null,
     distribuicao_fases_ciclo: fasesCiclo,
     transicoes_detectadas: transicoes,
@@ -441,7 +475,7 @@ async function runMacro(supabase: any, jobId: string, payload: any): Promise<any
     return { skipped: true, reason: "No micro results in window" };
   }
 
-  const macroPrompt = `Você é uma especialista em proteção à mulher e relações conjugais. Analise os dados agregados abaixo e gere um relatório detalhado e acolhedor.
+  const macroPrompt = `Você é uma especialista em proteção à mulher e relações conjugais. Analise os dados agregados abaixo e gere um relatório detalhado, acolhedor, elegante e organizado.
 
 PRINCÍPIO: Foco na PROTEÇÃO DA MULHER. Na dúvida, proteja-a. Seja empática e gentil na comunicação.
 
@@ -452,6 +486,7 @@ INSTRUÇÕES:
 - No "panorama_narrativo": escreva 5-8 frases descrevendo a situação geral, padrões observados, evolução emocional, tipos de violência detectados e dinâmica do relacionamento. Seja detalhada mas acessível.
 - No "resumo": escreva 2-3 frases como um resumo curto do panorama.
 - Nas "orientacoes": forneça 4-6 sugestões GENTIS e ACOLHEDORAS, como conselhos de uma amiga próxima, nunca como ordens. Use linguagem como "pode ser útil...", "considere...", "que tal tentar...", "uma opção seria...". Foque em ações práticas e realistas.
+- Nas "principais_ofensas": liste os xingamentos e termos depreciativos mais frequentes identificados, de forma clara e objetiva. Se não houver, retorne array vazio.
 - NÃO inclua score numérico em nenhum campo.
 - Só inclua canais de apoio se o nível for alto ou crítico.
 
@@ -460,6 +495,7 @@ RETORNE APENAS JSON:
   "panorama_narrativo": "5-8 frases detalhadas sobre a situação, padrões e dinâmica.",
   "resumo": "2-3 frases resumindo a situação atual.",
   "orientacoes": ["sugestão gentil 1", "sugestão gentil 2", "sugestão gentil 3", "sugestão gentil 4"],
+  "principais_ofensas": ["ofensa 1", "ofensa 2"],
   "canais_apoio": [],
   "nivel_alerta": "baixo|moderado|alto|critico"
 }`;
