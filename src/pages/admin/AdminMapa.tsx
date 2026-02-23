@@ -724,7 +724,7 @@ export default function AdminMapa() {
         </div>
         <div className="flex items-center gap-2">
           <div className="flex gap-1">
-            {([["7d", "7 dias"], ["30d", "30 dias"], ["6m", "6 meses"], ...Array.from({ length: new Date().getFullYear() - 2024 }, (_, i) => { const y = String(2025 + i); return [y, y] as [string, string]; })] as [string, string][]).map(([key, label]) => (
+            {([["7d", "7 dias"], ["30d", "30 dias"], ["6m", "6 meses"], ...Array.from({ length: new Date().getFullYear() - 2024 }, (_, i) => { const y = String(new Date().getFullYear() - i); return [y, y] as [string, string]; })] as [string, string][]).map(([key, label]) => (
               <button key={key} onClick={() => setPeriod(key)}
                 className="px-3 py-1.5 text-xs rounded-md border transition-colors"
                 style={{ borderColor: period === key ? "hsl(224 76% 33%)" : "hsl(220 13% 91%)", background: period === key ? "hsl(224 76% 33%)" : "transparent", color: period === key ? "#fff" : "hsl(220 9% 46%)", fontWeight: period === key ? 600 : 400 }}>
@@ -744,11 +744,11 @@ export default function AdminMapa() {
       {/* Summary cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
         {[
-          { icon: Mic, label: "Gravações", value: totalGravacoes, color: "hsl(224 76% 33%)", bg: "hsl(224 76% 33% / 0.08)" },
-          { icon: Clock, label: "Horas Gravadas", value: `${totalHorasGrav}h`, color: "hsl(262 60% 50%)", bg: "hsl(262 60% 50% / 0.08)" },
+          { icon: Mic, label: "Gravações", value: totalGravacoes, color: "hsl(220 13% 18%)", bg: "hsl(220 13% 18% / 0.08)" },
+          { icon: Clock, label: "Horas Gravadas", value: `${totalHorasGrav}h`, color: "hsl(220 13% 18%)", bg: "hsl(220 13% 18% / 0.08)" },
           { icon: Users, label: "Usuárias Ativas", value: totalUsuarios, color: "hsl(220 13% 18%)", bg: "hsl(220 13% 18% / 0.08)" },
-          { icon: Smartphone, label: "Dispositivos Online", value: totalOnline, color: "hsl(142 71% 35%)", bg: "hsl(142 71% 35% / 0.08)" },
-          { icon: MapPin, label: "Monitorando Agora", value: totalMonitorando, color: "hsl(262 83% 58%)", bg: "hsl(262 83% 58% / 0.08)" },
+          { icon: Smartphone, label: "Monitorando Agora", value: totalMonitorando, color: "hsl(220 13% 18%)", bg: "hsl(220 13% 18% / 0.08)" },
+          { icon: MapPin, label: "Dispositivos Online", value: totalOnline, color: "hsl(142 71% 35%)", bg: "hsl(142 71% 35% / 0.08)" },
           { icon: AlertTriangle, label: "Alertas Ativos", value: totalAlertas, color: "hsl(0 72% 51%)", bg: "hsl(0 72% 51% / 0.08)" },
         ].map(({ icon: Icon, label, value, color, bg }) => (
           <div key={label} className="rounded-lg border p-3 flex items-center gap-3" style={{ background: "hsl(0 0% 100%)", borderColor: "hsl(220 13% 91%)" }}>
