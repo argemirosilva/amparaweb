@@ -1157,8 +1157,8 @@ serve(async (req) => {
       // ========== RISK ENGINE ==========
       case "getRiskAssessment": {
         const windowDays = params.window_days;
-        if (![7, 15, 30].includes(windowDays)) {
-          return json({ error: "window_days deve ser 7, 15 ou 30" }, 400);
+        if (![7, 14, 30].includes(windowDays)) {
+          return json({ error: "window_days deve ser 7, 14 ou 30" }, 400);
         }
 
         const today = new Date().toISOString().slice(0, 10);
@@ -1235,8 +1235,8 @@ serve(async (req) => {
 
       case "getRiskHistory": {
         const windowDays = params.window_days;
-        if (![7, 15, 30].includes(windowDays)) {
-          return json({ error: "window_days deve ser 7, 15 ou 30" }, 400);
+        if (![7, 14, 30].includes(windowDays)) {
+          return json({ error: "window_days deve ser 7, 14 ou 30" }, 400);
         }
         const limit = params.limit || 30;
 
