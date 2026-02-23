@@ -193,7 +193,7 @@ export function useDeviceStatus(): DeviceStatusResult {
   // Adaptive polling: 5s when active (recording/panic), 30s otherwise
   const isActive = !!(device?.is_recording || device?.is_monitoring || device?.panicActive);
   useEffect(() => {
-    const interval = isActive ? 5_000 : 30_000;
+    const interval = isActive ? 1_000 : 30_000;
     const id = setInterval(fetchData, interval);
     return () => clearInterval(id);
   }, [fetchData, isActive]);
