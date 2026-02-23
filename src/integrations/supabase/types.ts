@@ -1920,6 +1920,7 @@ export type Database = {
         | "operador"
         | "suporte"
         | "administrador"
+        | "super_administrador"
       support_access_scope:
         | "read_metadata"
         | "read_transcription"
@@ -2102,6 +2103,7 @@ export const Constants = {
         "operador",
         "suporte",
         "administrador",
+        "super_administrador",
       ],
       support_access_scope: [
         "read_metadata",

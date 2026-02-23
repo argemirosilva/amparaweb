@@ -24,6 +24,7 @@ interface UserRow {
 }
 
 const ROLE_LABELS: Record<string, string> = {
+  super_administrador: "Super Administrador",
   administrador: "Administrador",
   admin_master: "Técnico",
   admin_tenant: "Operacional",
@@ -503,6 +504,7 @@ export default function AdminUsuarios() {
                     style={{ borderColor: "hsl(220 13% 87%)", color: "hsl(220 13% 18%)" }}
                   >
                     <option value="">Usuária (sem acesso admin)</option>
+                    {isAdministrador && <option value="super_administrador">Super Administrador</option>}
                     {isAdministrador && <option value="administrador">Administrador</option>}
                     <option value="admin_master">Técnico</option>
                     <option value="operador">Operacional</option>
