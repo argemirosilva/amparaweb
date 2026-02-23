@@ -100,10 +100,19 @@ export function useDeviceStatus(): DeviceStatusResult {
       if (deviceRes.error) throw deviceRes.error;
       if (locationRes.error) throw locationRes.error;
 
+      // Derive actual states from multiple sources for accuracy
+      // If device says recording but no pending gravacao exists, it already stopped
+      const hasPendingRecording = !!recordingRes.data;
+      const hasActiveMonitor = !!monitorRes.data;
+      const hasActivePanic = !!panicRes.data;
+
       const deviceData = deviceRes.data
         ? {
             ...deviceRes.data,
-            panicActive: !!panicRes.data,
+            // Override device flags with DB-derived truth
+            is_recording: deviceRes.data.is_recording && hasPendingRecording ? true : hasPendingRecording,
+            is_monitoring: deviceRes.data.is_monitoring && hasActiveMonitor ? true : hasActiveMonitor,
+            panicActive: hasActivePanic,
             panicStartedAt: panicRes.data?.criado_em ?? null,
             monitoringStartedAt: monitorRes.data?.iniciado_em ?? null,
             recordingStartedAt: recordingRes.data?.created_at ?? null,
