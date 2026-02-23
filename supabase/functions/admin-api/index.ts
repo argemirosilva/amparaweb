@@ -51,7 +51,7 @@ async function authenticateAdmin(supabase: any, sessionToken: string): Promise<s
     .eq("user_id", session.user_id);
 
   const hasAdmin = (roles || []).some(
-    (r: any) => r.role === "admin_master" || r.role === "admin_tenant"
+    (r: any) => r.role === "administrador" || r.role === "admin_master" || r.role === "admin_tenant"
   );
   if (!hasAdmin) return null;
   return session.user_id;
@@ -287,6 +287,18 @@ serve(async (req) => {
 
       if (updateError) {
         return json({ error: "Erro ao atualizar: " + updateError.message }, 500);
+      }
+
+      // Restrict 'administrador' role assignment to existing administrators
+      if (role === "administrador") {
+        const { data: callerRoles } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", userId);
+        const isCallerAdmin = (callerRoles || []).some((r: any) => r.role === "administrador");
+        if (!isCallerAdmin) {
+          return json({ error: "Somente administradores podem atribuir o nível Administrador" }, 403);
+        }
       }
 
       // Update role / tenant association

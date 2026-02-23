@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import GovStatusBadge from "@/components/institucional/GovStatusBadge";
 import { Plus, X, Search, ChevronLeft, ChevronRight, Building2, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAdminRole } from "@/hooks/useAdminRole";
 import { useToast } from "@/hooks/use-toast";
 
 const fontStyle = { fontFamily: "Inter, Roboto, sans-serif" };
@@ -23,6 +24,7 @@ interface UserRow {
 }
 
 const ROLE_LABELS: Record<string, string> = {
+  administrador: "Administrador",
   admin_master: "Técnico",
   admin_tenant: "Operacional",
   operador: "Operacional",
@@ -37,6 +39,7 @@ interface TenantOption {
 
 export default function AdminUsuarios() {
   const { sessionToken } = useAuth();
+  const { isAdministrador } = useAdminRole();
   const { toast } = useToast();
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -500,6 +503,7 @@ export default function AdminUsuarios() {
                     style={{ borderColor: "hsl(220 13% 87%)", color: "hsl(220 13% 18%)" }}
                   >
                     <option value="">Usuária (sem acesso admin)</option>
+                    {isAdministrador && <option value="administrador">Administrador</option>}
                     <option value="admin_master">Técnico</option>
                     <option value="operador">Operacional</option>
                     <option value="suporte">Suporte</option>

@@ -41,8 +41,8 @@ export default function AdminLayout() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { logout, usuario } = useAuth();
-  const { roles, hasRole, tenantSigla, isSuporte } = useAdminRole();
-  const isTecnico = hasRole("admin_master");
+  const { roles, hasRole, tenantSigla, isSuporte, isAdministrador } = useAdminRole();
+  const isTecnico = hasRole("administrador") || hasRole("admin_master");
   const isOperacional = hasRole("admin_tenant") || hasRole("operador");
   const isSupportOnly = isSuporte && !isTecnico && !isOperacional;
   const [sidebarOpen, setSidebarOpen] = useState(false);
