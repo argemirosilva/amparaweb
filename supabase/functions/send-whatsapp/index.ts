@@ -328,13 +328,22 @@ async function notifyGuardiansAlert(
 async function notifyGuardiansResolved(
   supabase: ReturnType<typeof createClient>,
   userId: string
-): Promise<{ sent: number }> {
-  // Fetch user name
+): Promise<{ sent: number; skipped?: boolean }> {
+  // Fetch user name + config
   const { data: usuario } = await supabase
     .from("usuarios")
-    .select("nome_completo")
+    .select("nome_completo, configuracao_alertas")
     .eq("id", userId)
     .single();
+
+  if (!usuario) return { sent: 0 };
+
+  // If WhatsApp panic alerts are disabled, skip resolved notification too
+  const acionamentos = getAcionamentos(usuario.configuracao_alertas);
+  if (!isAlertEnabled(acionamentos, "panico")) {
+    console.log(`WhatsApp resolved skipped: panic alerts disabled for user ${userId}`);
+    return { sent: 0, skipped: true };
+  }
 
   if (!usuario) return { sent: 0 };
 
