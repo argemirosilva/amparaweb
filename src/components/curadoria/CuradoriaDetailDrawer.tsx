@@ -108,6 +108,19 @@ const fmtDuration = (s: number | null) => {
   return `${m}m${sec.toString().padStart(2, "0")}s`;
 };
 
+function formatTranscricao(raw: string): string {
+  if (!raw) return "";
+  let text = raw
+    .replace(/[\[\(]?\d{1,2}:\d{2}(:\d{2})?[\]\)]?\s*[-–:]?\s*/g, "")
+    .replace(/\b(speaker|falante|spk|SPEAKER)[_ ]?\d*\s*[:]\s*/gi, "")
+    .replace(/^\s*[-–•]\s*/gm, "");
+  const sentences = text
+    .split(/(?<=[.!?])\s+|\n+/)
+    .map(s => s.trim())
+    .filter(s => s.length > 0);
+  return sentences.join("\n");
+}
+
 export default function CuradoriaDetailDrawer({ selected, onClose, onToggleCupiado, onAutoCurada }: Props) {
   const { sessionToken } = useAuth();
   const [jsonOpen, setJsonOpen] = useState(false);
@@ -187,7 +200,7 @@ export default function CuradoriaDetailDrawer({ selected, onClose, onToggleCupia
               </div>
               <div>
                 <h3 className="text-sm font-semibold text-foreground mb-1">Transcrição Anonimizada</h3>
-                <p className="text-sm whitespace-pre-wrap p-3 rounded bg-muted text-foreground">{selected.transcricao_anonimizada}</p>
+                <p className="text-sm whitespace-pre-wrap p-3 rounded bg-muted text-foreground">{formatTranscricao(selected.transcricao_anonimizada)}</p>
               </div>
               <div>
                 <h3 className="text-sm font-semibold text-foreground mb-1">Resumo Anonimizado</h3>
