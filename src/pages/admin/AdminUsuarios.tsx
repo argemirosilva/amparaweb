@@ -315,7 +315,7 @@ export default function AdminUsuarios() {
           <table className="w-full text-sm">
             <thead>
               <tr style={{ background: "hsl(210 17% 96%)" }}>
-                {["Nome", "Email", "Órgão", "Nível", "Status", "Último login", "Ações"].map((h) => (
+                {["Nome", "Email", "Órgão", "Papel", "Status", "Último login", "Ações"].map((h) => (
                   <th key={h} className="px-4 py-2.5 text-left text-xs font-semibold" style={{ color: "hsl(220 9% 46%)" }}>
                     {h}
                   </th>
@@ -496,7 +496,7 @@ export default function AdminUsuarios() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium mb-1" style={{ color: "hsl(220 9% 46%)" }}>Nível de acesso</label>
+                  <label className="block text-xs font-medium mb-1" style={{ color: "hsl(220 9% 46%)" }}>Papel</label>
                   <select
                     value={editForm.role}
                     onChange={(e) => setEditForm((f) => ({ ...f, role: e.target.value }))}
