@@ -93,6 +93,7 @@ interface Props {
   selected: CuradoriaItem | null;
   onClose: () => void;
   onToggleCupiado: (item: CuradoriaItem) => void;
+  onAutoCurada?: () => void;
 }
 
 const fmtDate = (iso: string) => {
@@ -107,7 +108,7 @@ const fmtDuration = (s: number | null) => {
   return `${m}m${sec.toString().padStart(2, "0")}s`;
 };
 
-export default function CuradoriaDetailDrawer({ selected, onClose, onToggleCupiado }: Props) {
+export default function CuradoriaDetailDrawer({ selected, onClose, onToggleCupiado, onAutoCurada }: Props) {
   const { sessionToken } = useAuth();
   const [jsonOpen, setJsonOpen] = useState(false);
   const [savingField, setSavingField] = useState<string | null>(null);
@@ -127,7 +128,7 @@ export default function CuradoriaDetailDrawer({ selected, onClose, onToggleCupia
     if (!selected?.analise_id || !sessionToken) return;
     setSavingField(campo);
     try {
-      await callAdmin(sessionToken, "saveAvaliacao", {
+      const result = await callAdmin(sessionToken, "saveAvaliacao", {
         analise_id: selected.analise_id,
         campo,
         status: data.status,
@@ -136,6 +137,10 @@ export default function CuradoriaDetailDrawer({ selected, onClose, onToggleCupia
       });
       toast.success(`Avaliação de "${campo}" salva`);
       refetchAvaliacoes();
+      if (result?.auto_cupiado) {
+        toast.success("Todos os campos avaliados — marcada como curada automaticamente!");
+        onAutoCurada?.();
+      }
     } catch (e: any) {
       toast.error(e.message);
     } finally {

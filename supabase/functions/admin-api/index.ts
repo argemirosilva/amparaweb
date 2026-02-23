@@ -536,7 +536,11 @@ serve(async (req) => {
       if (nivel_risco) query = query.eq("gravacoes_analises.nivel_risco", nivel_risco);
       if (data_inicio) query = query.gte("created_at", data_inicio);
       if (data_fim) query = query.lte("created_at", data_fim);
-      if (somente_curadas) query = query.eq("gravacoes_analises.cupiado", true);
+      if (somente_curadas) {
+        query = query.eq("gravacoes_analises.cupiado", true);
+      } else {
+        query = query.or("cupiado.is.null,cupiado.eq.false", { referencedTable: "gravacoes_analises" });
+      }
 
       const { data: gravacoes, error: qErr, count } = await query;
       if (qErr) return json({ error: qErr.message }, 500);
@@ -718,7 +722,23 @@ serve(async (req) => {
         }, { onConflict: "analise_id,campo" });
 
       if (upsertErr) return json({ error: upsertErr.message }, 500);
-      return json({ success: true });
+
+      // Auto-mark as curada when all 8 campos are evaluated
+      const TOTAL_CAMPOS = 8;
+      const { data: allAvs } = await supabase
+        .from("curadoria_avaliacoes")
+        .select("campo")
+        .eq("analise_id", analise_id)
+        .neq("status", "pendente");
+      const evaluatedCount = (allAvs || []).length;
+      if (evaluatedCount >= TOTAL_CAMPOS) {
+        await supabase
+          .from("gravacoes_analises")
+          .update({ cupiado: true })
+          .eq("id", analise_id);
+      }
+
+      return json({ success: true, auto_cupiado: evaluatedCount >= TOTAL_CAMPOS });
     }
 
     return json({ error: `Ação desconhecida: ${action}` }, 400);
