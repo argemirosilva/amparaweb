@@ -22,10 +22,11 @@ import { useState } from "react";
 const TECNICO_PATHS = [
   "/admin", "/admin/relatorios",
   "/admin/usuarios", "/admin/suporte", "/admin/orgaos",
-  "/admin/auditoria", "/admin/configuracoes", "/admin/integracoes",
+  "/admin/auditoria", "/admin/configuracoes",
 ];
 const OPERACIONAL_PATHS = ["/admin", "/admin/relatorios"];
 const SUPORTE_PATHS = ["/admin/suporte"];
+const SUPER_ADMIN_ONLY_PATHS = ["/admin/integracoes"];
 
 const sidebarItems = [
   { label: "Dashboard", path: "/admin", icon: LayoutDashboard },
@@ -119,6 +120,7 @@ export default function AdminLayout() {
           <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
             {sidebarItems
               .filter((item) => {
+                if (SUPER_ADMIN_ONLY_PATHS.includes(item.path)) return isSuperAdmin;
                 if (isSupportOnly) return SUPORTE_PATHS.includes(item.path);
                 if (isTecnico) return TECNICO_PATHS.includes(item.path);
                 if (isOperacional) return OPERACIONAL_PATHS.includes(item.path);
