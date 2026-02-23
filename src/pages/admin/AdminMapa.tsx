@@ -155,7 +155,27 @@ export default function AdminMapa() {
   const [showDevices, setShowDevices] = useState(true);
   const [loading, setLoading] = useState(false);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
-  const [period, setPeriod] = useState<"7d" | "30d" | "6m" | "12m">("30d");
+  const [period, setPeriod] = useState<string>("30d");
+
+  // Helper: convert period to { since, periodDays, periodHours }
+  const getPeriodRange = useCallback((p: string) => {
+    const hoursMap: Record<string, number> = { "7d": 168, "30d": 720, "6m": 4320, "12m": 8760 };
+    const daysMap: Record<string, number> = { "7d": 7, "30d": 30, "6m": 180, "12m": 365 };
+    if (hoursMap[p]) {
+      return { since: new Date(Date.now() - hoursMap[p] * 3600000).toISOString(), periodDays: daysMap[p], periodHours: hoursMap[p] };
+    }
+    // Year-based: "2025", "2026", etc.
+    const year = parseInt(p);
+    if (!isNaN(year)) {
+      const start = new Date(year, 0, 1);
+      const endOfYear = new Date(year + 1, 0, 1);
+      const end = endOfYear < new Date() ? endOfYear : new Date();
+      const days = Math.ceil((end.getTime() - start.getTime()) / 86400000);
+      return { since: start.toISOString(), periodDays: days, periodHours: days * 24 };
+    }
+    return { since: new Date(Date.now() - 720 * 3600000).toISOString(), periodDays: 30, periodHours: 720 };
+  }, []);
+
   const [ufTrends, setUfTrends] = useState<Record<string, "up" | "down" | "stable">>({});
   const [recTrends, setRecTrends] = useState<Record<string, RecTrend>>({});
 
@@ -207,8 +227,7 @@ export default function AdminMapa() {
   // Fetch map operational data
   const fetchData = useCallback(async () => {
     setLoading(true);
-    const periodHours = { "24h": 24, "7d": 168, "30d": 720, "6m": 4320, "12m": 8760 }[period];
-    const since = new Date(Date.now() - periodHours * 60 * 60 * 1000).toISOString();
+    const { since, periodHours } = getPeriodRange(period);
 
     const [
       { data: users }, { data: deviceData }, { data: alertData }, { data: locations },
@@ -265,8 +284,7 @@ export default function AdminMapa() {
       if (u?.uf) { ensureUf(u.uf); ufStats[u.uf].alertas++; if (u.cidade) { ensureMun(u.uf, u.cidade); munStats[u.uf][u.cidade].alertas++; } }
     });
     // Recordings per UF
-    const periodHoursVal = { "24h": 24, "7d": 168, "30d": 720, "6m": 4320, "12m": 8760 }[period];
-    const midpoint = new Date(Date.now() - (periodHoursVal / 2) * 60 * 60 * 1000).toISOString();
+    const midpoint = new Date(Date.now() - (periodHours / 2) * 3600000).toISOString();
     const recentRecByUf: Record<string, number> = {};
     const olderRecByUf: Record<string, number> = {};
     (gravacoesData || []).forEach((g: any) => {
@@ -413,8 +431,7 @@ export default function AdminMapa() {
 
   // Fetch dashboard analytics
   useEffect(() => {
-    const periodDays = { "24h": 1, "7d": 7, "30d": 30, "6m": 180, "12m": 365 }[period] || 30;
-    const since = new Date(Date.now() - periodDays * 24 * 60 * 60 * 1000).toISOString();
+    const { since, periodDays } = getPeriodRange(period);
 
     async function loadAnalytics() {
       // Count queries (no 1000 limit issue - these use head:true or count:exact)
@@ -707,7 +724,7 @@ export default function AdminMapa() {
         </div>
         <div className="flex items-center gap-2">
           <div className="flex gap-1">
-            {([["7d", "7 dias"], ["30d", "30 dias"], ["6m", "6 meses"], ["12m", "12 meses"]] as const).map(([key, label]) => (
+            {([["7d", "7 dias"], ["30d", "30 dias"], ["6m", "6 meses"], ["12m", "12 meses"], ["2025", "2025"]] as [string, string][]).map(([key, label]) => (
               <button key={key} onClick={() => setPeriod(key)}
                 className="px-3 py-1.5 text-xs rounded-md border transition-colors"
                 style={{ borderColor: period === key ? "hsl(224 76% 33%)" : "hsl(220 13% 91%)", background: period === key ? "hsl(224 76% 33%)" : "transparent", color: period === key ? "#fff" : "hsl(220 9% 46%)", fontWeight: period === key ? 600 : 400 }}>
@@ -930,7 +947,7 @@ export default function AdminMapa() {
               )}
             </div>
           </div>
-          <WordCloudCard since={new Date(Date.now() - ({ "24h": 24, "7d": 168, "30d": 720, "6m": 4320, "12m": 8760 }[period] || 168) * 60 * 60 * 1000).toISOString()} />
+          <WordCloudCard since={getPeriodRange(period).since} />
         </div>
 
         {/* Row 2: Timeline + Alert Type */}
