@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TrendingUp, TrendingDown, Minus, ShieldAlert, AlertTriangle, Shield, ShieldCheck, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
 import GradientIcon from "@/components/ui/gradient-icon";
@@ -9,7 +8,7 @@ import { Area, AreaChart, ResponsiveContainer, Tooltip, YAxis, XAxis } from "rec
 import MacroReportCard from "@/components/gravacoes/MacroReportCard";
 import { useAuth } from "@/contexts/AuthContext";
 
-type WindowDays = 7 | 14 | 30;
+const FIXED_WINDOW = 30;
 
 interface Assessment {
   risk_score: number;
@@ -49,7 +48,7 @@ interface HistoryPoint {
 
 export default function RiskEvolutionCard() {
   const { sessionToken, usuario } = useAuth();
-  const [window, setWindow] = useState<WindowDays>(7);
+  const [window] = useState(FIXED_WINDOW);
   const [assessment, setAssessment] = useState<Assessment | null>(null);
   const [history, setHistory] = useState<HistoryPoint[]>([]);
   const [loading, setLoading] = useState(true);
@@ -58,14 +57,14 @@ export default function RiskEvolutionCard() {
   
 
   // Fetch risk data only (no report)
-  const fetchData = useCallback(async (w: WindowDays) => {
+  const fetchData = useCallback(async () => {
     if (!sessionToken) return;
     setLoading(true);
     setError(null);
     try {
       const [assessRes, histRes] = await Promise.all([
-        callWebApi("getRiskAssessment", sessionToken, { window_days: w }),
-        callWebApi("getRiskHistory", sessionToken, { window_days: w, limit: 30 }),
+        callWebApi("getRiskAssessment", sessionToken, { window_days: FIXED_WINDOW }),
+        callWebApi("getRiskHistory", sessionToken, { window_days: FIXED_WINDOW, limit: 30 }),
       ]);
       if (assessRes.ok && assessRes.data.assessment) {
         setAssessment(assessRes.data.assessment);
@@ -87,12 +86,8 @@ export default function RiskEvolutionCard() {
   }, [sessionToken]);
 
   useEffect(() => {
-    fetchData(window);
-  }, [window, fetchData]);
-
-  const handleWindowChange = (val: string) => {
-    setWindow(Number(val) as WindowDays);
-  };
+    fetchData();
+  }, [fetchData]);
 
   const level = assessment ? (levelConfig[assessment.risk_level] || levelConfig["Sem Risco"]) : levelConfig["Sem Risco"];
   const TrendIcon = assessment ? (trendIcons[assessment.trend as keyof typeof trendIcons] || Minus) : Minus;
@@ -116,13 +111,7 @@ export default function RiskEvolutionCard() {
             <p className="text-sm font-semibold">
               Evolução do Risco
             </p>
-            <Tabs value={String(window)} onValueChange={handleWindowChange}>
-              <TabsList className="h-8">
-                <TabsTrigger value="7" className="text-xs px-2 h-6">7d</TabsTrigger>
-                <TabsTrigger value="14" className="text-xs px-2 h-6">14d</TabsTrigger>
-                <TabsTrigger value="30" className="text-xs px-2 h-6">30d</TabsTrigger>
-              </TabsList>
-            </Tabs>
+            <span className="text-[10px] text-muted-foreground">últimos 30 dias</span>
           </div>
 
           {/* Content */}
