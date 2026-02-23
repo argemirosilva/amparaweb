@@ -109,14 +109,14 @@ export function useDeviceStatus(): DeviceStatusResult {
       const deviceData = deviceRes.data
         ? {
             ...deviceRes.data,
-            // Use device_status flags as primary source; only override to FALSE
-            // when DB shows the activity already ended (no pending recording / no active panic)
-            is_recording: deviceRes.data.is_recording && !hasPendingRecording ? false : deviceRes.data.is_recording,
+            // Trust device flags, but override to FALSE only when DB confirms activity ended.
+            // Recording is valid if there's a pending gravacao OR an active monitoring session.
+            is_recording: deviceRes.data.is_recording && !hasPendingRecording && !hasActiveMonitor ? false : deviceRes.data.is_recording,
             is_monitoring: deviceRes.data.is_monitoring,
             panicActive: hasActivePanic,
             panicStartedAt: panicRes.data?.criado_em ?? null,
             monitoringStartedAt: monitorRes.data?.iniciado_em ?? null,
-            recordingStartedAt: recordingRes.data?.created_at ?? null,
+            recordingStartedAt: recordingRes.data?.created_at ?? monitorRes.data?.iniciado_em ?? null,
             lastSegmentIdx: segmentRes.data?.segmento_idx ?? null,
           }
         : null;
