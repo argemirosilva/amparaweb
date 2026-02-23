@@ -74,7 +74,7 @@ const FRIENDLY_LABELS: Record<string, string> = {
   whatsapp_template_resolucao: "Template de resolução",
 };
 
-const TEXTAREA_KEYS = new Set(["ia_prompt_analise"]);
+const HIDDEN_KEYS = new Set(["ia_prompt_analise"]);
 
 export default function AdminIntegracoes() {
   const { sessionToken } = useAuth();
@@ -175,79 +175,7 @@ export default function AdminIntegracoes() {
       );
     }
 
-    // Textarea for long text fields (prompts)
-    if (TEXTAREA_KEYS.has(s.chave)) {
-      const lineCount = currentValue.split("\n").length;
-      return (
-        <div className="flex flex-col gap-2">
-          {/* Prompt editor header */}
-          <div
-            className="flex items-center gap-2 px-3 py-1.5 rounded-t-md border border-b-0"
-            style={{
-              background: "hsl(220 20% 16%)",
-              borderColor: "hsl(220 13% 30%)",
-            }}
-          >
-            <div className="flex gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full" style={{ background: "hsl(0 70% 55%)" }} />
-              <span className="w-2.5 h-2.5 rounded-full" style={{ background: "hsl(45 80% 55%)" }} />
-              <span className="w-2.5 h-2.5 rounded-full" style={{ background: "hsl(130 50% 50%)" }} />
-            </div>
-            <span
-              className="text-[10px] font-medium tracking-wider uppercase ml-2"
-              style={{ color: "hsl(220 10% 60%)", fontFamily: "'JetBrains Mono', 'Fira Code', 'SF Mono', Menlo, monospace" }}
-            >
-              system_prompt.txt
-            </span>
-            <span
-              className="ml-auto text-[10px]"
-              style={{ color: "hsl(220 10% 50%)", fontFamily: "'JetBrains Mono', 'Fira Code', 'SF Mono', Menlo, monospace" }}
-            >
-              {lineCount} linhas · {currentValue.length} chars
-            </span>
-          </div>
-          <textarea
-            style={{
-              border: "1px solid hsl(220 13% 30%)",
-              borderTop: "none",
-              borderRadius: "0 0 6px 6px",
-              padding: "12px 16px",
-              fontSize: 12.5,
-              outline: "none",
-              fontFamily: "'JetBrains Mono', 'Fira Code', 'SF Mono', Menlo, monospace",
-              color: "hsl(150 60% 80%)",
-              background: "hsl(220 20% 12%)",
-              width: "100%",
-              minHeight: 280,
-              maxHeight: 500,
-              resize: "vertical",
-              lineHeight: 1.7,
-              tabSize: 2,
-              whiteSpace: "pre-wrap",
-              wordBreak: "break-word",
-            }}
-            value={currentValue}
-            onChange={(e) => handleChange(s.id, e.target.value)}
-            spellCheck={false}
-          />
-          {isModified && (
-            <div className="flex gap-2 justify-end">
-              <button onClick={() => resetField(s.id)} className="flex items-center gap-1 px-2.5 py-1.5 rounded text-xs hover:bg-gray-100" title="Desfazer">
-                <RotateCcw className="w-3.5 h-3.5" style={{ color: "hsl(220 9% 46%)" }} /> Desfazer
-              </button>
-              <button
-                onClick={() => handleSave(s)}
-                disabled={saving === s.id}
-                className="flex items-center gap-1 px-3 py-1.5 rounded text-xs text-white"
-                style={{ background: "hsl(224 76% 33%)" }}
-              >
-                <Save className="w-3.5 h-3.5" /> Salvar
-              </button>
-            </div>
-          )}
-        </div>
-      );
-    }
+
 
     return (
       <div className="flex items-center gap-2">
@@ -291,7 +219,7 @@ export default function AdminIntegracoes() {
       ) : (
         <div className="space-y-5">
           {INTEGRATION_CATEGORIES.map((cat) => {
-            const items = settings.filter((s) => s.categoria === cat.key);
+            const items = settings.filter((s) => s.categoria === cat.key && !HIDDEN_KEYS.has(s.chave));
             if (items.length === 0) return null;
 
             const Icon = cat.icon;
@@ -340,24 +268,21 @@ export default function AdminIntegracoes() {
 
                 {/* Fields */}
                 <div className="divide-y" style={{ borderColor: "hsl(220 13% 91%)" }}>
-                  {items.map((s) => {
-                    const isTextarea = TEXTAREA_KEYS.has(s.chave);
-                    return (
-                      <div key={s.id} className={`px-4 py-3.5 ${isTextarea ? "flex flex-col gap-2" : "flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6"}`}>
-                        <div className={isTextarea ? "" : "flex-1 min-w-0"}>
-                          <p className="text-sm font-medium" style={{ color: "hsl(220 13% 18%)" }}>
-                            {FRIENDLY_LABELS[s.chave] || s.chave.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
+                  {items.map((s) => (
+                    <div key={s.id} className="px-4 py-3.5 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium" style={{ color: "hsl(220 13% 18%)" }}>
+                          {FRIENDLY_LABELS[s.chave] || s.chave.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
+                        </p>
+                        {s.descricao && (
+                          <p className="text-xs mt-0.5" style={{ color: "hsl(220 9% 46%)" }}>
+                            {s.descricao}
                           </p>
-                          {s.descricao && (
-                            <p className="text-xs mt-0.5" style={{ color: "hsl(220 9% 46%)" }}>
-                              {s.descricao}
-                            </p>
-                          )}
-                        </div>
-                        <div className={isTextarea ? "w-full" : "sm:w-96 shrink-0"}>{renderField(s)}</div>
+                        )}
                       </div>
-                    );
-                  })}
+                      <div className="sm:w-96 shrink-0">{renderField(s)}</div>
+                    </div>
+                  ))}
                 </div>
               </div>
             );
