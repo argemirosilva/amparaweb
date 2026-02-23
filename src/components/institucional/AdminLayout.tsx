@@ -49,7 +49,7 @@ export default function AdminLayout() {
 
   const handleLogout = async () => {
     await logout();
-    navigate("/login");
+    navigate("/admin/login");
   };
 
   const fontStyle = { fontFamily: "Inter, Roboto, sans-serif" };
