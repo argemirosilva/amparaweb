@@ -137,9 +137,9 @@ export default function RiskEvolutionCard() {
 
               {/* Chart */}
               {history.length > 1 && (
-                <div className="h-[60px] -mx-1 overflow-hidden">
+                <div className="h-[80px] -mx-1 overflow-hidden">
                   <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={history} margin={{ top: 2, right: 4, bottom: 0, left: -24 }}>
+                    <AreaChart data={history} margin={{ top: 2, right: 4, bottom: 14, left: -24 }}>
                       <defs>
                         <linearGradient id="riskFillGrad" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="0%" stopColor={CHART_STROKE} stopOpacity={0.15} />
@@ -153,22 +153,19 @@ export default function RiskEvolutionCard() {
                       <YAxis domain={[100, 200]} hide />
                       <XAxis
                         dataKey="date"
-                        padding={{ left: 0, right: 0 }}
                         tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }}
                         tickLine={false}
                         axisLine={false}
+                        interval="preserveStartEnd"
                         ticks={(() => {
                           if (history.length === 0) return [];
-                          const dates = history.map(h => h.date);
-                          const uniqueDates = [...new Set(dates)];
+                          const uniqueDates = [...new Set(history.map(h => h.date))];
                           if (uniqueDates.length <= 5) return uniqueDates;
-                          // Distribute ~4-5 evenly spaced ticks across unique dates
                           const step = Math.max(1, Math.floor((uniqueDates.length - 1) / 4));
-                          const picks: string[] = [];
-                          for (let i = 0; i < uniqueDates.length - 1; i += step) {
+                          const picks: string[] = [uniqueDates[0]];
+                          for (let i = step; i < uniqueDates.length - 1; i += step) {
                             picks.push(uniqueDates[i]);
                           }
-                          // Always include last date
                           if (picks[picks.length - 1] !== uniqueDates[uniqueDates.length - 1]) {
                             picks.push(uniqueDates[uniqueDates.length - 1]);
                           }
@@ -180,6 +177,7 @@ export default function RiskEvolutionCard() {
                         }}
                       />
                       <Tooltip
+                        cursor={{ stroke: "hsl(var(--border))", strokeWidth: 1, strokeDasharray: "3 3" }}
                         content={({ active, payload }) => {
                           if (!active || !payload?.[0]) return null;
                           const p = payload[0].payload as HistoryPoint;
@@ -195,7 +193,7 @@ export default function RiskEvolutionCard() {
                         }}
                       />
                       <Area
-                        type="natural"
+                        type="monotone"
                         dataKey="score"
                         stroke="url(#riskStrokeGrad)"
                         strokeWidth={1.5}
