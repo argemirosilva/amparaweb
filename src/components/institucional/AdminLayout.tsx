@@ -6,7 +6,7 @@ import {
   LayoutDashboard,
   Users,
   Building2,
-  Shield,
+  ClipboardCheck,
   FileText,
   Settings,
   LogOut,
@@ -26,7 +26,7 @@ const sidebarItems = [
   { label: "Usuários", path: "/admin/usuarios", icon: Users },
   { label: "Suporte", path: "/admin/suporte", icon: Headset },
   { label: "Entidades", path: "/admin/orgaos", icon: Building2 },
-  { label: "Auditoria", path: "/admin/auditoria", icon: Shield },
+  { label: "Auditoria", path: "/admin/auditoria", icon: ClipboardCheck },
   { label: "Relatórios", path: "/admin/relatorios", icon: FileText },
   
   { label: "Configurações", path: "/admin/configuracoes", icon: Settings },
