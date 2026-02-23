@@ -49,6 +49,7 @@ interface Gravacao {
   device_id: string | null;
   timezone: string | null;
   nivel_risco: string | null;
+  iniciado_em: string | null;
 }
 
 const RISCO_COLORS: Record<string, string> = {
@@ -131,12 +132,17 @@ function getDateLabel(iso: string): string {
   return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
 }
 
+function getDisplayTime(g: Gravacao): string {
+  return g.iniciado_em || g.created_at;
+}
+
 function groupByDate(items: Gravacao[]): { label: string; items: Gravacao[] }[] {
   const groups: Map<string, { label: string; items: Gravacao[] }> = new Map();
   for (const g of items) {
-    const key = new Date(g.created_at).toLocaleDateString("pt-BR");
+    const displayTime = getDisplayTime(g);
+    const key = new Date(displayTime).toLocaleDateString("pt-BR");
     if (!groups.has(key)) {
-      groups.set(key, { label: getDateLabel(g.created_at), items: [] });
+      groups.set(key, { label: getDateLabel(displayTime), items: [] });
     }
     groups.get(key)!.items.push(g);
   }
@@ -417,7 +423,7 @@ export default function GravacoesPage() {
                         <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
                           <div className="flex items-center gap-1.5">
                             <span className="text-[11px] font-medium text-foreground">
-                              {formatTime(g.created_at)}
+                              {formatTime(getDisplayTime(g))}
                             </span>
                             {(() => {
                               const device = getDeviceLabel(g.device_id);
@@ -429,9 +435,10 @@ export default function GravacoesPage() {
                               {formatDuration(g.duracao_segundos)}
                             </span>
                             {g.nivel_risco === "sem_risco" && (() => {
-                              const countdown = getRetentionCountdown(g.created_at, retencaoDias);
+                              const displayTime = getDisplayTime(g);
+                              const countdown = getRetentionCountdown(displayTime, retencaoDias);
                               if (!countdown) return null;
-                              const expireAt = new Date(g.created_at).getTime() + retencaoDias * 24 * 60 * 60 * 1000;
+                              const expireAt = new Date(displayTime).getTime() + retencaoDias * 24 * 60 * 60 * 1000;
                               const remainingHours = (expireAt - Date.now()) / (1000 * 60 * 60);
                               const isUrgent = remainingHours < 24;
                               return (
