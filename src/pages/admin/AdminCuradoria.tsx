@@ -189,9 +189,6 @@ export default function AdminCuradoria() {
           />
           <label className="text-sm text-muted-foreground">Somente curadas</label>
         </div>
-        <Button variant="outline" size="sm" onClick={handleExport} className="ml-auto">
-          <Download className="w-4 h-4 mr-1" /> Exportar .jsonl
-        </Button>
       </div>
 
       {/* Table */}
