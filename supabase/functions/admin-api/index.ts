@@ -229,7 +229,31 @@ serve(async (req) => {
         .select("*")
         .order("nome");
       if (error) return json({ error: error.message }, 500);
-      return json({ tenants: data });
+
+      // Count active users per tenant
+      const { data: counts } = await supabase
+        .from("user_roles")
+        .select("tenant_id, user_id")
+        .not("tenant_id", "is", null);
+
+      const countMap: Record<string, number> = {};
+      if (counts) {
+        const seen = new Set<string>();
+        for (const row of counts) {
+          const key = `${row.tenant_id}:${row.user_id}`;
+          if (!seen.has(key)) {
+            seen.add(key);
+            countMap[row.tenant_id] = (countMap[row.tenant_id] || 0) + 1;
+          }
+        }
+      }
+
+      const tenants = (data || []).map((t: any) => ({
+        ...t,
+        usuarios_ativos: countMap[t.id] || 0,
+      }));
+
+      return json({ tenants });
     }
 
     if (action === "createTenant") {
