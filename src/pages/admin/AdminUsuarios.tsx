@@ -19,7 +19,15 @@ interface UserRow {
   ultimo_acesso: string | null;
   created_at: string;
   orgao?: string | null;
+  role?: string | null;
 }
+
+const ROLE_LABELS: Record<string, string> = {
+  admin_master: "Técnico",
+  admin_tenant: "Operacional",
+  operador: "Operacional",
+  suporte: "Suporte",
+};
 
 interface TenantOption {
   id: string;
@@ -117,7 +125,7 @@ export default function AdminUsuarios() {
       const userIds = userRows.map((u) => u.id);
       const { data: roles } = await supabase
         .from("user_roles")
-        .select("user_id, tenant_id")
+        .select("user_id, tenant_id, role")
         .in("user_id", userIds);
 
       if (roles && roles.length > 0) {
@@ -137,13 +145,18 @@ export default function AdminUsuarios() {
           }
         }
         const userTenantMap: Record<string, string> = {};
+        const userRoleMap: Record<string, string> = {};
         for (const r of roles) {
           if (r.tenant_id && tenantMap[r.tenant_id]) {
             userTenantMap[r.user_id] = tenantMap[r.tenant_id];
           }
+          if (r.role) {
+            userRoleMap[r.user_id] = r.role;
+          }
         }
         for (const u of userRows) {
           u.orgao = userTenantMap[u.id] || null;
+          u.role = userRoleMap[u.id] || null;
         }
       }
     }
@@ -298,7 +311,7 @@ export default function AdminUsuarios() {
           <table className="w-full text-sm">
             <thead>
               <tr style={{ background: "hsl(210 17% 96%)" }}>
-                {["Nome", "Email", "Órgão", "Status", "Último login", "Ações"].map((h) => (
+                {["Nome", "Email", "Órgão", "Nível", "Status", "Último login", "Ações"].map((h) => (
                   <th key={h} className="px-4 py-2.5 text-left text-xs font-semibold" style={{ color: "hsl(220 9% 46%)" }}>
                     {h}
                   </th>
@@ -307,15 +320,15 @@ export default function AdminUsuarios() {
             </thead>
             <tbody>
               {loading ? (
-                <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-sm" style={{ color: "hsl(220 9% 46%)" }}>
-                    Carregando…
-                  </td>
-                </tr>
-              ) : users.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-sm" style={{ color: "hsl(220 9% 46%)" }}>
-                    Nenhum usuário encontrado.
+                 <tr>
+                   <td colSpan={7} className="px-4 py-8 text-center text-sm" style={{ color: "hsl(220 9% 46%)" }}>
+                     Carregando…
+                   </td>
+                 </tr>
+               ) : users.length === 0 ? (
+                 <tr>
+                   <td colSpan={7} className="px-4 py-8 text-center text-sm" style={{ color: "hsl(220 9% 46%)" }}>
+                     Nenhum usuário encontrado.
                   </td>
                 </tr>
               ) : (
@@ -325,6 +338,9 @@ export default function AdminUsuarios() {
                     <td className="px-4 py-3" style={{ color: "hsl(220 9% 46%)" }}>{u.email}</td>
                     <td className="px-4 py-3 text-xs" style={{ color: "hsl(220 9% 46%)" }}>
                       {u.orgao || <span style={{ opacity: 0.4 }}>—</span>}
+                    </td>
+                    <td className="px-4 py-3 text-xs" style={{ color: "hsl(220 9% 46%)" }}>
+                      {u.role ? (ROLE_LABELS[u.role] || u.role) : <span style={{ opacity: 0.4 }}>Usuária</span>}
                     </td>
                     <td className="px-4 py-3">
                       <GovStatusBadge status={statusMap[u.status] || "amarelo"} label={u.status} />
