@@ -724,7 +724,7 @@ export default function AdminMapa() {
         </div>
         <div className="flex items-center gap-2">
           <div className="flex gap-1">
-            {([["7d", "7 dias"], ["30d", "30 dias"], ["6m", "6 meses"], [String(new Date().getFullYear()), String(new Date().getFullYear())]] as [string, string][]).map(([key, label]) => (
+            {([["7d", "7 dias"], ["30d", "30 dias"], ["6m", "6 meses"], ...Array.from({ length: new Date().getFullYear() - 2024 }, (_, i) => { const y = String(2025 + i); return [y, y] as [string, string]; })] as [string, string][]).map(([key, label]) => (
               <button key={key} onClick={() => setPeriod(key)}
                 className="px-3 py-1.5 text-xs rounded-md border transition-colors"
                 style={{ borderColor: period === key ? "hsl(224 76% 33%)" : "hsl(220 13% 91%)", background: period === key ? "hsl(224 76% 33%)" : "transparent", color: period === key ? "#fff" : "hsl(220 9% 46%)", fontWeight: period === key ? 600 : 400 }}>
