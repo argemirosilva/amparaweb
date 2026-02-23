@@ -230,7 +230,7 @@ serve(async (req) => {
         .order("nome");
       if (error) return json({ error: error.message }, 500);
 
-      // Count active users per tenant
+      // Count active users per tenant (v2)
       const { data: counts } = await supabase
         .from("user_roles")
         .select("tenant_id, user_id")
