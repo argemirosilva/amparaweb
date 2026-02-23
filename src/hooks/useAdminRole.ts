@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
-export type AdminRole = "admin_master" | "admin_tenant" | "operador" | "suporte";
+export type AdminRole = "administrador" | "admin_master" | "admin_tenant" | "operador" | "suporte";
 
 export function useAdminRole() {
   const { usuario } = useAuth();
@@ -51,10 +51,11 @@ export function useAdminRole() {
     [roles]
   );
 
-  const isAdmin = roles.some((r) => r === "admin_master" || r === "admin_tenant");
+  const isAdministrador = roles.includes("administrador");
+  const isAdmin = roles.some((r) => r === "administrador" || r === "admin_master" || r === "admin_tenant");
   const isOperador = roles.includes("operador");
   const isSuporte = roles.includes("suporte");
   const hasAnyAdminAccess = isAdmin || isOperador || isSuporte;
 
-  return { roles, loading, hasRole, isAdmin, isOperador, isSuporte, hasAnyAdminAccess, tenantSigla };
+  return { roles, loading, hasRole, isAdmin, isAdministrador, isOperador, isSuporte, hasAnyAdminAccess, tenantSigla };
 }
