@@ -17,9 +17,9 @@ export function BuscaPerfilForm({ onSubmit, loading }: Props) {
   const filledCount = Object.values(form).filter(v => v.trim()).length;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Primary fields */}
-      <div className="ampara-card !p-4 space-y-3">
+      <div className="ampara-card !p-3 space-y-2">
         <p className="text-sm font-semibold text-foreground">Identificação</p>
         <input
           type="text" className="ampara-input" placeholder="Nome (parcial ou completo)"
@@ -32,7 +32,7 @@ export function BuscaPerfilForm({ onSubmit, loading }: Props) {
         />
       </div>
 
-      <div className="ampara-card !p-4 space-y-3">
+      <div className="ampara-card !p-3 space-y-2">
         <p className="text-sm font-semibold text-foreground">Família (só 1º nome basta)</p>
         <input
           type="text" className="ampara-input" placeholder="Primeiro nome do pai"
@@ -44,7 +44,7 @@ export function BuscaPerfilForm({ onSubmit, loading }: Props) {
         />
       </div>
 
-      <div className="ampara-card !p-4 space-y-3">
+      <div className="ampara-card !p-3 space-y-2">
         <p className="text-sm font-semibold text-foreground">Localização aproximada</p>
         <div className="flex gap-2">
           <input
@@ -69,7 +69,7 @@ export function BuscaPerfilForm({ onSubmit, loading }: Props) {
 
       {showMore && (
         <>
-          <div className="ampara-card !p-4 space-y-3">
+           <div className="ampara-card !p-3 space-y-2">
             <p className="text-sm font-semibold text-foreground">Contato parcial</p>
             <div className="flex gap-2">
               <input
@@ -86,7 +86,7 @@ export function BuscaPerfilForm({ onSubmit, loading }: Props) {
             </div>
           </div>
 
-          <div className="ampara-card !p-4 space-y-3">
+          <div className="ampara-card !p-3 space-y-2">
             <p className="text-sm font-semibold text-foreground">Trabalho / Veículo</p>
             <input
               type="text" className="ampara-input" placeholder="Profissão ou setor"
