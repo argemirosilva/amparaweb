@@ -90,8 +90,21 @@ serve(async (req) => {
         return json({ error: "Órgão é obrigatório" }, 400);
       }
 
-      const validRoles = ["admin_tenant", "operador", "suporte"];
-      const validRole = validRoles.includes(role) ? role : "operador";
+      const allRoles = ["super_administrador", "administrador", "admin_master", "admin_tenant", "operador", "suporte"];
+      const highRoles = ["super_administrador", "administrador"];
+      let validRole = allRoles.includes(role) ? role : "operador";
+
+      // Only allow assigning high-level roles if the caller is also a high-level admin
+      if (highRoles.includes(validRole)) {
+        const { data: callerRoles } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", userId);
+        const callerIsHighAdmin = (callerRoles || []).some((r: any) => highRoles.includes(r.role));
+        if (!callerIsHighAdmin) {
+          validRole = "operador";
+        }
+      }
 
       // Check if email already exists
       const { data: existing } = await supabase
