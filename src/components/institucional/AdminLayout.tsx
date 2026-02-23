@@ -15,6 +15,7 @@ import {
   Plug,
   AudioLines,
   Headset,
+  BrainCircuit,
 } from "lucide-react";
 import amparaLogo from "@/assets/ampara-logo.png";
 import { useState } from "react";
@@ -27,6 +28,7 @@ const TECNICO_PATHS = [
 const OPERACIONAL_PATHS = ["/admin", "/admin/relatorios"];
 const SUPORTE_PATHS = ["/admin/suporte"];
 const SUPER_ADMIN_ONLY_PATHS = ["/admin/integracoes"];
+const ADMIN_LEVEL_PATHS = ["/admin/curadoria"];
 
 const sidebarItems = [
   { label: "Dashboard", path: "/admin", icon: LayoutDashboard },
@@ -37,6 +39,7 @@ const sidebarItems = [
   { label: "Relatórios", path: "/admin/relatorios", icon: FileText },
   { label: "Configurações", path: "/admin/configuracoes", icon: Settings },
   { label: "Integrações", path: "/admin/integracoes", icon: Plug },
+  { label: "Curadoria IA", path: "/admin/curadoria", icon: BrainCircuit },
 ];
 
 export default function AdminLayout() {
@@ -121,6 +124,7 @@ export default function AdminLayout() {
             {sidebarItems
               .filter((item) => {
                 if (SUPER_ADMIN_ONLY_PATHS.includes(item.path)) return isSuperAdmin;
+                if (ADMIN_LEVEL_PATHS.includes(item.path)) return isSuperAdmin || isAdministrador;
                 if (isSupportOnly) return SUPORTE_PATHS.includes(item.path);
                 if (isTecnico) return TECNICO_PATHS.includes(item.path);
                 if (isOperacional) return OPERACIONAL_PATHS.includes(item.path);
