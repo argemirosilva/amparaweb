@@ -2107,7 +2107,14 @@ async function handleReportarStatusGravacao(
       });
     }
 
-    // Session already exists — ensure device_status reflects recording state
+    // Session already exists — update origem if changed and ensure device_status reflects recording
+    if (origemGravacao && validOrigens.includes(origemGravacao)) {
+      await supabase
+        .from("monitoramento_sessoes")
+        .update({ origem: origemGravacao })
+        .eq("id", existingSession.id);
+    }
+
     await supabase
       .from("device_status")
       .update({ is_recording: true })
