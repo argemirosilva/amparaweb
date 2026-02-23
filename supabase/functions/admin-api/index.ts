@@ -386,6 +386,92 @@ serve(async (req) => {
       return json({ success: true, link });
     }
 
+    // ========== DELETE USER ==========
+    if (action === "deleteUser") {
+      const { user_id: targetUserId } = params;
+      if (!targetUserId) return json({ error: "ID do usuário não informado" }, 400);
+
+      // Prevent self-deletion
+      if (targetUserId === userId) {
+        return json({ error: "Você não pode remover a si mesmo" }, 400);
+      }
+
+      // Only super_administrador / administrador can delete
+      const { data: callerRoles } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId);
+      const isCallerAdmin = (callerRoles || []).some(
+        (r: any) => r.role === "super_administrador" || r.role === "administrador"
+      );
+      if (!isCallerAdmin) {
+        return json({ error: "Somente administradores podem remover usuários" }, 403);
+      }
+
+      // Get user info for audit before deletion
+      const { data: targetUser } = await supabase
+        .from("usuarios")
+        .select("email, nome_completo")
+        .eq("id", targetUserId)
+        .maybeSingle();
+
+      // Delete related data first
+      await supabase.from("user_roles").delete().eq("user_id", targetUserId);
+      await supabase.from("user_sessions").delete().eq("user_id", targetUserId);
+      await supabase.from("refresh_tokens").delete().eq("user_id", targetUserId);
+      await supabase.from("guardioes").delete().eq("usuario_id", targetUserId);
+
+      // Delete user
+      const { error: deleteError } = await supabase
+        .from("usuarios")
+        .delete()
+        .eq("id", targetUserId);
+
+      if (deleteError) {
+        return json({ error: "Erro ao remover usuário: " + deleteError.message }, 500);
+      }
+
+      // Audit log
+      await supabase.from("audit_logs").insert({
+        user_id: userId,
+        action_type: "admin_delete_user",
+        success: true,
+        details: {
+          deleted_user_id: targetUserId,
+          email: targetUser?.email,
+          nome: targetUser?.nome_completo,
+        },
+      });
+
+      return json({ success: true });
+    }
+
+    // ========== ACTIVATE USER ==========
+    if (action === "activateUser") {
+      const { user_id: targetUserId } = params;
+      if (!targetUserId) return json({ error: "ID do usuário não informado" }, 400);
+
+      const { error: updateError } = await supabase
+        .from("usuarios")
+        .update({
+          status: "ativo",
+          email_verificado: true,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", targetUserId);
+
+      if (updateError) return json({ error: "Erro ao ativar: " + updateError.message }, 500);
+
+      await supabase.from("audit_logs").insert({
+        user_id: userId,
+        action_type: "admin_activate_user",
+        success: true,
+        details: { target_user_id: targetUserId },
+      });
+
+      return json({ success: true });
+    }
+
     return json({ error: `Ação desconhecida: ${action}` }, 400);
   } catch (err) {
     return json({ error: err.message || "Erro interno" }, 500);

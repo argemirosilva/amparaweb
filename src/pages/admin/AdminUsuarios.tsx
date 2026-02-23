@@ -64,6 +64,13 @@ export default function AdminUsuarios() {
   const [blockConfirm, setBlockConfirm] = useState(false);
   const [blockLoading, setBlockLoading] = useState(false);
 
+  // Delete user state
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
+  // Activate user state
+  const [activateLoading, setActivateLoading] = useState(false);
+
   // Create user dialog state
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [createForm, setCreateForm] = useState({ nome_completo: "", email: "", tenant_id: "", role: "operador" });
@@ -440,7 +447,7 @@ export default function AdminUsuarios() {
       {/* Details Drawer */}
       {drawerUser && (
         <>
-          <div className="fixed inset-0 bg-black/20 z-40" onClick={() => { setDrawerUser(null); setEditMode(false); setBlockConfirm(false); }} />
+          <div className="fixed inset-0 bg-black/20 z-40" onClick={() => { setDrawerUser(null); setEditMode(false); setBlockConfirm(false); setDeleteConfirm(false); }} />
           <div
             className="fixed right-0 top-0 h-full w-full max-w-md z-50 border-l overflow-y-auto p-6"
             style={{ background: "hsl(0 0% 100%)", borderColor: "hsl(220 13% 91%)" }}
@@ -449,7 +456,7 @@ export default function AdminUsuarios() {
               <h2 className="text-base font-semibold" style={{ color: "hsl(220 13% 18%)" }}>
                 {editMode ? "Editar Usuário" : "Detalhes do Usuário"}
               </h2>
-              <button onClick={() => { setDrawerUser(null); setEditMode(false); setBlockConfirm(false); }}>
+              <button onClick={() => { setDrawerUser(null); setEditMode(false); setBlockConfirm(false); setDeleteConfirm(false); }}>
                 <X className="w-5 h-5" style={{ color: "hsl(220 9% 46%)" }} />
               </button>
             </div>
@@ -594,11 +601,10 @@ export default function AdminUsuarios() {
                     </div>
                   ))}
                 </div>
-                <div className="mt-6 flex gap-2">
+                <div className="mt-6 flex flex-wrap gap-2">
                   <button
                     onClick={() => {
                       const userTenantId = (() => {
-                        // find tenant_id from user_roles for this user
                         const t = tenants.find((t) => t.sigla === drawerUser.orgao);
                         return t?.id || "";
                       })();
@@ -617,6 +623,45 @@ export default function AdminUsuarios() {
                   >
                     Editar
                   </button>
+
+                  {/* Activate manually */}
+                  {drawerUser.status !== "ativo" && (
+                    <button
+                      onClick={async () => {
+                        setActivateLoading(true);
+                        try {
+                          const res = await fetch(`${SUPABASE_URL}/functions/v1/admin-api`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json", apikey: SUPABASE_KEY },
+                            body: JSON.stringify({
+                              action: "activateUser",
+                              session_token: sessionToken,
+                              user_id: drawerUser.id,
+                            }),
+                          });
+                          const data = await res.json();
+                          if (res.ok && data.success) {
+                            toast({ title: "Usuário ativado", description: "O usuário foi ativado manualmente com sucesso." });
+                            setDrawerUser(null);
+                            loadUsers();
+                          } else {
+                            toast({ title: "Erro", description: data.error || "Erro ao ativar usuário", variant: "destructive" });
+                          }
+                        } catch {
+                          toast({ title: "Erro", description: "Erro de conexão", variant: "destructive" });
+                        }
+                        setActivateLoading(false);
+                      }}
+                      disabled={activateLoading}
+                      className="flex items-center gap-1 px-4 py-2 rounded text-xs font-semibold border transition-colors hover:bg-gray-50 disabled:opacity-60"
+                      style={{ borderColor: "hsl(142 71% 35%)", color: "hsl(142 71% 35%)" }}
+                    >
+                      {activateLoading && <Loader2 className="w-3 h-3 animate-spin" />}
+                      Ativar manualmente
+                    </button>
+                  )}
+
+                  {/* Block / Unblock */}
                   {!blockConfirm ? (
                     <button
                       onClick={() => setBlockConfirm(true)}
@@ -675,6 +720,71 @@ export default function AdminUsuarios() {
                       >
                         Não
                       </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Delete user */}
+                <div className="mt-4 pt-4 border-t" style={{ borderColor: "hsl(220 13% 91%)" }}>
+                  {!deleteConfirm ? (
+                    <button
+                      onClick={() => setDeleteConfirm(true)}
+                      className="px-4 py-2 rounded text-xs font-semibold border transition-colors hover:bg-red-50"
+                      style={{ borderColor: "hsl(0 73% 42%)", color: "hsl(0 73% 42%)" }}
+                    >
+                      Remover usuário
+                    </button>
+                  ) : (
+                    <div className="rounded-md border p-3 space-y-2" style={{ borderColor: "hsl(0 73% 42% / 0.3)", background: "hsl(0 73% 42% / 0.04)" }}>
+                      <p className="text-xs font-medium" style={{ color: "hsl(0 73% 42%)" }}>
+                        Tem certeza que deseja remover permanentemente este usuário?
+                      </p>
+                      <p className="text-xs" style={{ color: "hsl(220 9% 46%)" }}>
+                        Esta ação não pode ser desfeita. Todos os dados associados serão removidos.
+                      </p>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={async () => {
+                            setDeleteLoading(true);
+                            try {
+                              const res = await fetch(`${SUPABASE_URL}/functions/v1/admin-api`, {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json", apikey: SUPABASE_KEY },
+                                body: JSON.stringify({
+                                  action: "deleteUser",
+                                  session_token: sessionToken,
+                                  user_id: drawerUser.id,
+                                }),
+                              });
+                              const data = await res.json();
+                              if (res.ok && data.success) {
+                                toast({ title: "Usuário removido", description: "O usuário foi removido permanentemente." });
+                                setDrawerUser(null);
+                                setDeleteConfirm(false);
+                                loadUsers();
+                              } else {
+                                toast({ title: "Erro", description: data.error || "Erro ao remover", variant: "destructive" });
+                              }
+                            } catch {
+                              toast({ title: "Erro", description: "Erro de conexão", variant: "destructive" });
+                            }
+                            setDeleteLoading(false);
+                          }}
+                          disabled={deleteLoading}
+                          className="flex items-center gap-1 px-3 py-1.5 rounded text-xs font-semibold text-white disabled:opacity-60"
+                          style={{ background: "hsl(0 73% 42%)" }}
+                        >
+                          {deleteLoading && <Loader2 className="w-3 h-3 animate-spin" />}
+                          Sim, remover
+                        </button>
+                        <button
+                          onClick={() => setDeleteConfirm(false)}
+                          className="px-3 py-1.5 rounded text-xs border"
+                          style={{ borderColor: "hsl(220 13% 87%)", color: "hsl(220 9% 46%)" }}
+                        >
+                          Cancelar
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
