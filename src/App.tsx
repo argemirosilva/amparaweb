@@ -98,9 +98,9 @@ const App = () => (
               <Route path="/admin/suporte/:sessionId" element={<SuporteChat />} />
               <Route path="/admin/suporte-auditoria" element={<SuporteAuditoria />} />
               <Route path="/admin/orgaos" element={<AdminOrgaos />} />
-              <Route path="/admin/configuracoes" element={<ProtectedAdminRoute requiredRole="admin_master"><AdminConfiguracoes /></ProtectedAdminRoute>} />
-              <Route path="/admin/integracoes" element={<ProtectedAdminRoute requiredRole="admin_master"><AdminIntegracoes /></ProtectedAdminRoute>} />
-              <Route path="/admin/gerador-audios-ampara" element={<ProtectedAdminRoute requiredRole="admin_master"><AdminGeradorAudios /></ProtectedAdminRoute>} />
+              <Route path="/admin/configuracoes" element={<AdminConfiguracoes />} />
+              <Route path="/admin/integracoes" element={<AdminIntegracoes />} />
+              <Route path="/admin/gerador-audios-ampara" element={<AdminGeradorAudios />} />
             </Route>
             <Route path="/suporte" element={<Suporte />} />
             <Route path="/privacidade" element={<Privacidade />} />
