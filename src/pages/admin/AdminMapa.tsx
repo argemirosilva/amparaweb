@@ -155,7 +155,7 @@ export default function AdminMapa() {
   const [showDevices, setShowDevices] = useState(true);
   const [loading, setLoading] = useState(false);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
-  const [period, setPeriod] = useState<"7d" | "30d" | "6m" | "12m">("7d");
+  const [period, setPeriod] = useState<"7d" | "30d" | "6m" | "12m">("30d");
   const [ufTrends, setUfTrends] = useState<Record<string, "up" | "down" | "stable">>({});
   const [recTrends, setRecTrends] = useState<Record<string, RecTrend>>({});
 
