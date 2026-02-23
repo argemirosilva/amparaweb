@@ -189,25 +189,23 @@ html, body, #root {
 
   /* ---- Primary button (gradient pill) ---- */
   .ampara-btn-primary {
-    @apply w-full rounded-full py-3.5 px-8 font-semibold text-primary-foreground transition-all duration-200 text-base;
+    @apply w-full rounded-full py-2.5 px-8 font-semibold text-primary-foreground transition-all duration-200 text-base;
     background: var(--ampara-gradient);
     box-shadow: var(--ampara-shadow);
   }
 
   .ampara-btn-primary:hover {
     opacity: 0.92;
-    transform: translateY(-1px);
     box-shadow: var(--ampara-shadow-lg);
   }
 
   .ampara-btn-primary:active {
-    transform: translateY(0);
+    opacity: 0.88;
   }
 
   .ampara-btn-primary:disabled {
     opacity: 0.5;
     cursor: not-allowed;
-    transform: none;
   }
 
   /* ---- Secondary button (outlined pill) ---- */
