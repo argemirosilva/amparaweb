@@ -15,6 +15,7 @@ import {
   Eye,
   Heart,
   Lightbulb,
+  MessageCircleWarning,
 } from "lucide-react";
 import { callWebApi } from "@/services/webApiService";
 
@@ -31,6 +32,7 @@ interface AnaliseData {
   nivel_risco: string | null;
   categorias: string[] | null;
   palavras_chave: string[] | null;
+  xingamentos: string[] | null;
   analise_completa: {
     resumo_contexto?: string;
     analise_linguagem?: string[];
@@ -199,6 +201,23 @@ export default function AnaliseCard({
               <Badge key={i} variant="outline" className="text-[10px] bg-red-500/5 text-red-600 border-red-200">
                 <AlertTriangle className="w-2.5 h-2.5 mr-1" />
                 {s}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Ofensas identificadas - always visible when present */}
+      {analise.xingamentos && analise.xingamentos.length > 0 && (
+        <div className="px-3 pb-2">
+          <div className="flex items-center gap-1.5 mb-1.5">
+            <MessageCircleWarning className="w-3 h-3 text-destructive/70" />
+            <span className="text-[10px] font-semibold text-destructive/70 uppercase tracking-wider">Ofensas identificadas</span>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {analise.xingamentos.map((x, i) => (
+              <Badge key={i} variant="outline" className="text-[10px] bg-destructive/5 text-destructive/80 border-destructive/15">
+                {x}
               </Badge>
             ))}
           </div>

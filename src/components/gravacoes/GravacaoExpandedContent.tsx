@@ -24,6 +24,7 @@ interface AnaliseData {
   nivel_risco: string | null;
   categorias: string[] | null;
   palavras_chave: string[] | null;
+  xingamentos: string[] | null;
   analise_completa: any;
 }
 
