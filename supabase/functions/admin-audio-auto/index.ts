@@ -63,6 +63,8 @@ PRINCÍPIO: Na dúvida, proteja a mulher. Diferencie conflitos normais de abuso 
 
 TÁTICAS a detectar: instrumentalizacao_filhos, falsa_demonstracao_afeto, ameaca_juridica_velada, acusacao_sem_evidencia, gaslighting, vitimizacao_reversa, controle_disfarçado_preocupacao.
 
+ATENÇÃO CRÍTICA: nivel_risco DEVE ser OBRIGATORIAMENTE um destes 4 valores: sem_risco, moderado, alto, critico. NUNCA use "risco_elevado_escalada" como nivel_risco — esse é um valor de classificacao_contexto.
+
 Retorne APENAS JSON válido:
 {"resumo_contexto":"...","analise_linguagem":[],"padroes_detectados":[],"tipos_violencia":[],"nivel_risco":"sem_risco|moderado|alto|critico","justificativa_risco":"...","classificacao_contexto":"saudavel|rispido_nao_abusivo|potencial_abuso_leve|padrao_consistente_abuso|ameaca_risco|risco_elevado_escalada","sentimento":"positivo|negativo|neutro|misto","palavras_chave":[],"xingamentos":[],"categorias":[],"taticas_manipulativas":[{"tatica":"...","descricao":"...","evidencia":"...","gravidade":"baixa|media|alta"}],"orientacoes_vitima":["orientações práticas e acolhedoras"],"sinais_alerta":["sinais identificados"]}
 Arrays vazios se não aplicável. Cite evidências da transcrição.`;
