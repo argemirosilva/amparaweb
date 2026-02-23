@@ -35,6 +35,7 @@ interface Tenant {
   responsavel_email: string | null;
   ativo: boolean;
   max_usuarios: number;
+  usuarios_ativos?: number;
   created_at: string;
 }
 
@@ -201,7 +202,11 @@ export default function AdminOrgaos() {
                   </td>
                   <td className="px-4 py-3 text-xs text-foreground">{t.responsavel_nome || "—"}</td>
                   <td className="px-4 py-3 text-xs text-foreground">{t.cidade && t.uf ? `${t.cidade}/${t.uf}` : "—"}</td>
-                  <td className="px-4 py-3 text-xs text-foreground">{t.max_usuarios}</td>
+                  <td className="px-4 py-3 text-xs">
+                    <span className={(t.usuarios_ativos ?? 0) >= t.max_usuarios ? "text-destructive font-semibold" : "text-foreground"}>
+                      {t.usuarios_ativos ?? 0}/{t.max_usuarios}
+                    </span>
+                  </td>
                   <td className="px-4 py-3"><GovStatusBadge status={t.ativo ? "verde" : "vermelho"} label={t.ativo ? "Ativo" : "Inativo"} /></td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1">
