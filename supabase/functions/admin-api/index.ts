@@ -528,6 +528,8 @@ serve(async (req) => {
         .select("id, created_at, duracao_segundos, transcricao, gravacoes_analises!inner(id, nivel_risco, sentimento, categorias, palavras_chave, xingamentos, resumo, cupiado, gravacao_id)", { count: "exact" })
         .eq("status", "processado")
         .not("transcricao", "is", null)
+        .neq("gravacoes_analises.nivel_risco", "sem_risco")
+        .neq("gravacoes_analises.nivel_risco", "nenhum")
         .order("created_at", { ascending: false })
         .range(offset, offset + limit - 1);
 
@@ -591,6 +593,8 @@ serve(async (req) => {
         .select("id, created_at, duracao_segundos, transcricao, gravacoes_analises!inner(id, nivel_risco, sentimento, categorias, palavras_chave, xingamentos, resumo, cupiado)")
         .eq("status", "processado")
         .not("transcricao", "is", null)
+        .neq("gravacoes_analises.nivel_risco", "sem_risco")
+        .neq("gravacoes_analises.nivel_risco", "nenhum")
         .order("created_at", { ascending: false });
 
       if (somente_curadas) query = query.eq("gravacoes_analises.cupiado", true);
