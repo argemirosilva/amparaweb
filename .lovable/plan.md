@@ -1,90 +1,120 @@
 
+# Plano: Alinhar Prompts de IA com a Tabela `tipos_alerta`
 
-## Curadoria Inline por Frase - Alertas com Validacao e Correcao
+## Problema Identificado
 
-### Objetivo
-Melhorar o sistema de curadoria inline nas frases da transcricao para que o curador possa:
-1. Ver claramente qual alerta foi detectado ao lado de cada frase
-2. Marcar se o alerta esta correto ou incorreto
-3. Quando incorreto, selecionar o tipo correto de alerta/violencia a partir de uma lista predefinida
-4. Tambem poder adicionar um alerta que nao foi detectado pela IA
+Existem **3 desalinhamentos** entre o que a IA retorna e o que a tabela `tipos_alerta` espera:
 
-### Mudancas
+1. **`tipos_violencia`** -- O prompt pede `fisica`, `psicologica`, `moral`, etc. (nomes curtos), mas a tabela registra `violencia_psicologica`, `violencia_fisica`, etc. (com prefixo). Quando a curadoria compara os valores, eles nao batem.
 
-#### 1. Ampliar o `LineCurationPopover` (TranscriptionBubbles.tsx)
+2. **`categorias`** -- O prompt lista 7 opcoes (`violencia_fisica`, `ameaca`, `coercao`, `controle`, `assedio`, `nenhuma`), mas a tabela tem 18 tipos de violencia (inclui `chantagem`, `humilhacao`, `isolamento`, etc.). A IA nao sabe que esses existem.
 
-O popover atual so tem "Correto/Incorreto" e uma nota. Sera expandido para:
+3. **Prompts duplicados** -- Existem 4 edge functions com prompts quase identicos, mas com pequenas divergencias entre si:
+   - `process-recording` (prompt principal)
+   - `run-batch-analysis` (versao resumida)
+   - `analysis-worker` (versao com ciclo de violencia)
+   - `admin-audio-auto` (versao resumida)
 
-- Mostrar o alerta detectado que esta sendo avaliado (ex: "Xingamento: vagabunda")
-- Opcao "Correto" / "Incorreto"
-- Quando "Incorreto", exibir um dropdown para selecionar o tipo correto de alerta dentre as opcoes:
-  - Xingamento
-  - Ameaca
-  - Violencia psicologica
-  - Violencia fisica
-  - Tatica manipulativa (gaslighting, isolamento, etc.)
-  - Sinal de alerta
-  - Nenhum (falso positivo)
-- Campo de nota opcional
+## Solucao Proposta
 
-#### 2. Botao "Adicionar alerta" em frases SEM alertas
+### Etapa 1: Unificar o prompt em um unico lugar
 
-- Frases sem deteccao de alerta ganham um botao discreto (visivel no hover) para que o curador possa adicionar manualmente um tipo de alerta que a IA nao detectou
-- Isso permite marcar falsos negativos (IA nao pegou, mas deveria)
+Criar uma funcao utilitaria compartilhada que monta o prompt dinamicamente, buscando os valores validos da tabela `tipos_alerta` no banco. Assim, qualquer tipo adicionado/removido no banco se reflete automaticamente no prompt.
 
-#### 3. Atualizar a interface `LineCurationData`
+**Abordagem**: Cada edge function, ao montar o prompt, fara uma query na tabela `tipos_alerta` para obter os codigos validos por grupo e injetar no template do prompt.
 
-Adicionar campos:
-- `alert_type`: o tipo original do alerta sendo avaliado
-- `alert_label`: o label original
-- `corrected_type`: quando incorreto, o tipo correto selecionado pelo curador
+### Etapa 2: Atualizar o template do prompt
 
-#### 4. Atualizar a chamada de salvamento no `CuradoriaDetailDrawer`
-
-O `onSaveLineCuration` passara os novos campos (`alert_type`, `corrected_type`) para a API `saveAvaliacao`, armazenando no `valor_corrigido`.
-
-### Detalhes Tecnicos
-
-**Arquivo:** `src/components/curadoria/TranscriptionBubbles.tsx`
-
-- Criar constante `ALERT_TYPE_OPTIONS` com os tipos de alerta/violencia disponiveis
-- Refatorar `LineCurationPopover` para receber os alertas da linha e renderizar uma avaliacao por alerta
-- Adicionar botao "Adicionar alerta" para linhas sem deteccao
-- Atualizar `LineCurationData` com os novos campos
-- Manter o popover compacto e funcional
-
-**Arquivo:** `src/components/curadoria/CuradoriaDetailDrawer.tsx`
-
-- Atualizar o `onSaveLineCuration` para enviar os campos adicionais (`alert_type`, `alert_label`, `corrected_type`) no payload da API
-
-### Fluxo do Curador
+O prompt sera alterado para:
 
 ```text
-Frase com alerta detectado:
-+-------------------------------------------------------+
-| "Vou meter a mao na tua orelha"                       |
-| [Ameaca] [Violencia fisica]     [Avaliar]             |
-+-------------------------------------------------------+
-         |
-         v  (clica Avaliar)
-    +---------------------------+
-    | Alerta: Ameaca            |
-    | ( ) Correto  ( ) Incorreto|
-    | [Tipo correto: ________v] |  <-- so aparece se Incorreto
-    | Nota: ________________    |
-    | [Salvar]                  |
-    +---------------------------+
-
-Frase SEM alerta:
-+-------------------------------------------------------+
-| "Nao enche, velho"                    [+ Alerta]      |
-+-------------------------------------------------------+
-         |
-         v  (clica + Alerta)
-    +---------------------------+
-    | Tipo: [______________ v]  |
-    | Nota: ________________    |
-    | [Salvar]                  |
-    +---------------------------+
+"tipos_violencia": usar SOMENTE estes valores: [lista dinamica do grupo 'violencia']
+"categorias": usar SOMENTE estes valores: [lista dinamica dos grupos 'violencia' + 'curadoria']  
+"taticas_manipulativas[].tatica": usar SOMENTE estes valores: [lista dinamica do grupo 'tatica']
+"nivel_risco": usar SOMENTE: [lista do grupo 'risco']
+"classificacao_contexto": usar SOMENTE: [lista do grupo 'contexto']
 ```
 
+### Etapa 3: Normalizar `tipos_violencia` no prompt
+
+Mudar o prompt para que `tipos_violencia` use os mesmos codigos da tabela (`violencia_psicologica` em vez de `psicologica`). Isso elimina a necessidade de mapeamento no frontend.
+
+Alternativa mais segura: manter o formato curto no prompt (`fisica`, `psicologica`) e adicionar um passo de normalizacao no backend apos o parse do JSON da IA, convertendo para o formato da tabela.
+
+### Etapa 4: Aplicar em todas as 4 edge functions
+
+Cada uma das 4 functions sera atualizada para usar a mesma funcao de montagem de prompt:
+
+1. **`process-recording/index.ts`** -- Substituir `getAnalysisPrompt()` pela versao dinamica
+2. **`run-batch-analysis/index.ts`** -- Substituir `getDefaultAnalysisPrompt()` pela versao dinamica
+3. **`analysis-worker/index.ts`** -- Substituir `getMicroPrompt()` pela versao dinamica
+4. **`admin-audio-auto/index.ts`** -- Substituir a funcao de prompt pela versao dinamica
+
+### Etapa 5: Atualizar a tabela `tipos_alerta` (se necessario)
+
+Verificar se faltam tipos que a IA ja retorna nos dados existentes e adicionar. Exemplo: o campo `categorias` no prompt atual inclui `nenhuma` -- precisamos decidir se entra na tabela ou se a IA pode retornar array vazio em vez disso.
+
+---
+
+## Detalhes Tecnicos
+
+### Funcao compartilhada de montagem de prompt
+
+Cada edge function incluira uma funcao `buildAnalysisPrompt(supabase)` que:
+
+1. Busca `tipos_alerta` agrupados por `grupo`
+2. Verifica se existe override em `admin_settings.ia_prompt_analise`
+3. Se existir override, usa ele (retrocompatibilidade)
+4. Se nao, monta o prompt com template + valores dinamicos
+
+```text
+// Pseudocodigo
+async function buildAnalysisPrompt(supabase) {
+  // 1. Tenta admin_settings override
+  const override = await getAdminSetting('ia_prompt_analise');
+  if (override) return override;
+
+  // 2. Busca tipos do banco
+  const tipos = await supabase.from('tipos_alerta').select('grupo, codigo').eq('ativo', true);
+  
+  // 3. Agrupa
+  const violencia = tipos.filter(t => t.grupo === 'violencia').map(t => t.codigo);
+  const taticas = tipos.filter(t => t.grupo === 'tatica').map(t => t.codigo);
+  const risco = tipos.filter(t => t.grupo === 'risco').map(t => t.codigo);
+  const contexto = tipos.filter(t => t.grupo === 'contexto').map(t => t.codigo);
+
+  // 4. Injeta no template
+  return TEMPLATE.replace('{TIPOS_VIOLENCIA}', violencia.join('|'))
+                  .replace('{TATICAS}', taticas.join(', '))
+                  // etc.
+}
+```
+
+### Normalizacao pos-parse
+
+Apos o parse do JSON da IA, adicionar um passo de normalizacao:
+
+```text
+// Se a IA retornar "fisica", converter para "violencia_fisica"
+// Se retornar "violencia_fisica", manter como esta
+function normalizeTipoViolencia(tipo) {
+  if (tipo.startsWith('violencia_')) return tipo;
+  if (tipo === 'nenhuma') return tipo;
+  return 'violencia_' + tipo;
+}
+```
+
+### Arquivos a modificar
+
+| Arquivo | Mudanca |
+|---|---|
+| `supabase/functions/process-recording/index.ts` | Substituir `getAnalysisPrompt()` por versao dinamica |
+| `supabase/functions/run-batch-analysis/index.ts` | Substituir `getDefaultAnalysisPrompt()` por versao dinamica |
+| `supabase/functions/analysis-worker/index.ts` | Substituir `getMicroPrompt()` por versao dinamica |
+| `supabase/functions/admin-audio-auto/index.ts` | Substituir funcao de prompt por versao dinamica |
+
+### Sem alteracoes necessarias
+
+- Tabela `tipos_alerta` -- ja esta completa
+- Frontend/curadoria -- ja consome do banco via hook `useTiposAlerta`
+- `admin_settings` override -- continua funcionando (prioridade sobre template dinamico)
