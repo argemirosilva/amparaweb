@@ -206,6 +206,7 @@ export default function AdminMapa() {
   const [ufData, setUfData] = useState<{ uf: string; total: number }[]>([]);
   const [acionamentoData, setAcionamentoData] = useState<{ name: string; value: number }[]>([]);
   const [hourlyData, setHourlyData] = useState<{ hora: string; alertas: number; logins: number }[]>([]);
+  const [cityEvents, setCityEvents] = useState<{ nome: string; eventos: number; emergencias: number }[]>([]);
 
   // Summary counts
   const totalUsuarios = Object.values(stats).reduce((a, s) => a + s.usuarios, 0);
@@ -215,12 +216,6 @@ export default function AdminMapa() {
   const totalGravacoes = Object.values(stats).reduce((a, s) => a + s.gravacoes, 0);
   const totalHorasGrav = Math.round(Object.values(stats).reduce((a, s) => a + s.horasGravacao, 0) * 10) / 10;
 
-  const regions = [
-    { nome: "Porto Velho", eventos: 45, emergencias: 8, tendencia: "subindo" as const },
-    { nome: "Ji-Paraná", eventos: 32, emergencias: 5, tendencia: "estável" as const },
-    { nome: "Ariquemes", eventos: 21, emergencias: 3, tendencia: "descendo" as const },
-    { nome: "Vilhena", eventos: 18, emergencias: 2, tendencia: "estável" as const },
-  ];
 
   // Load GeoJSON
   useEffect(() => {
@@ -456,15 +451,15 @@ export default function AdminMapa() {
         supabase.from("gravacoes_analises").select("*", { count: "exact", head: true }).gte("created_at", since),
         supabase.from("alertas_panico").select("*", { count: "exact", head: true }).gte("criado_em", since),
         supabase.from("device_status").select("status"),
-        supabase.from("usuarios").select("endereco_uf, status"),
+        supabase.from("usuarios").select("id, endereco_uf, endereco_cidade, status"),
         supabase.from("audit_logs").select("action_type, success, created_at").gte("created_at", since),
         supabase.from("gravacoes").select("*", { count: "exact", head: true }).gte("created_at", since),
       ]);
 
       // Paginated queries for data that may exceed 1000 rows
       const [eventosData, panicData, riskData, gravacoesData] = await Promise.all([
-        fetchAllRows((from, to) => supabase.from("gravacoes_analises").select("created_at").gte("created_at", since).range(from, to)),
-        fetchAllRows((from, to) => supabase.from("alertas_panico").select("criado_em, tipo_acionamento").gte("criado_em", since).range(from, to)),
+        fetchAllRows((from, to) => supabase.from("gravacoes_analises").select("created_at, user_id").gte("created_at", since).range(from, to)),
+        fetchAllRows((from, to) => supabase.from("alertas_panico").select("criado_em, tipo_acionamento, user_id").gte("criado_em", since).range(from, to)),
         fetchAllRows((from, to) => supabase.from("gravacoes_analises").select("nivel_risco").gte("created_at", since).range(from, to)),
         fetchAllRows((from, to) => supabase.from("gravacoes").select("duracao_segundos").gte("created_at", since).range(from, to)),
       ]);
@@ -499,6 +494,31 @@ export default function AdminMapa() {
       (panicData || []).forEach(a => { const h = new Date(a.criado_em).getHours(); hourBuckets[h].alertas++; });
       (auditData || []).filter(a => a.action_type === "login" && a.success).forEach(a => { const h = new Date(a.created_at).getHours(); hourBuckets[h].logins++; });
       setHourlyData(Object.entries(hourBuckets).map(([h, v]) => ({ hora: `${h.padStart(2, "0")}h`, ...v })));
+
+      // Top 10 cities by events
+      const userCityMap: Record<string, string> = {};
+      (usersData || []).forEach((u: any) => {
+        if (u.endereco_cidade && u.endereco_uf) userCityMap[u.id] = `${u.endereco_cidade} - ${u.endereco_uf}`;
+      });
+      const cityCounts: Record<string, { eventos: number; emergencias: number }> = {};
+      (eventosData || []).forEach((e: any) => {
+        const city = userCityMap[e.user_id];
+        if (!city) return;
+        if (!cityCounts[city]) cityCounts[city] = { eventos: 0, emergencias: 0 };
+        cityCounts[city].eventos++;
+      });
+      (panicData || []).forEach((p: any) => {
+        const city = userCityMap[p.user_id];
+        if (!city) return;
+        if (!cityCounts[city]) cityCounts[city] = { eventos: 0, emergencias: 0 };
+        cityCounts[city].emergencias++;
+      });
+      setCityEvents(
+        Object.entries(cityCounts)
+          .map(([nome, v]) => ({ nome, ...v }))
+          .sort((a, b) => (b.eventos + b.emergencias) - (a.eventos + a.emergencias))
+          .slice(0, 10)
+      );
     }
 
     loadAnalytics();
@@ -1053,41 +1073,37 @@ export default function AdminMapa() {
           </div>
         </div>
 
-        {/* Regions Table */}
+        {/* Top 10 Cities Table */}
         <div className="rounded-md border overflow-hidden mb-6" style={cardStyle}>
           <div className="px-4 py-3 border-b" style={{ borderColor: "hsl(220 13% 91%)" }}>
-            <h2 className="text-sm font-semibold" style={titleStyle}>Regiões com maior incidência</h2>
+            <h2 className="text-sm font-semibold" style={titleStyle}>Top 10 Cidades por Eventos</h2>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr style={{ background: "hsl(210 17% 96%)" }}>
-                  {["Região", "Total Eventos", "Emergências", "Tendência", "Ação"].map(h => (
+                  {["#", "Cidade", "Eventos", "Emergências", "Total"].map(h => (
                     <th key={h} className="px-4 py-2.5 text-left text-xs font-semibold" style={subtitleStyle}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {regions.map(r => (
-                  <tr key={r.nome} className="border-t" style={{ borderColor: "hsl(220 13% 91%)" }}>
-                    <td className="px-4 py-3 font-medium" style={titleStyle}>{r.nome}</td>
-                    <td className="px-4 py-3" style={titleStyle}>{r.eventos}</td>
-                    <td className="px-4 py-3" style={titleStyle}>{r.emergencias}</td>
-                    <td className="px-4 py-3">
-                      <GovStatusBadge status={r.tendencia === "subindo" ? "vermelho" : r.tendencia === "descendo" ? "verde" : "amarelo"}
-                        label={r.tendencia.charAt(0).toUpperCase() + r.tendencia.slice(1)} />
-                    </td>
-                    <td className="px-4 py-3">
-                      <button className="text-xs font-medium px-3 py-1 rounded border transition-colors hover:bg-gray-50"
-                        style={{ borderColor: "hsl(224 76% 33%)", color: "hsl(224 76% 33%)" }}>Detalhar</button>
-                    </td>
+                {cityEvents.length > 0 ? cityEvents.map((c, i) => (
+                  <tr key={c.nome} className="border-t" style={{ borderColor: "hsl(220 13% 91%)" }}>
+                    <td className="px-4 py-3 font-medium" style={subtitleStyle}>{i + 1}</td>
+                    <td className="px-4 py-3 font-medium" style={titleStyle}>{c.nome}</td>
+                    <td className="px-4 py-3" style={titleStyle}>{c.eventos}</td>
+                    <td className="px-4 py-3" style={titleStyle}>{c.emergencias}</td>
+                    <td className="px-4 py-3 font-semibold" style={titleStyle}>{c.eventos + c.emergencias}</td>
                   </tr>
-                ))}
+                )) : (
+                  <tr><td colSpan={5} className="px-4 py-6 text-center text-xs" style={subtitleStyle}>Nenhum dado no período</td></tr>
+                )}
               </tbody>
             </table>
           </div>
           <div className="px-4 py-3 border-t text-xs" style={{ borderColor: "hsl(220 13% 91%)", ...subtitleStyle }}>
-            Dados agregados. Visualizações detalhadas são auditadas.
+            Dados agregados por cidade da usuária. Visualizações detalhadas são auditadas.
           </div>
         </div>
 
