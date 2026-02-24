@@ -38,10 +38,11 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 const FRIENDLY_LABELS: Record<string, string> = {
   elevenlabs_copom_telefone: "Telefones chamada de emergência 190/180",
+  copom_telefone_destino: "Telefones chamada de emergência 190/180",
 };
 
 const FIELD_HINTS: Record<string, string> = {};
-const PHONE_CHIP_KEYS = new Set(["elevenlabs_copom_telefone"]);
+const PHONE_CHIP_KEYS = new Set(["elevenlabs_copom_telefone", "copom_telefone_destino"]);
 const HIDDEN_KEYS = new Set(["ia_prompt_analise"]);
 const CATEGORY_ORDER = ["sistema", "panico", "gps", "notificacoes", "dados", "limites"];
 
