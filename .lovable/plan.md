@@ -1,34 +1,27 @@
 
+## Enviar apenas o ID do link temporario (sem dominio)
 
-## Ajustes no grafico "Alertas por Tipo de Acionamento"
+Atualmente, o campo `LINK_MONITORAMENTO` envia o valor no formato `amparamulher.com.br/A 9 f 4 K 2`. A alteracao vai enviar **somente o codigo/ID** ja formatado para voz, sem o prefixo do dominio.
 
 ### Mudancas
 
-No mapeamento `ACIONAMENTO_LABELS` (linha 74-76 de `src/pages/admin/AdminMapa.tsx`):
+**1. `supabase/functions/copom-outbound-call/index.ts`** (acionamento automatico)
+- Linha 155: Alterar de `amparamulher.com.br/${codeSpeak || code}` para apenas `codeSpeak || code`
+- O valor enviado sera, por exemplo, `A 9 f 4 K 2` em vez de `amparamulher.com.br/A 9 f 4 K 2`
 
-1. **Agrupar "manual" com "Botao" como "Manual"**: os tipos `botao_fisico`, `botao_manual`, `botao`, `manual` passam a exibir "Manual"
-2. **Agrupar "automatico" com "voz" como "Automatico"**: os tipos `automatico`, `voz` passam a exibir "Automatico"
-3. **Renomear `botao_panico` para "Panico"**: o tipo `botao_panico` exibe "Panico"
+**2. `supabase/functions/agreggar-speed-dial/index.ts`** (tela de teste)
+- Linha 143: Mesma alteracao — remover o prefixo `amparamulher.com.br/` e enviar somente o codigo formatado para voz
 
-### Detalhe tecnico
+### Detalhes tecnicos
 
-**Arquivo:** `src/pages/admin/AdminMapa.tsx` (linhas 74-76)
-
-De:
+Antes:
 ```typescript
-const ACIONAMENTO_LABELS: Record<string, string> = {
-  app: "Aplicativo", botao_fisico: "Botão", botao_manual: "Botão", botao: "Botão", automatico: "Automático",
-};
+add("LINK_MONITORAMENTO", code ? `amparamulher.com.br/${codeSpeak || code}` : undefined);
 ```
 
-Para:
+Depois:
 ```typescript
-const ACIONAMENTO_LABELS: Record<string, string> = {
-  app: "Aplicativo",
-  botao_fisico: "Manual", botao_manual: "Manual", botao: "Manual", manual: "Manual",
-  automatico: "Automático", voz: "Automático",
-  botao_panico: "Pânico",
-};
+add("LINK_MONITORAMENTO", codeSpeak || code || undefined);
 ```
 
-A logica existente na linha 491 ja agrupa valores com o mesmo label, entao os tipos mapeados para "Manual" serao somados automaticamente, assim como os mapeados para "Automatico".
+Nenhuma outra alteracao necessaria — banco, APIs e fluxo permanecem iguais.
