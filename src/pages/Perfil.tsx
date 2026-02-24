@@ -3,6 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { callWebApi } from "@/services/webApiService";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { UserCircle, Users, AlertTriangle, Loader2, Plus, Trash2, Edit2, X, Check, Camera, ChevronDown, ChevronUp } from "lucide-react";
 import { EnderecoForm, emptyEndereco, EnderecoFields } from "@/components/EnderecoForm";
 import { useToast } from "@/hooks/use-toast";
@@ -84,17 +85,15 @@ interface VinculoData {
 }
 
 const FORCAS_SEGURANCA = [
+  "Não",
   "Polícia Militar",
   "Polícia Civil",
   "Polícia Federal",
   "Polícia Rodoviária Federal",
   "Guarda Municipal",
   "Corpo de Bombeiros",
-  "Forças Armadas (Exército)",
-  "Forças Armadas (Marinha)",
-  "Forças Armadas (Aeronáutica)",
+  "Forças Armadas",
   "Agente penitenciário",
-  "Outra",
 ] as const;
 
 interface AgressorEditForm {
@@ -725,28 +724,26 @@ export default function PerfilPage() {
 
 
                       <div>
-                        <label className="flex items-center gap-3 cursor-pointer mb-2">
-                          <input type="checkbox" checked={agressorForm.forca_seguranca}
-                            onChange={e => setAgressorForm({ ...agressorForm, forca_seguranca: e.target.checked, forca_seguranca_tipo: e.target.checked ? agressorForm.forca_seguranca_tipo : "" })}
-                            className="h-4 w-4 rounded border-input accent-primary" />
-                          <span className="text-xs text-foreground">É de alguma força de segurança?</span>
-                        </label>
-                        {agressorForm.forca_seguranca && (
-                          <div className="ml-7 space-y-1.5">
+                        <label className="block text-xs font-medium text-foreground mb-1.5">Força de segurança</label>
+                        <Select
+                          value={agressorForm.forca_seguranca ? (agressorForm.forca_seguranca_tipo || "") : "Não"}
+                          onValueChange={(val) => {
+                            if (val === "Não") {
+                              setAgressorForm({ ...agressorForm, forca_seguranca: false, forca_seguranca_tipo: "" });
+                            } else {
+                              setAgressorForm({ ...agressorForm, forca_seguranca: true, forca_seguranca_tipo: val });
+                            }
+                          }}
+                        >
+                          <SelectTrigger className="w-full text-xs">
+                            <SelectValue placeholder="Selecione" />
+                          </SelectTrigger>
+                          <SelectContent>
                             {FORCAS_SEGURANCA.map((forca) => (
-                              <label key={forca} className="flex items-center gap-2 cursor-pointer">
-                                <input
-                                  type="radio"
-                                  name="forca_seguranca_tipo"
-                                  checked={agressorForm.forca_seguranca_tipo === forca}
-                                  onChange={() => setAgressorForm({ ...agressorForm, forca_seguranca_tipo: forca })}
-                                  className="h-3.5 w-3.5 accent-primary"
-                                />
-                                <span className="text-xs text-foreground">{forca}</span>
-                              </label>
+                              <SelectItem key={forca} value={forca} className="text-xs">{forca}</SelectItem>
                             ))}
-                          </div>
-                        )}
+                          </SelectContent>
+                        </Select>
                       </div>
                       <label className="flex items-center gap-3 cursor-pointer">
                         <input type="checkbox" checked={agressorForm.tem_arma_em_casa}
