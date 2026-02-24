@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Save, RotateCcw, Plug, Mic, Brain, Phone, MessageCircle, Mail } from "lucide-react";
+import { Save, RotateCcw, Plug, Mic, Brain, Phone, MessageCircle, Mail, PhoneOutgoing } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
@@ -49,9 +49,16 @@ const INTEGRATION_CATEGORIES = [
     color: "hsl(224 76% 33%)",
   },
   {
+    key: "integracao_sinergytech",
+    label: "SinergyTech — Chamadas de Segurança",
+    description: "Integração com a plataforma OCS/Agreggar para discagem automática (speedDial) em alertas de emergência.",
+    icon: PhoneOutgoing,
+    color: "hsl(210 80% 45%)",
+  },
+  {
     key: "integracao_elevenlabs",
-    label: "ElevenLabs — Voz e Telefonia",
-    description: "Agente de voz para comunicados ao COPOM via WebRTC e chamadas telefônicas.",
+    label: "ElevenLabs — Voz Sintética",
+    description: "Agente de voz para comunicados via WebRTC (voz apenas, sem telefonia).",
     icon: Phone,
     color: "hsl(150 60% 40%)",
   },
@@ -80,6 +87,12 @@ const FRIENDLY_LABELS: Record<string, string> = {
   elevenlabs_agent_id: "Agent ID",
   elevenlabs_ativa: "Integração ativa",
   elevenlabs_copom_telefone: "Telefone COPOM (destino)",
+  sinergytech_ativa: "Integração ativa",
+  sinergytech_api_url: "URL da API (OCS)",
+  sinergytech_campaign_id: "Campaign ID padrão",
+  sinergytech_api_token: "Token de autenticação",
+  sinergytech_caller_id: "Caller ID (remetente)",
+  sinergytech_extra_fields_map: "Campos extras automáticos",
   whatsapp_ativa: "Integração ativa",
   whatsapp_phone_id: "Phone Number ID (Meta)",
   whatsapp_template_alerta: "Template de alerta",
