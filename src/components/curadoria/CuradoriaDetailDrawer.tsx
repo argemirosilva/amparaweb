@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTiposAlerta } from "@/hooks/useTiposAlerta";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -115,6 +116,12 @@ export default function CuradoriaDetailDrawer({ selected, onClose, onToggleCupia
   const { sessionToken } = useAuth();
   const [jsonOpen, setJsonOpen] = useState(false);
   const [savingField, setSavingField] = useState<string | null>(null);
+
+  const { data: tiposViolenciaOpcoes } = useTiposAlerta(["violencia"]);
+  const violenciaOptions = useMemo(() => {
+    if (!tiposViolenciaOpcoes?.length) return [];
+    return tiposViolenciaOpcoes.map(t => ({ value: t.codigo, label: t.label }));
+  }, [tiposViolenciaOpcoes]);
 
   const { data: avaliacoesData, refetch: refetchAvaliacoes } = useQuery({
     queryKey: ["curadoria-avaliacoes", selected?.analise_id],
@@ -331,7 +338,8 @@ export default function CuradoriaDetailDrawer({ selected, onClose, onToggleCupia
                 campo="tipos_violencia"
                 label="Tipos de Violência"
                 valorIA={tiposViolencia}
-                tipo="tags"
+                tipo="multiselect"
+                opcoes={violenciaOptions}
                 avaliacao={avaliacoes["tipos_violencia"]}
                 onSave={handleSaveAvaliacao}
                 saving={savingField === "tipos_violencia"}
