@@ -148,7 +148,7 @@ serve(async (req) => {
             ? `${veiculoStr}, placa ${v.plate_partial}`
             : `placa ${v.plate_partial}`;
         }
-        add("VEICULO", veiculoStr || "não informado");
+        add("VEICULO", (veiculoStr || "não informado").replace(/,/g, ""));
       }
 
       // Merge: auto fields first, then any manual extraFields (manual overrides auto)
