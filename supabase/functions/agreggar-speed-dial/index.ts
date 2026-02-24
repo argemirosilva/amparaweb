@@ -152,9 +152,11 @@ serve(async (req) => {
         lstExtraFieldValue: mergedFields,
       };
 
+      const fullUrl = `${baseUrl}/speedDial`;
+      console.log("SpeedDial URL:", fullUrl);
       console.log("SpeedDial payload:", JSON.stringify(payload));
 
-      const response = await fetch(`${baseUrl}/speedDial`, {
+      const response = await fetch(fullUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -203,10 +205,11 @@ serve(async (req) => {
           error: "Erro na API Agreggar",
           status: response.status,
           response: responseData,
+          url_used: fullUrl,
         }, 502);
       }
 
-      return json({ success: true, response: responseData });
+      return json({ success: true, response: responseData, url_used: fullUrl });
     }
 
     // ── listHistory ──
