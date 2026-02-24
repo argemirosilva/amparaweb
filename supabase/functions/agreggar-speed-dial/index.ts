@@ -133,12 +133,22 @@ serve(async (req) => {
           : "não");
 
         // Vehicle
+        // Vehicle - formato: "Paraty de cor preta, placa adb 4j55"
         const v = context.aggressor?.vehicle;
-        const vParts: string[] = [];
-        if (v?.model) vParts.push(v.model);
-        if (v?.color) vParts.push(`cor ${v.color}`);
-        if (v?.plate_partial) vParts.push(`placa ${v.plate_partial}`);
-        add("VEICULO", vParts.length > 0 ? vParts.join(", ") : "não informado");
+        let veiculoStr = "";
+        if (v?.model && v?.color) {
+          veiculoStr = `${v.model} de cor ${v.color}`;
+        } else if (v?.model) {
+          veiculoStr = v.model;
+        } else if (v?.color) {
+          veiculoStr = `cor ${v.color}`;
+        }
+        if (v?.plate_partial) {
+          veiculoStr = veiculoStr
+            ? `${veiculoStr}, placa ${v.plate_partial}`
+            : `placa ${v.plate_partial}`;
+        }
+        add("VEICULO", veiculoStr || "não informado");
       }
 
       // Merge: auto fields first, then any manual extraFields (manual overrides auto)
