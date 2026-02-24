@@ -726,7 +726,7 @@ export default function PerfilPage() {
                       <div>
                         <label className="block text-xs font-medium text-foreground mb-1.5">Integrante de alguma força de segurança?</label>
                         <Select
-                          value={agressorForm.forca_seguranca ? (agressorForm.forca_seguranca_tipo || "") : "Não"}
+                          value={agressorForm.forca_seguranca && agressorForm.forca_seguranca_tipo ? agressorForm.forca_seguranca_tipo : "Não"}
                           onValueChange={(val) => {
                             if (val === "Não") {
                               setAgressorForm({ ...agressorForm, forca_seguranca: false, forca_seguranca_tipo: "" });
