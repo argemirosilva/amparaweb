@@ -37,16 +37,19 @@ function cleanTranscription(raw: string): string[] {
 
   // Try parsing as JSON array of segments (e.g. [{text:"...", confidence:...}, ...])
   const trimmed = raw.trim();
-  if (trimmed.startsWith("[")) {
+  if (trimmed.startsWith("[") || trimmed.startsWith("{")) {
     try {
       const parsed = JSON.parse(trimmed);
-      if (Array.isArray(parsed)) {
-        return parsed
-          .map((seg: any) => (seg.text || "").trim())
-          .filter((t: string) => t.length > 2);
-      }
+      const arr = Array.isArray(parsed) ? parsed : [parsed];
+      const texts = arr.map((seg: any) => (seg.text || "").trim()).filter((t: string) => t.length > 2);
+      if (texts.length > 0) return texts;
     } catch {
-      // Not valid JSON, fall through to text cleaning
+      // JSON might be truncated — extract "text" values via regex
+      const textMatches = [...trimmed.matchAll(/"text"\s*:\s*"((?:[^"\\]|\\.)*)"/g)];
+      if (textMatches.length > 0) {
+        const texts = textMatches.map(m => m[1].replace(/\\"/g, '"').trim()).filter(t => t.length > 2);
+        if (texts.length > 0) return texts;
+      }
     }
   }
 
