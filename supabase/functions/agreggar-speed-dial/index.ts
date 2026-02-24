@@ -120,7 +120,7 @@ serve(async (req) => {
         };
 
         add("VITIMA_NOME", context.victim?.name);
-        add("VITIMA_TELEFONE", context.victim?.phone_masked);
+        add("VITIMA_TELEFONE", formatToSpeak(context.victim?.phone_masked, "telefone") || context.victim?.phone_masked);
 
         // Address — extract only street, number and neighborhood
         const rawAddr = context.location?.address || "";
@@ -135,11 +135,12 @@ serve(async (req) => {
         add("AGRESSOR_NOME", context.aggressor?.name || context.aggressor?.name_masked);
         add("RELACAO", context.victim_aggressor_relation);
 
-        // Monitoring link — force production domain
+        // Monitoring link — code formatted for voice
         const rawLink = context.monitoring_link || "";
         const pathMatch = rawLink.match(/\/([a-z0-9]{4,10})$/i);
         const code = pathMatch ? pathMatch[1] : rawLink;
-        add("LINK_MONITORAMENTO", code ? `amparamulher.com.br/${code}` : undefined);
+        const codeSpeak = formatToSpeak(code, "codigo");
+        add("LINK_MONITORAMENTO", code ? `amparamulher.com.br/${codeSpeak || code}` : undefined);
 
         // Security
         add("AGRESSOR_TEM_ARMA", context.aggressor?.tem_arma ? "sim" : "não");
@@ -149,7 +150,7 @@ serve(async (req) => {
           ? rawForca.replace(/\s*\(.*?\)/g, "").trim()
           : "não");
 
-        // Vehicle
+        // Vehicle — plate formatted for voice
         const v = context.aggressor?.vehicle;
         let veiculoStr = "";
         if (v?.model && v?.color) {
@@ -159,22 +160,13 @@ serve(async (req) => {
         } else if (v?.color) {
           veiculoStr = `cor ${v.color}`;
         }
+        const plateSpeak = formatToSpeak(v?.plate_partial, "placa");
         if (v?.plate_partial) {
           veiculoStr = veiculoStr
-            ? `${veiculoStr}, placa ${v.plate_partial}`
-            : `placa ${v.plate_partial}`;
+            ? `${veiculoStr}, placa ${plateSpeak || v.plate_partial}`
+            : `placa ${plateSpeak || v.plate_partial}`;
         }
         add("VEICULO", (veiculoStr || "não informado").replace(/,/g, ""));
-
-        // _speak versions (in-memory only, for voice agent reading)
-        const phoneSpeak = formatToSpeak(context.victim?.phone_masked, "telefone");
-        if (phoneSpeak) add("VITIMA_TELEFONE_SPEAK", phoneSpeak);
-
-        const plateSpeak = formatToSpeak(v?.plate_partial, "placa");
-        if (plateSpeak) add("PLACA_VEICULO_SPEAK", plateSpeak);
-
-        const codeSpeak = formatToSpeak(code, "codigo");
-        if (codeSpeak) add("LINK_CODIGO_TEMPORARIO_SPEAK", codeSpeak);
       }
 
       // Merge: auto fields first, then any manual extraFields (manual overrides auto)
