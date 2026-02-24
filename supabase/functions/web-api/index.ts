@@ -1449,12 +1449,11 @@ serve(async (req) => {
           .eq("user_id", userId)
           .eq("ativo", true);
 
-        // Generate 5-char alphanumeric code
-        const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-        let codigo = "";
-        const arr = new Uint8Array(5);
+        // Generate 6-digit numeric code
+        const arr = new Uint8Array(6);
         crypto.getRandomValues(arr);
-        for (const b of arr) codigo += chars[b % chars.length];
+        let codigo = "";
+        for (const b of arr) codigo += String(b % 10);
 
         const insertData: Record<string, unknown> = {
           user_id: userId,

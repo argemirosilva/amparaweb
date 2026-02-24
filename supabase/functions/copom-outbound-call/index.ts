@@ -148,10 +148,9 @@ serve(async (req) => {
       add("STATUS_MOVIMENTO", context.location?.movement_status);
       add("AGRESSOR_NOME", context.aggressor?.name || context.aggressor?.name_masked);
       add("RELACAO", context.victim_aggressor_relation);
-      const rawLink = context.monitoring_link || "";
-      const pathMatch = rawLink.match(/\/([a-z0-9]{4,10})$/i);
-      const code = pathMatch ? pathMatch[1] : rawLink;
-      const codeSpeak = formatToSpeak(code, "codigo");
+      // Monitoring link — 6-digit numeric code, formatted for voice
+      const code = (context.monitoring_link || "").replace(/\D/g, "");
+      const codeSpeak = code ? code.split("").join(" ") : "";
       add("LINK_MONITORAMENTO", codeSpeak || code || undefined);
       add("AGRESSOR_TEM_ARMA", context.aggressor?.tem_arma ? "sim" : "não");
       const rawForca = context.aggressor?.forca_seguranca_tipo || "sim, tipo não especificado";
