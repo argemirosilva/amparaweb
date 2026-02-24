@@ -217,7 +217,7 @@ function AlertCurationPopover({
             <SelectTrigger className="h-7 text-xs">
               <SelectValue placeholder="Tipo correto..." />
             </SelectTrigger>
-            <SelectContent className="z-[60] bg-popover">
+            <SelectContent className="z-[9999] bg-popover" position="popper" sideOffset={4}>
               {ALERT_TYPE_OPTIONS.map(o => (
                 <SelectItem key={o.value} value={o.value} className="text-xs">{o.label}</SelectItem>
               ))}
@@ -276,7 +276,7 @@ function AddAlertPopover({
           <SelectTrigger className="h-7 text-xs">
             <SelectValue placeholder="Tipo de alerta..." />
           </SelectTrigger>
-          <SelectContent className="z-[60] bg-popover">
+          <SelectContent className="z-[9999] bg-popover" position="popper" sideOffset={4}>
             {ALERT_TYPE_OPTIONS.filter(o => o.value !== "nenhum").map(o => (
               <SelectItem key={o.value} value={o.value} className="text-xs">{o.label}</SelectItem>
             ))}
