@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useMapbox } from "@/hooks/useMapbox";
 import { MapPin, AlertTriangle, Smartphone, Users, RefreshCw, BarChart3, Mic, Clock, ChevronDown } from "lucide-react";
@@ -207,6 +208,8 @@ export default function AdminMapa() {
   const [acionamentoData, setAcionamentoData] = useState<{ name: string; value: number }[]>([]);
   const [hourlyData, setHourlyData] = useState<{ hora: string; alertas: number; logins: number }[]>([]);
   const [cityEvents, setCityEvents] = useState<{ nome: string; eventos: number; emergencias: number }[]>([]);
+  const [cityEmergencias, setCityEmergencias] = useState<{ nome: string; total: number }[]>([]);
+  const [cityCritico, setCityCritico] = useState<{ nome: string; total: number }[]>([]);
 
   // Summary counts
   const totalUsuarios = Object.values(stats).reduce((a, s) => a + s.usuarios, 0);
@@ -460,7 +463,7 @@ export default function AdminMapa() {
       const [eventosData, panicData, riskData, gravacoesData] = await Promise.all([
         fetchAllRows((from, to) => supabase.from("gravacoes_analises").select("created_at, user_id").gte("created_at", since).range(from, to)),
         fetchAllRows((from, to) => supabase.from("alertas_panico").select("criado_em, tipo_acionamento, user_id").gte("criado_em", since).range(from, to)),
-        fetchAllRows((from, to) => supabase.from("gravacoes_analises").select("nivel_risco").gte("created_at", since).range(from, to)),
+        fetchAllRows((from, to) => supabase.from("gravacoes_analises").select("nivel_risco, user_id").gte("created_at", since).range(from, to)),
         fetchAllRows((from, to) => supabase.from("gravacoes").select("duracao_segundos").gte("created_at", since).range(from, to)),
       ]);
 
@@ -517,6 +520,35 @@ export default function AdminMapa() {
         Object.entries(cityCounts)
           .map(([nome, v]) => ({ nome, ...v }))
           .sort((a, b) => (b.eventos + b.emergencias) - (a.eventos + a.emergencias))
+          .slice(0, 10)
+      );
+
+      // Top 10 cities by emergencies
+      const cityEmergCounts: Record<string, number> = {};
+      (panicData || []).forEach((p: any) => {
+        const city = userCityMap[p.user_id];
+        if (!city) return;
+        cityEmergCounts[city] = (cityEmergCounts[city] || 0) + 1;
+      });
+      setCityEmergencias(
+        Object.entries(cityEmergCounts)
+          .map(([nome, total]) => ({ nome, total }))
+          .sort((a, b) => b.total - a.total)
+          .slice(0, 10)
+      );
+
+      // Top 10 cities by critical risk
+      const cityCritCounts: Record<string, number> = {};
+      (riskData || []).forEach((r: any) => {
+        if (r.nivel_risco !== "critico") return;
+        const city = userCityMap[r.user_id];
+        if (!city) return;
+        cityCritCounts[city] = (cityCritCounts[city] || 0) + 1;
+      });
+      setCityCritico(
+        Object.entries(cityCritCounts)
+          .map(([nome, total]) => ({ nome, total }))
+          .sort((a, b) => b.total - a.total)
           .slice(0, 10)
       );
     }
@@ -1073,35 +1105,95 @@ export default function AdminMapa() {
           </div>
         </div>
 
-        {/* Top 10 Cities Table */}
+        {/* Top 10 Cities — Tabbed */}
         <div className="rounded-md border overflow-hidden mb-6" style={cardStyle}>
-          <div className="px-4 py-3 border-b" style={{ borderColor: "hsl(220 13% 91%)" }}>
-            <h2 className="text-sm font-semibold" style={titleStyle}>Top 10 Cidades por Eventos</h2>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr style={{ background: "hsl(210 17% 96%)" }}>
-                  {["#", "Cidade", "Eventos", "Emergências", "Total"].map(h => (
-                    <th key={h} className="px-4 py-2.5 text-left text-xs font-semibold" style={subtitleStyle}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {cityEvents.length > 0 ? cityEvents.map((c, i) => (
-                  <tr key={c.nome} className="border-t" style={{ borderColor: "hsl(220 13% 91%)" }}>
-                    <td className="px-4 py-3 font-medium" style={subtitleStyle}>{i + 1}</td>
-                    <td className="px-4 py-3 font-medium" style={titleStyle}>{c.nome}</td>
-                    <td className="px-4 py-3" style={titleStyle}>{c.eventos}</td>
-                    <td className="px-4 py-3" style={titleStyle}>{c.emergencias}</td>
-                    <td className="px-4 py-3 font-semibold" style={titleStyle}>{c.eventos + c.emergencias}</td>
-                  </tr>
-                )) : (
-                  <tr><td colSpan={5} className="px-4 py-6 text-center text-xs" style={subtitleStyle}>Nenhum dado no período</td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+          <Tabs defaultValue="eventos" className="w-full">
+            <div className="px-4 py-3 border-b flex items-center justify-between gap-4" style={{ borderColor: "hsl(220 13% 91%)" }}>
+              <h2 className="text-sm font-semibold whitespace-nowrap" style={titleStyle}>Top 10 Cidades</h2>
+              <TabsList className="h-8">
+                <TabsTrigger value="eventos" className="text-xs px-3 py-1">Eventos</TabsTrigger>
+                <TabsTrigger value="emergencias" className="text-xs px-3 py-1">Emergências</TabsTrigger>
+                <TabsTrigger value="critico" className="text-xs px-3 py-1">Nível Crítico</TabsTrigger>
+              </TabsList>
+            </div>
+
+            <TabsContent value="eventos" className="mt-0">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr style={{ background: "hsl(210 17% 96%)" }}>
+                      {["#", "Cidade", "Eventos", "Emergências", "Total"].map(h => (
+                        <th key={h} className="px-4 py-2.5 text-left text-xs font-semibold" style={subtitleStyle}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {cityEvents.length > 0 ? cityEvents.map((c, i) => (
+                      <tr key={c.nome} className="border-t" style={{ borderColor: "hsl(220 13% 91%)" }}>
+                        <td className="px-4 py-3 font-medium" style={subtitleStyle}>{i + 1}</td>
+                        <td className="px-4 py-3 font-medium" style={titleStyle}>{c.nome}</td>
+                        <td className="px-4 py-3" style={titleStyle}>{c.eventos}</td>
+                        <td className="px-4 py-3" style={titleStyle}>{c.emergencias}</td>
+                        <td className="px-4 py-3 font-semibold" style={titleStyle}>{c.eventos + c.emergencias}</td>
+                      </tr>
+                    )) : (
+                      <tr><td colSpan={5} className="px-4 py-6 text-center text-xs" style={subtitleStyle}>Nenhum dado no período</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="emergencias" className="mt-0">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr style={{ background: "hsl(210 17% 96%)" }}>
+                      {["#", "Cidade", "Emergências"].map(h => (
+                        <th key={h} className="px-4 py-2.5 text-left text-xs font-semibold" style={subtitleStyle}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {cityEmergencias.length > 0 ? cityEmergencias.map((c, i) => (
+                      <tr key={c.nome} className="border-t" style={{ borderColor: "hsl(220 13% 91%)" }}>
+                        <td className="px-4 py-3 font-medium" style={subtitleStyle}>{i + 1}</td>
+                        <td className="px-4 py-3 font-medium" style={titleStyle}>{c.nome}</td>
+                        <td className="px-4 py-3 font-semibold" style={titleStyle}>{c.total}</td>
+                      </tr>
+                    )) : (
+                      <tr><td colSpan={3} className="px-4 py-6 text-center text-xs" style={subtitleStyle}>Nenhum dado no período</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="critico" className="mt-0">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr style={{ background: "hsl(210 17% 96%)" }}>
+                      {["#", "Cidade", "Análises Críticas"].map(h => (
+                        <th key={h} className="px-4 py-2.5 text-left text-xs font-semibold" style={subtitleStyle}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {cityCritico.length > 0 ? cityCritico.map((c, i) => (
+                      <tr key={c.nome} className="border-t" style={{ borderColor: "hsl(220 13% 91%)" }}>
+                        <td className="px-4 py-3 font-medium" style={subtitleStyle}>{i + 1}</td>
+                        <td className="px-4 py-3 font-medium" style={titleStyle}>{c.nome}</td>
+                        <td className="px-4 py-3 font-semibold" style={titleStyle}>{c.total}</td>
+                      </tr>
+                    )) : (
+                      <tr><td colSpan={3} className="px-4 py-6 text-center text-xs" style={subtitleStyle}>Nenhum dado no período</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </TabsContent>
+          </Tabs>
           <div className="px-4 py-3 border-t text-xs" style={{ borderColor: "hsl(220 13% 91%)", ...subtitleStyle }}>
             Dados agregados por cidade da usuária. Visualizações detalhadas são auditadas.
           </div>
