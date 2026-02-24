@@ -280,9 +280,7 @@ function fireCopomCall(userId: string, alertaId: string) {
         }
       }
 
-      const monitoringLink = share?.codigo
-        ? `ampamamulher.lovable.app/${share.codigo}`
-        : "";
+      const monitoringLink = share?.codigo || "";
 
       const context = {
         victim: { name: user.nome_completo, phone_masked: phoneMasked },
