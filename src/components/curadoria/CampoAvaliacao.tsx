@@ -25,10 +25,39 @@ interface CampoAvaliacaoProps {
   saving?: boolean;
 }
 
+function formatTatica(t: any): string {
+  const nome = t.tatica || t.tactic || "Tática";
+  const gravidade = t.gravidade || t.severity || "";
+  return nome.replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase())
+    + (gravidade ? ` (${gravidade})` : "");
+}
+
+function isTaticaObject(v: any): boolean {
+  return typeof v === "object" && v !== null && (v.tatica || v.tactic);
+}
+
 function renderValorIA(valor: any) {
   if (valor === null || valor === undefined) return <span className="text-muted-foreground italic">Não detectado</span>;
   if (Array.isArray(valor)) {
     if (valor.length === 0) return <span className="text-muted-foreground italic">Vazio</span>;
+    // Check if it's an array of tactic objects
+    if (valor.some(isTaticaObject)) {
+      return (
+        <div className="space-y-1.5">
+          {valor.map((t, i) => (
+            <div key={i} className="rounded border border-border bg-muted/50 px-2.5 py-1.5 text-xs space-y-0.5">
+              <div className="font-medium text-foreground">{formatTatica(t)}</div>
+              {(t.descricao || t.description) && (
+                <p className="text-muted-foreground">{t.descricao || t.description}</p>
+              )}
+              {(t.evidencia || t.evidence) && (
+                <p className="text-muted-foreground italic">"{t.evidencia || t.evidence}"</p>
+              )}
+            </div>
+          ))}
+        </div>
+      );
+    }
     return (
       <div className="flex flex-wrap gap-1">
         {valor.map((v, i) => (
