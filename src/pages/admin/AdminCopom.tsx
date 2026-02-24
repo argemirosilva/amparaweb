@@ -57,7 +57,7 @@ const CONTEXT_FIELDS: Array<{ section: string; fields: ContextFieldDef[] }> = [
   { section: "Localização", fields: [
     { key: "location.address", label: "Endereço (última localização)", placeholder: "Rua XV de Novembro, 123, Bauru-SP" },
     { key: "location.movement_status", label: "Status de movimento", placeholder: "parada" },
-    { key: "monitoring_link", label: "Link de monitoramento", placeholder: "https://amparamulher.com.br/abc123" },
+    { key: "monitoring_link", label: "Link de monitoramento", placeholder: "1q2w3" },
   ]},
 ];
 
@@ -95,7 +95,7 @@ export default function AdminCopom({ embedded, apiBaseUrl = "" }: { embedded?: b
     },
     victim_aggressor_relation: "ex-companheiro",
     location: { address: "Rua XV de Novembro, 250 - Centro", movement_status: "parada" },
-    monitoring_link: "https://amparamulher.com.br/1q2w3",
+    monitoring_link: "1q2w3",
   });
   const [extraFields, setExtraFields] = useState<ExtraField[]>([
     { fieldName: "VITIMA_NOME", value: "Maria Silva" },
