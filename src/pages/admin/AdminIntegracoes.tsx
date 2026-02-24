@@ -82,8 +82,6 @@ const FRIENDLY_LABELS: Record<string, string> = {
   sinergytech_ativa: "Integração ativa",
   sinergytech_api_url: "URL da API (OCS)",
   sinergytech_campaign_id: "Campaign ID padrão",
-  sinergytech_api_token: "Token de autenticação",
-  sinergytech_caller_id: "Caller ID (remetente)",
   sinergytech_extra_fields_map: "Campos extras automáticos",
   sinergytech_usuario: "Usuário (login)",
   sinergytech_senha: "Senha",
