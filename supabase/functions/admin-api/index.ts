@@ -765,6 +765,63 @@ serve(async (req) => {
       return json({ success: true, auto_cupiado: evaluatedCount >= TOTAL_CAMPOS });
     }
 
+    // ========== TIPOS ALERTA CRUD ==========
+    if (action === "listTiposAlerta") {
+      const { data, error } = await supabase
+        .from("tipos_alerta")
+        .select("*")
+        .order("grupo")
+        .order("ordem");
+      if (error) return json({ error: error.message }, 500);
+      return json({ items: data });
+    }
+
+    if (action === "createTipoAlerta") {
+      const { item } = params;
+      if (!item?.codigo?.trim() || !item?.label?.trim() || !item?.grupo?.trim()) {
+        return json({ error: "Código, label e grupo são obrigatórios" }, 400);
+      }
+      const { data, error } = await supabase
+        .from("tipos_alerta")
+        .insert({
+          grupo: item.grupo.trim(),
+          codigo: item.codigo.trim(),
+          label: item.label.trim(),
+          descricao: item.descricao?.trim() || null,
+          ordem: item.ordem ?? 0,
+          ativo: item.ativo !== false,
+        })
+        .select()
+        .single();
+      if (error) return json({ error: error.message }, 500);
+      await supabase.from("audit_logs").insert({
+        user_id: userId, action_type: "admin_create_tipo_alerta", success: true,
+        details: { tipo_alerta_id: data.id, codigo: data.codigo, grupo: data.grupo },
+      });
+      return json({ item: data });
+    }
+
+    if (action === "updateTipoAlerta") {
+      const { id, updates } = params;
+      if (!id) return json({ error: "ID não informado" }, 400);
+      const { data, error } = await supabase
+        .from("tipos_alerta")
+        .update({ ...updates, updated_at: undefined })
+        .eq("id", id)
+        .select()
+        .single();
+      if (error) return json({ error: error.message }, 500);
+      return json({ item: data });
+    }
+
+    if (action === "deleteTipoAlerta") {
+      const { id } = params;
+      if (!id) return json({ error: "ID não informado" }, 400);
+      const { error } = await supabase.from("tipos_alerta").delete().eq("id", id);
+      if (error) return json({ error: error.message }, 500);
+      return json({ ok: true });
+    }
+
     return json({ error: `Ação desconhecida: ${action}` }, 400);
   } catch (err) {
     return json({ error: err.message || "Erro interno" }, 500);
