@@ -158,12 +158,33 @@ serve(async (req) => {
       console.log("SpeedDial URL:", fullUrl);
       console.log("SpeedDial payload:", JSON.stringify(payload));
 
-      // Build auth headers
-      const fetchHeaders: Record<string, string> = { "Content-Type": "application/json" };
+      // Step 1: Login to get access token
+      let apiToken = "";
+      const loginUrl = `${baseUrl}/login`;
       if (stUser && stPass) {
-        const credentials = btoa(`${stUser}:${stPass}`);
-        fetchHeaders["Authorization"] = `Basic ${credentials}`;
+        console.log("Authenticating at:", loginUrl);
+        const loginRes = await fetch(loginUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userName: stUser, password: stPass }),
+        });
+        const loginData = await loginRes.json();
+        console.log("Login response:", JSON.stringify(loginData));
+        if (!loginData.success || !loginData.token) {
+          return json({
+            error: "Falha na autenticação com a API SinergyTech",
+            login_response: loginData,
+            login_url: loginUrl,
+          }, 401);
+        }
+        apiToken = loginData.token;
       }
+
+      // Step 2: Call speedDial with token in header
+      const fetchHeaders: Record<string, string> = {
+        "Content-Type": "application/json",
+        ...(apiToken ? { token: apiToken } : {}),
+      };
 
       const response = await fetch(fullUrl, {
         method: "POST",
@@ -210,11 +231,14 @@ serve(async (req) => {
       } catch {}
 
       const requestDebug = {
-        url: fullUrl,
+        login_url: loginUrl,
+        login_user: stUser,
+        token_obtained: !!apiToken,
+        speedDial_url: fullUrl,
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(stUser && stPass ? { Authorization: `Basic ${btoa(`${stUser}:${stPass}`)}` } : {}),
+          ...(apiToken ? { token: apiToken } : {}),
         },
       };
 
