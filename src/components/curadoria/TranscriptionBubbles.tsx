@@ -45,6 +45,7 @@ function cleanTranscription(raw: string): string[] {
     // Remove timestamps e speaker labels
     l = l.replace(/[\[\(]?\d{1,2}:\d{2}(:\d{2})?[\]\)]?\s*[-–:]?\s*/g, "");
     l = l.replace(/\b(speaker|falante|spk|SPEAKER)[_ ]?\d*\s*[:]\s*/gi, "");
+    l = l.replace(/\[[^\]]*\]/g, "").trim();
     l = l.replace(/^\s*[-–•]\s*/g, "");
 
     // Remover linhas técnicas (confiança, scores, metadata)
