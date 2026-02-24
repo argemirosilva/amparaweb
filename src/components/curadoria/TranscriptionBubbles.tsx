@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertTriangle, CheckCircle2, XCircle, MessageCircle, Loader2, Plus } from "lucide-react";
+import { useTiposAlerta, TipoAlerta } from "@/hooks/useTiposAlerta";
 
 interface TranscriptionLine {
   text: string;
@@ -28,7 +29,8 @@ export interface LineCurationData {
   corrected_type?: string;
 }
 
-const ALERT_TYPE_OPTIONS = [
+// Fallback hardcoded options (used while DB loads)
+const ALERT_TYPE_OPTIONS_FALLBACK = [
   { value: "xingamento", label: "Xingamento" },
   { value: "ameaca", label: "Ameaça" },
   { value: "violencia_psicologica", label: "Violência Psicológica" },
@@ -155,11 +157,13 @@ function AlertCurationPopover({
   alert,
   onSave,
   saving,
+  alertOptions,
 }: {
   lineIndex: number;
   alert: TranscriptionAlert;
   onSave: (data: LineCurationData) => Promise<void>;
   saving: boolean;
+  alertOptions: { value: string; label: string }[];
 }) {
   const [open, setOpen] = useState(false);
   const [status, setStatus] = useState<"correto" | "incorreto">("correto");
@@ -218,7 +222,7 @@ function AlertCurationPopover({
               <SelectValue placeholder="Tipo correto..." />
             </SelectTrigger>
             <SelectContent className="z-[9999] bg-popover" position="popper" sideOffset={4}>
-              {ALERT_TYPE_OPTIONS.map(o => (
+              {alertOptions.map(o => (
                 <SelectItem key={o.value} value={o.value} className="text-xs">{o.label}</SelectItem>
               ))}
             </SelectContent>
@@ -240,10 +244,12 @@ function AddAlertPopover({
   lineIndex,
   onSave,
   saving,
+  alertOptions,
 }: {
   lineIndex: number;
   onSave: (data: LineCurationData) => Promise<void>;
   saving: boolean;
+  alertOptions: { value: string; label: string }[];
 }) {
   const [open, setOpen] = useState(false);
   const [alertType, setAlertType] = useState("");
@@ -276,11 +282,11 @@ function AddAlertPopover({
           <SelectTrigger className="h-7 text-xs">
             <SelectValue placeholder="Tipo de alerta..." />
           </SelectTrigger>
-          <SelectContent className="z-[9999] bg-popover" position="popper" sideOffset={4}>
-            {ALERT_TYPE_OPTIONS.filter(o => o.value !== "nenhum").map(o => (
-              <SelectItem key={o.value} value={o.value} className="text-xs">{o.label}</SelectItem>
-            ))}
-          </SelectContent>
+            <SelectContent className="z-[9999] bg-popover" position="popper" sideOffset={4}>
+              {alertOptions.filter(o => o.value !== "falso_positivo" && o.value !== "nenhum").map(o => (
+                <SelectItem key={o.value} value={o.value} className="text-xs">{o.label}</SelectItem>
+              ))}
+            </SelectContent>
         </Select>
         <Textarea value={nota} onChange={(e) => setNota(e.target.value)} placeholder="Nota opcional..." rows={2} className="text-xs" />
         <Button size="sm" className="w-full text-xs h-7" onClick={handleSave} disabled={saving || !alertType}>
@@ -293,6 +299,13 @@ function AddAlertPopover({
 }
 
 export default function TranscriptionBubbles({ transcricao, outputJson, xingamentos, onSaveLineCuration, savingLine }: Props) {
+  const { data: tiposAlerta } = useTiposAlerta(["curadoria", "violencia", "tatica"]);
+
+  const alertOptions = useMemo(() => {
+    if (!tiposAlerta?.length) return ALERT_TYPE_OPTIONS_FALLBACK;
+    return tiposAlerta.map(t => ({ value: t.codigo, label: t.label }));
+  }, [tiposAlerta]);
+
   const oj = outputJson || {};
   const taticas = oj.taticas_manipulativas || oj.manipulative_tactics || null;
   const sinaisAlerta = oj.sinais_alerta || oj.alert_signs || null;
@@ -335,6 +348,7 @@ export default function TranscriptionBubbles({ transcricao, outputJson, xingamen
                           alert={alert}
                           onSave={onSaveLineCuration}
                           saving={savingLine === i}
+                          alertOptions={alertOptions}
                         />
                       )}
                     </div>
@@ -349,6 +363,7 @@ export default function TranscriptionBubbles({ transcricao, outputJson, xingamen
                 lineIndex={i}
                 onSave={onSaveLineCuration}
                 saving={savingLine === i}
+                alertOptions={alertOptions}
               />
             )}
           </div>
