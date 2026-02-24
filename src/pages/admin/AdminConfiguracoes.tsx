@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { Settings, Save, RotateCcw, Plus, X } from "lucide-react";
+import { Settings, Save, RotateCcw, Plus, X, ChevronDown, ChevronRight, Tags } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
@@ -51,6 +51,7 @@ export default function AdminConfiguracoes() {
   const [editedValues, setEditedValues] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
+  const [tiposOpen, setTiposOpen] = useState(false);
 
   async function loadSettings() {
     if (!sessionToken) return;
@@ -226,13 +227,22 @@ export default function AdminConfiguracoes() {
         </div>
       )}
 
-      {/* Tipos de Alerta */}
-      <div className="mt-8">
-        <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-          Tipos de Alerta
-          <span className="text-xs font-normal text-muted-foreground">— Taxonomia usada nos prompts de IA, curadoria e análises</span>
-        </h2>
-        <AdminTiposAlerta />
+      {/* Tipos de Alerta — Collapsible */}
+      <div className="mt-8 rounded-lg border border-border bg-card shadow-sm overflow-hidden">
+        <button
+          onClick={() => setTiposOpen((v) => !v)}
+          className="w-full px-4 py-3 flex items-center gap-2 bg-muted/50 hover:bg-muted/70 transition-colors text-left"
+        >
+          <Tags className="w-4 h-4 text-primary" />
+          <h2 className="text-sm font-semibold text-foreground flex-1">Tipos de Alerta</h2>
+          <span className="text-xs text-muted-foreground mr-2">Taxonomia usada nos prompts de IA, curadoria e análises</span>
+          {tiposOpen ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
+        </button>
+        {tiposOpen && (
+          <div className="p-4">
+            <AdminTiposAlerta />
+          </div>
+        )}
       </div>
     </div>
   );
