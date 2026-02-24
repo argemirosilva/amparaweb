@@ -72,7 +72,7 @@ const RISK_LABELS_FALLBACK: Record<string, string> = {
 };
 
 const ACIONAMENTO_LABELS: Record<string, string> = {
-  app: "Aplicativo", botao_fisico: "Manual", botao_manual: "Manual", botao: "Manual", automatico: "Detecção Automática", voz: "Detecção Automática", botao_panico: "Pânico",
+  app: "Aplicativo", botao_fisico: "Manual", botao_manual: "Manual", botao: "Manual", automatico: "Automático", botao_panico: "Pânico",
 };
 
 const cardStyle = { background: "hsl(0 0% 100%)", borderColor: "hsl(220 13% 91%)" };
