@@ -209,16 +209,26 @@ serve(async (req) => {
         });
       } catch {}
 
+      const requestDebug = {
+        url: fullUrl,
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(stUser && stPass ? { Authorization: `Basic ${btoa(`${stUser}:${stPass}`)}` } : {}),
+        },
+      };
+
       if (!response.ok) {
         return json({
           error: "Erro na API Agreggar",
           status: response.status,
           response: responseData,
           url_used: fullUrl,
+          request_debug: requestDebug,
         }, 502);
       }
 
-      return json({ success: true, response: responseData, url_used: fullUrl });
+      return json({ success: true, response: responseData, url_used: fullUrl, request_debug: requestDebug });
     }
 
     // ── listHistory ──

@@ -357,10 +357,13 @@ export default function AdminCopom({ embedded, apiBaseUrl = "" }: { embedded?: b
 
             {lastResponse && (
               <>
-                {lastResponse.url_used && (
+                {lastResponse.request_debug && (
                   <div className="rounded-md border border-border bg-muted/50 p-3">
-                    <p className="text-xs font-medium text-muted-foreground mb-1">URL chamada</p>
-                    <p className="text-sm font-mono text-foreground break-all">{lastResponse.url_used}</p>
+                    <p className="text-xs font-medium text-muted-foreground mb-1">Requisição enviada à API</p>
+                    <pre className="text-xs font-mono text-foreground break-all whitespace-pre-wrap">
+{`${lastResponse.request_debug.method} ${lastResponse.request_debug.url}
+${Object.entries(lastResponse.request_debug.headers || {}).map(([k, v]) => `${k}: ${v}`).join("\n")}`}
+                    </pre>
                   </div>
                 )}
                 <h3 className="text-sm font-semibold text-foreground">Resposta</h3>
