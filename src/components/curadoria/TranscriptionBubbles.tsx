@@ -34,15 +34,32 @@ interface Props {
 
 function cleanTranscription(raw: string): string[] {
   if (!raw) return [];
-  const text = raw
-    .replace(/[\[\(]?\d{1,2}:\d{2}(:\d{2})?[\]\)]?\s*[-–:]?\s*/g, "")
-    .replace(/\b(speaker|falante|spk|SPEAKER)[_ ]?\d*\s*[:]\s*/gi, "")
-    .replace(/^\s*[-–•]\s*/gm, "");
 
-  return text
-    .split(/(?<=[.!?])\s+|\n+/)
-    .map(s => s.trim())
-    .filter(s => s.length > 0);
+  const lines = raw.split(/\n+/);
+  const cleaned: string[] = [];
+
+  for (const line of lines) {
+    let l = line.trim();
+    if (!l) continue;
+
+    // Remove timestamps e speaker labels
+    l = l.replace(/[\[\(]?\d{1,2}:\d{2}(:\d{2})?[\]\)]?\s*[-–:]?\s*/g, "");
+    l = l.replace(/\b(speaker|falante|spk|SPEAKER)[_ ]?\d*\s*[:]\s*/gi, "");
+    l = l.replace(/^\s*[-–•]\s*/g, "");
+
+    // Remover linhas técnicas (confiança, scores, metadata)
+    if (/^(confian[cç]a|confidence|score|risco|risk|sentimento|sentiment|categoria|category|resumo|summary|nivel|level)\s*[:=]/i.test(l)) continue;
+    if (/^\s*\{/.test(l) || /^\s*\[/.test(l)) continue; // JSON fragments
+    if (/^(tags?|label|tipo|type|output|result|modelo|model)\s*[:=]/i.test(l)) continue;
+    if (/^\d+(\.\d+)?%?\s*$/.test(l)) continue; // isolated numbers/percentages
+    if (/^[-–=_]{3,}$/.test(l)) continue; // separators
+
+    // Dividir em sentenças
+    const sentences = l.split(/(?<=[.!?])\s+/).map(s => s.trim()).filter(s => s.length > 2);
+    cleaned.push(...(sentences.length > 0 ? sentences : [l]));
+  }
+
+  return cleaned.filter(s => s.length > 2);
 }
 
 function matchAlerts(
