@@ -93,7 +93,7 @@ const FRIENDLY_LABELS: Record<string, string> = {
   whatsapp_template_suporte: "Template de segurança (suporte)",
 };
 
-const HIDDEN_KEYS = new Set(["ia_prompt_analise"]);
+const HIDDEN_KEYS = new Set(["ia_prompt_analise", "sinergytech_token_cache", "sinergytech_token_expires"]);
 
 export default function AdminIntegracoes() {
   const { sessionToken } = useAuth();
