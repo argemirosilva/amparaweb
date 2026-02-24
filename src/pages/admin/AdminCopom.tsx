@@ -94,7 +94,7 @@ export default function AdminCopom({ embedded }: { embedded?: boolean }) {
       vehicle: { model: "Gol", color: "Prata", plate_partial: "FGH-3*45" },
     },
     victim_aggressor_relation: "ex-companheiro",
-    location: { address: "Rua XV de Novembro, 250, Bauru-SP", movement_status: "parada" },
+    location: { address: "Rua XV de Novembro, 250 - Centro", movement_status: "parada" },
     monitoring_link: "https://amparamulher.com.br/abc123",
   });
   const [extraFields, setExtraFields] = useState<ExtraField[]>([
@@ -102,7 +102,7 @@ export default function AdminCopom({ embedded }: { embedded?: boolean }) {
     { fieldName: "VITIMA_TELEFONE", value: "(14) 99600-5332" },
     { fieldName: "AGRESSOR_NOME", value: "João Souza" },
     { fieldName: "RELACAO", value: "ex-companheiro" },
-    { fieldName: "ENDERECO_ULTIMA_LOCALIZACAO", value: "Rua XV de Novembro, 250, Bauru-SP" },
+    { fieldName: "ENDERECO_ULTIMA_LOCALIZACAO", value: "Rua XV de Novembro, 250 - Centro" },
     { fieldName: "STATUS_MOVIMENTO", value: "parada" },
     { fieldName: "LINK_MONITORAMENTO", value: "amparamulher.com.br/abc123" },
     { fieldName: "AGRESSOR_TEM_ARMA", value: "não" },

@@ -99,10 +99,14 @@ serve(async (req) => {
         add("VITIMA_NOME", context.victim?.name);
         add("VITIMA_TELEFONE", context.victim?.phone_masked);
 
-        // Address
+        // Address — extract only street, number and neighborhood
+        // Expected format from reverse geocode: "Rua X, 123 - Bairro, Cidade - UF"
         const rawAddr = context.location?.address || "";
-        const addrParts = rawAddr.split(",").map((s: string) => s.trim());
-        add("ENDERECO_ULTIMA_LOCALIZACAO", addrParts.slice(0, 2).join(", "));
+        const dashParts = rawAddr.split(" - ");
+        const logradouroNumero = dashParts[0]?.trim() || ""; // "Rua X, 123"
+        const bairro = dashParts[1]?.trim() || "";            // "Bairro" (before city)
+        const endereco = bairro ? `${logradouroNumero} - ${bairro}` : logradouroNumero;
+        add("ENDERECO_ULTIMA_LOCALIZACAO", endereco || undefined);
         add("STATUS_MOVIMENTO", context.location?.movement_status);
 
         // Aggressor
