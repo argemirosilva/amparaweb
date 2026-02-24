@@ -320,7 +320,7 @@ export default function AdminIntegracoes() {
                         <DialogHeader>
                           <DialogTitle>Testar Acionamento — SinergyTech SpeedDial</DialogTitle>
                         </DialogHeader>
-                        <AdminCopom embedded />
+                        <AdminCopom embedded apiBaseUrl={items.find((s) => s.chave === "sinergytech_api_url")?.valor || ""} />
                       </DialogContent>
                     </Dialog>
                   </div>

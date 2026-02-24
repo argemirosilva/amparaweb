@@ -75,7 +75,7 @@ function getNestedValue(obj: any, path: string): any {
   return path.split(".").reduce((acc, part) => acc?.[part], obj);
 }
 
-export default function AdminCopom({ embedded }: { embedded?: boolean }) {
+export default function AdminCopom({ embedded, apiBaseUrl = "" }: { embedded?: boolean; apiBaseUrl?: string }) {
   const { sessionToken } = useAuth();
   const [tab, setTab] = useState<"dial" | "history">("dial");
 
@@ -177,6 +177,8 @@ export default function AdminCopom({ embedded }: { embedded?: boolean }) {
 
   const inputClass =
     "w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/30";
+  const normalizedApiBaseUrl = apiBaseUrl.trim().replace(/\/+$/, "");
+  const displayUrl = lastResponse?.url_used || (normalizedApiBaseUrl ? `${normalizedApiBaseUrl}/speedDial` : "");
 
   return (
     <div>
@@ -330,10 +332,10 @@ export default function AdminCopom({ embedded }: { embedded?: boolean }) {
 
           {/* Response / Preview */}
           <div className="rounded-lg border border-border bg-card shadow-sm p-5 space-y-4">
-            {lastResponse?.url_used && (
+            {displayUrl && (
               <div className="rounded-md border border-border bg-muted/50 p-3">
                 <p className="text-xs font-medium text-muted-foreground mb-1">URL chamada</p>
-                <p className="text-sm font-mono text-foreground break-all">{lastResponse.url_used}</p>
+                <p className="text-sm font-mono text-foreground break-all">{displayUrl}</p>
               </div>
             )}
             <h3 className="text-sm font-semibold text-foreground">Payload de Envio</h3>
