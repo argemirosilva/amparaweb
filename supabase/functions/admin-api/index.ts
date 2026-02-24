@@ -298,7 +298,7 @@ serve(async (req) => {
         .from("admin_settings")
         .select("*")
         .order("categoria")
-        .order("chave");
+        .order("updated_at");
       if (error) return json({ error: error.message }, 500);
       return json({ settings: data });
     }
