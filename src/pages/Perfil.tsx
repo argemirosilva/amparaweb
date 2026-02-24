@@ -745,12 +745,21 @@ export default function PerfilPage() {
                           </SelectContent>
                         </Select>
                       </div>
-                      <label className="flex items-center gap-3 cursor-pointer">
-                        <input type="checkbox" checked={agressorForm.tem_arma_em_casa}
-                          onChange={e => setAgressorForm({ ...agressorForm, tem_arma_em_casa: e.target.checked })}
-                          className="h-4 w-4 rounded border-input accent-primary" />
-                        <span className="text-xs text-foreground">Tem arma em casa?</span>
-                      </label>
+                      <div>
+                        <label className="block text-xs font-medium text-foreground mb-1.5">Tem arma em casa?</label>
+                        <Select
+                          value={agressorForm.tem_arma_em_casa ? "Sim" : "Não"}
+                          onValueChange={(val) => setAgressorForm({ ...agressorForm, tem_arma_em_casa: val === "Sim" })}
+                        >
+                          <SelectTrigger className="w-full text-xs">
+                            <SelectValue placeholder="Selecione" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Não" className="text-xs">Não</SelectItem>
+                            <SelectItem value="Sim" className="text-xs">Sim</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
 
                       <Button onClick={saveAgressor} disabled={saving} size="sm" className="w-full">
                         {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Check className="w-4 h-4 mr-1" /> Salvar alterações</>}
