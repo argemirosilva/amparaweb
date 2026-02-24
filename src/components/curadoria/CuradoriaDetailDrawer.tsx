@@ -1,14 +1,15 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useTiposAlerta } from "@/hooks/useTiposAlerta";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { BrainCircuit, ChevronDown, ChevronUp } from "lucide-react";
+import { BrainCircuit, ChevronDown, ChevronUp, Check, X, Clock, MapPin, Gauge } from "lucide-react";
 import { toast } from "sonner";
 import CampoAvaliacao, { AvaliacaoData } from "./CampoAvaliacao";
 import TranscriptionBubbles from "./TranscriptionBubbles";
@@ -82,6 +83,8 @@ const CAMPOS_AVALIAVEIS = [
   "tipos_violencia",
 ] as const;
 
+const TOTAL_CAMPOS = CAMPOS_AVALIAVEIS.length;
+
 async function callAdmin(sessionToken: string, action: string, params: any = {}) {
   const { data, error } = await supabase.functions.invoke("admin-api", {
     body: { action, session_token: sessionToken, ...params },
@@ -110,12 +113,20 @@ const fmtDuration = (s: number | null) => {
   return `${m}m${sec.toString().padStart(2, "0")}s`;
 };
 
-// formatTranscricao moved to TranscriptionBubbles component
+const CONTEXT_LABELS: Record<string, string> = {
+  saudavel: "Saudável",
+  rispido_nao_abusivo: "Ríspido",
+  potencial_abuso_leve: "Abuso leve",
+  padrao_consistente_abuso: "Padrão abuso",
+  ameaca_risco: "Ameaça/risco",
+  risco_elevado_escalada: "Risco escalada",
+};
 
 export default function CuradoriaDetailDrawer({ selected, onClose, onToggleCupiado, onAutoCurada }: Props) {
   const { sessionToken } = useAuth();
   const [jsonOpen, setJsonOpen] = useState(false);
   const [savingField, setSavingField] = useState<string | null>(null);
+  const [resumoOpen, setResumoOpen] = useState(false);
 
   const { data: tiposViolenciaOpcoes } = useTiposAlerta(["violencia"]);
   const violenciaOptions = useMemo(() => {
@@ -133,6 +144,9 @@ export default function CuradoriaDetailDrawer({ selected, onClose, onToggleCupia
   for (const av of avaliacoesData?.avaliacoes || []) {
     avaliacoes[av.campo] = { status: av.status, valor_corrigido: av.valor_corrigido, nota: av.nota || "" };
   }
+
+  const camposAvaliados = CAMPOS_AVALIAVEIS.filter(c => avaliacoes[c]?.status && avaliacoes[c].status !== "pendente").length;
+  const progressPercent = Math.round((camposAvaliados / TOTAL_CAMPOS) * 100);
 
   const handleSaveAvaliacao = useCallback(async (campo: string, data: AvaliacaoData) => {
     if (!selected?.analise_id || !sessionToken) return;
@@ -158,7 +172,6 @@ export default function CuradoriaDetailDrawer({ selected, onClose, onToggleCupia
     }
   }, [selected?.analise_id, sessionToken, refetchAvaliacoes]);
 
-  // Extract output_json fields
   const oj = selected?.output_json_anonimizado || {};
   const sinaisAlerta = oj.sinais_alerta || oj.alert_signs || null;
   const taticasManipulativas = oj.taticas_manipulativas || oj.manipulative_tactics || null;
@@ -166,205 +179,202 @@ export default function CuradoriaDetailDrawer({ selected, onClose, onToggleCupia
 
   return (
     <Sheet open={!!selected} onOpenChange={(open) => { if (!open) onClose(); }}>
-      <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
-        <SheetHeader>
-          <SheetTitle className="flex items-center gap-2">
-            <BrainCircuit className="w-5 h-5 text-primary" />
-            Detalhes da Transcrição
-          </SheetTitle>
-        </SheetHeader>
-
+      <SheetContent className="w-full sm:max-w-2xl overflow-y-auto p-0 flex flex-col">
         {selected && (
-          <Tabs defaultValue="geral" className="mt-4">
-            <TabsList className="w-full flex-wrap h-auto gap-1">
-              <TabsTrigger value="geral">Geral</TabsTrigger>
-              <TabsTrigger value="risco">Risco</TabsTrigger>
-              <TabsTrigger value="sentimento">Sentimento</TabsTrigger>
-              <TabsTrigger value="taticas">Táticas</TabsTrigger>
-              <TabsTrigger value="ciclo">Ciclo</TabsTrigger>
-              <TabsTrigger value="json">JSON</TabsTrigger>
-            </TabsList>
+          <>
+            {/* Compact Header */}
+            <div className="border-b border-border bg-muted/30 px-6 pt-6 pb-4 space-y-3">
+              <SheetHeader className="p-0">
+                <SheetTitle className="flex items-center gap-2 text-base">
+                  <BrainCircuit className="w-5 h-5 text-primary" />
+                  Curadoria da Transcrição
+                </SheetTitle>
+              </SheetHeader>
 
-            {/* === GERAL === */}
-            <TabsContent value="geral" className="space-y-4 mt-4">
-              <div className="flex items-center gap-3 flex-wrap">
-                <span className="text-sm text-muted-foreground">{fmtDate(selected.created_at)}</span>
-                <span className="text-sm text-muted-foreground">{fmtDuration(selected.duracao_segundos)}</span>
+              {/* Metadata row */}
+              <div className="flex items-center gap-3 flex-wrap text-sm">
+                <span className="flex items-center gap-1 text-muted-foreground">
+                  <Clock className="w-3.5 h-3.5" />
+                  {fmtDate(selected.created_at)}
+                </span>
+                <span className="text-muted-foreground">{fmtDuration(selected.duracao_segundos)}</span>
                 {selected.nivel_risco && (
-                  <Badge className={RISK_COLORS[selected.nivel_risco] || "bg-gray-300"}>{selected.nivel_risco}</Badge>
+                  <Badge className={`${RISK_COLORS[selected.nivel_risco] || "bg-muted text-foreground"} text-xs`}>
+                    {selected.nivel_risco}
+                  </Badge>
                 )}
-                <span className="text-sm capitalize text-muted-foreground">{selected.sentimento}</span>
+                {selected.sentimento && (
+                  <Badge variant="outline" className="text-xs capitalize">{selected.sentimento}</Badge>
+                )}
+                {selected.context_classification && (
+                  <Badge variant="secondary" className="text-xs">
+                    {CONTEXT_LABELS[selected.context_classification] || selected.context_classification}
+                  </Badge>
+                )}
               </div>
-              <div>
-                <h3 className="text-sm font-semibold text-foreground mb-2">Transcrição Anonimizada</h3>
-                <TranscriptionBubbles
-                  transcricao={selected.transcricao_anonimizada}
-                  outputJson={selected.output_json_anonimizado}
-                  xingamentos={selected.xingamentos}
+
+              {/* Progress bar */}
+              <div className="space-y-1">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground font-medium">Progresso da avaliação</span>
+                  <span className={`font-semibold ${camposAvaliados === TOTAL_CAMPOS ? "text-green-600" : "text-foreground"}`}>
+                    {camposAvaliados}/{TOTAL_CAMPOS} campos
+                  </span>
+                </div>
+                <Progress value={progressPercent} className="h-2" />
+              </div>
+            </div>
+
+            {/* Tabs: Transcrição / Avaliação / JSON */}
+            <div className="flex-1 overflow-y-auto">
+              <Tabs defaultValue="transcricao" className="flex flex-col h-full">
+                <div className="px-6 pt-3">
+                  <TabsList className="w-full">
+                    <TabsTrigger value="transcricao" className="flex-1">Transcrição</TabsTrigger>
+                    <TabsTrigger value="avaliacao" className="flex-1">
+                      Avaliação
+                      {camposAvaliados > 0 && camposAvaliados < TOTAL_CAMPOS && (
+                        <Badge variant="secondary" className="ml-1.5 text-[10px] px-1.5 py-0">
+                          {camposAvaliados}/{TOTAL_CAMPOS}
+                        </Badge>
+                      )}
+                      {camposAvaliados === TOTAL_CAMPOS && (
+                        <Check className="ml-1 w-3.5 h-3.5 text-green-600" />
+                      )}
+                    </TabsTrigger>
+                    <TabsTrigger value="json" className="flex-1">JSON</TabsTrigger>
+                  </TabsList>
+                </div>
+
+                {/* === TRANSCRIÇÃO === */}
+                <TabsContent value="transcricao" className="space-y-4 px-6 pb-6 mt-3">
+                  <TranscriptionBubbles
+                    transcricao={selected.transcricao_anonimizada}
+                    outputJson={selected.output_json_anonimizado}
+                    xingamentos={selected.xingamentos}
                     onSaveLineCuration={async (data) => {
-                     if (!selected.analise_id || !sessionToken) return;
-                     try {
-                       await callAdmin(sessionToken, "saveAvaliacao", {
-                         analise_id: selected.analise_id,
-                         campo: `line_${data.line_index}_${data.alert_type || "manual"}`,
-                         status: data.status,
-                         valor_corrigido: data.corrected_type ? {
-                           alert_type: data.alert_type,
-                           alert_label: data.alert_label,
-                           corrected_type: data.corrected_type,
-                         } : null,
-                         nota: data.nota,
-                       });
-                       toast.success("Avaliação da linha salva");
-                       refetchAvaliacoes();
-                     } catch (e: any) {
-                       toast.error(e.message);
-                     }
-                   }}
-                />
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold text-foreground mb-1">Resumo Anonimizado</h3>
-                <p className="text-sm whitespace-pre-wrap p-3 rounded bg-muted text-foreground">{selected.resumo_anonimizado || "—"}</p>
-              </div>
-              {selected.palavras_chave?.length ? (
-                <div>
-                  <h4 className="text-xs font-semibold text-muted-foreground mb-1">Palavras-chave</h4>
-                  <div className="flex flex-wrap gap-1">
-                    {selected.palavras_chave.map((p, i) => <Badge key={i} variant="outline">{p}</Badge>)}
+                      if (!selected.analise_id || !sessionToken) return;
+                      try {
+                        await callAdmin(sessionToken, "saveAvaliacao", {
+                          analise_id: selected.analise_id,
+                          campo: `line_${data.line_index}_${data.alert_type || "manual"}`,
+                          status: data.status,
+                          valor_corrigido: data.corrected_type ? {
+                            alert_type: data.alert_type,
+                            alert_label: data.alert_label,
+                            corrected_type: data.corrected_type,
+                          } : null,
+                          nota: data.nota,
+                        });
+                        toast.success("Avaliação da linha salva");
+                        refetchAvaliacoes();
+                      } catch (e: any) {
+                        toast.error(e.message);
+                      }
+                    }}
+                  />
+
+                  {/* Resumo colapsável */}
+                  <Collapsible open={resumoOpen} onOpenChange={setResumoOpen}>
+                    <CollapsibleTrigger className="flex items-center gap-1 text-sm font-semibold text-foreground w-full">
+                      Resumo anonimizado
+                      {resumoOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <p className="text-sm whitespace-pre-wrap p-3 rounded bg-muted text-foreground mt-2">
+                        {selected.resumo_anonimizado || "—"}
+                      </p>
+                    </CollapsibleContent>
+                  </Collapsible>
+
+                  {/* Palavras-chave & Xingamentos */}
+                  <div className="flex flex-wrap gap-4">
+                    {selected.palavras_chave?.length ? (
+                      <div>
+                        <h4 className="text-xs font-semibold text-muted-foreground mb-1">Palavras-chave</h4>
+                        <div className="flex flex-wrap gap-1">
+                          {selected.palavras_chave.map((p, i) => <Badge key={i} variant="outline" className="text-xs">{p}</Badge>)}
+                        </div>
+                      </div>
+                    ) : null}
+                    {selected.xingamentos?.length ? (
+                      <div>
+                        <h4 className="text-xs font-semibold text-destructive mb-1">Xingamentos</h4>
+                        <div className="flex flex-wrap gap-1">
+                          {selected.xingamentos.map((x, i) => <Badge key={i} variant="destructive" className="text-xs">{x}</Badge>)}
+                        </div>
+                      </div>
+                    ) : null}
                   </div>
-                </div>
-              ) : null}
-              {selected.xingamentos?.length ? (
-                <div>
-                  <h4 className="text-xs font-semibold text-destructive mb-1">Xingamentos</h4>
-                  <div className="flex flex-wrap gap-1">
-                    {selected.xingamentos.map((x, i) => <Badge key={i} variant="destructive">{x}</Badge>)}
+                </TabsContent>
+
+                {/* === AVALIAÇÃO === */}
+                <TabsContent value="avaliacao" className="px-6 pb-24 mt-3 space-y-6">
+                  {/* Seção: Classificação */}
+                  <div className="space-y-3">
+                    <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider border-b border-border pb-1">
+                      Classificação
+                    </h3>
+                    <CampoAvaliacao campo="nivel_risco" label="Nível de Risco" valorIA={selected.nivel_risco} tipo="select" opcoes={RISK_OPTIONS} avaliacao={avaliacoes["nivel_risco"]} onSave={handleSaveAvaliacao} saving={savingField === "nivel_risco"} />
+                    <CampoAvaliacao campo="sentimento" label="Sentimento" valorIA={selected.sentimento} tipo="select" opcoes={SENTIMENTO_OPTIONS} avaliacao={avaliacoes["sentimento"]} onSave={handleSaveAvaliacao} saving={savingField === "sentimento"} />
+                    <CampoAvaliacao campo="context_classification" label="Classificação de Contexto" valorIA={selected.context_classification} tipo="select" opcoes={CONTEXT_OPTIONS} avaliacao={avaliacoes["context_classification"]} onSave={handleSaveAvaliacao} saving={savingField === "context_classification"} />
                   </div>
-                </div>
-              ) : null}
-              <div className="pt-2">
-                <Button
-                  variant={selected.cupiado ? "outline" : "default"}
-                  onClick={() => onToggleCupiado(selected)}
-                >
-                  {selected.cupiado ? "Desmarcar curada" : "Marcar como curada"}
-                </Button>
-              </div>
-            </TabsContent>
 
-            {/* === RISCO === */}
-            <TabsContent value="risco" className="space-y-4 mt-4">
-              <CampoAvaliacao
-                campo="nivel_risco"
-                label="Nível de Risco"
-                valorIA={selected.nivel_risco}
-                tipo="select"
-                opcoes={RISK_OPTIONS}
-                avaliacao={avaliacoes["nivel_risco"]}
-                onSave={handleSaveAvaliacao}
-                saving={savingField === "nivel_risco"}
-              />
-              <CampoAvaliacao
-                campo="sinais_alerta"
-                label="Sinais de Alerta"
-                valorIA={sinaisAlerta}
-                tipo="textarea"
-                avaliacao={avaliacoes["sinais_alerta"]}
-                onSave={handleSaveAvaliacao}
-                saving={savingField === "sinais_alerta"}
-              />
-            </TabsContent>
+                  {/* Seção: Detecção */}
+                  <div className="space-y-3">
+                    <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider border-b border-border pb-1">
+                      Detecção
+                    </h3>
+                    <CampoAvaliacao campo="taticas_manipulativas" label="Táticas Manipulativas" valorIA={taticasManipulativas} tipo="textarea" avaliacao={avaliacoes["taticas_manipulativas"]} onSave={handleSaveAvaliacao} saving={savingField === "taticas_manipulativas"} />
+                    <CampoAvaliacao campo="sinais_alerta" label="Sinais de Alerta" valorIA={sinaisAlerta} tipo="textarea" avaliacao={avaliacoes["sinais_alerta"]} onSave={handleSaveAvaliacao} saving={savingField === "sinais_alerta"} />
+                    <CampoAvaliacao campo="categorias" label="Categorias" valorIA={selected.categorias} tipo="tags" avaliacao={avaliacoes["categorias"]} onSave={handleSaveAvaliacao} saving={savingField === "categorias"} />
+                  </div>
 
-            {/* === SENTIMENTO === */}
-            <TabsContent value="sentimento" className="space-y-4 mt-4">
-              <CampoAvaliacao
-                campo="sentimento"
-                label="Sentimento"
-                valorIA={selected.sentimento}
-                tipo="select"
-                opcoes={SENTIMENTO_OPTIONS}
-                avaliacao={avaliacoes["sentimento"]}
-                onSave={handleSaveAvaliacao}
-                saving={savingField === "sentimento"}
-              />
-              <CampoAvaliacao
-                campo="categorias"
-                label="Categorias"
-                valorIA={selected.categorias}
-                tipo="tags"
-                avaliacao={avaliacoes["categorias"]}
-                onSave={handleSaveAvaliacao}
-                saving={savingField === "categorias"}
-              />
-            </TabsContent>
+                  {/* Seção: Ciclo */}
+                  <div className="space-y-3">
+                    <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider border-b border-border pb-1">
+                      Ciclo de Violência
+                    </h3>
+                    <CampoAvaliacao campo="cycle_phase" label="Fase do Ciclo" valorIA={selected.cycle_phase} tipo="select" opcoes={CYCLE_OPTIONS} avaliacao={avaliacoes["cycle_phase"]} onSave={handleSaveAvaliacao} saving={savingField === "cycle_phase"} />
+                    <CampoAvaliacao campo="tipos_violencia" label="Tipos de Violência" valorIA={tiposViolencia} tipo="multiselect" opcoes={violenciaOptions} avaliacao={avaliacoes["tipos_violencia"]} onSave={handleSaveAvaliacao} saving={savingField === "tipos_violencia"} />
+                  </div>
+                </TabsContent>
 
-            {/* === TATICAS === */}
-            <TabsContent value="taticas" className="space-y-4 mt-4">
-              <CampoAvaliacao
-                campo="taticas_manipulativas"
-                label="Táticas Manipulativas"
-                valorIA={taticasManipulativas}
-                tipo="textarea"
-                avaliacao={avaliacoes["taticas_manipulativas"]}
-                onSave={handleSaveAvaliacao}
-                saving={savingField === "taticas_manipulativas"}
-              />
-            </TabsContent>
+                {/* === JSON === */}
+                <TabsContent value="json" className="px-6 pb-6 mt-3">
+                  {selected.output_json_anonimizado ? (
+                    <Collapsible open={jsonOpen} onOpenChange={setJsonOpen}>
+                      <CollapsibleTrigger className="flex items-center gap-1 text-sm font-semibold text-primary">
+                        Output JSON (Micro Result)
+                        {jsonOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <pre className="text-xs mt-2 p-3 rounded overflow-auto max-h-80 bg-muted text-foreground">
+                          {JSON.stringify(selected.output_json_anonimizado, null, 2)}
+                        </pre>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">Nenhum output JSON disponível.</p>
+                  )}
+                </TabsContent>
+              </Tabs>
+            </div>
 
-            {/* === CICLO === */}
-            <TabsContent value="ciclo" className="space-y-4 mt-4">
-              <CampoAvaliacao
-                campo="cycle_phase"
-                label="Fase do Ciclo"
-                valorIA={selected.cycle_phase}
-                tipo="select"
-                opcoes={CYCLE_OPTIONS}
-                avaliacao={avaliacoes["cycle_phase"]}
-                onSave={handleSaveAvaliacao}
-                saving={savingField === "cycle_phase"}
-              />
-              <CampoAvaliacao
-                campo="context_classification"
-                label="Classificação de Contexto"
-                valorIA={selected.context_classification}
-                tipo="select"
-                opcoes={CONTEXT_OPTIONS}
-                avaliacao={avaliacoes["context_classification"]}
-                onSave={handleSaveAvaliacao}
-                saving={savingField === "context_classification"}
-              />
-              <CampoAvaliacao
-                campo="tipos_violencia"
-                label="Tipos de Violência"
-                valorIA={tiposViolencia}
-                tipo="multiselect"
-                opcoes={violenciaOptions}
-                avaliacao={avaliacoes["tipos_violencia"]}
-                onSave={handleSaveAvaliacao}
-                saving={savingField === "tipos_violencia"}
-              />
-            </TabsContent>
-
-            {/* === JSON === */}
-            <TabsContent value="json" className="mt-4">
-              {selected.output_json_anonimizado ? (
-                <Collapsible open={jsonOpen} onOpenChange={setJsonOpen}>
-                  <CollapsibleTrigger className="flex items-center gap-1 text-sm font-semibold text-primary">
-                    Output JSON (Micro Result)
-                    {jsonOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <pre className="text-xs mt-2 p-3 rounded overflow-auto max-h-80 bg-muted text-foreground">
-                      {JSON.stringify(selected.output_json_anonimizado, null, 2)}
-                    </pre>
-                  </CollapsibleContent>
-                </Collapsible>
-              ) : (
-                <p className="text-sm text-muted-foreground">Nenhum output JSON disponível.</p>
-              )}
-            </TabsContent>
-          </Tabs>
+            {/* Sticky footer */}
+            <div className="border-t border-border bg-card px-6 py-3 flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">
+                {camposAvaliados}/{TOTAL_CAMPOS} avaliados
+              </span>
+              <Button
+                variant={selected.cupiado ? "outline" : "default"}
+                size="sm"
+                onClick={() => onToggleCupiado(selected)}
+              >
+                {selected.cupiado ? "Desmarcar curada" : "Marcar como curada"}
+              </Button>
+            </div>
+          </>
         )}
       </SheetContent>
     </Sheet>
