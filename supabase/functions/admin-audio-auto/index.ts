@@ -170,6 +170,29 @@ const TOPICS_MULHER_EXTRAPOLA = [
   "ela faz escândalo em público e ele depois pune com isolamento em casa",
 ];
 
+// ~5% violência sexual velada — coerção sexual sutil
+const TOPICS_VIOLENCIA_SEXUAL_VELADA = [
+  "marido insiste em ter relações após ela dizer que não quer",
+  "pressão sexual disfarçada de carinho e afeto",
+  "chantagem emocional para convencê-la a ter relações — 'se me amasse de verdade...'",
+  "marido fica agressivo e faz silêncio punitivo porque ela recusou sexo",
+  "ele cobra sexo como obrigação do casamento",
+  "marido insinua que vai procurar outra mulher se ela não ceder",
+  "ele toca insistentemente mesmo após ela pedir para parar",
+  "marido usa culpa — 'faz tempo que a gente não fica junto, tô me sentindo rejeitado'",
+  "ele minimiza o cansaço dela e insiste — 'é rapidinho, não precisa fazer nada'",
+  "marido condiciona bom tratamento a ter relações sexuais com ele",
+];
+
+// ~2% estupro conjugal com vítima inconsciente
+const TOPICS_ESTUPRO_INCONSCIENTE = [
+  "mulher acorda com sinais de que o marido teve relações com ela enquanto dormia após beber",
+  "ela confronta o marido depois de perceber que ele a tocou enquanto estava sedada por medicamento",
+  "mulher descobre por marcas no corpo que o marido abusou dela enquanto estava inconsciente por álcool",
+  "ela relata a uma amiga que desconfia que o marido fez algo com ela enquanto dormia após tomar remédio",
+  "marido admite casualmente que 'ficaram juntos' na noite em que ela passou mal de tanto beber e não lembra de nada",
+];
+
 // Duration variation: returns [turnsHint, targetLabel]
 function randomDurationHint(): string {
   const roll = Math.random();
@@ -181,20 +204,29 @@ function randomDurationHint(): string {
   return "entre 70 e 90"; // ~5-7min — longo
 }
 
+type ViolenceSubcategory = "padrao" | "mulher_extrapola" | "sexual_velada" | "estupro_inconsciente";
+
 async function generateScript(targetDurationHint: string, audioMode: string = "violencia") {
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
 
   // Determine which topic pool and prompt style to use
   let topic: string;
-  let isMulherExtrapola = false;
+  let subcategory: ViolenceSubcategory = "padrao";
 
   if (audioMode === "briga_saudavel") {
     topic = TOPICS_BRIGA_SAUDAVEL[Math.floor(Math.random() * TOPICS_BRIGA_SAUDAVEL.length)];
   } else {
-    // ~15% chance of "mulher extrapola" scenario
-    if (Math.random() < 0.15) {
+    // Distribution: 2% estupro_inconsciente, 5% sexual_velada, 15% mulher_extrapola, 78% padrão
+    const roll = Math.random();
+    if (roll < 0.02) {
+      topic = TOPICS_ESTUPRO_INCONSCIENTE[Math.floor(Math.random() * TOPICS_ESTUPRO_INCONSCIENTE.length)];
+      subcategory = "estupro_inconsciente";
+    } else if (roll < 0.07) {
+      topic = TOPICS_VIOLENCIA_SEXUAL_VELADA[Math.floor(Math.random() * TOPICS_VIOLENCIA_SEXUAL_VELADA.length)];
+      subcategory = "sexual_velada";
+    } else if (roll < 0.22) {
       topic = TOPICS_MULHER_EXTRAPOLA[Math.floor(Math.random() * TOPICS_MULHER_EXTRAPOLA.length)];
-      isMulherExtrapola = true;
+      subcategory = "mulher_extrapola";
     } else {
       topic = TOPICS_VIOLENCIA[Math.floor(Math.random() * TOPICS_VIOLENCIA.length)];
     }
@@ -227,7 +259,41 @@ REGRAS OBRIGATÓRIAS:
 
 Responda EXCLUSIVAMENTE com JSON válido (sem markdown, sem texto extra):
 {"topic":"${topic}","turns":[{"speaker":"M","text":"..."},{"speaker":"F","text":"..."}]}`;
-  } else if (isMulherExtrapola) {
+  } else if (subcategory === "estupro_inconsciente") {
+    prompt = `Gere um roteiro de diálogo realista em português brasileiro entre um casal (M = homem, F = mulher) sobre o tema: "${topic}".
+
+REGRAS OBRIGATÓRIAS:
+- O roteiro deve ter ${targetDurationHint} turnos de fala.
+- CENÁRIO: a mulher percebe, descobre ou confronta o marido sobre ele ter tido relações sexuais com ela enquanto ela estava INCONSCIENTE (por álcool, medicamento ou sono profundo).
+- O tom da mulher deve ser de CONFUSÃO, CHOQUE, MEDO ou RAIVA ao perceber o que aconteceu.
+- O homem deve reagir de forma MINIMIZADORA: "você é minha mulher", "não foi nada demais", "você tá exagerando", "a gente é casado, qual o problema?".
+- Ele pode negar, se fazer de vítima, ou tentar convencê-la de que foi consensual.
+- NÃO descreva o ato em si — foque nos SINAIS que ela percebe (marcas, roupas, dor, relatos de terceiros) e no DIÁLOGO de confronto.
+- Linguagem natural coloquial brasileira com gírias e expressões regionais variadas.
+- Cada fala deve ter entre 5 e 35 palavras.
+- Inclua falas sobrepostas e interrupções (marcadas com "..." no final).
+- O objetivo é treinar o sistema a reconhecer sinais de estupro conjugal.
+
+Responda EXCLUSIVAMENTE com JSON válido (sem markdown, sem texto extra):
+{"topic":"${topic}","turns":[{"speaker":"M","text":"..."},{"speaker":"F","text":"..."}]}`;
+  } else if (subcategory === "sexual_velada") {
+    prompt = `Gere um roteiro de diálogo realista em português brasileiro entre um casal (M = homem, F = mulher) sobre o tema: "${topic}".
+
+REGRAS OBRIGATÓRIAS:
+- O roteiro deve ter ${targetDurationHint} turnos de fala.
+- CENÁRIO: o marido pressiona, insiste ou chantageia emocionalmente a esposa para ter relações sexuais. Ela não quer, mas ele não aceita o "não".
+- Táticas do homem: insistência repetida, culpabilização ("você não me ama"), ameaça velada ("vou procurar quem me dê atenção"), silêncio punitivo, cobrar sexo como dever conjugal, minimizar o cansaço/desconforto dela.
+- A mulher pode ceder por medo, exaustão ou culpa — mas deve ficar claro que NÃO É consensual de verdade.
+- NÃO descreva o ato sexual em si — foque na PRESSÃO, na MANIPULAÇÃO e na COERÇÃO emocional.
+- Linguagem natural coloquial brasileira com gírias e expressões regionais variadas.
+- Cada fala deve ter entre 5 e 35 palavras.
+- Inclua falas sobrepostas e interrupções (marcadas com "..." no final).
+- Varie o tom: ele pode ser carinhoso-falso, insistente, irritado ou frio.
+- O objetivo é treinar o sistema a detectar coerção sexual sutil dentro do casamento.
+
+Responda EXCLUSIVAMENTE com JSON válido (sem markdown, sem texto extra):
+{"topic":"${topic}","turns":[{"speaker":"M","text":"..."},{"speaker":"F","text":"..."}]}`;
+  } else if (subcategory === "mulher_extrapola") {
     prompt = `Gere um roteiro de diálogo realista em português brasileiro entre um casal (M = homem, F = mulher) sobre o tema: "${topic}".
 
 REGRAS OBRIGATÓRIAS:
@@ -292,7 +358,7 @@ Responda EXCLUSIVAMENTE com JSON válido (sem markdown, sem texto extra):
   if (!parsed.turns || !Array.isArray(parsed.turns) || parsed.turns.length < 5)
     throw new Error("Script has too few turns");
 
-  return { ...parsed, topic, mulher_extrapola: isMulherExtrapola };
+  return { ...parsed, topic, subcategory };
 }
 
 // ── TTS via ElevenLabs ──
@@ -472,7 +538,68 @@ async function processItem(
 
       if (gravErr) throw new Error(`Gravacoes insert: ${gravErr.message}`);
 
-      // 10) Update item as done
+      // 10b) Inline AI analysis (fire-and-forget — failure does not block item)
+      try {
+        const analysisPrompt = await buildAnalysisPrompt(supabase);
+        const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
+        const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${LOVABLE_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "google/gemini-2.5-flash",
+            messages: [
+              { role: "system", content: analysisPrompt },
+              { role: "user", content: `Analise esta transcrição:\n\n${transcricao}` },
+            ],
+          }),
+        });
+
+        if (aiRes.ok) {
+          const aiData = await aiRes.json();
+          const raw = aiData.choices?.[0]?.message?.content || "";
+          let cleanJson = raw.trim();
+          if (cleanJson.startsWith("```")) {
+            cleanJson = cleanJson.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "");
+          }
+          let parsed: any;
+          try {
+            const jsonMatch = cleanJson.match(/\{[\s\S]*\}/);
+            parsed = JSON.parse(jsonMatch ? jsonMatch[0] : cleanJson);
+            parsed = normalizeAnalysisOutput(parsed);
+          } catch {
+            parsed = {
+              resumo_contexto: raw.substring(0, 500),
+              nivel_risco: "moderado",
+              sentimento: "neutro",
+              categorias: [],
+              palavras_chave: [],
+            };
+          }
+
+          await supabase.from("gravacoes_analises").insert({
+            gravacao_id: gravacao.id,
+            user_id: targetUserId,
+            resumo: parsed.resumo_contexto || parsed.resumo || "",
+            sentimento: parsed.sentimento || "neutro",
+            nivel_risco: parsed.nivel_risco || "sem_risco",
+            categorias: parsed.categorias || [],
+            palavras_chave: parsed.palavras_chave || [],
+            xingamentos: parsed.xingamentos || [],
+            analise_completa: parsed,
+            modelo_usado: "google/gemini-2.5-flash",
+          });
+          console.log(`✅ Análise inline #${item.item_index}: nivel_risco=${parsed.nivel_risco}`);
+        } else {
+          console.error(`⚠️ Análise inline #${item.item_index}: AI ${aiRes.status}`);
+        }
+      } catch (analysisErr) {
+        console.error(`⚠️ Análise inline #${item.item_index} falhou:`, analysisErr);
+      }
+
+      // 11) Update item as done
       await supabase
         .from("audio_generation_items")
         .update({
@@ -484,7 +611,7 @@ async function processItem(
         })
         .eq("id", item.id);
 
-      // 11) Increment job done_count
+      // 12) Increment job done_count
       const { data: job } = await supabase
         .from("audio_generation_jobs")
         .select("done_count")
