@@ -97,8 +97,19 @@ export default function AdminCopom({ embedded }: { embedded?: boolean }) {
     location: { address: "Rua XV de Novembro, 250, Bauru-SP", movement_status: "parada" },
     monitoring_link: "https://amparamulher.com.br/abc123",
   });
-  const [extraFields, setExtraFields] = useState<ExtraField[]>([]);
-  const [showExtras, setShowExtras] = useState(false);
+  const [extraFields, setExtraFields] = useState<ExtraField[]>([
+    { fieldName: "VITIMA_NOME", value: "Maria Silva" },
+    { fieldName: "VITIMA_TELEFONE", value: "(14) 99600-5332" },
+    { fieldName: "AGRESSOR_NOME", value: "João Souza" },
+    { fieldName: "RELACAO", value: "ex-companheiro" },
+    { fieldName: "ENDERECO_ULTIMA_LOCALIZACAO", value: "Rua XV de Novembro, 250, Bauru-SP" },
+    { fieldName: "STATUS_MOVIMENTO", value: "parada" },
+    { fieldName: "LINK_MONITORAMENTO", value: "amparamulher.com.br/abc123" },
+    { fieldName: "AGRESSOR_TEM_ARMA", value: "não" },
+    { fieldName: "AGRESSOR_FORCA_SEGURANCA", value: "não" },
+    { fieldName: "VEICULO", value: "Gol, cor Prata, placa FGH-3*45" },
+  ]);
+  const [showExtras, setShowExtras] = useState(true);
   const [sending, setSending] = useState(false);
   const [lastResponse, setLastResponse] = useState<any>(null);
 
