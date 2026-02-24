@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Save, RotateCcw, Plug, Mic, Brain, Phone, MessageCircle, Mail, PhoneOutgoing } from "lucide-react";
+import { Save, RotateCcw, Plug, Mic, Brain, MessageCircle, Mail, PhoneOutgoing } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
@@ -56,13 +56,6 @@ const INTEGRATION_CATEGORIES = [
     color: "hsl(210 80% 45%)",
   },
   {
-    key: "integracao_elevenlabs",
-    label: "ElevenLabs — Voz Sintética",
-    description: "Agente de voz para comunicados via WebRTC (voz apenas, sem telefonia).",
-    icon: Phone,
-    color: "hsl(150 60% 40%)",
-  },
-  {
     key: "integracao_whatsapp",
     label: "WhatsApp Business — Notificações",
     description: "Envio de alertas e notificações para guardiões via API do WhatsApp Business (Meta).",
@@ -84,9 +77,6 @@ const FRIENDLY_LABELS: Record<string, string> = {
   ia_modelo_risco: "Modelo de risco",
   ia_ativa: "Integração ativa",
   ia_prompt_analise: "Prompt de análise",
-  elevenlabs_agent_id: "Agent ID",
-  elevenlabs_ativa: "Integração ativa",
-  elevenlabs_copom_telefone: "Telefone COPOM (destino)",
   sinergytech_ativa: "Integração ativa",
   sinergytech_api_url: "URL da API (OCS)",
   sinergytech_campaign_id: "Campaign ID padrão",
