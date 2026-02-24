@@ -8,6 +8,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { BrainCircuit } from "lucide-react";
@@ -33,6 +34,7 @@ interface CuradoriaItem {
   context_classification: string | null;
   cycle_phase: string | null;
   output_json_anonimizado: any;
+  avaliacoes_count?: number;
 }
 
 const RISK_COLORS: Record<string, string> = {
@@ -41,6 +43,15 @@ const RISK_COLORS: Record<string, string> = {
   moderado: "bg-yellow-500 text-black",
   baixo: "bg-green-500 text-white",
   nenhum: "bg-gray-400 text-white",
+};
+
+const CONTEXT_LABELS: Record<string, string> = {
+  saudavel: "Saudável",
+  rispido_nao_abusivo: "Ríspido",
+  potencial_abuso_leve: "Abuso leve",
+  padrao_consistente_abuso: "Padrão abuso",
+  ameaca_risco: "Ameaça/risco",
+  risco_elevado_escalada: "Risco escalada",
 };
 
 const PAGE_SIZES = [25, 50, 100];
@@ -53,19 +64,6 @@ async function callAdmin(sessionToken: string, action: string, params: any = {})
   if (error) throw new Error(error.message);
   if (data?.error) throw new Error(data.error);
   return data;
-}
-
-function formatTranscricao(raw: string): string {
-  if (!raw) return "";
-  let text = raw
-    .replace(/[\[\(]?\d{1,2}:\d{2}(:\d{2})?[\]\)]?\s*[-–:]?\s*/g, "")
-    .replace(/\b(speaker|falante|spk|SPEAKER)[_ ]?\d*\s*[:]\s*/gi, "")
-    .replace(/^\s*[-–•]\s*/gm, "");
-  const sentences = text
-    .split(/(?<=[.!?])\s+|\n+/)
-    .map(s => s.trim())
-    .filter(s => s.length > 0);
-  return sentences.join("\n");
 }
 
 export default function AdminCuradoria() {
@@ -140,7 +138,7 @@ export default function AdminCuradoria() {
 
   const fmtDate = (iso: string) => {
     const d = new Date(iso);
-    return d.toLocaleDateString("pt-BR") + " " + d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+    return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }) + " " + d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
   };
 
   const fmtDuration = (s: number | null) => {
@@ -195,33 +193,56 @@ export default function AdminCuradoria() {
           <TableHeader>
             <TableRow className="bg-muted/50">
               <TableHead>Data/hora</TableHead>
+              <TableHead>Duração</TableHead>
               <TableHead>Risco</TableHead>
-              <TableHead>Sentimento</TableHead>
+              <TableHead>Contexto</TableHead>
+              <TableHead>Progresso</TableHead>
               <TableHead className="text-center">Curada</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow><TableCell colSpan={4} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
+              <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
             ) : items.length === 0 ? (
-              <TableRow><TableCell colSpan={4} className="text-center py-8 text-muted-foreground">Nenhuma transcrição encontrada</TableCell></TableRow>
-            ) : items.map((item) => (
-              <TableRow
-                key={item.id}
-                className="cursor-pointer hover:bg-muted/30 transition-colors"
-                onClick={() => setSelected(item)}
-              >
-                <TableCell className="whitespace-nowrap text-sm">{fmtDate(item.created_at)}</TableCell>
-                <TableCell className="text-sm capitalize">{item.nivel_risco || "—"}</TableCell>
-                <TableCell className="text-sm capitalize">{item.sentimento || "—"}</TableCell>
-                <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
-                  <Checkbox
-                    checked={item.cupiado}
-                    onCheckedChange={(v) => toggleMutation.mutate({ analise_id: item.analise_id, cupiado: !!v })}
-                  />
-                </TableCell>
-              </TableRow>
-            ))}
+              <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Nenhuma transcrição encontrada</TableCell></TableRow>
+            ) : items.map((item) => {
+              const avCount = item.avaliacoes_count || 0;
+              const progressPct = Math.round((avCount / TOTAL_CAMPOS) * 100);
+              return (
+                <TableRow
+                  key={item.id}
+                  className="cursor-pointer hover:bg-muted/30 transition-colors"
+                  onClick={() => setSelected(item)}
+                >
+                  <TableCell className="whitespace-nowrap text-sm">{fmtDate(item.created_at)}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{fmtDuration(item.duracao_segundos)}</TableCell>
+                  <TableCell>
+                    {item.nivel_risco ? (
+                      <Badge className={`${RISK_COLORS[item.nivel_risco] || "bg-muted text-foreground"} text-xs capitalize`}>
+                        {item.nivel_risco}
+                      </Badge>
+                    ) : <span className="text-muted-foreground">—</span>}
+                  </TableCell>
+                  <TableCell className="text-sm">
+                    {item.context_classification
+                      ? CONTEXT_LABELS[item.context_classification] || item.context_classification
+                      : <span className="text-muted-foreground">—</span>}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2 min-w-[100px]">
+                      <Progress value={progressPct} className="h-1.5 flex-1" />
+                      <span className="text-xs text-muted-foreground whitespace-nowrap">{avCount}/{TOTAL_CAMPOS}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
+                    <Checkbox
+                      checked={item.cupiado}
+                      onCheckedChange={(v) => toggleMutation.mutate({ analise_id: item.analise_id, cupiado: !!v })}
+                    />
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </AdminTableWrapper>

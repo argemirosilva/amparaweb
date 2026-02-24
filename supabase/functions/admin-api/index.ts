@@ -583,6 +583,20 @@ serve(async (req) => {
         }
       }
 
+      // Fetch avaliacoes count per analise_id
+      const allAnaliseIds = (gravacoes || []).map((g: any) => g.gravacoes_analises?.id).filter(Boolean);
+      let avaliacoesCountMap: Record<string, number> = {};
+      if (allAnaliseIds.length > 0) {
+        const { data: avCounts } = await supabase
+          .from("curadoria_avaliacoes")
+          .select("analise_id")
+          .in("analise_id", allAnaliseIds)
+          .neq("status", "pendente");
+        for (const av of avCounts || []) {
+          avaliacoesCountMap[av.analise_id] = (avaliacoesCountMap[av.analise_id] || 0) + 1;
+        }
+      }
+
       const items = (gravacoes || []).map((g: any) => {
         const a = g.gravacoes_analises;
         const micro = microMap[g.id];
@@ -602,6 +616,7 @@ serve(async (req) => {
           context_classification: micro?.context_classification || null,
           cycle_phase: micro?.cycle_phase || null,
           output_json_anonimizado: micro?.output_json ? anonymizeJson(micro.output_json) : null,
+          avaliacoes_count: avaliacoesCountMap[a?.id] || 0,
         };
       });
 
