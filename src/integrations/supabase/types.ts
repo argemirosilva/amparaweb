@@ -1677,6 +1677,39 @@ export type Database = {
         }
         Relationships: []
       }
+      tipos_alerta: {
+        Row: {
+          ativo: boolean
+          codigo: string
+          created_at: string
+          descricao: string | null
+          grupo: string
+          id: string
+          label: string
+          ordem: number
+        }
+        Insert: {
+          ativo?: boolean
+          codigo: string
+          created_at?: string
+          descricao?: string | null
+          grupo: string
+          id?: string
+          label: string
+          ordem?: number
+        }
+        Update: {
+          ativo?: boolean
+          codigo?: string
+          created_at?: string
+          descricao?: string | null
+          grupo?: string
+          id?: string
+          label?: string
+          ordem?: number
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
