@@ -1,42 +1,34 @@
 
-## Formatar variavel VEICULO no formato natural
 
-### O que muda
-Atualmente o campo VEICULO e montado como: `Paraty, cor preta, placa adb 4j55`
+## Ajustes no grafico "Alertas por Tipo de Acionamento"
 
-O formato desejado e: `Paraty de cor preta, placa adb 4j55` (usando "de cor" em vez de separar com virgula).
+### Mudancas
 
-### Alteracao
+No mapeamento `ACIONAMENTO_LABELS` (linha 74-76 de `src/pages/admin/AdminMapa.tsx`):
 
-**Arquivo:** `supabase/functions/agreggar-speed-dial/index.ts` (linhas 136-141)
-
-Trocar a logica de montagem do texto do veiculo:
-
-- Se tem modelo e cor: `{modelo} de cor {cor}`
-- Se tem placa, adiciona `, placa {placa}` ao final
-- Se so tem modelo sem cor: `{modelo}`
-- Se so tem cor sem modelo: `cor {cor}`
-- Fallback: `nao informado`
-
-Exemplo de resultado: **Paraty de cor preta, placa adb 4j55**
+1. **Agrupar "manual" com "Botao" como "Manual"**: os tipos `botao_fisico`, `botao_manual`, `botao`, `manual` passam a exibir "Manual"
+2. **Agrupar "automatico" com "voz" como "Automatico"**: os tipos `automatico`, `voz` passam a exibir "Automatico"
+3. **Renomear `botao_panico` para "Panico"**: o tipo `botao_panico` exibe "Panico"
 
 ### Detalhe tecnico
 
+**Arquivo:** `src/pages/admin/AdminMapa.tsx` (linhas 74-76)
+
+De:
 ```typescript
-// Vehicle - formato: "Paraty de cor preta, placa adb 4j55"
-const v = context.aggressor?.vehicle;
-let veiculoStr = "";
-if (v?.model && v?.color) {
-  veiculoStr = `${v.model} de cor ${v.color}`;
-} else if (v?.model) {
-  veiculoStr = v.model;
-} else if (v?.color) {
-  veiculoStr = `cor ${v.color}`;
-}
-if (v?.plate_partial) {
-  veiculoStr = veiculoStr
-    ? `${veiculoStr}, placa ${v.plate_partial}`
-    : `placa ${v.plate_partial}`;
-}
-add("VEICULO", veiculoStr || "não informado");
+const ACIONAMENTO_LABELS: Record<string, string> = {
+  app: "Aplicativo", botao_fisico: "Botão", botao_manual: "Botão", botao: "Botão", automatico: "Automático",
+};
 ```
+
+Para:
+```typescript
+const ACIONAMENTO_LABELS: Record<string, string> = {
+  app: "Aplicativo",
+  botao_fisico: "Manual", botao_manual: "Manual", botao: "Manual", manual: "Manual",
+  automatico: "Automático", voz: "Automático",
+  botao_panico: "Pânico",
+};
+```
+
+A logica existente na linha 491 ja agrupa valores com o mesmo label, entao os tipos mapeados para "Manual" serao somados automaticamente, assim como os mapeados para "Automatico".
