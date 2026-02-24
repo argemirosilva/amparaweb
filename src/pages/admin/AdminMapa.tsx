@@ -1113,7 +1113,7 @@ export default function AdminMapa() {
               <TabsList className="h-8">
                 <TabsTrigger value="eventos" className="text-xs px-3 py-1">Eventos</TabsTrigger>
                 <TabsTrigger value="emergencias" className="text-xs px-3 py-1">Emergências</TabsTrigger>
-                <TabsTrigger value="critico" className="text-xs px-3 py-1">Nível Crítico</TabsTrigger>
+                <TabsTrigger value="critico" className="text-xs px-3 py-1">Alertas Críticos</TabsTrigger>
               </TabsList>
             </div>
 
