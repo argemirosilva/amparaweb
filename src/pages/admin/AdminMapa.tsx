@@ -1119,12 +1119,12 @@ export default function AdminMapa() {
 
             <TabsContent value="eventos" className="mt-0">
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full text-sm table-fixed">
                   <thead>
                     <tr style={{ background: "hsl(210 17% 96%)" }}>
-                      {["#", "Cidade", "Eventos", "Emergências", "Total"].map(h => (
-                        <th key={h} className="px-4 py-2.5 text-left text-xs font-semibold" style={subtitleStyle}>{h}</th>
-                      ))}
+                      <th className="w-12 px-4 py-2.5 text-left text-xs font-semibold" style={subtitleStyle}>#</th>
+                      <th className="px-4 py-2.5 text-left text-xs font-semibold" style={subtitleStyle}>Cidade</th>
+                      <th className="w-32 px-4 py-2.5 text-left text-xs font-semibold" style={subtitleStyle}>Quantidade</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1132,12 +1132,10 @@ export default function AdminMapa() {
                       <tr key={c.nome} className="border-t" style={{ borderColor: "hsl(220 13% 91%)" }}>
                         <td className="px-4 py-3 font-medium" style={subtitleStyle}>{i + 1}</td>
                         <td className="px-4 py-3 font-medium" style={titleStyle}>{c.nome}</td>
-                        <td className="px-4 py-3" style={titleStyle}>{c.eventos}</td>
-                        <td className="px-4 py-3" style={titleStyle}>{c.emergencias}</td>
-                        <td className="px-4 py-3 font-semibold" style={titleStyle}>{c.eventos + c.emergencias}</td>
+                        <td className="px-4 py-3 font-semibold" style={titleStyle}>{c.eventos}</td>
                       </tr>
                     )) : (
-                      <tr><td colSpan={5} className="px-4 py-6 text-center text-xs" style={subtitleStyle}>Nenhum dado no período</td></tr>
+                      <tr><td colSpan={3} className="px-4 py-6 text-center text-xs" style={subtitleStyle}>Nenhum dado no período</td></tr>
                     )}
                   </tbody>
                 </table>
@@ -1146,12 +1144,12 @@ export default function AdminMapa() {
 
             <TabsContent value="emergencias" className="mt-0">
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full text-sm table-fixed">
                   <thead>
                     <tr style={{ background: "hsl(210 17% 96%)" }}>
-                      {["#", "Cidade", "Emergências"].map(h => (
-                        <th key={h} className="px-4 py-2.5 text-left text-xs font-semibold" style={subtitleStyle}>{h}</th>
-                      ))}
+                      <th className="w-12 px-4 py-2.5 text-left text-xs font-semibold" style={subtitleStyle}>#</th>
+                      <th className="px-4 py-2.5 text-left text-xs font-semibold" style={subtitleStyle}>Cidade</th>
+                      <th className="w-32 px-4 py-2.5 text-left text-xs font-semibold" style={subtitleStyle}>Quantidade</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1171,12 +1169,12 @@ export default function AdminMapa() {
 
             <TabsContent value="critico" className="mt-0">
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full text-sm table-fixed">
                   <thead>
                     <tr style={{ background: "hsl(210 17% 96%)" }}>
-                      {["#", "Cidade", "Análises Críticas"].map(h => (
-                        <th key={h} className="px-4 py-2.5 text-left text-xs font-semibold" style={subtitleStyle}>{h}</th>
-                      ))}
+                      <th className="w-12 px-4 py-2.5 text-left text-xs font-semibold" style={subtitleStyle}>#</th>
+                      <th className="px-4 py-2.5 text-left text-xs font-semibold" style={subtitleStyle}>Cidade</th>
+                      <th className="w-32 px-4 py-2.5 text-left text-xs font-semibold" style={subtitleStyle}>Quantidade</th>
                     </tr>
                   </thead>
                   <tbody>
