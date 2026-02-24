@@ -81,10 +81,22 @@ export default function AdminCopom({ embedded }: { embedded?: boolean }) {
 
   // Form state
   const [campaignId, setCampaignId] = useState("1506");
-  const [contactName, setContactName] = useState("");
-  const [ddd, setDdd] = useState("");
-  const [phone, setPhone] = useState("");
-  const [context, setContext] = useState<Record<string, any>>({});
+  const [contactName, setContactName] = useState("Maria Silva");
+  const [ddd, setDdd] = useState("14");
+  const [phone, setPhone] = useState("996005332");
+  const [context, setContext] = useState<Record<string, any>>({
+    victim: { name: "Maria Silva", phone_masked: "(14) 9****-5332" },
+    aggressor: {
+      name: "João Souza",
+      tem_arma: false,
+      forca_seguranca: false,
+      forca_seguranca_tipo: "",
+      vehicle: { model: "Gol", color: "Prata", plate_partial: "FGH-3*45" },
+    },
+    victim_aggressor_relation: "ex-companheiro",
+    location: { address: "Rua XV de Novembro, 250, Bauru-SP", movement_status: "parada" },
+    monitoring_link: "https://amparamulher.com.br/abc123",
+  });
   const [extraFields, setExtraFields] = useState<ExtraField[]>([]);
   const [showExtras, setShowExtras] = useState(false);
   const [sending, setSending] = useState(false);
