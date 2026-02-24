@@ -10,6 +10,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { BrainCircuit, ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "sonner";
 import CampoAvaliacao, { AvaliacaoData } from "./CampoAvaliacao";
+import TranscriptionBubbles from "./TranscriptionBubbles";
 
 interface CuradoriaItem {
   id: string;
@@ -108,18 +109,7 @@ const fmtDuration = (s: number | null) => {
   return `${m}m${sec.toString().padStart(2, "0")}s`;
 };
 
-function formatTranscricao(raw: string): string {
-  if (!raw) return "";
-  let text = raw
-    .replace(/[\[\(]?\d{1,2}:\d{2}(:\d{2})?[\]\)]?\s*[-–:]?\s*/g, "")
-    .replace(/\b(speaker|falante|spk|SPEAKER)[_ ]?\d*\s*[:]\s*/gi, "")
-    .replace(/^\s*[-–•]\s*/gm, "");
-  const sentences = text
-    .split(/(?<=[.!?])\s+|\n+/)
-    .map(s => s.trim())
-    .filter(s => s.length > 0);
-  return sentences.join("\n");
-}
+// formatTranscricao moved to TranscriptionBubbles component
 
 export default function CuradoriaDetailDrawer({ selected, onClose, onToggleCupiado, onAutoCurada }: Props) {
   const { sessionToken } = useAuth();
@@ -199,8 +189,28 @@ export default function CuradoriaDetailDrawer({ selected, onClose, onToggleCupia
                 <span className="text-sm capitalize text-muted-foreground">{selected.sentimento}</span>
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-foreground mb-1">Transcrição Anonimizada</h3>
-                <p className="text-sm whitespace-pre-wrap p-3 rounded bg-muted text-foreground">{formatTranscricao(selected.transcricao_anonimizada)}</p>
+                <h3 className="text-sm font-semibold text-foreground mb-2">Transcrição Anonimizada</h3>
+                <TranscriptionBubbles
+                  transcricao={selected.transcricao_anonimizada}
+                  outputJson={selected.output_json_anonimizado}
+                  xingamentos={selected.xingamentos}
+                  onSaveLineCuration={async (data) => {
+                    if (!selected.analise_id || !sessionToken) return;
+                    try {
+                      await callAdmin(sessionToken, "saveAvaliacao", {
+                        analise_id: selected.analise_id,
+                        campo: `line_${data.line_index}`,
+                        status: data.status,
+                        valor_corrigido: null,
+                        nota: data.nota,
+                      });
+                      toast.success("Avaliação da linha salva");
+                      refetchAvaliacoes();
+                    } catch (e: any) {
+                      toast.error(e.message);
+                    }
+                  }}
+                />
               </div>
               <div>
                 <h3 className="text-sm font-semibold text-foreground mb-1">Resumo Anonimizado</h3>
