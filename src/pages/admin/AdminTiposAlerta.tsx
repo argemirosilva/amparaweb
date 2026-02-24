@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Tags, Plus, Pencil, Trash2, Save, X, GripVertical } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import { Badge } from "@/components/ui/badge";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
@@ -152,20 +151,16 @@ export default function AdminTiposAlerta() {
 
   return (
     <div>
-      <AdminPageHeader
-        icon={Tags}
-        breadcrumb="Admin › Tipos de Alerta"
-        title="Tipos de Alerta"
-        description="Gerencie os tipos usados nos prompts de IA, curadoria e análises"
-        actions={
-          <button
-            onClick={() => setCreating(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium ampara-gradient-bg text-primary-foreground"
-          >
-            <Plus className="w-4 h-4" /> Novo Tipo
-          </button>
-        }
-      />
+      {/* Actions */}
+      <div className="flex items-center justify-between mb-3">
+        <div />
+        <button
+          onClick={() => setCreating(true)}
+          className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium ampara-gradient-bg text-primary-foreground"
+        >
+          <Plus className="w-3.5 h-3.5" /> Novo Tipo
+        </button>
+      </div>
 
       {/* Filter */}
       <div className="flex items-center gap-2 mb-4 flex-wrap">

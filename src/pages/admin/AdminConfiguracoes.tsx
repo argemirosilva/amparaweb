@@ -3,6 +3,7 @@ import { Settings, Save, RotateCcw, Plus, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
+import AdminTiposAlerta from "./AdminTiposAlerta";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -224,6 +225,15 @@ export default function AdminConfiguracoes() {
           ))}
         </div>
       )}
+
+      {/* Tipos de Alerta */}
+      <div className="mt-8">
+        <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+          Tipos de Alerta
+          <span className="text-xs font-normal text-muted-foreground">— Taxonomia usada nos prompts de IA, curadoria e análises</span>
+        </h2>
+        <AdminTiposAlerta />
+      </div>
     </div>
   );
 }
