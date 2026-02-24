@@ -330,6 +330,12 @@ export default function AdminCopom({ embedded }: { embedded?: boolean }) {
 
           {/* Response / Preview */}
           <div className="rounded-lg border border-border bg-card shadow-sm p-5 space-y-4">
+            {lastResponse?.url_used && (
+              <div className="rounded-md border border-border bg-muted/50 p-3">
+                <p className="text-xs font-medium text-muted-foreground mb-1">URL chamada</p>
+                <p className="text-sm font-mono text-foreground break-all">{lastResponse.url_used}</p>
+              </div>
+            )}
             <h3 className="text-sm font-semibold text-foreground">Payload de Envio</h3>
             <pre className="text-xs bg-muted/50 rounded p-3 overflow-auto max-h-64 text-foreground">
               {JSON.stringify(
