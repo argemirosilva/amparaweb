@@ -93,6 +93,24 @@ serve(async (req) => {
       const stUser = stMap["sinergytech_usuario"] || "";
       const stPass = stMap["sinergytech_senha"] || "";
 
+      // Utility: format value for voice agent reading (in-memory only)
+      function formatToSpeak(value: string | undefined | null, mode: string): string {
+        if (!value) return "";
+        let clean = "";
+        switch (mode) {
+          case "placa":
+          case "codigo":
+            clean = value.replace(/[^a-zA-Z0-9]/g, "");
+            break;
+          case "telefone":
+            clean = value.replace(/\D/g, "");
+            break;
+          default:
+            clean = value;
+        }
+        return clean.split("").join(" ");
+      }
+
       // Build lstExtraFieldValue automatically from context
       const autoFields: Array<{ fieldName: string; value: string }> = [];
 
@@ -105,11 +123,10 @@ serve(async (req) => {
         add("VITIMA_TELEFONE", context.victim?.phone_masked);
 
         // Address — extract only street, number and neighborhood
-        // Expected format from reverse geocode: "Rua X, 123 - Bairro, Cidade - UF"
         const rawAddr = context.location?.address || "";
         const dashParts = rawAddr.split(" - ");
-        const logradouroNumero = dashParts[0]?.trim() || ""; // "Rua X, 123"
-        const bairro = dashParts[1]?.trim() || "";            // "Bairro" (before city)
+        const logradouroNumero = dashParts[0]?.trim() || "";
+        const bairro = dashParts[1]?.trim() || "";
         const endereco = bairro ? `${logradouroNumero} - ${bairro}` : logradouroNumero;
         add("ENDERECO_ULTIMA_LOCALIZACAO", endereco || undefined);
         add("STATUS_MOVIMENTO", context.location?.movement_status);
@@ -133,7 +150,6 @@ serve(async (req) => {
           : "não");
 
         // Vehicle
-        // Vehicle - formato: "Paraty de cor preta, placa adb 4j55"
         const v = context.aggressor?.vehicle;
         let veiculoStr = "";
         if (v?.model && v?.color) {
@@ -149,6 +165,16 @@ serve(async (req) => {
             : `placa ${v.plate_partial}`;
         }
         add("VEICULO", (veiculoStr || "não informado").replace(/,/g, ""));
+
+        // _speak versions (in-memory only, for voice agent reading)
+        const phoneSpeak = formatToSpeak(context.victim?.phone_masked, "telefone");
+        if (phoneSpeak) add("VITIMA_TELEFONE_SPEAK", phoneSpeak);
+
+        const plateSpeak = formatToSpeak(v?.plate_partial, "placa");
+        if (plateSpeak) add("PLACA_VEICULO_SPEAK", plateSpeak);
+
+        const codeSpeak = formatToSpeak(code, "codigo");
+        if (codeSpeak) add("LINK_CODIGO_TEMPORARIO_SPEAK", codeSpeak);
       }
 
       // Merge: auto fields first, then any manual extraFields (manual overrides auto)
