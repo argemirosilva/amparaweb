@@ -88,9 +88,9 @@ export default function AdminCopom({ embedded, apiBaseUrl = "" }: { embedded?: b
     victim: { name: "Maria Silva", phone_masked: "(14) 99740-6686" },
     aggressor: {
       name: "João Souza",
-      tem_arma: false,
-      forca_seguranca: false,
-      forca_seguranca_tipo: "",
+      tem_arma: true,
+      forca_seguranca: true,
+      forca_seguranca_tipo: "Policial Militar",
       vehicle: { model: "Gol", color: "Prata", plate_partial: "FGH-3D45" },
     },
     victim_aggressor_relation: "ex-companheiro",
@@ -105,8 +105,8 @@ export default function AdminCopom({ embedded, apiBaseUrl = "" }: { embedded?: b
     { fieldName: "ENDERECO_ULTIMA_LOCALIZACAO", value: "Rua XV de Novembro, 250 - Centro" },
     { fieldName: "STATUS_MOVIMENTO", value: "parada" },
     { fieldName: "LINK_MONITORAMENTO", value: "4 8 2 7 3 1" },
-    { fieldName: "AGRESSOR_TEM_ARMA", value: "não" },
-    { fieldName: "AGRESSOR_FORCA_SEGURANCA", value: "não" },
+    { fieldName: "AGRESSOR_TEM_ARMA", value: "sim" },
+    { fieldName: "AGRESSOR_FORCA_SEGURANCA", value: "Policial Militar" },
     { fieldName: "VEICULO", value: "Gol, cor Prata, placa FGH-3D45" },
   ]);
   const [showExtras, setShowExtras] = useState(true);
