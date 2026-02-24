@@ -724,7 +724,7 @@ export default function PerfilPage() {
 
 
                       <div>
-                        <label className="block text-xs font-medium text-foreground mb-1.5">É de alguma força de segurança?</label>
+                        <label className="block text-xs font-medium text-foreground mb-1.5">Integrante de alguma força de segurança?</label>
                         <Select
                           value={agressorForm.forca_seguranca ? (agressorForm.forca_seguranca_tipo || "") : "Não"}
                           onValueChange={(val) => {
@@ -746,7 +746,7 @@ export default function PerfilPage() {
                         </Select>
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-foreground mb-1.5">Tem arma em casa?</label>
+                        <label className="block text-xs font-medium text-foreground mb-1.5">Tem arma de fogo?</label>
                         <Select
                           value={agressorForm.tem_arma_em_casa ? "Sim" : "Não"}
                           onValueChange={(val) => setAgressorForm({ ...agressorForm, tem_arma_em_casa: val === "Sim" })}
