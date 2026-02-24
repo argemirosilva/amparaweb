@@ -83,7 +83,7 @@ serve(async (req) => {
       const { data: urlSetting } = await supabase
         .from("admin_settings")
         .select("valor")
-        .eq("chave", "agreggar_api_url")
+        .eq("chave", "sinergytech_api_url")
         .maybeSingle();
 
       const baseUrl = urlSetting?.valor || "https://api.aggregar.com.br";
