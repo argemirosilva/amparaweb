@@ -85,13 +85,13 @@ export default function AdminCopom({ embedded }: { embedded?: boolean }) {
   const [ddd, setDdd] = useState("14");
   const [phone, setPhone] = useState("996005332");
   const [context, setContext] = useState<Record<string, any>>({
-    victim: { name: "Maria Silva", phone_masked: "(14) 9****-5332" },
+    victim: { name: "Maria Silva", phone_masked: "(14) 99600-5332" },
     aggressor: {
       name: "João Souza",
       tem_arma: false,
       forca_seguranca: false,
       forca_seguranca_tipo: "",
-      vehicle: { model: "Gol", color: "Prata", plate_partial: "FGH-3*45" },
+      vehicle: { model: "Gol", color: "Prata", plate_partial: "FGH-3D45" },
     },
     victim_aggressor_relation: "ex-companheiro",
     location: { address: "Rua XV de Novembro, 250 - Centro", movement_status: "parada" },
@@ -107,7 +107,7 @@ export default function AdminCopom({ embedded }: { embedded?: boolean }) {
     { fieldName: "LINK_MONITORAMENTO", value: "amparamulher.com.br/abc123" },
     { fieldName: "AGRESSOR_TEM_ARMA", value: "não" },
     { fieldName: "AGRESSOR_FORCA_SEGURANCA", value: "não" },
-    { fieldName: "VEICULO", value: "Gol, cor Prata, placa FGH-3*45" },
+    { fieldName: "VEICULO", value: "Gol, cor Prata, placa FGH-3D45" },
   ]);
   const [showExtras, setShowExtras] = useState(true);
   const [sending, setSending] = useState(false);
