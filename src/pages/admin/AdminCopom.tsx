@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Phone, Send, History, Plus, X, Loader2 } from "lucide-react";
+import { Phone, Send, History, Plus, X, Loader2, ChevronDown, ChevronRight } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
@@ -31,6 +31,50 @@ interface HistoryItem {
   sucesso: boolean | null;
 }
 
+// Context fields matching ElevenLabs dynamic variables
+interface ContextFieldDef {
+  key: string;
+  label: string;
+  placeholder?: string;
+  type?: "toggle";
+}
+
+const CONTEXT_FIELDS: Array<{ section: string; fields: ContextFieldDef[] }> = [
+  { section: "Vítima", fields: [
+    { key: "victim.name", label: "Nome da vítima", placeholder: "Maria Silva" },
+    { key: "victim.phone_masked", label: "Telefone (mascarado)", placeholder: "(14) 9****-5332" },
+  ]},
+  { section: "Agressor", fields: [
+    { key: "aggressor.name", label: "Nome do agressor", placeholder: "João Souza" },
+    { key: "victim_aggressor_relation", label: "Relação com a vítima", placeholder: "ex-companheiro" },
+    { key: "aggressor.tem_arma", label: "Possui arma?", type: "toggle" },
+    { key: "aggressor.forca_seguranca", label: "Força de segurança?", type: "toggle" },
+    { key: "aggressor.forca_seguranca_tipo", label: "Tipo força segurança", placeholder: "PM" },
+    { key: "aggressor.vehicle.model", label: "Veículo — modelo", placeholder: "Gol Branco" },
+    { key: "aggressor.vehicle.color", label: "Veículo — cor", placeholder: "Branco" },
+    { key: "aggressor.vehicle.plate_partial", label: "Veículo — placa parcial", placeholder: "ABC-1*34" },
+  ]},
+  { section: "Localização", fields: [
+    { key: "location.address", label: "Endereço (última localização)", placeholder: "Rua XV de Novembro, 123, Bauru-SP" },
+    { key: "location.movement_status", label: "Status de movimento", placeholder: "parada" },
+    { key: "monitoring_link", label: "Link de monitoramento", placeholder: "https://amparamulher.com.br/abc123" },
+  ]},
+];
+
+function setNestedValue(obj: any, path: string, value: any) {
+  const parts = path.split(".");
+  let current = obj;
+  for (let i = 0; i < parts.length - 1; i++) {
+    if (!current[parts[i]]) current[parts[i]] = {};
+    current = current[parts[i]];
+  }
+  current[parts[parts.length - 1]] = value;
+}
+
+function getNestedValue(obj: any, path: string): any {
+  return path.split(".").reduce((acc, part) => acc?.[part], obj);
+}
+
 export default function AdminCopom() {
   const { sessionToken } = useAuth();
   const [tab, setTab] = useState<"dial" | "history">("dial");
@@ -40,9 +84,9 @@ export default function AdminCopom() {
   const [contactName, setContactName] = useState("");
   const [ddd, setDdd] = useState("");
   const [phone, setPhone] = useState("");
-  const [extraFields, setExtraFields] = useState<ExtraField[]>([
-    { fieldName: "NOME_AGRESSOR", value: "" },
-  ]);
+  const [context, setContext] = useState<Record<string, any>>({});
+  const [extraFields, setExtraFields] = useState<ExtraField[]>([]);
+  const [showExtras, setShowExtras] = useState(false);
   const [sending, setSending] = useState(false);
   const [lastResponse, setLastResponse] = useState<any>(null);
 
@@ -50,14 +94,20 @@ export default function AdminCopom() {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
 
+  function updateContext(path: string, value: any) {
+    setContext((prev) => {
+      const next = JSON.parse(JSON.stringify(prev));
+      setNestedValue(next, path, value);
+      return next;
+    });
+  }
+
   function addExtraField() {
     setExtraFields((prev) => [...prev, { fieldName: "", value: "" }]);
   }
-
   function removeExtraField(idx: number) {
     setExtraFields((prev) => prev.filter((_, i) => i !== idx));
   }
-
   function updateExtraField(idx: number, key: keyof ExtraField, val: string) {
     setExtraFields((prev) => prev.map((f, i) => (i === idx ? { ...f, [key]: val } : f)));
   }
@@ -78,17 +128,15 @@ export default function AdminCopom() {
       contactName,
       ddd,
       phone,
+      context: Object.keys(context).length > 0 ? context : undefined,
       extraFields: extraFields.filter((f) => f.fieldName && f.value),
     });
 
     setSending(false);
     setLastResponse(data);
 
-    if (ok) {
-      toast.success("SpeedDial disparado com sucesso");
-    } else {
-      toast.error(data.error || "Erro ao disparar speedDial");
-    }
+    if (ok) toast.success("SpeedDial disparado com sucesso");
+    else toast.error(data.error || "Erro ao disparar speedDial");
   }
 
   async function loadHistory() {
@@ -144,100 +192,104 @@ export default function AdminCopom() {
           {/* Form */}
           <form
             onSubmit={handleSubmit}
-            className="rounded-lg border border-border bg-card shadow-sm p-5 space-y-4"
+            className="rounded-lg border border-border bg-card shadow-sm p-5 space-y-5"
           >
-            <h3 className="text-sm font-semibold text-foreground">Dados da Chamada</h3>
-
+            {/* Basic fields */}
             <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">
-                Campaign ID *
-              </label>
-              <input
-                className={inputClass}
-                value={campaignId}
-                onChange={(e) => setCampaignId(e.target.value)}
-                placeholder="1506"
-              />
-            </div>
-
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">
-                Nome do Contato *
-              </label>
-              <input
-                className={inputClass}
-                value={contactName}
-                onChange={(e) => setContactName(e.target.value)}
-                placeholder="Nome da vítima"
-              />
-            </div>
-
-            <div className="grid grid-cols-3 gap-3">
-              <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">
-                  DDD *
-                </label>
-                <input
-                  className={inputClass}
-                  value={ddd}
-                  onChange={(e) => setDdd(e.target.value.replace(/\D/g, "").slice(0, 2))}
-                  placeholder="14"
-                  maxLength={2}
-                />
-              </div>
-              <div className="col-span-2">
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">
-                  Telefone *
-                </label>
-                <input
-                  className={inputClass}
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 9))}
-                  placeholder="996005332"
-                  maxLength={9}
-                />
-              </div>
-            </div>
-
-            {/* Extra fields */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-xs font-medium text-muted-foreground">
-                  Campos Extras (lstExtraFieldValue)
-                </label>
-                <button
-                  type="button"
-                  onClick={addExtraField}
-                  className="flex items-center gap-1 text-xs text-primary hover:underline"
-                >
-                  <Plus className="w-3 h-3" /> Adicionar
-                </button>
-              </div>
-              <div className="space-y-2">
-                {extraFields.map((f, i) => (
-                  <div key={i} className="flex gap-2 items-center">
-                    <input
-                      className={inputClass}
-                      value={f.fieldName}
-                      onChange={(e) => updateExtraField(i, "fieldName", e.target.value)}
-                      placeholder="fieldName"
-                    />
-                    <input
-                      className={inputClass}
-                      value={f.value}
-                      onChange={(e) => updateExtraField(i, "value", e.target.value)}
-                      placeholder="value"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeExtraField(i)}
-                      className="p-1.5 rounded hover:bg-destructive/10 text-destructive shrink-0"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
+              <h3 className="text-sm font-semibold text-foreground mb-3">Dados da Chamada</h3>
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">Campaign ID *</label>
+                  <input className={inputClass} value={campaignId} onChange={(e) => setCampaignId(e.target.value)} placeholder="1506" />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">Nome do Contato *</label>
+                  <input className={inputClass} value={contactName} onChange={(e) => setContactName(e.target.value)} placeholder="Nome da vítima" />
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground mb-1 block">DDD *</label>
+                    <input className={inputClass} value={ddd} onChange={(e) => setDdd(e.target.value.replace(/\D/g, "").slice(0, 2))} placeholder="14" maxLength={2} />
                   </div>
-                ))}
+                  <div className="col-span-2">
+                    <label className="text-xs font-medium text-muted-foreground mb-1 block">Telefone *</label>
+                    <input className={inputClass} value={phone} onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 9))} placeholder="996005332" maxLength={9} />
+                  </div>
+                </div>
               </div>
+            </div>
+
+            {/* Context fields — auto-mapped to ElevenLabs vars */}
+            <div>
+              <h3 className="text-sm font-semibold text-foreground mb-1">Contexto da Ocorrência</h3>
+              <p className="text-xs text-muted-foreground mb-3">
+                Preenchidos automaticamente como lstExtraFieldValue (mesmas variáveis do ElevenLabs)
+              </p>
+
+              {CONTEXT_FIELDS.map((section) => (
+                <div key={section.section} className="mb-4">
+                  <p className="text-xs font-semibold text-primary mb-2">{section.section}</p>
+                  <div className="space-y-2">
+                    {section.fields.map((field) => {
+                      if (field.type === "toggle") {
+                        const val = !!getNestedValue(context, field.key);
+                        return (
+                          <div key={field.key} className="flex items-center gap-3">
+                            <button
+                              type="button"
+                              onClick={() => updateContext(field.key, !val)}
+                              className="relative w-10 h-5 rounded-full transition-colors shrink-0"
+                              style={{ background: val ? "hsl(var(--primary))" : "hsl(var(--muted-foreground) / 0.3)" }}
+                            >
+                              <span className="absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform" style={{ left: val ? 22 : 2 }} />
+                            </button>
+                            <span className="text-xs text-foreground">{field.label}</span>
+                          </div>
+                        );
+                      }
+                      return (
+                        <div key={field.key}>
+                          <label className="text-xs text-muted-foreground mb-0.5 block">{field.label}</label>
+                          <input
+                            className={inputClass}
+                            value={getNestedValue(context, field.key) || ""}
+                            onChange={(e) => updateContext(field.key, e.target.value)}
+                            placeholder={field.placeholder}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Manual extra fields (override) */}
+            <div>
+              <button
+                type="button"
+                onClick={() => setShowExtras(!showExtras)}
+                className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+              >
+                {showExtras ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+                Campos extras manuais (override)
+              </button>
+              {showExtras && (
+                <div className="mt-2 space-y-2">
+                  {extraFields.map((f, i) => (
+                    <div key={i} className="flex gap-2 items-center">
+                      <input className={inputClass} value={f.fieldName} onChange={(e) => updateExtraField(i, "fieldName", e.target.value)} placeholder="fieldName" />
+                      <input className={inputClass} value={f.value} onChange={(e) => updateExtraField(i, "value", e.target.value)} placeholder="value" />
+                      <button type="button" onClick={() => removeExtraField(i)} className="p-1.5 rounded hover:bg-destructive/10 text-destructive shrink-0">
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                  <button type="button" onClick={addExtraField} className="flex items-center gap-1 text-xs text-primary hover:underline">
+                    <Plus className="w-3 h-3" /> Adicionar campo
+                  </button>
+                </div>
+              )}
             </div>
 
             <button
@@ -245,11 +297,7 @@ export default function AdminCopom() {
               disabled={sending}
               className="w-full flex items-center justify-center gap-2 py-2.5 rounded-md text-sm font-semibold ampara-gradient-bg text-primary-foreground disabled:opacity-60"
             >
-              {sending ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Phone className="w-4 h-4" />
-              )}
+              {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Phone className="w-4 h-4" />}
               {sending ? "Enviando..." : "Disparar SpeedDial"}
             </button>
           </form>
@@ -257,14 +305,15 @@ export default function AdminCopom() {
           {/* Response / Preview */}
           <div className="rounded-lg border border-border bg-card shadow-sm p-5 space-y-4">
             <h3 className="text-sm font-semibold text-foreground">Payload de Envio</h3>
-            <pre className="text-xs bg-muted/50 rounded p-3 overflow-auto max-h-48 text-foreground">
+            <pre className="text-xs bg-muted/50 rounded p-3 overflow-auto max-h-64 text-foreground">
               {JSON.stringify(
                 {
                   campaignId: Number(campaignId),
                   contactName,
                   ddd,
                   phone,
-                  lstExtraFieldValue: extraFields.filter((f) => f.fieldName && f.value),
+                  context: Object.keys(context).length > 0 ? context : undefined,
+                  extraFields: extraFields.filter((f) => f.fieldName && f.value),
                 },
                 null,
                 2
@@ -298,21 +347,11 @@ export default function AdminCopom() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border bg-muted/50">
-                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground">
-                      Data/Hora
-                    </th>
-                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground">
-                      Contato
-                    </th>
-                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground">
-                      Telefone
-                    </th>
-                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground">
-                      Campaign
-                    </th>
-                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground">
-                      Status
-                    </th>
+                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground">Data/Hora</th>
+                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground">Contato</th>
+                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground">Telefone</th>
+                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground">Campaign</th>
+                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground">Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -321,17 +360,10 @@ export default function AdminCopom() {
                     return (
                       <tr key={h.id} className="hover:bg-muted/30 transition-colors">
                         <td className="px-4 py-3 text-foreground whitespace-nowrap">
-                          {new Date(h.created_at).toLocaleString("pt-BR", {
-                            day: "2-digit",
-                            month: "2-digit",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
+                          {new Date(h.created_at).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
                         </td>
                         <td className="px-4 py-3 text-foreground">{p.contactName || "—"}</td>
-                        <td className="px-4 py-3 text-foreground font-mono">
-                          ({p.ddd}) {p.phone}
-                        </td>
+                        <td className="px-4 py-3 text-foreground font-mono">({p.ddd}) {p.phone}</td>
                         <td className="px-4 py-3 text-foreground">{p.campaignId}</td>
                         <td className="px-4 py-3">
                           <Badge variant={h.sucesso ? "default" : "destructive"}>

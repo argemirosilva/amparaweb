@@ -73,7 +73,7 @@ serve(async (req) => {
 
     // ── speedDial ──
     if (action === "speedDial") {
-      const { campaignId, contactName, ddd, phone, extraFields } = params;
+      const { campaignId, contactName, ddd, phone, extraFields, context } = params;
 
       if (!campaignId || !contactName || !ddd || !phone) {
         return json({ error: "Campos obrigatórios: campaignId, contactName, ddd, phone" }, 400);
@@ -88,12 +88,64 @@ serve(async (req) => {
 
       const baseUrl = urlSetting?.valor || "https://api.aggregar.com.br";
 
+      // Build lstExtraFieldValue automatically from context (same vars as ElevenLabs)
+      const autoFields: Array<{ fieldName: string; value: string }> = [];
+
+      if (context) {
+        const add = (fieldName: string, value: string | undefined | null) => {
+          if (value) autoFields.push({ fieldName, value });
+        };
+
+        add("VITIMA_NOME", context.victim?.name);
+        add("VITIMA_TELEFONE", context.victim?.phone_masked);
+
+        // Address
+        const rawAddr = context.location?.address || "";
+        const addrParts = rawAddr.split(",").map((s: string) => s.trim());
+        add("ENDERECO_ULTIMA_LOCALIZACAO", addrParts.slice(0, 2).join(", "));
+        add("STATUS_MOVIMENTO", context.location?.movement_status);
+
+        // Aggressor
+        add("AGRESSOR_NOME", context.aggressor?.name || context.aggressor?.name_masked);
+        add("RELACAO", context.victim_aggressor_relation);
+
+        // Monitoring link — force production domain
+        const rawLink = context.monitoring_link || "";
+        const pathMatch = rawLink.match(/\/([a-z0-9]{4,10})$/i);
+        const code = pathMatch ? pathMatch[1] : rawLink;
+        add("LINK_MONITORAMENTO", code ? `amparamulher.com.br/${code}` : undefined);
+
+        // Security
+        add("AGRESSOR_TEM_ARMA", context.aggressor?.tem_arma ? "sim" : "não");
+
+        const rawForca = context.aggressor?.forca_seguranca_tipo || "sim, tipo não especificado";
+        add("AGRESSOR_FORCA_SEGURANCA", context.aggressor?.forca_seguranca
+          ? rawForca.replace(/\s*\(.*?\)/g, "").trim()
+          : "não");
+
+        // Vehicle
+        const v = context.aggressor?.vehicle;
+        const vParts: string[] = [];
+        if (v?.model) vParts.push(v.model);
+        if (v?.color) vParts.push(`cor ${v.color}`);
+        if (v?.plate_partial) vParts.push(`placa ${v.plate_partial}`);
+        add("VEICULO", vParts.length > 0 ? vParts.join(", ") : "não informado");
+      }
+
+      // Merge: auto fields first, then any manual extraFields (manual overrides auto)
+      const manualFields = Array.isArray(extraFields) ? extraFields : [];
+      const manualNames = new Set(manualFields.map((f: any) => f.fieldName));
+      const mergedFields = [
+        ...autoFields.filter((f) => !manualNames.has(f.fieldName)),
+        ...manualFields,
+      ];
+
       const payload = {
         campaignId: Number(campaignId),
         contactName,
         ddd: String(ddd),
         phone: String(phone),
-        lstExtraFieldValue: Array.isArray(extraFields) ? extraFields : [],
+        lstExtraFieldValue: mergedFields,
       };
 
       console.log("SpeedDial payload:", JSON.stringify(payload));
