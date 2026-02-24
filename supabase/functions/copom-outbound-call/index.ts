@@ -113,6 +113,24 @@ serve(async (req) => {
       return json({ error: "Nenhum telefone válido configurado" }, 400);
     }
 
+    // ── Utility: format value for voice agent reading ──
+    function formatToSpeak(value: string | undefined | null, mode: string): string {
+      if (!value) return "";
+      let clean = "";
+      switch (mode) {
+        case "placa":
+        case "codigo":
+          clean = value.replace(/[^a-zA-Z0-9]/g, "");
+          break;
+        case "telefone":
+          clean = value.replace(/\D/g, "");
+          break;
+        default:
+          clean = value;
+      }
+      return clean.split("").join(" ");
+    }
+
     // ── Build context extra fields ──
     const autoFields: Array<{ fieldName: string; value: string }> = [];
     if (context) {
@@ -146,6 +164,16 @@ serve(async (req) => {
       else if (v?.color) veiculoStr = `cor ${v.color}`;
       if (v?.plate_partial) veiculoStr = veiculoStr ? `${veiculoStr} placa ${v.plate_partial}` : `placa ${v.plate_partial}`;
       add("VEICULO", (veiculoStr || "não informado").replace(/,/g, ""));
+
+      // ── _speak versions (in-memory only, for voice agent reading) ──
+      const phoneSpeak = formatToSpeak(context.victim?.phone_masked, "telefone");
+      if (phoneSpeak) add("VITIMA_TELEFONE_SPEAK", phoneSpeak);
+
+      const plateSpeak = formatToSpeak(v?.plate_partial, "placa");
+      if (plateSpeak) add("PLACA_VEICULO_SPEAK", plateSpeak);
+
+      const codeSpeak = formatToSpeak(code, "codigo");
+      if (codeSpeak) add("LINK_CODIGO_TEMPORARIO_SPEAK", codeSpeak);
     }
 
     // ── Authenticate with SinergyTech ──
