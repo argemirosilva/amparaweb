@@ -83,9 +83,9 @@ export default function AdminCopom({ embedded }: { embedded?: boolean }) {
   const [campaignId, setCampaignId] = useState("1506");
   const [contactName, setContactName] = useState("Maria Silva");
   const [ddd, setDdd] = useState("14");
-  const [phone, setPhone] = useState("996005332");
+  const [phone, setPhone] = useState("997406686");
   const [context, setContext] = useState<Record<string, any>>({
-    victim: { name: "Maria Silva", phone_masked: "(14) 99600-5332" },
+    victim: { name: "Maria Silva", phone_masked: "(14) 99740-6686" },
     aggressor: {
       name: "João Souza",
       tem_arma: false,
@@ -99,7 +99,7 @@ export default function AdminCopom({ embedded }: { embedded?: boolean }) {
   });
   const [extraFields, setExtraFields] = useState<ExtraField[]>([
     { fieldName: "VITIMA_NOME", value: "Maria Silva" },
-    { fieldName: "VITIMA_TELEFONE", value: "(14) 99600-5332" },
+    { fieldName: "VITIMA_TELEFONE", value: "(14) 99740-6686" },
     { fieldName: "AGRESSOR_NOME", value: "João Souza" },
     { fieldName: "RELACAO", value: "ex-companheiro" },
     { fieldName: "ENDERECO_ULTIMA_LOCALIZACAO", value: "Rua XV de Novembro, 250 - Centro" },
