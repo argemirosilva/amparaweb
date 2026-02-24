@@ -39,7 +39,6 @@ import AdminOrgaos from "./pages/admin/AdminOrgaos";
 import AdminConfiguracoes from "./pages/admin/AdminConfiguracoes";
 import AdminIntegracoes from "./pages/admin/AdminIntegracoes";
 import AdminCuradoria from "./pages/admin/AdminCuradoria";
-import AdminCopom from "./pages/admin/AdminCopom";
 
 import AdminLogin from "./pages/admin/AdminLogin";
 import ConfigurarConta from "./pages/ConfigurarConta";
@@ -104,7 +103,6 @@ const App = () => (
               <Route path="/admin/configuracoes" element={<AdminConfiguracoes />} />
               <Route path="/admin/integracoes" element={<AdminIntegracoes />} />
               <Route path="/admin/curadoria" element={<AdminCuradoria />} />
-              <Route path="/admin/copom" element={<AdminCopom />} />
               
               <Route path="/admin/doc-api" element={<DocApi />} />
               <Route path="/admin/gerador-audios-ampara" element={<AdminGeradorAudios />} />
