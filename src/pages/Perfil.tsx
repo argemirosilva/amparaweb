@@ -724,7 +724,7 @@ export default function PerfilPage() {
 
 
                       <div>
-                        <label className="block text-xs font-medium text-foreground mb-1.5">Força de segurança</label>
+                        <label className="block text-xs font-medium text-foreground mb-1.5">É de alguma força de segurança?</label>
                         <Select
                           value={agressorForm.forca_seguranca ? (agressorForm.forca_seguranca_tipo || "") : "Não"}
                           onValueChange={(val) => {
