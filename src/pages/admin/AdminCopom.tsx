@@ -75,7 +75,7 @@ function getNestedValue(obj: any, path: string): any {
   return path.split(".").reduce((acc, part) => acc?.[part], obj);
 }
 
-export default function AdminCopom() {
+export default function AdminCopom({ embedded }: { embedded?: boolean }) {
   const { sessionToken } = useAuth();
   const [tab, setTab] = useState<"dial" | "history">("dial");
 
@@ -156,12 +156,14 @@ export default function AdminCopom() {
 
   return (
     <div>
-      <AdminPageHeader
-        icon={Phone}
-        breadcrumb="Admin › COPOM Agreggar"
-        title="COPOM — Agreggar SpeedDial"
-        description="Dispare chamadas automatizadas via plataforma OCS Agreggar"
-      />
+      {!embedded && (
+        <AdminPageHeader
+          icon={Phone}
+          breadcrumb="Admin › COPOM Agreggar"
+          title="COPOM — Agreggar SpeedDial"
+          description="Dispare chamadas automatizadas via plataforma OCS Agreggar"
+        />
+      )}
 
       {/* Tabs */}
       <div className="flex gap-1 mb-5">

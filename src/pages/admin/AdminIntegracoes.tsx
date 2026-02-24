@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
-import { Save, RotateCcw, Plug, Mic, Brain, MessageCircle, Mail, PhoneOutgoing } from "lucide-react";
+import { Save, RotateCcw, Plug, Mic, Brain, MessageCircle, Mail, PhoneOutgoing, FlaskConical } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import AdminCopom from "./AdminCopom";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -303,6 +305,26 @@ export default function AdminIntegracoes() {
                     </div>
                   ))}
                 </div>
+
+                {/* SinergyTech test button */}
+                {cat.key === "integracao_sinergytech" && (
+                  <div className="px-4 py-3 border-t flex justify-end" style={{ borderColor: "hsl(220 13% 91%)", background: "hsl(210 17% 98%)" }}>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <button className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
+                          <FlaskConical className="w-4 h-4" />
+                          Testar Acionamento
+                        </button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                        <DialogHeader>
+                          <DialogTitle>Testar Acionamento — SinergyTech SpeedDial</DialogTitle>
+                        </DialogHeader>
+                        <AdminCopom embedded />
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                )}
               </div>
             );
           })}
