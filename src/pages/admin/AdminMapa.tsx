@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMapbox } from "@/hooks/useMapbox";
 import { MapPin, AlertTriangle, Smartphone, Users, RefreshCw, BarChart3, Mic, Clock, ChevronDown } from "lucide-react";
@@ -13,6 +13,7 @@ import {
 } from "recharts";
 import { format, subDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useTiposAlerta } from "@/hooks/useTiposAlerta";
 
 /**
  * Paginated fetch: retrieves ALL rows from a Supabase query,
@@ -66,7 +67,7 @@ const BAR_COLORS = [
   "hsl(200 25% 50%)", "hsl(150 22% 45%)", "hsl(335 25% 47%)",
 ];
 
-const RISK_LABELS: Record<string, string> = {
+const RISK_LABELS_FALLBACK: Record<string, string> = {
   baixo: "Baixo", moderado: "Moderado", alto: "Alto", critico: "Crítico", sem_risco: "Sem risco",
 };
 
@@ -144,6 +145,14 @@ export default function AdminMapa() {
   const mapRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
   const { mapboxgl: mapboxglInstance, loading: mbLoading } = useMapbox();
+  const { data: tiposRisco } = useTiposAlerta(["risco"]);
+  const RISK_LABELS = useMemo(() => {
+    if (!tiposRisco?.length) return RISK_LABELS_FALLBACK;
+    const map: Record<string, string> = {};
+    tiposRisco.forEach(t => { map[t.codigo] = t.label; });
+    if (!map["sem_risco"]) map["sem_risco"] = "Sem risco";
+    return map;
+  }, [tiposRisco]);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [geojson, setGeojson] = useState<any>(null);
   const [stats, setStats] = useState<StatsMap>({});
