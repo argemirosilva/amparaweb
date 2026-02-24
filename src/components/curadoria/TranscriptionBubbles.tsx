@@ -35,6 +35,21 @@ interface Props {
 function cleanTranscription(raw: string): string[] {
   if (!raw) return [];
 
+  // Try parsing as JSON array of segments (e.g. [{text:"...", confidence:...}, ...])
+  const trimmed = raw.trim();
+  if (trimmed.startsWith("[")) {
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (Array.isArray(parsed)) {
+        return parsed
+          .map((seg: any) => (seg.text || "").trim())
+          .filter((t: string) => t.length > 2);
+      }
+    } catch {
+      // Not valid JSON, fall through to text cleaning
+    }
+  }
+
   const lines = raw.split(/\n+/);
   const cleaned: string[] = [];
 
