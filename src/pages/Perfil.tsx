@@ -86,10 +86,10 @@ interface VinculoData {
 
 const FORCAS_SEGURANCA = [
   "Não",
-  "Polícia Militar",
-  "Polícia Civil",
-  "Polícia Federal",
-  "Polícia Rodoviária Federal",
+  "Policial Militar",
+  "Policial Civil",
+  "Policial Federal",
+  "Policial Rodoviário Federal",
   "Guarda Municipal",
   "Corpo de Bombeiros",
   "Forças Armadas",
