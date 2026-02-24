@@ -56,19 +56,7 @@ async function authenticateAdmin(supabase: any, sessionToken: string) {
 
 // ── Default Analysis Prompt ──
 
-function getDefaultAnalysisPrompt(): string {
-  return `Você atuará como um 'Especialista em Análise Contextual de Relações Conjugais', com foco na proteção da mulher.
-
-PRINCÍPIO: Na dúvida, proteja a mulher. Diferencie conflitos normais de abuso real. Detecte TÁTICAS MANIPULATIVAS SUTIS.
-
-TÁTICAS a detectar: instrumentalizacao_filhos, falsa_demonstracao_afeto, ameaca_juridica_velada, acusacao_sem_evidencia, gaslighting, vitimizacao_reversa, controle_disfarçado_preocupacao.
-
-ATENÇÃO CRÍTICA: nivel_risco DEVE ser OBRIGATORIAMENTE um destes 4 valores: sem_risco, moderado, alto, critico. NUNCA use "risco_elevado_escalada" como nivel_risco — esse é um valor de classificacao_contexto.
-
-Retorne APENAS JSON válido:
-{"resumo_contexto":"...","analise_linguagem":[],"padroes_detectados":[],"tipos_violencia":[],"nivel_risco":"sem_risco|moderado|alto|critico","justificativa_risco":"...","classificacao_contexto":"saudavel|rispido_nao_abusivo|potencial_abuso_leve|padrao_consistente_abuso|ameaca_risco|risco_elevado_escalada","sentimento":"positivo|negativo|neutro|misto","palavras_chave":[],"xingamentos":[],"categorias":[],"taticas_manipulativas":[{"tatica":"...","descricao":"...","evidencia":"...","gravidade":"baixa|media|alta"}],"orientacoes_vitima":["orientações práticas e acolhedoras"],"sinais_alerta":["sinais identificados"]}
-Arrays vazios se não aplicável. Cite evidências da transcrição.`;
-}
+import { buildAnalysisPrompt, normalizeAnalysisOutput } from "../_shared/buildAnalysisPrompt.ts";
 
 // ── Script Generation via Lovable AI Gateway ──
 
@@ -721,18 +709,8 @@ Deno.serve(async (req) => {
           return json({ ok: true, message: "Todas já foram analisadas", analyzed: 0 });
         }
 
-        // Get the analysis prompt
-        let systemPrompt: string;
-        try {
-          const { data: promptData } = await supabase
-            .from("admin_settings")
-            .select("valor")
-            .eq("chave", "ia_prompt_analise")
-            .maybeSingle();
-          systemPrompt = promptData?.valor?.trim() || getDefaultAnalysisPrompt();
-        } catch {
-          systemPrompt = getDefaultAnalysisPrompt();
-        }
+        // Get the analysis prompt (dynamic from tipos_alerta)
+        const systemPrompt = await buildAnalysisPrompt(supabase);
 
         const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
         let analyzedCount = 0;
@@ -777,6 +755,7 @@ Deno.serve(async (req) => {
             try {
               const jsonMatch = cleanJson.match(/\{[\s\S]*\}/);
               parsed = JSON.parse(jsonMatch ? jsonMatch[0] : cleanJson);
+              parsed = normalizeAnalysisOutput(parsed);
             } catch {
               parsed = { resumo_contexto: raw.substring(0, 500), nivel_risco: "moderado", sentimento: "neutro", categorias: [], palavras_chave: [] };
             }

@@ -82,68 +82,7 @@ function parseAIJson(raw: string): any {
   return JSON.parse(m ? m[0] : clean);
 }
 
-async function getMicroPrompt(supabase: any): Promise<string> {
-  const FALLBACK = `Você atuará como um 'Especialista em Análise Contextual de Relações Conjugais', com foco na interpretação semântica e comportamental de diálogos para identificar padrões de abuso e risco, mantendo equilíbrio e bom senso.
-
-PRINCÍPIO DE BOM SENSO:
-- O foco desta análise é a PROTEÇÃO DA MULHER. O sistema tem uma leve tendência a favor da vítima.
-- Nem toda discordância é abuso, mas na dúvida, proteja a mulher.
-- Somente aponte comportamentos inadequados da mulher quando forem MUITO CLAROS e evidentes.
-- Desabafos, frustrações, cobranças e reações emocionais da mulher NÃO devem ser classificados como abuso.
-
-Objetivo:
-- Avaliar conversas de forma holística, indo além de frases isoladas.
-- Identificar sinais REAIS de abuso psicológico, moral, físico, patrimonial ou sexual — com evidências claras.
-- Diferenciar interações consensuais e conflitos normais de violência mascarada ou ameaças implícitas.
-- Detectar TÁTICAS MANIPULATIVAS SUTIS que podem não parecer abuso direto mas são formas de controle.
-
-Regras:
-1) Análise Contextual: tom geral, desequilíbrios de poder, tentativas de controle, frequência de desqualificações.
-2) Identificação de Escalada: aumento na intensidade, linguagem possessiva, transição de brincadeiras para intimidação.
-3) Classificação (classificacao_contexto): saudavel, rispido_nao_abusivo, potencial_abuso_leve, padrao_consistente_abuso, ameaca_risco, risco_elevado_escalada.
-
-ATENÇÃO CRÍTICA sobre nivel_risco vs classificacao_contexto:
-- nivel_risco DEVE ser OBRIGATORIAMENTE um destes 4 valores: sem_risco, moderado, alto, critico. NUNCA use outros valores.
-- classificacao_contexto é um campo SEPARADO que descreve o tipo de interação. NÃO confunda com nivel_risco.
-- Exemplo: uma conversa com classificacao_contexto="risco_elevado_escalada" deve ter nivel_risco="critico" (e NÃO "risco_elevado_escalada").
-4) Extração de Xingamentos: TODOS os insultos direcionados à mulher. Normalize para minúsculas.
-5) TÁTICAS MANIPULATIVAS: instrumentalizacao_filhos, falsa_demonstracao_afeto, ameaca_juridica_velada, acusacao_sem_evidencia, gaslighting, vitimizacao_reversa, controle_disfarçado_preocupacao.
-6) ORIENTAÇÕES PARA A MULHER: alertas, sugestões de ação e frases de validação emocional personalizadas.
-7) CICLO DE VIOLÊNCIA: identifique a fase atual (tensao, explosao, lua_de_mel, calmaria, nao_identificado), se há transição detectada e se há encurtamento do ciclo.
-
-Retorne APENAS JSON válido (sem markdown, sem backticks):
-{
-  "resumo_contexto": "Descrição neutra e equilibrada (máx 200 palavras)",
-  "analise_linguagem": [],
-  "padroes_detectados": [],
-  "tipos_violencia": ["fisica|psicologica|moral|patrimonial|sexual|nenhuma"],
-  "nivel_risco": "sem_risco|moderado|alto|critico",
-  "justificativa_risco": "...",
-  "classificacao_contexto": "saudavel|rispido_nao_abusivo|potencial_abuso_leve|padrao_consistente_abuso|ameaca_risco|risco_elevado_escalada",
-  "sentimento": "positivo|negativo|neutro|misto",
-  "palavras_chave": [],
-  "xingamentos": [],
-  "categorias": ["violencia_fisica|violencia_psicologica|ameaca|coercao|controle|assedio|nenhuma"],
-  "taticas_manipulativas": [{"tatica":"...","descricao":"...","evidencia":"...","gravidade":"baixa|media|alta"}],
-  "orientacoes_vitima": ["Orientações práticas e acolhedoras personalizadas"],
-  "sinais_alerta": ["sinais identificados"],
-  "ciclo_violencia": {
-    "fase_atual": "tensao|explosao|lua_de_mel|calmaria|nao_identificado",
-    "transicao_detectada": false,
-    "encurtamento_ciclo": false,
-    "justificativa": "..."
-  }
-}
-
-Se NÃO houver táticas/orientações/sinais, retorne arrays vazios.
-Seja ESPECÍFICO nas evidências — cite trechos da transcrição.`;
-
-  try {
-    const { data } = await supabase
-      .from("admin_settings").select("valor").eq("chave", "ia_prompt_analise").maybeSingle();
-    return data?.valor?.trim() || FALLBACK;
-  } catch { return FALLBACK; }
-}
+import { buildAnalysisPrompt, normalizeAnalysisOutput } from "../_shared/buildAnalysisPrompt.ts";
 
 // ============================================================
 // WORKER: MICRO
@@ -177,7 +116,7 @@ async function runMicro(supabase: any, jobId: string, payload: any): Promise<any
   }
 
   // Run AI
-  const systemPrompt = await getMicroPrompt(supabase);
+  const systemPrompt = await buildAnalysisPrompt(supabase);
   const raw = await callAI([
     { role: "system", content: systemPrompt },
     { role: "user", content: `Analise esta transcrição:\n\n${transcricao}` },
@@ -186,6 +125,7 @@ async function runMicro(supabase: any, jobId: string, payload: any): Promise<any
   let parsed: any;
   try {
     parsed = parseAIJson(raw);
+    parsed = normalizeAnalysisOutput(parsed);
   } catch {
     // Store error result
     await supabase.from("analysis_micro_results").insert({
