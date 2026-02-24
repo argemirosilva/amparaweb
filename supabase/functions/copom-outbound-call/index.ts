@@ -138,7 +138,7 @@ serve(async (req) => {
         if (value) autoFields.push({ fieldName, value });
       };
       add("VITIMA_NOME", context.victim?.name);
-      add("VITIMA_TELEFONE", formatToSpeak(context.victim?.phone_masked, "telefone") || context.victim?.phone_masked);
+      add("VITIMA_TELEFONE", context.victim?.phone_masked);
       const rawAddr = context.location?.address || "";
       const dashParts = rawAddr.split(" - ");
       const logradouroNumero = dashParts[0]?.trim() || "";
