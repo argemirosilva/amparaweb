@@ -31,7 +31,7 @@ interface HistoryItem {
   sucesso: boolean | null;
 }
 
-// Context fields matching ElevenLabs dynamic variables
+// Context fields matching SinergyTech SpeedDial extra fields
 interface ContextFieldDef {
   key: string;
   label: string;
@@ -247,11 +247,11 @@ export default function AdminCopom({ embedded, apiBaseUrl = "" }: { embedded?: b
               </div>
             </div>
 
-            {/* Context fields — auto-mapped to ElevenLabs vars */}
+            {/* Context fields — auto-mapped to SinergyTech lstExtraFieldValue */}
             <div>
               <h3 className="text-sm font-semibold text-foreground mb-1">Contexto da Ocorrência</h3>
               <p className="text-xs text-muted-foreground mb-3">
-                Preenchidos automaticamente como lstExtraFieldValue (mesmas variáveis do ElevenLabs)
+                Preenchidos automaticamente como lstExtraFieldValue no SpeedDial
               </p>
 
               {CONTEXT_FIELDS.map((section) => (

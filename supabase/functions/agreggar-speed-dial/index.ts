@@ -93,7 +93,7 @@ serve(async (req) => {
       const stUser = stMap["sinergytech_usuario"] || "";
       const stPass = stMap["sinergytech_senha"] || "";
 
-      // Build lstExtraFieldValue automatically from context (same vars as ElevenLabs)
+      // Build lstExtraFieldValue automatically from context
       const autoFields: Array<{ fieldName: string; value: string }> = [];
 
       if (context) {
