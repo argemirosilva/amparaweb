@@ -140,7 +140,7 @@ serve(async (req) => {
         const pathMatch = rawLink.match(/\/([a-z0-9]{4,10})$/i);
         const code = pathMatch ? pathMatch[1] : rawLink;
         const codeSpeak = formatToSpeak(code, "codigo");
-        add("LINK_MONITORAMENTO", code ? `amparamulher.com.br/${codeSpeak || code}` : undefined);
+        add("LINK_MONITORAMENTO", codeSpeak || code || undefined);
 
         // Security
         add("AGRESSOR_TEM_ARMA", context.aggressor?.tem_arma ? "sim" : "não");
