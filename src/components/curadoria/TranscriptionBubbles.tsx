@@ -59,7 +59,14 @@ function cleanTranscription(raw: string): string[] {
     cleaned.push(...(sentences.length > 0 ? sentences : [l]));
   }
 
-  return cleaned.filter(s => s.length > 2);
+  const result = cleaned.filter(s => s.length > 2);
+
+  // Fallback: if cleaning removed everything, return raw non-empty lines
+  if (result.length === 0 && raw.trim().length > 0) {
+    return raw.split(/\n+/).map(l => l.trim()).filter(l => l.length > 2);
+  }
+
+  return result;
 }
 
 function matchAlerts(
