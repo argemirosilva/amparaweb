@@ -194,22 +194,26 @@ export default function CuradoriaDetailDrawer({ selected, onClose, onToggleCupia
                   transcricao={selected.transcricao_anonimizada}
                   outputJson={selected.output_json_anonimizado}
                   xingamentos={selected.xingamentos}
-                  onSaveLineCuration={async (data) => {
-                    if (!selected.analise_id || !sessionToken) return;
-                    try {
-                      await callAdmin(sessionToken, "saveAvaliacao", {
-                        analise_id: selected.analise_id,
-                        campo: `line_${data.line_index}`,
-                        status: data.status,
-                        valor_corrigido: null,
-                        nota: data.nota,
-                      });
-                      toast.success("Avaliação da linha salva");
-                      refetchAvaliacoes();
-                    } catch (e: any) {
-                      toast.error(e.message);
-                    }
-                  }}
+                    onSaveLineCuration={async (data) => {
+                     if (!selected.analise_id || !sessionToken) return;
+                     try {
+                       await callAdmin(sessionToken, "saveAvaliacao", {
+                         analise_id: selected.analise_id,
+                         campo: `line_${data.line_index}_${data.alert_type || "manual"}`,
+                         status: data.status,
+                         valor_corrigido: data.corrected_type ? {
+                           alert_type: data.alert_type,
+                           alert_label: data.alert_label,
+                           corrected_type: data.corrected_type,
+                         } : null,
+                         nota: data.nota,
+                       });
+                       toast.success("Avaliação da linha salva");
+                       refetchAvaliacoes();
+                     } catch (e: any) {
+                       toast.error(e.message);
+                     }
+                   }}
                 />
               </div>
               <div>
