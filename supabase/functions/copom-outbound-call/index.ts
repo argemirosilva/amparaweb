@@ -138,7 +138,7 @@ serve(async (req) => {
         if (value) autoFields.push({ fieldName, value });
       };
       add("VITIMA_NOME", context.victim?.name);
-      add("VITIMA_TELEFONE", context.victim?.phone_masked);
+      add("VITIMA_TELEFONE", formatToSpeak(context.victim?.phone_masked, "telefone") || context.victim?.phone_masked);
       const rawAddr = context.location?.address || "";
       const dashParts = rawAddr.split(" - ");
       const logradouroNumero = dashParts[0]?.trim() || "";
@@ -151,7 +151,8 @@ serve(async (req) => {
       const rawLink = context.monitoring_link || "";
       const pathMatch = rawLink.match(/\/([a-z0-9]{4,10})$/i);
       const code = pathMatch ? pathMatch[1] : rawLink;
-      add("LINK_MONITORAMENTO", code ? `amparamulher.com.br/${code}` : undefined);
+      const codeSpeak = formatToSpeak(code, "codigo");
+      add("LINK_MONITORAMENTO", code ? `amparamulher.com.br/${codeSpeak || code}` : undefined);
       add("AGRESSOR_TEM_ARMA", context.aggressor?.tem_arma ? "sim" : "não");
       const rawForca = context.aggressor?.forca_seguranca_tipo || "sim, tipo não especificado";
       add("AGRESSOR_FORCA_SEGURANCA", context.aggressor?.forca_seguranca
@@ -162,18 +163,9 @@ serve(async (req) => {
       if (v?.model && v?.color) veiculoStr = `${v.model} de cor ${v.color}`;
       else if (v?.model) veiculoStr = v.model;
       else if (v?.color) veiculoStr = `cor ${v.color}`;
-      if (v?.plate_partial) veiculoStr = veiculoStr ? `${veiculoStr} placa ${v.plate_partial}` : `placa ${v.plate_partial}`;
-      add("VEICULO", (veiculoStr || "não informado").replace(/,/g, ""));
-
-      // ── _speak versions (in-memory only, for voice agent reading) ──
-      const phoneSpeak = formatToSpeak(context.victim?.phone_masked, "telefone");
-      if (phoneSpeak) add("VITIMA_TELEFONE_SPEAK", phoneSpeak);
-
       const plateSpeak = formatToSpeak(v?.plate_partial, "placa");
-      if (plateSpeak) add("PLACA_VEICULO_SPEAK", plateSpeak);
-
-      const codeSpeak = formatToSpeak(code, "codigo");
-      if (codeSpeak) add("LINK_CODIGO_TEMPORARIO_SPEAK", codeSpeak);
+      if (v?.plate_partial) veiculoStr = veiculoStr ? `${veiculoStr} placa ${plateSpeak || v.plate_partial}` : `placa ${plateSpeak || v.plate_partial}`;
+      add("VEICULO", (veiculoStr || "não informado").replace(/,/g, ""));
     }
 
     // ── Authenticate with SinergyTech ──
