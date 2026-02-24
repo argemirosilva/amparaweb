@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Save, RotateCcw, Plug, Mic, Brain, MessageCircle, Mail, PhoneOutgoing, FlaskConical } from "lucide-react";
+import { Save, RotateCcw, Plug, Mic, Brain, MessageCircle, Mail, PhoneOutgoing, FlaskConical, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
@@ -83,8 +83,8 @@ const FRIENDLY_LABELS: Record<string, string> = {
   sinergytech_api_url: "URL da API (OCS)",
   sinergytech_campaign_id: "Campaign ID padrão",
   sinergytech_extra_fields_map: "Campos extras automáticos",
-  sinergytech_usuario: "Usuário (login)",
   sinergytech_senha: "Senha",
+  sinergytech_usuario: "Usuário (login)",
   whatsapp_ativa: "Integração ativa",
   whatsapp_phone_id: "Phone Number ID (Meta)",
   whatsapp_template_alerta: "Template de alerta",
@@ -101,6 +101,7 @@ export default function AdminIntegracoes() {
   const [editedValues, setEditedValues] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
+  const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({});
 
   async function loadSettings() {
     if (!sessionToken) return;
@@ -197,16 +198,26 @@ export default function AdminIntegracoes() {
 
 
     const isPassword = s.chave === "smtp_pass" || s.chave === "sinergytech_senha";
+    const showPw = showPasswords[s.id] ?? false;
 
     return (
       <div className="flex items-center gap-2">
         <input
-          type={isPassword ? "password" : "text"}
+          type={isPassword && !showPw ? "password" : "text"}
           style={inputStyle}
           value={currentValue}
           onChange={(e) => handleChange(s.id, e.target.value)}
           autoComplete={isPassword ? "new-password" : "off"}
         />
+        {isPassword && (
+          <button
+            onClick={() => setShowPasswords((prev) => ({ ...prev, [s.id]: !prev[s.id] }))}
+            className="p-1.5 rounded hover:bg-muted shrink-0"
+            title={showPw ? "Ocultar" : "Mostrar"}
+          >
+            {showPw ? <EyeOff className="w-3.5 h-3.5 text-muted-foreground" /> : <Eye className="w-3.5 h-3.5 text-muted-foreground" />}
+          </button>
+        )}
         {isModified && (
           <div className="flex gap-1 shrink-0">
             <button onClick={() => resetField(s.id)} className="p-1.5 rounded hover:bg-gray-100" title="Desfazer">
