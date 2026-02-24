@@ -434,7 +434,7 @@ export default function DashboardMapCard() {
         </div>`;
 
         if (!popupRef.current) {
-          popupRef.current = new mapboxglInstance.Popup({ closeButton: false, closeOnClick: false, offset: 10, className: "dashboard-map-tooltip", maxWidth: "340px" });
+          popupRef.current = new mapboxglInstance.Popup({ closeButton: false, closeOnClick: false, offset: 10, className: "dashboard-map-tooltip", maxWidth: "600px" });
         }
         popupRef.current.setLngLat(e.lngLat).setHTML(html).addTo(map);
       });
