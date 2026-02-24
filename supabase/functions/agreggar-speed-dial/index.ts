@@ -79,14 +79,16 @@ serve(async (req) => {
         return json({ error: "Campos obrigatórios: campaignId, contactName, ddd, phone" }, 400);
       }
 
-      // Read API URL from admin_settings (fallback to default)
-      const { data: urlSetting } = await supabase
+      // Read SinergyTech settings
+      const { data: stSettings } = await supabase
         .from("admin_settings")
-        .select("valor")
-        .eq("chave", "sinergytech_api_url")
-        .maybeSingle();
+        .select("chave, valor")
+        .in("chave", ["sinergytech_api_url", "sinergytech_usuario", "sinergytech_senha"]);
 
-      const baseUrl = urlSetting?.valor || "https://api.aggregar.com.br";
+      const stMap = Object.fromEntries((stSettings || []).map((s: any) => [s.chave, s.valor]));
+      const baseUrl = stMap["sinergytech_api_url"] || "https://api.aggregar.com.br";
+      const stUser = stMap["sinergytech_usuario"] || "";
+      const stPass = stMap["sinergytech_senha"] || "";
 
       // Build lstExtraFieldValue automatically from context (same vars as ElevenLabs)
       const autoFields: Array<{ fieldName: string; value: string }> = [];
@@ -156,9 +158,16 @@ serve(async (req) => {
       console.log("SpeedDial URL:", fullUrl);
       console.log("SpeedDial payload:", JSON.stringify(payload));
 
+      // Build auth headers
+      const fetchHeaders: Record<string, string> = { "Content-Type": "application/json" };
+      if (stUser && stPass) {
+        const credentials = btoa(`${stUser}:${stPass}`);
+        fetchHeaders["Authorization"] = `Basic ${credentials}`;
+      }
+
       const response = await fetch(fullUrl, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: fetchHeaders,
         body: JSON.stringify(payload),
       });
 

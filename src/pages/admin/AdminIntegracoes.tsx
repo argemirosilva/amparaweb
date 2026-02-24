@@ -85,6 +85,8 @@ const FRIENDLY_LABELS: Record<string, string> = {
   sinergytech_api_token: "Token de autenticação",
   sinergytech_caller_id: "Caller ID (remetente)",
   sinergytech_extra_fields_map: "Campos extras automáticos",
+  sinergytech_usuario: "Usuário (login)",
+  sinergytech_senha: "Senha",
   whatsapp_ativa: "Integração ativa",
   whatsapp_phone_id: "Phone Number ID (Meta)",
   whatsapp_template_alerta: "Template de alerta",
@@ -196,7 +198,7 @@ export default function AdminIntegracoes() {
 
 
 
-    const isPassword = s.chave === "smtp_pass";
+    const isPassword = s.chave === "smtp_pass" || s.chave === "sinergytech_senha";
 
     return (
       <div className="flex items-center gap-2">
