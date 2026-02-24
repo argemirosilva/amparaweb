@@ -49,7 +49,7 @@ async function authenticateAdmin(supabase: any, sessionToken: string) {
     .eq("user_id", session.user_id);
 
   const isAdmin = (roles || []).some(
-    (r: any) => r.role === "admin_master" || r.role === "admin_tenant"
+    (r: any) => ["super_administrador", "administrador", "admin_master", "admin_tenant"].includes(r.role)
   );
   return isAdmin ? session.user_id : null;
 }
