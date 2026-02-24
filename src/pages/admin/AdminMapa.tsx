@@ -498,7 +498,7 @@ export default function AdminMapa() {
       (auditData || []).filter(a => a.action_type === "login" && a.success).forEach(a => { const h = new Date(a.created_at).getHours(); hourBuckets[h].logins++; });
       setHourlyData(Object.entries(hourBuckets).map(([h, v]) => ({ hora: `${h.padStart(2, "0")}h`, ...v })));
 
-      // Top 10 cities by events
+      // Top 5 cities by events
       const userCityMap: Record<string, string> = {};
       (usersData || []).forEach((u: any) => {
         if (u.endereco_cidade && u.endereco_uf) userCityMap[u.id] = `${u.endereco_cidade} - ${u.endereco_uf}`;
@@ -520,10 +520,10 @@ export default function AdminMapa() {
         Object.entries(cityCounts)
           .map(([nome, v]) => ({ nome, ...v }))
           .sort((a, b) => (b.eventos + b.emergencias) - (a.eventos + a.emergencias))
-          .slice(0, 10)
+          .slice(0, 5)
       );
 
-      // Top 10 cities by emergencies
+      // Top 5 cities by emergencies
       const cityEmergCounts: Record<string, number> = {};
       (panicData || []).forEach((p: any) => {
         const city = userCityMap[p.user_id];
@@ -534,10 +534,10 @@ export default function AdminMapa() {
         Object.entries(cityEmergCounts)
           .map(([nome, total]) => ({ nome, total }))
           .sort((a, b) => b.total - a.total)
-          .slice(0, 10)
+          .slice(0, 5)
       );
 
-      // Top 10 cities by critical risk
+      // Top 5 cities by critical risk
       const cityCritCounts: Record<string, number> = {};
       (riskData || []).forEach((r: any) => {
         if (r.nivel_risco !== "critico") return;
@@ -549,7 +549,7 @@ export default function AdminMapa() {
         Object.entries(cityCritCounts)
           .map(([nome, total]) => ({ nome, total }))
           .sort((a, b) => b.total - a.total)
-          .slice(0, 10)
+          .slice(0, 5)
       );
     }
 
@@ -1105,11 +1105,11 @@ export default function AdminMapa() {
           </div>
         </div>
 
-        {/* Top 10 Cities — Tabbed */}
+        {/* Top 5 Cities — Tabbed */}
         <div className="rounded-md border overflow-hidden mb-6" style={cardStyle}>
           <Tabs defaultValue="eventos" className="w-full">
             <div className="px-4 py-3 border-b flex items-center justify-between gap-4" style={{ borderColor: "hsl(220 13% 91%)" }}>
-              <h2 className="text-sm font-semibold whitespace-nowrap" style={titleStyle}>Top 10 Cidades</h2>
+              <h2 className="text-sm font-semibold whitespace-nowrap" style={titleStyle}>Top 5 Cidades</h2>
               <TabsList className="h-8">
                 <TabsTrigger value="eventos" className="text-xs px-3 py-1">Eventos</TabsTrigger>
                 <TabsTrigger value="emergencias" className="text-xs px-3 py-1">Emergências</TabsTrigger>
