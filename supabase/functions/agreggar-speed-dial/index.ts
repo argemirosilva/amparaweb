@@ -79,11 +79,14 @@ serve(async (req) => {
         return json({ error: "Campos obrigatórios: campaignId, contactName, ddd, phone" }, 400);
       }
 
-      // Read SinergyTech settings
+      // Read SinergyTech settings (including cached token)
       const { data: stSettings } = await supabase
         .from("admin_settings")
         .select("chave, valor")
-        .in("chave", ["sinergytech_api_url", "sinergytech_usuario", "sinergytech_senha"]);
+        .in("chave", [
+          "sinergytech_api_url", "sinergytech_usuario", "sinergytech_senha",
+          "sinergytech_token_cache", "sinergytech_token_expires",
+        ]);
 
       const stMap = Object.fromEntries((stSettings || []).map((s: any) => [s.chave, s.valor]));
       const baseUrl = stMap["sinergytech_api_url"] || "https://api.aggregar.com.br";
@@ -158,11 +161,21 @@ serve(async (req) => {
       console.log("SpeedDial URL:", fullUrl);
       console.log("SpeedDial payload:", JSON.stringify(payload));
 
-      // Step 1: Login to get access token
+      // Step 1: Get API token (use cache if valid, otherwise login)
       let apiToken = "";
+      let tokenReused = false;
       const loginUrl = `${baseUrl}/login`;
-      if (stUser && stPass) {
-        console.log("Authenticating at:", loginUrl);
+      const cachedToken = stMap["sinergytech_token_cache"] || "";
+      const cachedExpires = stMap["sinergytech_token_expires"] || "";
+      const now = new Date();
+      const TOKEN_LIFETIME_MS = 29 * 60 * 1000; // 29 minutes
+
+      if (cachedToken && cachedExpires && new Date(cachedExpires) > now) {
+        apiToken = cachedToken;
+        tokenReused = true;
+        console.log("Using cached SinergyTech token (expires:", cachedExpires, ")");
+      } else if (stUser && stPass) {
+        console.log("Token expired or missing, authenticating at:", loginUrl);
         const loginRes = await fetch(loginUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -178,6 +191,29 @@ serve(async (req) => {
           }, 401);
         }
         apiToken = loginData.token;
+
+        // Cache the token with 29-minute expiration
+        const expiresAt = new Date(now.getTime() + TOKEN_LIFETIME_MS).toISOString();
+        const upsert = async (chave: string, valor: string) => {
+          const { data: existing } = await supabase
+            .from("admin_settings")
+            .select("id")
+            .eq("chave", chave)
+            .maybeSingle();
+          if (existing) {
+            await supabase.from("admin_settings").update({ valor }).eq("chave", chave);
+          } else {
+            await supabase.from("admin_settings").insert({
+              chave, valor, categoria: "integracao_sinergytech",
+              descricao: chave === "sinergytech_token_cache" ? "Token de acesso cacheado (auto)" : "Expiração do token cacheado (auto)",
+            });
+          }
+        };
+        await Promise.all([
+          upsert("sinergytech_token_cache", apiToken),
+          upsert("sinergytech_token_expires", expiresAt),
+        ]);
+        console.log("Token cached until:", expiresAt);
       }
 
       // Step 2: Call speedDial with token in header
@@ -234,6 +270,7 @@ serve(async (req) => {
         login_url: loginUrl,
         login_user: stUser,
         token_obtained: !!apiToken,
+        token_reused_from_cache: tokenReused,
         speedDial_url: fullUrl,
         method: "POST",
         headers: {
