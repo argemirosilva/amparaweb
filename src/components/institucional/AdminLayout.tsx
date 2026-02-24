@@ -3,20 +3,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useAdminRole } from "@/hooks/useAdminRole";
 import ProtectedAdminRoute from "./ProtectedAdminRoute";
 import {
-  LayoutDashboard,
-  Users,
-  Building2,
-  ClipboardCheck,
-  FileText,
-  Settings,
-  LogOut,
-  Menu,
-  X,
-  Plug,
-  AudioLines,
-  Headset,
-  BrainCircuit,
-  FileCode2,
+  LayoutDashboard, Users, Building2, ClipboardCheck, FileText, Settings,
+  LogOut, Menu, X, Plug, AudioLines, Headset, BrainCircuit, FileCode2, Phone,
 } from "lucide-react";
 import amparaLogo from "@/assets/ampara-logo.png";
 import { useState } from "react";
@@ -28,7 +16,7 @@ const TECNICO_PATHS = [
 ];
 const OPERACIONAL_PATHS = ["/admin", "/admin/relatorios"];
 const SUPORTE_PATHS = ["/admin/suporte", "/admin/curadoria"];
-const SUPER_ADMIN_ONLY_PATHS = ["/admin/integracoes", "/admin/doc-api"];
+const SUPER_ADMIN_ONLY_PATHS = ["/admin/integracoes", "/admin/doc-api", "/admin/copom"];
 const ADMIN_LEVEL_PATHS = ["/admin/curadoria"];
 
 const sidebarItems = [
@@ -41,6 +29,7 @@ const sidebarItems = [
   { label: "Relatórios", path: "/admin/relatorios", icon: FileText },
   { label: "Configurações", path: "/admin/configuracoes", icon: Settings },
   
+  { label: "COPOM Agreggar", path: "/admin/copom", icon: Phone },
   { label: "Integrações", path: "/admin/integracoes", icon: Plug },
   { label: "Doc API", path: "/admin/doc-api", icon: FileCode2 },
 ];

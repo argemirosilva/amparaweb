@@ -74,3 +74,6 @@ verify_jwt = false
 
 [functions.analysis-worker]
 verify_jwt = false
+
+[functions.agreggar-speed-dial]
+verify_jwt = false
