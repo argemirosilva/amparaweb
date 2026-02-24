@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -6,6 +6,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Check, X, Loader2 } from "lucide-react";
 
 export interface AvaliacaoData {
@@ -18,7 +19,7 @@ interface CampoAvaliacaoProps {
   campo: string;
   label: string;
   valorIA: any;
-  tipo: "select" | "tags" | "textarea";
+  tipo: "select" | "tags" | "textarea" | "multiselect";
   opcoes?: { value: string; label: string }[];
   avaliacao?: AvaliacaoData;
   onSave: (campo: string, data: AvaliacaoData) => Promise<void>;
@@ -92,6 +93,9 @@ export default function CampoAvaliacao({ campo, label, valorIA, tipo, opcoes, av
     if (status === "incorreto" && tipo === "tags") {
       vc = tagsInput.split(",").map((t) => t.trim()).filter(Boolean);
     }
+    if (status === "incorreto" && tipo === "multiselect") {
+      vc = Array.isArray(valorCorrigido) ? valorCorrigido : [];
+    }
     onSave(campo, {
       status,
       valor_corrigido: status === "incorreto" ? vc : null,
@@ -157,6 +161,29 @@ export default function CampoAvaliacao({ campo, label, valorIA, tipo, opcoes, av
               onChange={(e) => setTagsInput(e.target.value)}
               placeholder="Valores separados por vírgula"
             />
+          )}
+          {tipo === "multiselect" && opcoes && (
+            <div className="grid grid-cols-1 gap-1.5 max-h-48 overflow-y-auto rounded border border-border p-2 bg-muted/30">
+              {opcoes.map((o) => {
+                const selected = Array.isArray(valorCorrigido) && valorCorrigido.includes(o.value);
+                return (
+                  <label key={o.value} className="flex items-center gap-2 cursor-pointer text-sm hover:bg-muted/50 rounded px-1.5 py-1">
+                    <Checkbox
+                      checked={selected}
+                      onCheckedChange={(checked) => {
+                        const current = Array.isArray(valorCorrigido) ? valorCorrigido : [];
+                        setValorCorrigido(
+                          checked
+                            ? [...current, o.value]
+                            : current.filter((v: string) => v !== o.value)
+                        );
+                      }}
+                    />
+                    <span className="text-foreground">{o.label}</span>
+                  </label>
+                );
+              })}
+            </div>
           )}
           {tipo === "textarea" && (
             <Textarea
