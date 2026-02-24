@@ -137,7 +137,7 @@ serve(async (req) => {
 
         // Monitoring link — 6-digit numeric code, formatted for voice
         const code = (context.monitoring_link || "").replace(/\D/g, "");
-        const codeSpeak = code ? code.split("").join(" ") : "";
+        const codeSpeak = code ? code.split("").join("...") : "";
         add("LINK_MONITORAMENTO", codeSpeak || code || undefined);
 
         // Security
