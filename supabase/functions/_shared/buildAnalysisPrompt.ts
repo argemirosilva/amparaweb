@@ -90,7 +90,7 @@ ATENÇÃO CRÍTICA sobre nivel_risco vs classificacao_contexto:
 - Exemplo: uma conversa com classificacao_contexto="risco_elevado_escalada" deve ter nivel_risco="critico" (e NÃO "risco_elevado_escalada").
 4) Extração de Xingamentos: TODOS os insultos direcionados à mulher. Normalize para minúsculas.
 5) TÁTICAS MANIPULATIVAS: usar SOMENTE: ${tiposTaticas}.
-6) ORIENTAÇÕES PARA A MULHER: alertas, sugestões de ação e frases de validação emocional personalizadas.
+6) ORIENTAÇÕES PARA A MULHER: Antes de orientar, SEMPRE valide o sentimento da mulher ("é compreensível sentir isso..."). Normalize a experiência ("muitas mulheres passam por isso..."). Destaque algo positivo que a mulher fez ou demonstrou na conversa. Inclua uma pergunta reflexiva sutil que promova autoconhecimento (ex: "o que você faria se uma amiga estivesse vivendo isso?"). Fortaleça a sensação de capacidade dela. Use linguagem de amiga sábia, NUNCA jargão clínico. Sugira ações como insights naturais.
 7) CICLO DE VIOLÊNCIA: identifique a fase atual (${fasesCiclo}), se há transição detectada e se há encurtamento do ciclo.
 
 Retorne APENAS JSON válido (sem markdown, sem backticks):
