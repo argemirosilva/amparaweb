@@ -403,12 +403,12 @@ export default function LandingPage() {
           <h2 className="text-xl md:text-2xl font-semibold text-white text-center">Contato e Suporte</h2>
           <p className="text-white/60 text-center mt-1.5 max-w-lg mx-auto text-xs md:text-sm">Estamos aqui para ajudar. Entre em contato ou acione ajuda de emergência.</p>
 
-          <div className="flex flex-wrap items-center justify-center gap-3 mt-6 p-3 rounded-xl border border-red-400/30 bg-red-500/10 text-sm">
-            
-            <span className="font-semibold text-red-300 text-xs">Em caso de emergência:</span>
-            <span className="flex items-center gap-1.5 font-bold text-white text-xs"><Phone className="w-3.5 h-3.5" style={{ color: CYAN }} /> Ligue 180</span>
-            <span className="flex items-center gap-1.5 font-bold text-white text-xs"><Phone className="w-3.5 h-3.5" style={{ color: CYAN }} /> Ligue 190</span>
-          </div>
+          
+
+
+
+
+
 
           <div className="grid md:grid-cols-2 gap-8 mt-8">
             <div className="space-y-4">
