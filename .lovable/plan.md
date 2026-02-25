@@ -1,63 +1,53 @@
 
 
-## Aplicar visual azul/roxo consistente em toda a Landing Page
+# Teste: Dashboard da Usuaria com Identidade Azul-Roxo
 
-### Objetivo
-Aplicar o mesmo padrao visual do hero (gradiente azul-roxo profundo com acentos ciano e texto branco) em todas as secoes da landing page, criando uma experiencia visual coesa e profissional.
+Aplicar o mesmo padrao visual da landing page (gradiente azul-roxo profundo, textos claros, glassmorphism) ao layout e dashboard da usuaria como teste.
 
-### O que muda
+## Mudancas Visuais
 
-Todas as secoes da pagina serao atualizadas para seguir o mesmo esquema de cores do hero:
-- **Fundo**: gradientes azul-roxo profundo em vez de branco/cinza claro
-- **Texto**: branco com opacidades variadas em vez de foreground/muted-foreground
-- **Acentos**: ciano `hsl(175, 80%, 55%)` para destaques
-- **Cards/elementos**: fundo semi-transparente branco (glassmorphism) em vez de cards brancos solidos
-- **Icones**: circulos com borda/fundo semi-transparente branco em vez do gradiente magenta
+### 1. AppLayout (container principal)
+- Fundo do container principal: gradiente azul-roxo profundo (`bg-gradient-to-br from-[#1a1040] via-[#193275] to-[#1a1040]`)
+- Area do `main` com texto claro por padrao
 
-### Secoes afetadas
+### 2. Topbar
+- Fundo escuro com glassmorphism (`bg-white/5 backdrop-blur border-white/10`)
+- Textos do nome/email em branco com opacidades (`text-white`, `text-white/60`)
+- Avatar com borda sutil branca
 
-| Secao | Mudanca |
+### 3. BottomNav (mobile)
+- Fundo escuro com glassmorphism (`bg-[#1a1040]/95 backdrop-blur border-white/10`)
+- Icones e textos em `text-white/50` (inativo) e `text-white` (ativo)
+- Botao central com fundo gradiente magenta-roxo
+
+### 4. AppSidebar (desktop)
+- Fundo escuro (`bg-[#1a1040]`)
+- Itens do menu em `text-white/60`, hover e ativo em `text-white`
+- Borda lateral em `border-white/10`
+
+### 5. Cards do Dashboard (Home.tsx e sub-componentes)
+- Cards com glassmorphism: `bg-white/5 backdrop-blur-sm border-white/10`
+- Textos principais em `text-white`, secundarios em `text-white/60`
+- Badges e indicadores mantendo cores funcionais (verde, amarelo, vermelho)
+
+## Arquivos Modificados
+
+| Arquivo | Descricao |
 |---|---|
-| **Header** | Fundo azul-roxo escuro, logo invertido, links e botoes em branco |
-| **Sobre** | Fundo gradiente azul, cards com glassmorphism, numeros de impacto em ciano |
-| **Funcionalidades** | Fundo gradiente levemente diferente, feature cards em vidro, icones em branco/ciano |
-| **Como Funciona** | Fundo azul escuro, badges numerados em ciano, setas em branco |
-| **Depoimentos** | Fundo com tom roxo mais intenso, quotes em vidro semi-transparente |
-| **FAQ** | Fundo azul medio, accordion em branco semi-transparente |
-| **Faca Parte** | Ja esta escuro -- ajustar para manter consistencia com ciano |
-| **Parceiros** | Fundo gradiente azul, cards em vidro |
-| **Contato** | Fundo azul-roxo, inputs com estilo glassmorphism |
-| **Footer** | Ja esta escuro -- manter e ajustar detalhes |
+| `src/components/layout/AppLayout.tsx` | Gradiente de fundo no container |
+| `src/components/layout/Topbar.tsx` | Glassmorphism, textos claros |
+| `src/components/layout/BottomNav.tsx` | Fundo escuro, icones claros |
+| `src/components/layout/AppSidebar.tsx` | Sidebar escura |
+| `src/pages/Home.tsx` | Classes dos cards com glassmorphism |
+| `src/components/dashboard/RiskEvolutionCard.tsx` | Card com fundo glass, textos claros |
+| `src/components/dashboard/DeviceStatusCard.tsx` | Card com fundo glass, textos claros |
+| `src/components/dashboard/AudioRecorderCard.tsx` | Card com fundo glass, textos claros |
+| `src/components/dashboard/MonitoringStatusCard.tsx` | Card com fundo glass, textos claros |
 
-### Detalhes tecnicos
+## Abordagem Tecnica
 
-**Arquivo unico: `src/pages/LandingPage.tsx`**
-
-1. **Header (linhas 104-136)**: Trocar `bg-background/95` por fundo azul escuro com backdrop-blur. Textos de nav em branco. Botoes com bordas brancas.
-
-2. **Sobre (linhas 192-220)**: Trocar `bg-background` por gradiente azul. Cards `.ampara-card` recebem classes inline de glassmorphism (`bg-white/10 border-white/15 backdrop-blur`). Textos em branco. Numeros de impacto em ciano.
-
-3. **Funcionalidades (linhas 223-237)**: Trocar `ampara-gradient-soft` por gradiente azul mais claro. Feature cards com glassmorphism. Icones em branco sobre fundo semi-transparente.
-
-4. **Como Funciona (linhas 240-262)**: Fundo azul escuro. Badges em ciano. Texto em branco.
-
-5. **Depoimentos (linhas 265-290)**: Fundo roxo-azul. Quote cards em vidro. Estrelas em ciano/dourado.
-
-6. **FAQ (linhas 293-306)**: Fundo azul medio. Accordion items em branco semi-transparente.
-
-7. **Parceiros (linhas 351-375)**: Fundo gradiente azul. Cards em vidro.
-
-8. **Contato (linhas 378-417)**: Fundo azul-roxo. Inputs com glassmorphism. Botao enviar mantido.
-
-9. **Container raiz (linha 102)**: Trocar `bg-background` por cor base escura para evitar flashes brancos.
-
-### Paleta consistente utilizada
-
-- Fundo principal: `hsl(255, 55%, 28%)` a `hsl(210, 80%, 45%)`
-- Fundo alternado (secoes pares): leve variacao de opacidade/angulo
-- Texto principal: `text-white`
-- Texto secundario: `text-white/70` ou `text-white/60`
-- Destaque: `hsl(175, 80%, 55%)` (ciano)
-- Cards: `bg-white/10 border-white/15 backdrop-blur-sm`
-- Inputs: `bg-white/15 border-white/20 text-white`
+- Substituir classes `bg-card`, `text-foreground`, `border-border` por classes diretas de cores escuras/claras nos componentes do layout
+- Usar `ampara-card` override ou classes inline nos cards do dashboard para aplicar glassmorphism
+- Manter as cores funcionais de risco (verde, amarelo, laranja, vermelho) inalteradas para nao prejudicar a usabilidade
+- Como e um teste, as mudancas serao feitas diretamente nos componentes sem alterar o design system global (CSS variables), facilitando reverter se necessario
 
