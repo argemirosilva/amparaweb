@@ -10,6 +10,7 @@ import {
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import amparaLogo from "@/assets/ampara-logo.png";
+import heroWoman from "@/assets/hero-woman.png";
 
 function scrollTo(id: string) {
   document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
@@ -135,27 +136,44 @@ export default function LandingPage() {
       </header>
 
       {/* ══════ HERO ══════ */}
-      <section className="relative overflow-hidden" style={{ background: "var(--ampara-gradient-soft)" }}>
-        <div className="absolute inset-0 opacity-30" style={{ background: "radial-gradient(circle at 80% 20%, hsl(var(--ampara-magenta) / 0.15), transparent 60%)" }} />
-        <div className="max-w-7xl mx-auto px-4 py-16 md:py-24 grid md:grid-cols-2 gap-12 items-center relative z-10">
-          <div className="space-y-6">
-            <h1 className="text-3xl md:text-5xl font-bold leading-tight text-foreground">
-              AMPARA Mulher — <span className="text-primary">Proteção</span>, monitoramento e apoio para você
-            </h1>
-            <p className="text-lg text-muted-foreground max-w-lg">
-              No AMPARA Mulher, você nunca está sozinha. Uma plataforma de monitoramento, suporte personalizado e uma rede de apoio pronta para ajudar em qualquer situação de risco.
+      <section className="relative overflow-hidden">
+        {/* Background gradient matching design */}
+        <div className="absolute inset-0" style={{
+          background: "linear-gradient(135deg, hsl(var(--background)) 0%, hsl(var(--background)) 45%, hsl(250 60% 30%) 70%, hsl(220 70% 35%) 85%, hsl(175 70% 45%) 100%)"
+        }} />
+        <div className="max-w-7xl mx-auto px-4 py-16 md:py-20 grid md:grid-cols-2 gap-8 items-center relative z-10">
+          {/* Left column — text */}
+          <div className="space-y-5">
+            {/* Badge */}
+            <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary/30 bg-primary/5 text-primary text-sm font-medium">
+              <Heart className="w-4 h-4" /> Proteção Inteligente e Discreta
+            </span>
+
+            <p className="text-sm font-semibold text-foreground/70 uppercase tracking-wide">Sua segurança é nossa prioridade</p>
+
+            <p className="text-base md:text-lg text-muted-foreground leading-relaxed max-w-lg">
+              O AMPARA é um sistema de proteção inteligente que combina tecnologia de ponta com inteligência artificial para proteger vítimas de violência doméstica de forma invisível, discreta e eficaz.
             </p>
-            <div className="flex flex-wrap gap-3">
-              <Link to="/cadastro" className="ampara-btn-primary !w-auto text-lg flex items-center gap-2">
-                <Shield className="w-5 h-5" /> Cadastre-se agora
+
+            {/* Quote card */}
+            <div className="relative rounded-xl border-l-4 border-primary bg-card/80 backdrop-blur p-4 max-w-lg">
+              <p className="text-sm text-foreground/90 italic leading-relaxed">
+                "O AMPARA é mais do que uma ferramenta - é um abraço tecnológico, uma mão estendida, uma voz que diz: 'Eu acredito em você'"
+              </p>
+            </div>
+
+            {/* CTA buttons */}
+            <div className="flex flex-wrap gap-3 pt-2">
+              <Link to="/cadastro" className="ampara-btn-primary !w-auto flex items-center gap-2">
+                <Shield className="w-4 h-4" /> Fazer Pré-cadastro
               </Link>
               <button onClick={() => scrollTo("sobre")} className="ampara-btn-secondary !w-auto flex items-center gap-2">
-                Saiba mais <ArrowRight className="w-4 h-4" />
+                Saiba Mais
               </button>
             </div>
 
             {/* ── Tracking code box ── */}
-            <div className="mt-4 p-4 rounded-2xl border border-border bg-card">
+            <div className="mt-2 p-4 rounded-2xl border border-border bg-card/90 backdrop-blur">
               <p className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
                 <Radio className="w-4 h-4 text-primary" /> Monitorar link temporário
               </p>
@@ -176,21 +194,18 @@ export default function LandingPage() {
               </p>
             </div>
           </div>
-          {/* hero illustration */}
-          <div className="hidden md:flex justify-center">
-            <div className="relative">
-              <div className="w-64 h-64 rounded-full ampara-gradient-soft-bg flex items-center justify-center">
-                <Shield className="w-24 h-24 text-primary" />
-              </div>
-              <div className="absolute -top-4 -right-4 ampara-icon-circle">
-                <Heart className="w-7 h-7" />
-              </div>
-              <div className="absolute -bottom-2 -left-6 ampara-icon-circle">
-                <Users className="w-7 h-7" />
-              </div>
-              <div className="absolute top-1/2 -right-10 ampara-icon-circle-sm">
-                <Lock className="w-4 h-4" />
-              </div>
+
+          {/* Right column — hero image */}
+          <div className="hidden md:flex justify-center relative">
+            <img
+              src={heroWoman}
+              alt="Mulher protegida pela tecnologia AMPARA"
+              className="max-h-[520px] w-auto object-contain drop-shadow-2xl"
+            />
+            {/* Floating badge bottom-right */}
+            <div className="absolute bottom-4 right-4 bg-card rounded-xl shadow-lg px-4 py-2.5 flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-sm font-medium text-foreground">Proteção sempre que você precisar.</span>
             </div>
           </div>
         </div>
