@@ -216,7 +216,7 @@ export default function AudioRecorderCard({ onUploaded }: AudioRecorderCardProps
   if (!sessionToken) return null;
 
   return (
-    <div className="ampara-card p-4 space-y-4">
+    <div className="rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm p-4 space-y-4">
       {/* Recorder / Upload controls */}
       <div className="flex items-center gap-3 flex-wrap">
         {recording ?
@@ -242,27 +242,27 @@ export default function AudioRecorderCard({ onUploaded }: AudioRecorderCardProps
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75" />
                   <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-destructive" />
                 </span>
-                <span className="text-sm font-medium text-foreground">Gravando...</span>
+                <span className="text-sm font-medium text-white">Gravando...</span>
                 <span className="text-sm text-muted-foreground tabular-nums">{formatRecDuration(elapsed)}</span>
               </div>
-              <p className="text-xs text-muted-foreground">Toque no botão para parar e enviar</p>
+              <p className="text-xs text-white/50">Toque no botão para parar e enviar</p>
             </div> :
           converting ?
-          <span className="text-sm font-medium text-foreground flex items-center gap-2">
-              <Loader2 className="w-4 h-4 animate-spin text-primary" />
+           <span className="text-sm font-medium text-white flex items-center gap-2">
+              <Loader2 className="w-4 h-4 animate-spin text-white/70" />
               Convertendo para MP3...
             </span> :
           uploading ?
           <div className="space-y-1.5">
-              <span className="text-sm font-medium text-foreground flex items-center gap-2">
-                <Loader2 className="w-4 h-4 animate-spin text-primary" />
+              <span className="text-sm font-medium text-white flex items-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin text-white/70" />
                 Enviando gravação...
               </span>
               <Progress value={undefined} className="h-1.5" />
             </div> :
 
           <div>
-              <p className="text-sm font-medium text-foreground">Gravar ou enviar áudio</p>
+              <p className="text-sm font-medium text-white">Gravar ou enviar áudio</p>
               
             </div>
           }
@@ -271,7 +271,7 @@ export default function AudioRecorderCard({ onUploaded }: AudioRecorderCardProps
         {!recording && !uploading && !converting &&
         <label className="cursor-pointer">
             <input type="file" accept="audio/mpeg,audio/mp3,audio/wav,audio/x-wav,audio/ogg,.mp3,.wav,.ogg" className="hidden" onChange={handleFileUpload} />
-            <div className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border text-sm text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-colors">
+            <div className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-white/20 text-sm text-white/60 hover:bg-white/10 hover:text-white transition-colors">
               <Upload className="w-4 h-4" />
               <span className="hidden sm:inline">Enviar arquivo</span>
             </div>

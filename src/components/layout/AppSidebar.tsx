@@ -41,12 +41,12 @@ export default function AppSidebar() {
   };
 
   return (
-    <Sidebar collapsible="icon">
-      <div className="p-4 flex items-center gap-3 border-b border-sidebar-border">
-        <div className="w-8 h-8 rounded-md bg-white flex items-center justify-center shrink-0">
+    <Sidebar collapsible="icon" className="!bg-[#1a1040] !border-white/10">
+      <div className="p-4 flex items-center gap-3 border-b border-white/10">
+        <div className="w-8 h-8 rounded-md bg-white/10 flex items-center justify-center shrink-0">
           <img src={amparaLogo} alt="AMPARA" className="w-7 h-7 object-contain" />
         </div>
-        <span className="font-display font-bold text-foreground text-lg group-data-[collapsible=icon]:hidden">
+        <span className="font-display font-bold text-white text-lg group-data-[collapsible=icon]:hidden">
           AMPARA
         </span>
       </div>
@@ -61,8 +61,8 @@ export default function AppSidebar() {
                     <NavLink
                       to={item.url}
                       end
-                      className="flex items-center gap-3 px-3 py-2 rounded-md text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                      activeClassName="bg-sidebar-accent text-primary font-medium"
+                      className="flex items-center gap-3 px-3 py-2 rounded-md text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+                      activeClassName="bg-white/10 text-white font-medium"
                     >
                       <item.icon className="w-5 h-5 shrink-0" />
                       <span className="group-data-[collapsible=icon]:hidden">{item.title}</span>
@@ -79,8 +79,8 @@ export default function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton onClick={handleLogout}>
-              <LogOut className="w-5 h-5 shrink-0 text-destructive" />
-              <span className="group-data-[collapsible=icon]:hidden text-destructive">Sair</span>
+              <LogOut className="w-5 h-5 shrink-0 text-red-400" />
+              <span className="group-data-[collapsible=icon]:hidden text-red-400">Sair</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
