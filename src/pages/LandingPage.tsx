@@ -120,10 +120,10 @@ export default function LandingPage() {
             <NavItems />
           </nav>
           <div className="hidden lg:flex items-center gap-2">
-            <Link to="/login" className="ampara-btn-secondary !w-auto !py-1.5 !px-3 flex items-center gap-1.5 text-xs">
+            <Link to="/login" className="ampara-btn-secondary !w-auto flex items-center gap-1.5 text-xs py-[5px] px-[12px]">
               <LogIn className="w-3.5 h-3.5" /> Portal da Mulher
             </Link>
-            <Link to="/cadastro" className="ampara-btn-primary !w-auto !py-1.5 !px-3 flex items-center gap-1.5 text-xs">
+            <Link to="/cadastro" className="ampara-btn-primary !w-auto flex items-center gap-1.5 text-xs py-[5px] px-px">
               <Shield className="w-3.5 h-3.5" /> Cadastre-se
             </Link>
           </div>
@@ -156,8 +156,8 @@ export default function LandingPage() {
         </div>
         <div className="max-w-7xl mx-auto px-4 py-6 md:py-16 grid md:grid-cols-2 gap-8 items-center relative z-10">
           <div className="space-y-4">
-            <h1 className="text-2xl md:text-4xl font-bold leading-tight text-white">
-              AMPARA Mulher
+            <h1 className="text-2xl md:text-4xl font-bold leading-tight text-white">AMPARA
+
             </h1>
             <p className="text-base md:text-xl font-medium text-white">
               Proteção, monitoramento e apoio para você
@@ -444,7 +444,7 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto px-4">
           <div className="grid sm:grid-cols-3 gap-6">
             <div>
-              <img src={amparaLogo} alt="AMPARA Mulher" className="h-7 brightness-0 invert mb-3" />
+              
               <p className="text-white/60 text-xs">
                 Proteção, monitoramento e apoio para mulheres em situação de vulnerabilidade. Tecnologia a serviço da vida.
               </p>
