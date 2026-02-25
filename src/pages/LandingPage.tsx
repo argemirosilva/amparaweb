@@ -10,6 +10,7 @@ import {
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import amparaLogo from "@/assets/ampara-logo.png";
+import heroWoman from "@/assets/hero-woman.png";
 
 function scrollTo(id: string) {
   document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
@@ -135,33 +136,33 @@ export default function LandingPage() {
       </header>
 
       {/* ══════ HERO ══════ */}
-      <section className="relative overflow-hidden" style={{ background: "var(--ampara-gradient-soft)" }}>
-        <div className="absolute inset-0 opacity-30" style={{ background: "radial-gradient(circle at 80% 20%, hsl(var(--ampara-magenta) / 0.15), transparent 60%)" }} />
+      <section className="relative overflow-hidden" style={{ background: "linear-gradient(135deg, hsl(255, 55%, 28%), hsl(220, 75%, 38%), hsl(210, 80%, 45%))" }}>
+        <div className="absolute inset-0 opacity-20" style={{ background: "radial-gradient(circle at 30% 50%, hsl(270, 60%, 42% / 0.4), transparent 60%)" }} />
         <div className="max-w-7xl mx-auto px-4 py-16 md:py-24 grid md:grid-cols-2 gap-12 items-center relative z-10">
           <div className="space-y-6">
-            <h1 className="text-3xl md:text-5xl font-bold leading-tight text-foreground">
-              AMPARA Mulher — <span className="text-primary">Proteção</span>, monitoramento e apoio para você
+            <h1 className="text-3xl md:text-5xl font-bold leading-tight text-white">
+              AMPARA Mulher — <span style={{ color: "hsl(175, 80%, 55%)" }}>Proteção</span>, monitoramento e apoio para você
             </h1>
-            <p className="text-lg text-muted-foreground max-w-lg">
+            <p className="text-lg text-white/80 max-w-lg">
               No AMPARA Mulher, você nunca está sozinha. Uma plataforma de monitoramento, suporte personalizado e uma rede de apoio pronta para ajudar em qualquer situação de risco.
             </p>
             <div className="flex flex-wrap gap-3">
               <Link to="/cadastro" className="ampara-btn-primary !w-auto text-lg flex items-center gap-2">
                 <Shield className="w-5 h-5" /> Cadastre-se agora
               </Link>
-              <button onClick={() => scrollTo("sobre")} className="ampara-btn-secondary !w-auto flex items-center gap-2">
+              <button onClick={() => scrollTo("sobre")} className="!w-auto flex items-center gap-2 px-6 py-3 rounded-xl border border-white/30 text-white font-semibold hover:bg-white/10 transition-colors">
                 Saiba mais <ArrowRight className="w-4 h-4" />
               </button>
             </div>
 
             {/* ── Tracking code box ── */}
-            <div className="mt-4 p-4 rounded-2xl border border-border bg-card">
-              <p className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
-                <Radio className="w-4 h-4 text-primary" /> Monitorar link temporário
+            <div className="mt-4 p-4 rounded-2xl border border-white/15 bg-white/10 backdrop-blur-sm">
+              <p className="text-sm font-medium text-white mb-2 flex items-center gap-2">
+                <Radio className="w-4 h-4" style={{ color: "hsl(175, 80%, 55%)" }} /> Monitorar link temporário
               </p>
               <form onSubmit={handleTrack} className="flex gap-2">
                 <input
-                  className="ampara-input flex-1"
+                  className="ampara-input flex-1 !bg-white/15 !border-white/20 !text-white placeholder:text-white/50"
                   placeholder="Digite o código (ex: 482731)"
                   value={trackCode}
                   onChange={(e) => setTrackCode(e.target.value.replace(/\s/g, ""))}
@@ -171,27 +172,18 @@ export default function LandingPage() {
                   <MapPin className="w-4 h-4" /> Monitorar
                 </button>
               </form>
-              <p className="text-xs text-muted-foreground mt-2">
+              <p className="text-xs text-white/50 mt-2">
                 Insira o código recebido para acompanhar a localização em tempo real.
               </p>
             </div>
           </div>
-          {/* hero illustration */}
+          {/* hero image */}
           <div className="hidden md:flex justify-center">
-            <div className="relative">
-              <div className="w-64 h-64 rounded-full ampara-gradient-soft-bg flex items-center justify-center">
-                <Shield className="w-24 h-24 text-primary" />
-              </div>
-              <div className="absolute -top-4 -right-4 ampara-icon-circle">
-                <Heart className="w-7 h-7" />
-              </div>
-              <div className="absolute -bottom-2 -left-6 ampara-icon-circle">
-                <Users className="w-7 h-7" />
-              </div>
-              <div className="absolute top-1/2 -right-10 ampara-icon-circle-sm">
-                <Lock className="w-4 h-4" />
-              </div>
-            </div>
+            <img
+              src={heroWoman}
+              alt="Mulher protegida pela plataforma AMPARA"
+              className="max-h-[520px] w-auto object-contain drop-shadow-2xl"
+            />
           </div>
         </div>
       </section>
