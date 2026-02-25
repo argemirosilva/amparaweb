@@ -121,7 +121,7 @@ export default function LandingPage() {
           </nav>
           <div className="hidden lg:flex items-center gap-2">
             <Link to="/login" className="ampara-btn-secondary !w-auto flex items-center gap-1.5 text-xs py-[5px] px-[12px]">
-              <LogIn className="w-3.5 h-3.5" /> Portal da Mulher
+               Portal da Mulher
             </Link>
             <Link to="/cadastro" className="ampara-btn-primary !w-auto flex items-center gap-1.5 text-xs py-[5px] px-[12px]">
                Cadastre-se
