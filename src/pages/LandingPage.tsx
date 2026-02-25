@@ -111,7 +111,7 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen" style={{ background: "hsl(255, 55%, 22%)" }}>
       {/* ══════ HEADER ══════ */}
-      <header className="sticky top-0 z-50 backdrop-blur-md border-b border-border bg-background/95">
+      <header className="sticky top-0 z-50 backdrop-blur-md border-b border-border bg-white">
         <div className="max-w-7xl mx-auto flex items-center justify-between px-4 py-3">
           <img src={amparaLogo} alt="AMPARA Mulher" className="h-9" />
           <nav className="hidden lg:flex items-center gap-6">
