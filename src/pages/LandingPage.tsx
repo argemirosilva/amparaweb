@@ -123,8 +123,8 @@ export default function LandingPage() {
             <Link to="/login" className="ampara-btn-secondary !w-auto flex items-center gap-1.5 text-xs py-[5px] px-[12px]">
               <LogIn className="w-3.5 h-3.5" /> Portal da Mulher
             </Link>
-            <Link to="/cadastro" className="ampara-btn-primary !w-auto flex items-center gap-1.5 text-xs py-[5px] px-px">
-              <Shield className="w-3.5 h-3.5" /> Cadastre-se
+            <Link to="/cadastro" className="ampara-btn-primary !w-auto flex items-center gap-1.5 text-xs py-[5px] px-[12px]">
+               Cadastre-se
             </Link>
           </div>
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
