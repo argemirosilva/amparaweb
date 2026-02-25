@@ -4,7 +4,7 @@ import { toast } from "@/hooks/use-toast";
 import {
   Shield, Heart, Users, TrendingUp, Smartphone, Mic, FileUp,
   MapPin, Search, Headphones, Settings, Check, Star, Menu,
-  Building2, Users2, Phone, Mail, AlertTriangle, Eye,
+  Building2, Users2, Phone, Mail, Eye,
   ChevronRight, Lock, ArrowRight, Radio, LogIn } from
 "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -485,7 +485,7 @@ export default function LandingPage() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-white/50">
             <p>© {new Date().getFullYear()} AMPARA Mulher. Todos os direitos reservados.</p>
             <div className="flex items-center gap-1.5">
-              <AlertTriangle className="w-3.5 h-3.5 text-red-400" />
+              
               
             </div>
           </div>
