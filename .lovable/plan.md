@@ -1,79 +1,63 @@
 
 
-## Analise Unificada com Abordagem Psicologica Sutil
+## Aplicar visual azul/roxo consistente em toda a Landing Page
 
 ### Objetivo
-Enriquecer os prompts de IA que geram os relatorios exibidos no card "Como estou?" (MacroReportCard) e no Relatorio de Saude com tecnicas de psicologia aplicadas de forma natural e acolhedora, sem que a usuaria perceba que esta recebendo orientacao psicologica formal.
+Aplicar o mesmo padrao visual do hero (gradiente azul-roxo profundo com acentos ciano e texto branco) em todas as secoes da landing page, criando uma experiencia visual coesa e profissional.
 
 ### O que muda
-Tres prompts de IA serao atualizados para incorporar tecnicas psicologicas de forma invisivel:
 
-1. **Prompt MACRO** (analysis-worker) - o "Como estou?" no card de risco
-2. **Prompt do Relatorio de Saude** (web-api, `getRelatorioSaude`)
-3. **Prompt MICRO** (buildAnalysisPrompt) - orientacoes individuais por gravacao
+Todas as secoes da pagina serao atualizadas para seguir o mesmo esquema de cores do hero:
+- **Fundo**: gradientes azul-roxo profundo em vez de branco/cinza claro
+- **Texto**: branco com opacidades variadas em vez de foreground/muted-foreground
+- **Acentos**: ciano `hsl(175, 80%, 55%)` para destaques
+- **Cards/elementos**: fundo semi-transparente branco (glassmorphism) em vez de cards brancos solidos
+- **Icones**: circulos com borda/fundo semi-transparente branco em vez do gradiente magenta
 
-### Tecnicas psicologicas a incorporar (sem nomea-las)
+### Secoes afetadas
 
-- **Validacao emocional**: reconhecer e legitimar sentimentos antes de orientar
-- **Reenquadramento cognitivo**: ajudar a ver a situacao de outro angulo sem invalidar
-- **Psicoeducacao sutil**: explicar dinamicas de poder e ciclos sem usar termos tecnicos
-- **Perguntas reflexivas**: incluir questionamentos que promovam auto-reflexao
-- **Normalizacao**: "e comum sentir isso..." para reduzir culpa e vergonha
-- **Fortalecimento de auto-eficacia**: destacar acoes positivas que ela ja tomou
-- **Tecnica do espelho**: refletir de volta o que ela demonstrou sentir
-- **Ancoragem em recursos internos**: lembrar de forcas e capacidades proprias
-- **Reducao de dissonancia**: ajudar a alinhar percepcao com realidade sem confronto
+| Secao | Mudanca |
+|---|---|
+| **Header** | Fundo azul-roxo escuro, logo invertido, links e botoes em branco |
+| **Sobre** | Fundo gradiente azul, cards com glassmorphism, numeros de impacto em ciano |
+| **Funcionalidades** | Fundo gradiente levemente diferente, feature cards em vidro, icones em branco/ciano |
+| **Como Funciona** | Fundo azul escuro, badges numerados em ciano, setas em branco |
+| **Depoimentos** | Fundo com tom roxo mais intenso, quotes em vidro semi-transparente |
+| **FAQ** | Fundo azul medio, accordion em branco semi-transparente |
+| **Faca Parte** | Ja esta escuro -- ajustar para manter consistencia com ciano |
+| **Parceiros** | Fundo gradiente azul, cards em vidro |
+| **Contato** | Fundo azul-roxo, inputs com estilo glassmorphism |
+| **Footer** | Ja esta escuro -- manter e ajustar detalhes |
 
 ### Detalhes tecnicos
 
-**Arquivo 1: `supabase/functions/analysis-worker/index.ts`** (linhas 423-446)
+**Arquivo unico: `src/pages/LandingPage.tsx`**
 
-Atualizar o `macroPrompt` na funcao `runMacro` para incluir instrucoes de abordagem psicologica sutil:
+1. **Header (linhas 104-136)**: Trocar `bg-background/95` por fundo azul escuro com backdrop-blur. Textos de nav em branco. Botoes com bordas brancas.
 
-- No `panorama_narrativo`: comece validando sentimentos, use reenquadramento cognitivo, normalize experiencias, reflita forcas que a usuaria demonstrou (ex: "o fato de voce estar monitorando mostra coragem")
-- Nas `orientacoes`: use linguagem que promova auto-reflexao ("voce ja percebeu que...", "vale se perguntar..."), fortaleca auto-eficacia, sugira acoes como se fossem insights naturais
-- Adicionar campo `reflexao_pessoal`: 1-2 perguntas reflexivas sutis que a usuaria pode ponderar
-- Instrucao explicita: "NUNCA use termos como 'terapia cognitiva', 'reenquadramento', 'psicoeducacao', 'tecnica psicologica' ou qualquer jargao clinico. Fale como uma amiga sabia e experiente."
+2. **Sobre (linhas 192-220)**: Trocar `bg-background` por gradiente azul. Cards `.ampara-card` recebem classes inline de glassmorphism (`bg-white/10 border-white/15 backdrop-blur`). Textos em branco. Numeros de impacto em ciano.
 
-**Arquivo 2: `supabase/functions/web-api/index.ts`** (linhas 1607-1642)
+3. **Funcionalidades (linhas 223-237)**: Trocar `ampara-gradient-soft` por gradiente azul mais claro. Feature cards com glassmorphism. Icones em branco sobre fundo semi-transparente.
 
-Atualizar o `aiPrompt` na acao `getRelatorioSaude`:
+4. **Como Funciona (linhas 240-262)**: Fundo azul escuro. Badges em ciano. Texto em branco.
 
-- Instrucoes adicionais para o `panorama_narrativo`: validar emocionalmente, normalizar, destacar recursos internos
-- Instrucoes para `explicacao_emocional`: usar tecnica do espelho, psicoeducacao sutil sobre dinamicas relacionais
-- Instrucoes para `orientacoes`: incluir perguntas reflexivas embutidas, fortalecer auto-eficacia, reduzir culpa
+5. **Depoimentos (linhas 265-290)**: Fundo roxo-azul. Quote cards em vidro. Estrelas em ciano/dourado.
 
-**Arquivo 3: `supabase/functions/_shared/buildAnalysisPrompt.ts`** (linhas 82-88)
+6. **FAQ (linhas 293-306)**: Fundo azul medio. Accordion items em branco semi-transparente.
 
-Atualizar as instrucoes de `orientacoes_vitima` no prompt micro:
+7. **Parceiros (linhas 351-375)**: Fundo gradiente azul. Cards em vidro.
 
-- Adicionar: "Antes de orientar, valide o sentimento. Normalize a experiencia. Destaque algo positivo que a mulher fez ou demonstrou. Inclua uma pergunta reflexiva sutil."
+8. **Contato (linhas 378-417)**: Fundo azul-roxo. Inputs com glassmorphism. Botao enviar mantido.
 
-**Arquivo 4: `src/components/gravacoes/MacroReportCard.tsx`**
+9. **Container raiz (linha 102)**: Trocar `bg-background` por cor base escura para evitar flashes brancos.
 
-- Adicionar exibicao do novo campo `reflexao_pessoal` (se presente no output_json) como um bloco suave com icone de coracao/pensamento
-- Atualizar a interface `MacroReport.output_json` para incluir `reflexao_pessoal?: string[]`
+### Paleta consistente utilizada
 
-### Exemplo de output antes vs depois
-
-**Antes (orientacao):**
-> "Considere buscar ajuda profissional para lidar com a situacao."
-
-**Depois (com psicologia sutil):**
-> "Voce demonstrou muita coragem ao registrar essas conversas -- isso mostra que voce reconhece seu valor. Pode ser util se perguntar: 'o que eu faria de diferente se uma amiga querida estivesse vivendo isso?' As vezes, nos dedicamos aos outros mais do que a nos mesmas, e voce merece o mesmo cuidado."
-
-**Antes (panorama):**
-> "Nos ultimos 30 dias foram detectados padroes de violencia psicologica."
-
-**Depois (com psicologia sutil):**
-> "Nos ultimos 30 dias, os registros mostram uma situacao que pode gerar muita confusao emocional -- e completamente normal sentir-se dividida ou ate questionar sua propria percepcao. O fato de voce estar acompanhando isso ja e um passo importante. Os padroes indicam comportamentos que tendem a minar sua confianca aos poucos, algo que acontece de forma tao gradual que muitas vezes so percebemos quando ja estamos exaustas."
-
-### Resumo de arquivos alterados
-
-| Arquivo | Tipo de alteracao |
-|---|---|
-| `supabase/functions/analysis-worker/index.ts` | Prompt macro enriquecido |
-| `supabase/functions/web-api/index.ts` | Prompt relatorio saude enriquecido |
-| `supabase/functions/_shared/buildAnalysisPrompt.ts` | Prompt micro orientacoes enriquecido |
-| `src/components/gravacoes/MacroReportCard.tsx` | Exibir campo `reflexao_pessoal` |
+- Fundo principal: `hsl(255, 55%, 28%)` a `hsl(210, 80%, 45%)`
+- Fundo alternado (secoes pares): leve variacao de opacidade/angulo
+- Texto principal: `text-white`
+- Texto secundario: `text-white/70` ou `text-white/60`
+- Destaque: `hsl(175, 80%, 55%)` (ciano)
+- Cards: `bg-white/10 border-white/15 backdrop-blur-sm`
+- Inputs: `bg-white/15 border-white/20 text-white`
 
