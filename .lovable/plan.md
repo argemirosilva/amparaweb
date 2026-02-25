@@ -1,92 +1,79 @@
 
 
-## Landing Page AMPARA Mulher
+## Analise Unificada com Abordagem Psicologica Sutil
 
-### Resumo
-Criar uma landing page completa na rota `/` (substituindo o redirect para `/login`), com todas as secoes solicitadas, usando os tokens de design AMPARA existentes e componentes Lucide para icones.
+### Objetivo
+Enriquecer os prompts de IA que geram os relatorios exibidos no card "Como estou?" (MacroReportCard) e no Relatorio de Saude com tecnicas de psicologia aplicadas de forma natural e acolhedora, sem que a usuaria perceba que esta recebendo orientacao psicologica formal.
 
-### Arquivos a criar
+### O que muda
+Tres prompts de IA serao atualizados para incorporar tecnicas psicologicas de forma invisivel:
 
-**1. `src/pages/LandingPage.tsx`** - Pagina principal da landing page
-- Componente unico com todas as secoes inline (header, hero, sobre, funcionalidades, como funciona, depoimentos, FAQ, cadastro, parceiros, contato, footer)
-- Header fixo com logo AMPARA, menu de navegacao por ancora (#sobre, #funcionalidades, etc.) e botao "Cadastre-se" destacado
-- Menu mobile com hamburger usando Sheet component
-- Scroll suave entre secoes via `scrollIntoView`
+1. **Prompt MACRO** (analysis-worker) - o "Como estou?" no card de risco
+2. **Prompt do Relatorio de Saude** (web-api, `getRelatorioSaude`)
+3. **Prompt MICRO** (buildAnalysisPrompt) - orientacoes individuais por gravacao
 
-### Secoes detalhadas
+### Tecnicas psicologicas a incorporar (sem nomea-las)
 
-**Header fixo:**
-- Logo `ampara-logo.png`, links de navegacao por ancora, botao CTA magenta
-- `sticky top-0 z-50 bg-white/95 backdrop-blur`
-- Menu hamburger no mobile
-
-**Hero Section:**
-- Fundo com gradiente suave roxo/magenta
-- Titulo "AMPARA Mulher -- Protecao, monitoramento e apoio para voce"
-- Subtitulo com texto de missao
-- Botao CTA grande "Cadastre-se agora" com icone Shield
-- Ilustracao com icones representativos (Heart, Shield, Users) em circulos gradiente
-
-**Sobre:**
-- Missao, visao e proposito em 3 cards com icones
-- Numeros de impacto social (cards com contadores estaticos): "+2.500 mulheres protegidas", "+15.000 analises realizadas", "+98% satisfacao"
-
-**Funcionalidades:**
-- Grid 2x4 de cards (`ampara-feature-card`) com icones Lucide:
-  - TrendingUp (Evolucao do Risco), Smartphone (Monitoramento), Mic (Gravacao), FileUp (Envio de Arquivos), MapPin (GPS), Search (Pesquisa Parceiros), Headphones (Suporte), Settings (Configuracoes)
-
-**Como Funciona:**
-- 4 passos numerados com `ampara-badge-number`: Cadastre-se, Ative o monitoramento, Use as ferramentas, Conte com suporte
-- Layout horizontal no desktop, vertical no mobile
-
-**Depoimentos:**
-- 3 cards com avatar (iniciais), nome ficticio, relato e estrelas
-- Classe `ampara-quote` para estilizacao
-
-**FAQ:**
-- Accordion expansivel usando componente `Accordion` existente
-- 8 perguntas sobre funcionamento, seguranca, privacidade, cadastro
-
-**Cadastro / Faca Parte:**
-- Secao com fundo gradiente escuro (`ampara-panel-bg`)
-- Lado esquerdo: beneficios em lista com icones Check
-- Lado direito: formulario simples (nome, email, telefone, senha) usando `ampara-input`
-- Submissao via `useAuth().register()` existente, redirecionando para `/validar-email`
-- Validacao: nome obrigatorio, email valido, telefone 10+ digitos, senha 6+ chars, termos aceitos
-
-**Parceiros e Impacto:**
-- Logos placeholder (icones Building2, Heart, Users2) representando ONGs e parceiros
-- Metricas de impacto em cards numericos
-- CTA para novos parceiros
-
-**Contato e Suporte:**
-- Email de contato, informacoes de emergencia (Ligue 180, 190)
-- Formulario simples de contato (nome, email, mensagem) -- submit via toast de confirmacao
-- Badge de emergencia sempre visivel
-
-**Footer:**
-- Links rapidos para todas as secoes
-- Link para `/privacidade`
-- Copyright com ano dinamico
-- Texto institucional AMPARA
-
-### Alteracao no roteamento
-
-**2. `src/App.tsx`**
-- Alterar rota `/` de `<Navigate to="/login" replace />` para `<LandingPage />`
-- Importar o novo componente
-
-### Design e Acessibilidade
-- Cores: tokens AMPARA existentes (magenta, roxo, ciano, deep-blue)
-- Fontes: Poppins para titulos, DM Sans para corpo (ja configuradas)
-- Classes reutilizadas: `ampara-btn-primary`, `ampara-btn-secondary`, `ampara-input`, `ampara-card`, `ampara-feature-card`, `ampara-quote`, `ampara-icon-circle`, `ampara-badge-number`, `ampara-section-title`, `ampara-section-subtitle`
-- Botoes grandes, contraste adequado, textos alt em icones
-- Responsivo: grid adaptavel, menu hamburger mobile
-- Animacoes: `animate-fade-in` existente para entrada das secoes
+- **Validacao emocional**: reconhecer e legitimar sentimentos antes de orientar
+- **Reenquadramento cognitivo**: ajudar a ver a situacao de outro angulo sem invalidar
+- **Psicoeducacao sutil**: explicar dinamicas de poder e ciclos sem usar termos tecnicos
+- **Perguntas reflexivas**: incluir questionamentos que promovam auto-reflexao
+- **Normalizacao**: "e comum sentir isso..." para reduzir culpa e vergonha
+- **Fortalecimento de auto-eficacia**: destacar acoes positivas que ela ja tomou
+- **Tecnica do espelho**: refletir de volta o que ela demonstrou sentir
+- **Ancoragem em recursos internos**: lembrar de forcas e capacidades proprias
+- **Reducao de dissonancia**: ajudar a alinhar percepcao com realidade sem confronto
 
 ### Detalhes tecnicos
-- Sem dependencias novas -- usa Lucide, Accordion, Sheet ja instalados
-- Formulario de cadastro reutiliza `useAuth().register()` e `formatPhone` do Cadastro.tsx
-- Nenhuma alteracao no banco de dados necessaria
-- Pagina publica, sem autenticacao requerida
+
+**Arquivo 1: `supabase/functions/analysis-worker/index.ts`** (linhas 423-446)
+
+Atualizar o `macroPrompt` na funcao `runMacro` para incluir instrucoes de abordagem psicologica sutil:
+
+- No `panorama_narrativo`: comece validando sentimentos, use reenquadramento cognitivo, normalize experiencias, reflita forcas que a usuaria demonstrou (ex: "o fato de voce estar monitorando mostra coragem")
+- Nas `orientacoes`: use linguagem que promova auto-reflexao ("voce ja percebeu que...", "vale se perguntar..."), fortaleca auto-eficacia, sugira acoes como se fossem insights naturais
+- Adicionar campo `reflexao_pessoal`: 1-2 perguntas reflexivas sutis que a usuaria pode ponderar
+- Instrucao explicita: "NUNCA use termos como 'terapia cognitiva', 'reenquadramento', 'psicoeducacao', 'tecnica psicologica' ou qualquer jargao clinico. Fale como uma amiga sabia e experiente."
+
+**Arquivo 2: `supabase/functions/web-api/index.ts`** (linhas 1607-1642)
+
+Atualizar o `aiPrompt` na acao `getRelatorioSaude`:
+
+- Instrucoes adicionais para o `panorama_narrativo`: validar emocionalmente, normalizar, destacar recursos internos
+- Instrucoes para `explicacao_emocional`: usar tecnica do espelho, psicoeducacao sutil sobre dinamicas relacionais
+- Instrucoes para `orientacoes`: incluir perguntas reflexivas embutidas, fortalecer auto-eficacia, reduzir culpa
+
+**Arquivo 3: `supabase/functions/_shared/buildAnalysisPrompt.ts`** (linhas 82-88)
+
+Atualizar as instrucoes de `orientacoes_vitima` no prompt micro:
+
+- Adicionar: "Antes de orientar, valide o sentimento. Normalize a experiencia. Destaque algo positivo que a mulher fez ou demonstrou. Inclua uma pergunta reflexiva sutil."
+
+**Arquivo 4: `src/components/gravacoes/MacroReportCard.tsx`**
+
+- Adicionar exibicao do novo campo `reflexao_pessoal` (se presente no output_json) como um bloco suave com icone de coracao/pensamento
+- Atualizar a interface `MacroReport.output_json` para incluir `reflexao_pessoal?: string[]`
+
+### Exemplo de output antes vs depois
+
+**Antes (orientacao):**
+> "Considere buscar ajuda profissional para lidar com a situacao."
+
+**Depois (com psicologia sutil):**
+> "Voce demonstrou muita coragem ao registrar essas conversas -- isso mostra que voce reconhece seu valor. Pode ser util se perguntar: 'o que eu faria de diferente se uma amiga querida estivesse vivendo isso?' As vezes, nos dedicamos aos outros mais do que a nos mesmas, e voce merece o mesmo cuidado."
+
+**Antes (panorama):**
+> "Nos ultimos 30 dias foram detectados padroes de violencia psicologica."
+
+**Depois (com psicologia sutil):**
+> "Nos ultimos 30 dias, os registros mostram uma situacao que pode gerar muita confusao emocional -- e completamente normal sentir-se dividida ou ate questionar sua propria percepcao. O fato de voce estar acompanhando isso ja e um passo importante. Os padroes indicam comportamentos que tendem a minar sua confianca aos poucos, algo que acontece de forma tao gradual que muitas vezes so percebemos quando ja estamos exaustas."
+
+### Resumo de arquivos alterados
+
+| Arquivo | Tipo de alteracao |
+|---|---|
+| `supabase/functions/analysis-worker/index.ts` | Prompt macro enriquecido |
+| `supabase/functions/web-api/index.ts` | Prompt relatorio saude enriquecido |
+| `supabase/functions/_shared/buildAnalysisPrompt.ts` | Prompt micro orientacoes enriquecido |
+| `src/components/gravacoes/MacroReportCard.tsx` | Exibir campo `reflexao_pessoal` |
 
