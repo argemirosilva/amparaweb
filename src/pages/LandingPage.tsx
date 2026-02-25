@@ -158,7 +158,7 @@ export default function LandingPage() {
             {/* ── Tracking code box ── */}
             <div className="mt-4 p-4 rounded-2xl border border-white/15 bg-white/10 backdrop-blur-sm">
               <p className="text-sm font-medium text-white mb-2 flex items-center gap-2">
-                <Radio className="w-4 h-4" style={{ color: "hsl(175, 80%, 55%)" }} /> Monitorar link temporário
+                <Radio className="w-4 h-4" style={{ color: "hsl(175, 80%, 55%)" }} /> Recebeu um código de monitoramento?
               </p>
               <form onSubmit={handleTrack} className="flex gap-2">
                 <input
