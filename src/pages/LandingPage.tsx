@@ -357,8 +357,8 @@ export default function LandingPage() {
               <p className="text-white/90 text-sm md:text-base max-w-md">
                 Sua segurança é prioridade. Faça parte da nossa comunidade e nunca esteja sozinha!
               </p>
-              <Link to="/cadastro" className="ampara-btn-primary !w-auto text-sm md:text-base inline-flex items-center gap-2 !px-8 !py-3">
-                <Shield className="w-5 h-5" /> Cadastre-se gratuitamente
+              <Link to="/cadastro" className="ampara-btn-primary !w-auto text-sm md:text-base inline-flex items-center gap-2 py-[10px] px-[25px]">
+                 Cadastre-se gratuitamente
               </Link>
               <p className="text-white/60 text-xs">
                 Já tem uma conta? <Link to="/login" className="text-white font-medium underline">Acessar o Portal</Link>
