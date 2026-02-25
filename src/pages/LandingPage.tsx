@@ -404,7 +404,7 @@ export default function LandingPage() {
           <p className="text-white/60 text-center mt-1.5 max-w-lg mx-auto text-xs md:text-sm">Estamos aqui para ajudar. Entre em contato ou acione ajuda de emergência.</p>
 
           <div className="flex flex-wrap items-center justify-center gap-3 mt-6 p-3 rounded-xl border border-red-400/30 bg-red-500/10 text-sm">
-            <AlertTriangle className="w-5 h-5 text-red-400" />
+            
             <span className="font-semibold text-red-300 text-xs">Em caso de emergência:</span>
             <span className="flex items-center gap-1.5 font-bold text-white text-xs"><Phone className="w-3.5 h-3.5" style={{ color: CYAN }} /> Ligue 180</span>
             <span className="flex items-center gap-1.5 font-bold text-white text-xs"><Phone className="w-3.5 h-3.5" style={{ color: CYAN }} /> Ligue 190</span>
