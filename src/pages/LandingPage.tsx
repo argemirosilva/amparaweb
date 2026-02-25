@@ -148,7 +148,15 @@ export default function LandingPage() {
       {/* ══════ HERO ══════ */}
       <section className="relative overflow-hidden" style={{ background: "linear-gradient(135deg, hsl(255, 55%, 28%), hsl(220, 75%, 38%), hsl(210, 80%, 45%))" }}>
         <div className="absolute inset-0 opacity-20" style={{ background: "radial-gradient(circle at 30% 50%, hsl(270, 60%, 42% / 0.4), transparent 60%)" }} />
-        <div className="max-w-7xl mx-auto px-4 py-16 md:py-24 grid md:grid-cols-2 gap-12 items-center relative z-10">
+        {/* Mobile hero image - cropped top half */}
+        <div className="flex md:hidden justify-center overflow-hidden max-h-[200px] relative z-10">
+          <img
+            src={heroWoman}
+            alt="Mulher protegida pela plataforma AMPARA"
+            className="w-auto h-[400px] object-cover object-top drop-shadow-2xl"
+          />
+        </div>
+        <div className="max-w-7xl mx-auto px-4 py-8 md:py-24 grid md:grid-cols-2 gap-12 items-center relative z-10">
           <div className="space-y-6">
             <h1 className="text-3xl md:text-5xl font-bold leading-tight text-white">
               AMPARA Mulher
@@ -190,7 +198,7 @@ export default function LandingPage() {
               </p>
             </div>
           </div>
-          {/* hero image */}
+          {/* Desktop hero image */}
           <div className="hidden md:flex justify-center">
             <img
               src={heroWoman}
