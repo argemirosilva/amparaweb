@@ -66,7 +66,7 @@ const FAQ_ITEMS = [
   { q: "Como funciona o monitoramento em tempo real?", a: "O AMPARA monitora continuamente o ambiente através do seu dispositivo, analisando áudios e padrões de comportamento para identificar situações de risco. Tudo de forma discreta e segura." },
   { q: "Meus dados estão seguros?", a: "Sim. Utilizamos criptografia de ponta a ponta, armazenamento seguro e políticas rigorosas de privacidade. Seus dados nunca são compartilhados sem sua autorização." },
   { q: "Quem pode ver minhas informações?", a: "Apenas você e os guardiões que você autorizar têm acesso às suas informações. Nossa equipe de suporte só acessa dados mediante solicitação e consentimento explícito." },
-  { q: "O cadastro é gratuito?", a: "Sim, o cadastro e o uso básico da plataforma são totalmente gratuitos. Nosso compromisso é com a proteção de todas as mulheres." },
+  { q: "O AMPARA é gratuito?", a: "Sim, o AMPARA é 100% gratuito para todas as mulheres. Não há nenhuma cobrança — nem no cadastro, nem no uso de qualquer funcionalidade. Nosso compromisso é com a proteção de todas as mulheres." },
   { q: "Como funciona a gravação de áudio?", a: "O monitoramento de áudio acontece em segundo plano no seu dispositivo. Os áudios são enviados para análise inteligente que identifica padrões de violência e gera alertas automáticos." },
   { q: "Posso desativar o monitoramento a qualquer momento?", a: "Sim, você tem total controle. Pode ativar e desativar o monitoramento quando quiser pelas configurações do aplicativo." },
   { q: "O que são guardiões?", a: "Guardiões são pessoas de sua confiança (familiares, amigos) que podem receber alertas e acompanhar sua localização em situações de emergência." },
