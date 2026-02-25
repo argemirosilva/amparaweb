@@ -474,7 +474,7 @@ export default function LandingPage() {
             <p className="text-[10px] text-white/40 text-center uppercase tracking-widest mb-4">Parceiros</p>
             <div className="flex flex-wrap items-center justify-center gap-6 md:gap-10">
               <img src={partnerFacimus} alt="Facimus" className="h-6 md:h-8 object-contain brightness-0 invert opacity-70 hover:opacity-100 transition-opacity" />
-              <img src={partnerHpe} alt="Hewlett Packard Enterprise" className="h-14 md:h-18 object-contain brightness-0 invert opacity-70 hover:opacity-100 transition-opacity" />
+              <img src={partnerHpe} alt="Hewlett Packard Enterprise" className="h-[72px] md:h-[94px] object-contain brightness-0 invert opacity-70 hover:opacity-100 transition-opacity" />
               
               <img src={partnerAggregar} alt="Aggregar Serviços Digitais" className="h-10 md:h-14 object-contain invert mix-blend-screen opacity-70 hover:opacity-100 transition-opacity" />
               <img src={partnerSinergytech} alt="SinergyTech" className="h-6 md:h-8 object-contain brightness-0 invert opacity-70 hover:opacity-100 transition-opacity" />
