@@ -151,8 +151,11 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 py-16 md:py-24 grid md:grid-cols-2 gap-12 items-center relative z-10">
           <div className="space-y-6">
             <h1 className="text-3xl md:text-5xl font-bold leading-tight text-white">
-              AMPARA Mulher — <span style={{ color: CYAN }}>Proteção</span>, monitoramento e apoio para você
+              AMPARA Mulher
             </h1>
+            <p className="text-xl md:text-2xl font-medium text-white/80">
+              <span style={{ color: CYAN }}>Proteção</span>, monitoramento e apoio para você
+            </p>
             <p className="text-lg text-white/80 max-w-lg">
               No AMPARA Mulher, você nunca está sozinha. Uma plataforma de monitoramento, suporte personalizado e uma rede de apoio pronta para ajudar em qualquer situação de risco.
             </p>
