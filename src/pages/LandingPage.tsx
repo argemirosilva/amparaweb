@@ -37,7 +37,7 @@ const NAV_LINKS = [
 ];
 
 const FEATURES = [
-  { icon: TrendingUp, title: "Evolução do Risco", desc: "Monitoramento contínuo dos últimos 30 dias com alertas críticos e análise de tendência." },
+  { icon: TrendingUp, title: "Evolução do Risco", desc: "Acompanhe a análise dos últimos 30 dias com alertas críticos e tendências de risco." },
   { icon: Smartphone, title: "Monitoramento de Dispositivos", desc: "Acompanhe o status online, bateria e localização do seu dispositivo em tempo real." },
   { icon: Mic, title: "Gravação de Áudio", desc: "Grave áudios automaticamente e envie para análise inteligente com total privacidade." },
   { icon: FileUp, title: "Envio de Arquivos", desc: "Envie evidências e documentos de forma segura e criptografada." },
@@ -75,7 +75,7 @@ const IMPACT_NUMBERS = [
   { value: "+2.500", label: "Mulheres protegidas" },
   { value: "+15.000", label: "Análises realizadas" },
   { value: "+98%", label: "Satisfação das usuárias" },
-  { value: "24/7", label: "Monitoramento contínuo" },
+  { value: "100%", label: "Personalizável por você" },
 ];
 
 export default function LandingPage() {
@@ -335,8 +335,8 @@ export default function LandingPage() {
               </p>
               <ul className="space-y-2">
                 {[
-                  "Monitoramento em tempo real",
-                  "Suporte personalizado 24/7",
+                  "Monitoramento automático nos seus horários de risco",
+                  "Suporte personalizado",
                   "Recursos de emergência",
                   "Comunidade de apoio",
                   "Análise inteligente de risco",
