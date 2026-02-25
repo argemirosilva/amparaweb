@@ -119,12 +119,12 @@ export default function LandingPage() {
           <nav className="hidden lg:flex items-center gap-6">
             <NavItems />
           </nav>
-          <div className="hidden lg:flex items-center gap-3">
-            <Link to="/login" className="ampara-btn-secondary !w-auto !py-2 flex items-center gap-2">
-              <LogIn className="w-4 h-4" /> Portal da Mulher
+          <div className="hidden lg:flex items-center gap-2">
+            <Link to="/login" className="ampara-btn-secondary !w-auto !py-1.5 !px-3 flex items-center gap-1.5 text-xs">
+              <LogIn className="w-3.5 h-3.5" /> Portal da Mulher
             </Link>
-            <Link to="/cadastro" className="ampara-btn-primary !w-auto !py-2 flex items-center gap-2">
-              <Shield className="w-4 h-4" /> Cadastre-se
+            <Link to="/cadastro" className="ampara-btn-primary !w-auto !py-1.5 !px-3 flex items-center gap-1.5 text-xs">
+              <Shield className="w-3.5 h-3.5" /> Cadastre-se
             </Link>
           </div>
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
