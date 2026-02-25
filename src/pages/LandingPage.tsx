@@ -149,93 +149,85 @@ export default function LandingPage() {
       <section className="relative overflow-hidden" style={{ background: "linear-gradient(135deg, hsl(255, 55%, 28%), hsl(220, 75%, 38%), hsl(210, 80%, 45%))" }}>
         <div className="absolute inset-0 opacity-20" style={{ background: "radial-gradient(circle at 30% 50%, hsl(270, 60%, 42% / 0.4), transparent 60%)" }} />
         {/* Mobile hero image - cropped top half */}
-        <div className="flex md:hidden justify-center overflow-hidden max-h-[200px] relative z-10">
-          <img
-            src={heroWoman}
-            alt="Mulher protegida pela plataforma AMPARA"
-            className="w-auto h-[400px] object-cover object-top drop-shadow-2xl"
-          />
+        <div className="flex md:hidden justify-center overflow-hidden max-h-[160px] relative z-10">
+          <img src={heroWoman} alt="Mulher protegida pela plataforma AMPARA" className="w-auto h-[320px] object-cover object-top drop-shadow-2xl" />
         </div>
-        <div className="max-w-7xl mx-auto px-4 py-8 md:py-24 grid md:grid-cols-2 gap-12 items-center relative z-10">
-          <div className="space-y-6">
-            <h1 className="text-3xl md:text-5xl font-bold leading-tight text-white">
+        <div className="max-w-7xl mx-auto px-4 py-6 md:py-16 grid md:grid-cols-2 gap-8 items-center relative z-10">
+          <div className="space-y-4">
+            <h1 className="text-2xl md:text-4xl font-bold leading-tight text-white">
               AMPARA Mulher
             </h1>
-            <p className="text-lg md:text-2xl font-medium text-white">
+            <p className="text-base md:text-xl font-medium text-white">
               Proteção, monitoramento e apoio para você
             </p>
-            <p className="text-lg text-white/80 max-w-lg">
+            <p className="text-sm md:text-base text-white/80 max-w-lg">
               No AMPARA Mulher, você nunca está sozinha. Uma plataforma de monitoramento, suporte personalizado e uma rede de apoio pronta para ajudar em qualquer situação de risco.
             </p>
-            <div className="flex flex-wrap gap-3">
-              <Link to="/cadastro" className="ampara-btn-primary !w-auto text-lg flex items-center gap-2">
-                <Shield className="w-5 h-5" /> Cadastre-se agora
+            <div className="flex flex-wrap gap-2">
+              <Link to="/cadastro" className="ampara-btn-primary !w-auto text-sm md:text-base !py-2 !px-5 flex items-center gap-2">
+                <Shield className="w-4 h-4" /> Cadastre-se agora
               </Link>
-              <button onClick={() => scrollTo("sobre")} className="!w-auto flex items-center gap-2 px-6 py-3 rounded-xl border border-white/30 text-white font-semibold hover:bg-white/10 transition-colors">
-                Saiba mais <ArrowRight className="w-4 h-4" />
+              <button onClick={() => scrollTo("sobre")} className="!w-auto flex items-center gap-2 px-4 py-2 rounded-xl border border-white/30 text-white text-sm font-semibold hover:bg-white/10 transition-colors">
+                Saiba mais <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
 
             {/* ── Tracking code box ── */}
-            <div className="mt-4 p-4 rounded-2xl border border-white/15 bg-white/10 backdrop-blur-sm">
-              <p className="text-sm font-medium text-white mb-2 flex items-center gap-2">
-                <Radio className="w-4 h-4" style={{ color: CYAN }} /> Recebeu um código de monitoramento?
+            <div className="mt-3 p-3 rounded-xl border border-white/15 bg-white/10 backdrop-blur-sm">
+              <p className="text-xs font-medium text-white mb-1.5 flex items-center gap-1.5">
+                <Radio className="w-3.5 h-3.5" style={{ color: CYAN }} /> Recebeu um código de monitoramento?
               </p>
               <form onSubmit={handleTrack} className="flex gap-2">
                 <input
-                  className="ampara-input flex-1 !bg-white/15 !border-white/20 !text-white placeholder:text-white/50"
+                  className="ampara-input flex-1 !bg-white/15 !border-white/20 !text-white placeholder:text-white/50 !py-2 !text-xs"
                   placeholder="Digite o código (ex: 482731)"
                   value={trackCode}
                   onChange={(e) => setTrackCode(e.target.value.replace(/\s/g, ""))}
                   maxLength={20}
                 />
-                <button type="submit" disabled={!trackCode.trim()} className="ampara-btn-primary !w-auto !py-2.5 flex items-center gap-2 shrink-0">
-                  <MapPin className="w-4 h-4" /> Monitorar
+                <button type="submit" disabled={!trackCode.trim()} className="ampara-btn-primary !w-auto !py-2 !px-4 !text-xs flex items-center gap-1.5 shrink-0">
+                  <MapPin className="w-3.5 h-3.5" /> Monitorar
                 </button>
               </form>
-              <p className="text-xs text-white/50 mt-2">
+              <p className="text-[10px] text-white/50 mt-1.5">
                 Insira o código recebido para acompanhar a localização em tempo real.
               </p>
             </div>
           </div>
           {/* Desktop hero image */}
           <div className="hidden md:flex justify-center">
-            <img
-              src={heroWoman}
-              alt="Mulher protegida pela plataforma AMPARA"
-              className="max-h-[520px] w-auto object-contain drop-shadow-2xl"
-            />
+            <img src={heroWoman} alt="Mulher protegida pela plataforma AMPARA" className="max-h-[400px] w-auto object-contain drop-shadow-2xl" />
           </div>
         </div>
       </section>
 
       {/* ══════ SOBRE ══════ */}
-      <section id="sobre" className="py-16 md:py-24" style={{ background: BG_2 }}>
-        <div className="max-w-7xl mx-auto px-4">
-          <h2 className="text-2xl font-semibold text-white text-center">Sobre o AMPARA Mulher</h2>
-          <p className="text-white/60 text-center mt-2 max-w-xl mx-auto">
+      <section id="sobre" className="py-10 md:py-16" style={{ background: BG_2 }}>
+        <div className="max-w-6xl mx-auto px-4">
+          <h2 className="text-xl md:text-2xl font-semibold text-white text-center">Sobre o AMPARA Mulher</h2>
+          <p className="text-white/60 text-center mt-1.5 max-w-lg mx-auto text-xs md:text-sm">
             Uma plataforma criada para proteger, monitorar e apoiar mulheres em situação de vulnerabilidade, com tecnologia, acolhimento e informação.
           </p>
-          <div className="grid md:grid-cols-3 gap-6 mt-12">
+          <div className="grid md:grid-cols-3 gap-4 mt-8">
             {[
               { icon: Heart, title: "Missão", text: "Oferecer proteção integral e suporte contínuo para mulheres em situação de risco, utilizando tecnologia acessível e humanizada." },
               { icon: Shield, title: "Visão", text: "Ser referência nacional em proteção feminina, integrando tecnologia, redes de apoio e políticas públicas para um futuro mais seguro." },
               { icon: Users, title: "Propósito", text: "Acreditamos que toda mulher merece viver sem medo. O AMPARA é a ponte entre a vulnerabilidade e a segurança plena." },
             ].map((c) => (
-              <div key={c.title} className={`rounded-2xl p-6 md:p-8 ${GLASS} flex flex-col items-center text-center gap-4`}>
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-white/10 border border-white/20">
-                  <c.icon className="w-7 h-7 text-white" />
+              <div key={c.title} className={`rounded-xl p-4 md:p-6 ${GLASS} flex flex-col items-center text-center gap-3`}>
+                <div className="inline-flex items-center justify-center w-11 h-11 rounded-full bg-white/10 border border-white/20">
+                  <c.icon className="w-5 h-5 text-white" />
                 </div>
-                <h3 className="text-lg font-semibold text-white">{c.title}</h3>
-                <p className="text-white/60 text-sm">{c.text}</p>
+                <h3 className="text-sm font-semibold text-white">{c.title}</h3>
+                <p className="text-white/60 text-xs">{c.text}</p>
               </div>
             ))}
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-12">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-8">
             {IMPACT_NUMBERS.map((n) => (
-              <div key={n.label} className={`rounded-2xl py-6 text-center ${GLASS}`}>
-                <p className="text-3xl md:text-4xl font-bold" style={{ color: CYAN }}>{n.value}</p>
-                <p className="text-sm text-white/60 mt-1">{n.label}</p>
+              <div key={n.label} className={`rounded-xl py-4 text-center ${GLASS}`}>
+                <p className="text-2xl md:text-3xl font-bold" style={{ color: CYAN }}>{n.value}</p>
+                <p className="text-xs text-white/60 mt-0.5">{n.label}</p>
               </div>
             ))}
           </div>
@@ -243,18 +235,18 @@ export default function LandingPage() {
       </section>
 
       {/* ══════ FUNCIONALIDADES ══════ */}
-      <section id="funcionalidades" className="py-16 md:py-24" style={{ background: BG_3 }}>
-        <div className="max-w-7xl mx-auto px-4">
-          <h2 className="text-2xl font-semibold text-white text-center">Funcionalidades</h2>
-          <p className="text-white/60 text-center mt-2 max-w-xl mx-auto">Tudo o que você precisa para se proteger, em um só lugar.</p>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-12">
+      <section id="funcionalidades" className="py-10 md:py-16" style={{ background: BG_3 }}>
+        <div className="max-w-6xl mx-auto px-4">
+          <h2 className="text-xl md:text-2xl font-semibold text-white text-center">Funcionalidades</h2>
+          <p className="text-white/60 text-center mt-1.5 max-w-lg mx-auto text-xs md:text-sm">Tudo o que você precisa para se proteger, em um só lugar.</p>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
             {FEATURES.map((f) => (
-              <div key={f.title} className={`rounded-2xl p-6 text-center ${GLASS} transition-all duration-200 hover:-translate-y-1 hover:bg-white/15 flex flex-col items-center gap-4`}>
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-white/10 border border-white/20">
-                  <f.icon className="w-7 h-7 text-white" />
+              <div key={f.title} className={`rounded-xl p-4 text-center ${GLASS} transition-all duration-200 hover:-translate-y-1 hover:bg-white/15 flex flex-col items-center gap-3`}>
+                <div className="inline-flex items-center justify-center w-11 h-11 rounded-full bg-white/10 border border-white/20">
+                  <f.icon className="w-5 h-5 text-white" />
                 </div>
-                <h3 className="font-semibold text-white">{f.title}</h3>
-                <p className="text-sm text-white/60">{f.desc}</p>
+                <h3 className="text-sm font-semibold text-white">{f.title}</h3>
+                <p className="text-xs text-white/60">{f.desc}</p>
               </div>
             ))}
           </div>
@@ -262,54 +254,54 @@ export default function LandingPage() {
       </section>
 
       {/* ══════ COMO FUNCIONA ══════ */}
-      <section id="como-funciona" className="py-16 md:py-24" style={{ background: BG_1 }}>
-        <div className="max-w-7xl mx-auto px-4">
-          <h2 className="text-2xl font-semibold text-white text-center">Como Funciona</h2>
-          <p className="text-white/60 text-center mt-2 max-w-xl mx-auto">Em 4 passos simples, você ativa sua proteção.</p>
-          <div className="grid md:grid-cols-4 gap-8 mt-12">
+      <section id="como-funciona" className="py-10 md:py-16" style={{ background: BG_1 }}>
+        <div className="max-w-6xl mx-auto px-4">
+          <h2 className="text-xl md:text-2xl font-semibold text-white text-center">Como Funciona</h2>
+          <p className="text-white/60 text-center mt-1.5 max-w-lg mx-auto text-xs md:text-sm">Em 4 passos simples, você ativa sua proteção.</p>
+          <div className="grid md:grid-cols-4 gap-6 mt-8">
             {STEPS.map((s, i) => (
-              <div key={s.num} className="flex flex-col items-center text-center gap-3 relative">
-                <div className="inline-flex items-center justify-center w-10 h-10 rounded-full text-lg font-bold" style={{ background: CYAN, color: "hsl(255, 55%, 22%)" }}>
+              <div key={s.num} className="flex flex-col items-center text-center gap-2 relative">
+                <div className="inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold" style={{ background: CYAN, color: "hsl(255, 55%, 22%)" }}>
                   {s.num}
                 </div>
-                <h3 className="font-semibold text-white">{s.title}</h3>
-                <p className="text-sm text-white/60">{s.desc}</p>
+                <h3 className="text-sm font-semibold text-white">{s.title}</h3>
+                <p className="text-xs text-white/60">{s.desc}</p>
                 {i < STEPS.length - 1 && (
-                  <ChevronRight className="hidden md:block absolute -right-5 top-4 text-white/30 w-6 h-6" />
+                  <ChevronRight className="hidden md:block absolute -right-4 top-3 text-white/30 w-5 h-5" />
                 )}
               </div>
             ))}
           </div>
-          <div className="text-center mt-10">
-            <Link to="/cadastro" className="ampara-btn-primary !w-auto text-base inline-flex items-center gap-2 mx-auto">
-              <Shield className="w-5 h-5" /> Comece agora
+          <div className="text-center mt-8">
+            <Link to="/cadastro" className="ampara-btn-primary !w-auto text-sm inline-flex items-center gap-2 mx-auto !py-2 !px-5">
+              <Shield className="w-4 h-4" /> Comece agora
             </Link>
           </div>
         </div>
       </section>
 
       {/* ══════ DEPOIMENTOS ══════ */}
-      <section id="depoimentos" className="py-16 md:py-24" style={{ background: BG_2 }}>
-        <div className="max-w-7xl mx-auto px-4">
-          <h2 className="text-2xl font-semibold text-white text-center">Depoimentos</h2>
-          <p className="text-white/60 text-center mt-2 max-w-xl mx-auto">Histórias reais de quem já faz parte da rede AMPARA.</p>
-          <div className="grid md:grid-cols-3 gap-6 mt-12">
+      <section id="depoimentos" className="py-10 md:py-16" style={{ background: BG_2 }}>
+        <div className="max-w-6xl mx-auto px-4">
+          <h2 className="text-xl md:text-2xl font-semibold text-white text-center">Depoimentos</h2>
+          <p className="text-white/60 text-center mt-1.5 max-w-lg mx-auto text-xs md:text-sm">Histórias reais de quem já faz parte da rede AMPARA.</p>
+          <div className="grid md:grid-cols-3 gap-4 mt-8">
             {TESTIMONIALS.map((t) => (
-              <div key={t.name} className={`rounded-2xl p-6 border-l-4 italic ${GLASS}`} style={{ borderLeftColor: CYAN }}>
-                <div className="flex items-center gap-3 mb-4 not-italic">
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white bg-white/20">
+              <div key={t.name} className={`rounded-xl p-4 border-l-4 italic ${GLASS}`} style={{ borderLeftColor: CYAN }}>
+                <div className="flex items-center gap-2.5 mb-3 not-italic">
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white bg-white/20">
                     {t.initials}
                   </div>
                   <div>
-                    <p className="font-semibold text-white text-sm">{t.name}</p>
+                    <p className="font-semibold text-white text-xs">{t.name}</p>
                     <div className="flex gap-0.5">
                       {Array.from({ length: t.stars }).map((_, i) => (
-                        <Star key={i} className="w-3.5 h-3.5" style={{ fill: CYAN, color: CYAN }} />
+                        <Star key={i} className="w-3 h-3" style={{ fill: CYAN, color: CYAN }} />
                       ))}
                     </div>
                   </div>
                 </div>
-                <p className="text-sm text-white/70 leading-relaxed">"{t.text}"</p>
+                <p className="text-xs text-white/70 leading-relaxed">"{t.text}"</p>
               </div>
             ))}
           </div>
@@ -317,15 +309,15 @@ export default function LandingPage() {
       </section>
 
       {/* ══════ FAQ ══════ */}
-      <section id="faq" className="py-16 md:py-24" style={{ background: BG_3 }}>
-        <div className="max-w-3xl mx-auto px-4">
-          <h2 className="text-2xl font-semibold text-white text-center">Perguntas Frequentes</h2>
-          <p className="text-white/60 text-center mt-2 max-w-xl mx-auto mb-8">Tire suas dúvidas sobre a plataforma.</p>
-          <Accordion type="single" collapsible className="mt-8 space-y-2">
+      <section id="faq" className="py-10 md:py-16" style={{ background: BG_3 }}>
+        <div className="max-w-2xl mx-auto px-4">
+          <h2 className="text-xl md:text-2xl font-semibold text-white text-center">Perguntas Frequentes</h2>
+          <p className="text-white/60 text-center mt-1.5 max-w-lg mx-auto mb-6 text-xs md:text-sm">Tire suas dúvidas sobre a plataforma.</p>
+          <Accordion type="single" collapsible className="mt-6 space-y-1.5">
             {FAQ_ITEMS.map((item, i) => (
-              <AccordionItem key={i} value={`faq-${i}`} className="rounded-xl bg-white/10 border border-white/15 px-4 backdrop-blur-sm">
-                <AccordionTrigger className="text-left text-white hover:no-underline">{item.q}</AccordionTrigger>
-                <AccordionContent className="text-white/60">{item.a}</AccordionContent>
+              <AccordionItem key={i} value={`faq-${i}`} className="rounded-lg bg-white/10 border border-white/15 px-3 backdrop-blur-sm">
+                <AccordionTrigger className="text-left text-white hover:no-underline text-sm py-3">{item.q}</AccordionTrigger>
+                <AccordionContent className="text-white/60 text-xs">{item.a}</AccordionContent>
               </AccordionItem>
             ))}
           </Accordion>
@@ -333,15 +325,15 @@ export default function LandingPage() {
       </section>
 
       {/* ══════ FAÇA PARTE ══════ */}
-      <section id="cadastro" className="py-16 md:py-24 text-white" style={{ background: BG_1 }}>
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div className="space-y-6">
-              <h2 className="text-2xl md:text-3xl font-bold">Faça Parte da Rede AMPARA</h2>
-              <p className="text-white/80 text-base">
+      <section id="cadastro" className="py-10 md:py-16 text-white" style={{ background: BG_1 }}>
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="grid md:grid-cols-2 gap-8 items-center">
+            <div className="space-y-4">
+              <h2 className="text-xl md:text-2xl font-bold">Faça Parte da Rede AMPARA</h2>
+              <p className="text-white/80 text-sm">
                 Proteja-se com tecnologia, acolhimento e informação. Ao se cadastrar, você terá acesso a:
               </p>
-              <ul className="space-y-3">
+              <ul className="space-y-2">
                 {[
                   "Monitoramento em tempo real",
                   "Suporte personalizado 24/7",
@@ -350,23 +342,23 @@ export default function LandingPage() {
                   "Análise inteligente de risco",
                   "Total sigilo e proteção dos dados",
                 ].map((b) => (
-                  <li key={b} className="flex items-center gap-3 text-sm">
-                    <Check className="w-5 h-5 shrink-0" style={{ color: CYAN }} /> {b}
+                  <li key={b} className="flex items-center gap-2 text-xs">
+                    <Check className="w-4 h-4 shrink-0" style={{ color: CYAN }} /> {b}
                   </li>
                 ))}
               </ul>
-              <p className="text-white/50 text-xs mt-4 flex items-center gap-2">
-                <Lock className="w-4 h-4" /> Seus dados são protegidos por criptografia de ponta a ponta.
+              <p className="text-white/50 text-[10px] mt-3 flex items-center gap-1.5">
+                <Lock className="w-3.5 h-3.5" /> Seus dados são protegidos por criptografia de ponta a ponta.
               </p>
             </div>
-            <div className="flex flex-col items-center gap-6 text-center">
-              <p className="text-white/90 text-lg max-w-md">
+            <div className="flex flex-col items-center gap-4 text-center">
+              <p className="text-white/90 text-sm md:text-base max-w-md">
                 Sua segurança é prioridade. Faça parte da nossa comunidade e nunca esteja sozinha!
               </p>
-              <Link to="/cadastro" className="ampara-btn-primary !w-auto text-lg inline-flex items-center gap-2 px-10 py-4">
-                <Shield className="w-6 h-6" /> Cadastre-se gratuitamente
+              <Link to="/cadastro" className="ampara-btn-primary !w-auto text-sm md:text-base inline-flex items-center gap-2 !px-8 !py-3">
+                <Shield className="w-5 h-5" /> Cadastre-se gratuitamente
               </Link>
-              <p className="text-white/60 text-sm">
+              <p className="text-white/60 text-xs">
                 Já tem uma conta? <Link to="/login" className="text-white font-medium underline">Acessar o Portal</Link>
               </p>
             </div>
@@ -375,70 +367,70 @@ export default function LandingPage() {
       </section>
 
       {/* ══════ PARCEIROS ══════ */}
-      <section id="parceiros" className="py-16 md:py-24" style={{ background: BG_2 }}>
-        <div className="max-w-7xl mx-auto px-4">
-          <h2 className="text-2xl font-semibold text-white text-center">Parceiros e Impacto Social</h2>
-          <p className="text-white/60 text-center mt-2 max-w-xl mx-auto">Juntos, construímos uma rede de proteção mais forte.</p>
-          <div className="grid sm:grid-cols-3 gap-6 mt-12">
+      <section id="parceiros" className="py-10 md:py-16" style={{ background: BG_2 }}>
+        <div className="max-w-6xl mx-auto px-4">
+          <h2 className="text-xl md:text-2xl font-semibold text-white text-center">Parceiros e Impacto Social</h2>
+          <p className="text-white/60 text-center mt-1.5 max-w-lg mx-auto text-xs md:text-sm">Juntos, construímos uma rede de proteção mais forte.</p>
+          <div className="grid sm:grid-cols-3 gap-4 mt-8">
             {[
               { icon: Building2, label: "Órgãos Governamentais", desc: "Parcerias com delegacias, Ministério Público e secretarias de segurança." },
               { icon: Heart, label: "ONGs e Grupos de Apoio", desc: "Colaboração com organizações dedicadas à proteção e empoderamento feminino." },
               { icon: Users2, label: "Comunidade AMPARA", desc: "Rede de guardiões, voluntários e profissionais comprometidos com a causa." },
             ].map((p) => (
-              <div key={p.label} className={`rounded-2xl p-6 text-center ${GLASS} transition-all duration-200 hover:-translate-y-1 hover:bg-white/15 flex flex-col items-center gap-4`}>
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-white/10 border border-white/20">
-                  <p.icon className="w-7 h-7 text-white" />
+              <div key={p.label} className={`rounded-xl p-4 text-center ${GLASS} transition-all duration-200 hover:-translate-y-1 hover:bg-white/15 flex flex-col items-center gap-3`}>
+                <div className="inline-flex items-center justify-center w-11 h-11 rounded-full bg-white/10 border border-white/20">
+                  <p.icon className="w-5 h-5 text-white" />
                 </div>
-                <h3 className="font-semibold text-white">{p.label}</h3>
-                <p className="text-sm text-white/60">{p.desc}</p>
+                <h3 className="text-sm font-semibold text-white">{p.label}</h3>
+                <p className="text-xs text-white/60">{p.desc}</p>
               </div>
             ))}
           </div>
-          <div className="text-center mt-10">
-            <p className="text-white/60">Quer ser um parceiro?</p>
-            <button onClick={() => scrollTo("contato")} className="mt-3 mx-auto flex items-center gap-2 rounded-full py-3 px-8 font-semibold text-white border-2 border-white/30 hover:bg-white/10 transition-colors">
-              Entre em contato <ArrowRight className="w-4 h-4" />
+          <div className="text-center mt-8">
+            <p className="text-white/60 text-xs">Quer ser um parceiro?</p>
+            <button onClick={() => scrollTo("contato")} className="mt-2 mx-auto flex items-center gap-2 rounded-full py-2 px-6 text-sm font-semibold text-white border-2 border-white/30 hover:bg-white/10 transition-colors">
+              Entre em contato <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
       </section>
 
       {/* ══════ CONTATO ══════ */}
-      <section id="contato" className="py-16 md:py-24" style={{ background: BG_3 }}>
-        <div className="max-w-7xl mx-auto px-4">
-          <h2 className="text-2xl font-semibold text-white text-center">Contato e Suporte</h2>
-          <p className="text-white/60 text-center mt-2 max-w-xl mx-auto">Estamos aqui para ajudar. Entre em contato ou acione ajuda de emergência.</p>
+      <section id="contato" className="py-10 md:py-16" style={{ background: BG_3 }}>
+        <div className="max-w-6xl mx-auto px-4">
+          <h2 className="text-xl md:text-2xl font-semibold text-white text-center">Contato e Suporte</h2>
+          <p className="text-white/60 text-center mt-1.5 max-w-lg mx-auto text-xs md:text-sm">Estamos aqui para ajudar. Entre em contato ou acione ajuda de emergência.</p>
 
-          <div className="flex flex-wrap items-center justify-center gap-4 mt-8 p-4 rounded-2xl border border-red-400/30 bg-red-500/10">
-            <AlertTriangle className="w-6 h-6 text-red-400" />
-            <span className="font-semibold text-red-300">Em caso de emergência:</span>
-            <span className="flex items-center gap-2 font-bold text-white"><Phone className="w-4 h-4" style={{ color: CYAN }} /> Ligue 180</span>
-            <span className="flex items-center gap-2 font-bold text-white"><Phone className="w-4 h-4" style={{ color: CYAN }} /> Ligue 190</span>
+          <div className="flex flex-wrap items-center justify-center gap-3 mt-6 p-3 rounded-xl border border-red-400/30 bg-red-500/10 text-sm">
+            <AlertTriangle className="w-5 h-5 text-red-400" />
+            <span className="font-semibold text-red-300 text-xs">Em caso de emergência:</span>
+            <span className="flex items-center gap-1.5 font-bold text-white text-xs"><Phone className="w-3.5 h-3.5" style={{ color: CYAN }} /> Ligue 180</span>
+            <span className="flex items-center gap-1.5 font-bold text-white text-xs"><Phone className="w-3.5 h-3.5" style={{ color: CYAN }} /> Ligue 190</span>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-12 mt-12">
-            <div className="space-y-6">
-              <div className="flex items-center gap-3">
-                <Mail className="w-5 h-5" style={{ color: CYAN }} />
-                <span className="text-white">contato@amparamulher.com.br</span>
+          <div className="grid md:grid-cols-2 gap-8 mt-8">
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Mail className="w-4 h-4" style={{ color: CYAN }} />
+                <span className="text-white text-sm">contato@amparamulher.com.br</span>
               </div>
-              <div className="flex items-center gap-3">
-                <Phone className="w-5 h-5" style={{ color: CYAN }} />
-                <span className="text-white">Central de Atendimento: Ligue 180</span>
+              <div className="flex items-center gap-2">
+                <Phone className="w-4 h-4" style={{ color: CYAN }} />
+                <span className="text-white text-sm">Central de Atendimento: Ligue 180</span>
               </div>
-              <p className="text-white/60 text-sm">
+              <p className="text-white/60 text-xs">
                 Nosso time de suporte está disponível para ajudar com dúvidas, orientações e situações de emergência. Seu contato é confidencial.
               </p>
             </div>
-            <form onSubmit={handleContact} className="space-y-4">
-              <input className="w-full rounded-xl px-4 py-2.5 text-sm bg-white/15 border border-white/20 text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-white/30" placeholder="Seu nome" value={contact.nome} maxLength={100}
+            <form onSubmit={handleContact} className="space-y-3">
+              <input className="w-full rounded-lg px-3 py-2 text-xs bg-white/15 border border-white/20 text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-white/30" placeholder="Seu nome" value={contact.nome} maxLength={100}
                 onChange={(e) => setContact({ ...contact, nome: e.target.value })} required />
-              <input type="email" className="w-full rounded-xl px-4 py-2.5 text-sm bg-white/15 border border-white/20 text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-white/30" placeholder="Seu email" value={contact.email} maxLength={255}
+              <input type="email" className="w-full rounded-lg px-3 py-2 text-xs bg-white/15 border border-white/20 text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-white/30" placeholder="Seu email" value={contact.email} maxLength={255}
                 onChange={(e) => setContact({ ...contact, email: e.target.value })} required />
-              <textarea className="w-full rounded-xl px-4 py-2.5 text-sm bg-white/15 border border-white/20 text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-white/30 min-h-[100px] resize-none" placeholder="Sua mensagem" value={contact.mensagem}
+              <textarea className="w-full rounded-lg px-3 py-2 text-xs bg-white/15 border border-white/20 text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-white/30 min-h-[80px] resize-none" placeholder="Sua mensagem" value={contact.mensagem}
                 onChange={(e) => setContact({ ...contact, mensagem: e.target.value })} required maxLength={1000} />
-              <button type="submit" className="ampara-btn-primary !w-auto flex items-center gap-2">
-                <Mail className="w-4 h-4" /> Enviar mensagem
+              <button type="submit" className="ampara-btn-primary !w-auto !py-2 !px-5 !text-sm flex items-center gap-2">
+                <Mail className="w-3.5 h-3.5" /> Enviar mensagem
               </button>
             </form>
           </div>
@@ -446,50 +438,50 @@ export default function LandingPage() {
       </section>
 
       {/* ══════ FOOTER ══════ */}
-      <footer className="py-12 text-white" style={{ background: "hsl(255, 55%, 18%)" }}>
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="grid sm:grid-cols-3 gap-8">
+      <footer className="py-8 text-white" style={{ background: "hsl(255, 55%, 18%)" }}>
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="grid sm:grid-cols-3 gap-6">
             <div>
-              <img src={amparaLogo} alt="AMPARA Mulher" className="h-8 brightness-0 invert mb-4" />
-              <p className="text-white/60 text-sm">
+              <img src={amparaLogo} alt="AMPARA Mulher" className="h-7 brightness-0 invert mb-3" />
+              <p className="text-white/60 text-xs">
                 Proteção, monitoramento e apoio para mulheres em situação de vulnerabilidade. Tecnologia a serviço da vida.
               </p>
             </div>
             <div>
-              <h4 className="font-semibold mb-3">Links Rápidos</h4>
-              <div className="flex flex-col gap-2">
+              <h4 className="font-semibold text-sm mb-2">Links Rápidos</h4>
+              <div className="flex flex-col gap-1.5">
                 {NAV_LINKS.map((l) => (
-                  <button key={l.id} onClick={() => scrollTo(l.id)} className="text-sm text-white/60 hover:text-white text-left transition-colors">
+                  <button key={l.id} onClick={() => scrollTo(l.id)} className="text-xs text-white/60 hover:text-white text-left transition-colors">
                     {l.label}
                   </button>
                 ))}
               </div>
             </div>
             <div>
-              <h4 className="font-semibold mb-3">Institucional</h4>
-              <div className="flex flex-col gap-2">
-                <Link to="/privacidade" className="text-sm text-white/60 hover:text-white transition-colors">Política de Privacidade</Link>
-                <Link to="/login" className="text-sm text-white/60 hover:text-white transition-colors">Portal da Mulher</Link>
-                <Link to="/cadastro" className="text-sm text-white/60 hover:text-white transition-colors">Cadastre-se</Link>
-                <Link to="/transparencia" className="text-sm text-white/60 hover:text-white transition-colors">Portal de Transparência</Link>
+              <h4 className="font-semibold text-sm mb-2">Institucional</h4>
+              <div className="flex flex-col gap-1.5">
+                <Link to="/privacidade" className="text-xs text-white/60 hover:text-white transition-colors">Política de Privacidade</Link>
+                <Link to="/login" className="text-xs text-white/60 hover:text-white transition-colors">Portal da Mulher</Link>
+                <Link to="/cadastro" className="text-xs text-white/60 hover:text-white transition-colors">Cadastre-se</Link>
+                <Link to="/transparencia" className="text-xs text-white/60 hover:text-white transition-colors">Portal de Transparência</Link>
               </div>
             </div>
           </div>
           {/* ── Parceiros ── */}
-          <div className="mt-8 pt-8 border-t border-white/10">
-            <p className="text-xs text-white/40 text-center uppercase tracking-widest mb-6">Parceiros</p>
-            <div className="flex flex-wrap items-center justify-center gap-8 md:gap-12">
-              <img src={partnerFacimus} alt="Facimus" className="h-8 md:h-10 object-contain opacity-70 hover:opacity-100 transition-opacity" />
-              <img src={partnerHpe} alt="Hewlett Packard Enterprise" className="h-12 md:h-16 object-contain brightness-0 invert opacity-70 hover:opacity-100 transition-opacity" />
-              <img src={partnerOrizon} alt="Orizon Tech" className="h-8 md:h-10 object-contain brightness-0 invert opacity-70 hover:opacity-100 transition-opacity" />
+          <div className="mt-6 pt-6 border-t border-white/10">
+            <p className="text-[10px] text-white/40 text-center uppercase tracking-widest mb-4">Parceiros</p>
+            <div className="flex flex-wrap items-center justify-center gap-6 md:gap-10">
+              <img src={partnerFacimus} alt="Facimus" className="h-6 md:h-8 object-contain opacity-70 hover:opacity-100 transition-opacity" />
+              <img src={partnerHpe} alt="Hewlett Packard Enterprise" className="h-10 md:h-12 object-contain brightness-0 invert opacity-70 hover:opacity-100 transition-opacity" />
+              <img src={partnerOrizon} alt="Orizon Tech" className="h-6 md:h-8 object-contain brightness-0 invert opacity-70 hover:opacity-100 transition-opacity" />
             </div>
           </div>
 
-          <hr className="border-white/15 my-8" />
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-white/50">
+          <hr className="border-white/15 my-6" />
+          <div className="flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-white/50">
             <p>© {new Date().getFullYear()} AMPARA Mulher. Todos os direitos reservados.</p>
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-red-400" />
+            <div className="flex items-center gap-1.5">
+              <AlertTriangle className="w-3.5 h-3.5 text-red-400" />
               <span>Emergência: <strong>Ligue 180</strong> ou <strong>190</strong></span>
             </div>
           </div>
