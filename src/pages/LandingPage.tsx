@@ -371,7 +371,7 @@ export default function LandingPage() {
       {/* ══════ PARCEIROS ══════ */}
       <section id="parceiros" className="py-10 md:py-16" style={{ background: BG_2 }}>
         <div className="max-w-6xl mx-auto px-4">
-          <h2 className="text-xl md:text-2xl font-semibold text-white text-center">Parceiros e Impacto Social</h2>
+          
           <p className="text-white/60 text-center mt-1.5 max-w-lg mx-auto text-xs md:text-sm">Juntos, construímos uma rede de proteção mais forte.</p>
           <div className="grid sm:grid-cols-3 gap-4 mt-8">
             {[
