@@ -12,6 +12,7 @@ import {
   MessageCircleWarning,
   Lightbulb,
   BookOpen,
+  Heart,
 } from "lucide-react";
 
 interface MacroReport {
@@ -25,6 +26,7 @@ interface MacroReport {
     principais_ofensas?: string[];
     canais_apoio?: string[];
     nivel_alerta?: string;
+    reflexao_pessoal?: string[];
   };
   aggregates_json: {
     total_gravacoes_analisadas?: number;
@@ -189,6 +191,24 @@ export default function MacroReportCard({
               <li key={i} className="text-xs text-foreground/85 leading-relaxed flex items-start gap-2">
                 <span className="text-primary/50 mt-0.5 shrink-0 text-[10px]">✦</span>
                 {o}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Reflexão pessoal */}
+      {output.reflexao_pessoal && output.reflexao_pessoal.length > 0 && (
+        <div className="rounded-lg bg-accent/30 border border-accent/50 p-3 space-y-2">
+          <div className="flex items-center gap-1.5 text-[10px] font-semibold text-accent-foreground/70 uppercase tracking-wider">
+            <Heart className="w-3 h-3" />
+            Para refletir
+          </div>
+          <ul className="space-y-1.5">
+            {output.reflexao_pessoal.map((r, i) => (
+              <li key={i} className="text-xs text-foreground/85 leading-relaxed flex items-start gap-2 italic">
+                <span className="text-accent-foreground/50 mt-0.5 shrink-0 text-[10px]">💭</span>
+                {r}
               </li>
             ))}
           </ul>
