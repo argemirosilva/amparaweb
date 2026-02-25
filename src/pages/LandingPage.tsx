@@ -473,10 +473,10 @@ export default function LandingPage() {
           <div className="mt-6 pt-6 border-t border-white/10">
             <p className="text-[10px] text-white/40 text-center uppercase tracking-widest mb-4">Parceiros</p>
             <div className="flex flex-wrap items-center justify-center gap-6 md:gap-10">
-              <img src={partnerFacimus} alt="Facimus" className="h-6 md:h-8 object-contain opacity-70 hover:opacity-100 transition-opacity" />
+              <img src={partnerFacimus} alt="Facimus" className="h-6 md:h-8 object-contain brightness-0 invert opacity-70 hover:opacity-100 transition-opacity" />
               <img src={partnerHpe} alt="Hewlett Packard Enterprise" className="h-10 md:h-12 object-contain brightness-0 invert opacity-70 hover:opacity-100 transition-opacity" />
               <img src={partnerOrizon} alt="Orizon Tech" className="h-6 md:h-8 object-contain brightness-0 invert opacity-70 hover:opacity-100 transition-opacity" />
-              <img src={partnerAggregar} alt="Aggregar Serviços Digitais" className="h-6 md:h-8 object-contain opacity-70 hover:opacity-100 transition-opacity" />
+              <img src={partnerAggregar} alt="Aggregar Serviços Digitais" className="h-8 md:h-10 object-contain opacity-70 hover:opacity-100 transition-opacity" />
               <img src={partnerSinergytech} alt="SinergyTech" className="h-6 md:h-8 object-contain brightness-0 invert opacity-70 hover:opacity-100 transition-opacity" />
             </div>
           </div>
