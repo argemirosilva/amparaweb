@@ -476,7 +476,7 @@ export default function LandingPage() {
               <img src={partnerFacimus} alt="Facimus" className="h-6 md:h-8 object-contain brightness-0 invert opacity-70 hover:opacity-100 transition-opacity" />
               <img src={partnerHpe} alt="Hewlett Packard Enterprise" className="h-10 md:h-12 object-contain brightness-0 invert opacity-70 hover:opacity-100 transition-opacity" />
               <img src={partnerOrizon} alt="Orizon Tech" className="h-6 md:h-8 object-contain brightness-0 invert opacity-70 hover:opacity-100 transition-opacity" />
-              <img src={partnerAggregar} alt="Aggregar Serviços Digitais" className="h-8 md:h-10 object-contain opacity-70 hover:opacity-100 transition-opacity" />
+              <img src={partnerAggregar} alt="Aggregar Serviços Digitais" className="h-8 md:h-10 object-contain brightness-0 invert opacity-70 hover:opacity-100 transition-opacity" />
               <img src={partnerSinergytech} alt="SinergyTech" className="h-6 md:h-8 object-contain brightness-0 invert opacity-70 hover:opacity-100 transition-opacity" />
             </div>
           </div>
