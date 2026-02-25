@@ -203,19 +203,34 @@ export default function AdminGeradorAudios() {
       await pollStatus(jId);
 
       // Processing loop
+      // Select ~5 random users for escalation (crescente violence in last 30 days)
+      const escalationUsers = new Set<string>();
+      if (randomMode && usuarios.length >= 3) {
+        const shuffled = [...usuarios].sort(() => Math.random() - 0.5);
+        const escalationCount = Math.max(3, Math.ceil(usuarios.length * 0.15));
+        shuffled.slice(0, escalationCount).forEach(u => escalationUsers.add(u.id));
+        addLog(`🔺 ${escalationUsers.size} usuárias selecionadas para escalada de risco (últimos 30 dias)`);
+      }
+
       let finished = false;
       while (!finished && !cancelRef.current) {
         const itemUserId = randomMode ? pickRandom(usuarios).id : targetUserId;
-        const itemMode = randomMode ? pickRandom(AUDIO_MODES) : audioMode;
+        const isEscalation = escalationUsers.has(itemUserId) && Math.random() < 0.6;
+        const itemMode = isEscalation ? "violencia" : (randomMode ? pickRandom(AUDIO_MODES) : audioMode);
         const userName = usuarios.find(u => u.id === itemUserId)?.nome_completo || "";
 
-        const r = await callApi("processNext", sessionToken, { job_id: jId, target_user_id: itemUserId, audio_mode: itemMode });
+        const r = await callApi("processNext", sessionToken, {
+          job_id: jId,
+          target_user_id: itemUserId,
+          audio_mode: itemMode,
+          escalation_mode: isEscalation,
+        });
 
         if (r.finished) {
           finished = true;
           addLog(`🏁 Job finalizado (status: ${r.status})`);
         } else if (r.result?.success) {
-          const modeEmoji = itemMode === "briga_saudavel" ? "🟢" : "🔴";
+          const modeEmoji = isEscalation ? "🔺" : (itemMode === "briga_saudavel" ? "🟢" : "🔴");
           const userLabel = randomMode ? ` → ${userName}` : "";
           addLog(
             `✅ #${r.item_index} ${modeEmoji} ${r.result.topic} — ${formatDuration(r.result.duration)}${userLabel}`
@@ -428,7 +443,7 @@ export default function AdminGeradorAudios() {
                 Geração 100% Aleatória
               </p>
               <p className="text-xs" style={{ color: "hsl(220 9% 46%)" }}>
-                Distribui áudios entre todas as {usuarios.length} usuárias ativas, alterna tipos (violência / briga saudável), e gera datas aleatórias nos últimos 12 meses.
+                Distribui áudios entre todas as {usuarios.length} usuárias ativas, alterna tipos (violência / briga saudável), distribui nos últimos 12 meses de forma crescente e seleciona ~15% das usuárias para escalada de risco nos últimos 30 dias.
               </p>
             </div>
           </div>
@@ -457,6 +472,7 @@ export default function AdminGeradorAudios() {
                 <SelectItem value="500">500</SelectItem>
                 <SelectItem value="1000">1000</SelectItem>
                 <SelectItem value="2000">2000</SelectItem>
+                <SelectItem value="3000">3000</SelectItem>
               </SelectContent>
             </Select>
           </div>

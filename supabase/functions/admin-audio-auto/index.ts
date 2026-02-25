@@ -427,7 +427,8 @@ async function processItem(
   item: any,
   jobId: string,
   targetUserId: string,
-  audioMode: string = "violencia"
+  audioMode: string = "violencia",
+  dateOverride?: string,
 ): Promise<{ success: boolean; topic?: string; duration?: number; error?: string }> {
   const MAX_ATTEMPTS = 3;
 
@@ -502,22 +503,30 @@ async function processItem(
         .map((t) => `[${t.speaker === "M" ? "Ele" : "Ela"}] ${t.text}`)
         .join("\n");
 
-      // 9) Generate random date within last 12 months
-      const now = Date.now();
-      const twelveMonthsMs = 365 * 24 * 60 * 60 * 1000;
-      const randomTs = new Date(now - Math.random() * twelveMonthsMs);
-      // Randomize time with nighttime bias (60% between 19-23h)
-      const hourRoll = Math.random();
-      if (hourRoll < 0.60) {
-        randomTs.setHours(19 + Math.floor(Math.random() * 5)); // 19-23
-      } else if (hourRoll < 0.85) {
-        randomTs.setHours(12 + Math.floor(Math.random() * 7)); // 12-18
+      // 9) Generate date — use override if provided, else crescente distribution over 12 months
+      let randomDate: string;
+      if (dateOverride) {
+        randomDate = dateOverride;
       } else {
-        randomTs.setHours(6 + Math.floor(Math.random() * 6)); // 06-11
+        const now = Date.now();
+        const twelveMonthsMs = 365 * 24 * 60 * 60 * 1000;
+        // Crescente distribution: bias towards recent dates using power curve
+        // Math.random()^2 concentrates values near 0 (recent), spreading older dates thinner
+        const ageFraction = Math.pow(Math.random(), 2); // 0=now, 1=12mo ago
+        const randomTs = new Date(now - ageFraction * twelveMonthsMs);
+        // Randomize time with nighttime bias (60% between 19-23h)
+        const hourRoll = Math.random();
+        if (hourRoll < 0.60) {
+          randomTs.setHours(19 + Math.floor(Math.random() * 5)); // 19-23
+        } else if (hourRoll < 0.85) {
+          randomTs.setHours(12 + Math.floor(Math.random() * 7)); // 12-18
+        } else {
+          randomTs.setHours(6 + Math.floor(Math.random() * 6)); // 06-11
+        }
+        randomTs.setMinutes(Math.floor(Math.random() * 60));
+        randomTs.setSeconds(Math.floor(Math.random() * 60));
+        randomDate = randomTs.toISOString();
       }
-      randomTs.setMinutes(Math.floor(Math.random() * 60));
-      randomTs.setSeconds(Math.floor(Math.random() * 60));
-      const randomDate = randomTs.toISOString();
 
       // 10) Insert into gravacoes with random date
       const { data: gravacao, error: gravErr } = await supabase
@@ -747,12 +756,34 @@ Deno.serve(async (req) => {
           return json({ ok: true, finished: true, status: "done" });
         }
 
+        // Escalation mode: force violence + recent date (last 30 days) for demonstrating crescente risk
+        const escalationMode = body.escalation_mode === true;
+        let dateOverride: string | undefined;
+        let effectiveMode = audioMode;
+
+        if (escalationMode) {
+          effectiveMode = "violencia";
+          // Generate a date within the last 30 days, biased towards very recent (last 7 days)
+          const now = Date.now();
+          const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+          const ageFraction = Math.pow(Math.random(), 3); // heavily biased recent
+          const ts = new Date(now - ageFraction * thirtyDaysMs);
+          const hourRoll = Math.random();
+          if (hourRoll < 0.60) ts.setHours(19 + Math.floor(Math.random() * 5));
+          else if (hourRoll < 0.85) ts.setHours(12 + Math.floor(Math.random() * 7));
+          else ts.setHours(6 + Math.floor(Math.random() * 6));
+          ts.setMinutes(Math.floor(Math.random() * 60));
+          ts.setSeconds(Math.floor(Math.random() * 60));
+          dateOverride = ts.toISOString();
+        }
+
         const result = await processItem(
           supabase,
           nextItem,
           job_id,
           targetUserId,
-          audioMode
+          effectiveMode,
+          dateOverride,
         );
 
         return json({
