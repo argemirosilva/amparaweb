@@ -15,6 +15,7 @@ import partnerFacimus from "@/assets/partner-facimus.png";
 import partnerHpe from "@/assets/partner-hpe.svg";
 import partnerOrizon from "@/assets/orizon-tech-logo.png";
 import partnerAggregar from "@/assets/partner-aggregar.png";
+import partnerSinergytech from "@/assets/partner-sinergytech.png";
 
 // ── Shared gradient palette ──
 const BG_1 = "linear-gradient(160deg, hsl(255, 55%, 28%), hsl(220, 75%, 38%))";
@@ -476,6 +477,7 @@ export default function LandingPage() {
               <img src={partnerHpe} alt="Hewlett Packard Enterprise" className="h-10 md:h-12 object-contain brightness-0 invert opacity-70 hover:opacity-100 transition-opacity" />
               <img src={partnerOrizon} alt="Orizon Tech" className="h-6 md:h-8 object-contain brightness-0 invert opacity-70 hover:opacity-100 transition-opacity" />
               <img src={partnerAggregar} alt="Aggregar Serviços Digitais" className="h-6 md:h-8 object-contain brightness-0 invert opacity-70 hover:opacity-100 transition-opacity" />
+              <img src={partnerSinergytech} alt="SinergyTech" className="h-6 md:h-8 object-contain brightness-0 invert opacity-70 hover:opacity-100 transition-opacity" />
             </div>
           </div>
 
