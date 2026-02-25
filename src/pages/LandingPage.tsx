@@ -11,6 +11,9 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import amparaLogo from "@/assets/ampara-logo.png";
 import heroWoman from "@/assets/hero-woman.png";
+import partnerFacimus from "@/assets/partner-facimus.png";
+import partnerHpe from "@/assets/partner-hpe.svg";
+import partnerOrizon from "@/assets/orizon-tech-logo.png";
 
 // ── Shared gradient palette ──
 const BG_1 = "linear-gradient(160deg, hsl(255, 55%, 28%), hsl(220, 75%, 38%))";
@@ -461,6 +464,16 @@ export default function LandingPage() {
               </div>
             </div>
           </div>
+          {/* ── Parceiros ── */}
+          <div className="mt-8 pt-8 border-t border-white/10">
+            <p className="text-xs text-white/40 text-center uppercase tracking-widest mb-6">Parceiros</p>
+            <div className="flex flex-wrap items-center justify-center gap-8 md:gap-12">
+              <img src={partnerFacimus} alt="Facimus" className="h-8 md:h-10 object-contain opacity-70 hover:opacity-100 transition-opacity" />
+              <img src={partnerHpe} alt="Hewlett Packard Enterprise" className="h-8 md:h-10 object-contain brightness-0 invert opacity-70 hover:opacity-100 transition-opacity" />
+              <img src={partnerOrizon} alt="Orizon Tech" className="h-8 md:h-10 object-contain brightness-0 invert opacity-70 hover:opacity-100 transition-opacity" />
+            </div>
+          </div>
+
           <hr className="border-white/15 my-8" />
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-white/50">
             <p>© {new Date().getFullYear()} AMPARA Mulher. Todos os direitos reservados.</p>
