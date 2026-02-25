@@ -101,7 +101,7 @@ export default function LandingPage() {
     <>
       {NAV_LINKS.map((l) => (
         <button key={l.id} onClick={() => { scrollTo(l.id); onNav?.(); }}
-          className="text-sm font-medium text-white/70 hover:text-white transition-colors">
+          className="text-sm font-medium text-foreground/70 hover:text-primary transition-colors">
           {l.label}
         </button>
       ))}
@@ -111,14 +111,14 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen" style={{ background: "hsl(255, 55%, 22%)" }}>
       {/* ══════ HEADER ══════ */}
-      <header className="sticky top-0 z-50 backdrop-blur-md border-b border-white/10" style={{ background: "hsl(255, 55%, 24% / 0.95)" }}>
+      <header className="sticky top-0 z-50 backdrop-blur-md border-b border-border bg-background/95">
         <div className="max-w-7xl mx-auto flex items-center justify-between px-4 py-3">
-          <img src={amparaLogo} alt="AMPARA Mulher" className="h-9 brightness-0 invert" />
+          <img src={amparaLogo} alt="AMPARA Mulher" className="h-9" />
           <nav className="hidden lg:flex items-center gap-6">
             <NavItems />
           </nav>
           <div className="hidden lg:flex items-center gap-3">
-            <Link to="/login" className="flex items-center gap-2 rounded-full py-2 px-6 font-semibold text-white border-2 border-white/30 hover:bg-white/10 transition-colors text-sm">
+            <Link to="/login" className="ampara-btn-secondary !w-auto !py-2 flex items-center gap-2">
               <LogIn className="w-4 h-4" /> Portal da Mulher
             </Link>
             <Link to="/cadastro" className="ampara-btn-primary !w-auto !py-2 flex items-center gap-2">
@@ -127,7 +127,7 @@ export default function LandingPage() {
           </div>
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>
-              <button className="lg:hidden p-2 text-white" aria-label="Menu">
+              <button className="lg:hidden p-2 text-foreground" aria-label="Menu">
                 <Menu className="w-6 h-6" />
               </button>
             </SheetTrigger>
@@ -161,8 +161,8 @@ export default function LandingPage() {
             <h1 className="text-3xl md:text-5xl font-bold leading-tight text-white">
               AMPARA Mulher
             </h1>
-            <p className="text-xl md:text-2xl font-medium text-white/80">
-              <span style={{ color: CYAN }}>Proteção</span>, monitoramento e apoio para você
+            <p className="text-lg md:text-2xl font-medium text-white">
+              Proteção, monitoramento e apoio para você
             </p>
             <p className="text-lg text-white/80 max-w-lg">
               No AMPARA Mulher, você nunca está sozinha. Uma plataforma de monitoramento, suporte personalizado e uma rede de apoio pronta para ajudar em qualquer situação de risco.
