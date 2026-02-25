@@ -1,30 +1,20 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
 import {
   Shield, Heart, Users, TrendingUp, Smartphone, Mic, FileUp,
-  MapPin, Search, Headphones, Settings, Check, Star, Menu, X,
-  Building2, Users2, Phone, Mail, AlertTriangle, Loader2, Eye, EyeOff,
-  ChevronRight, Lock, ArrowRight
+  MapPin, Search, Headphones, Settings, Check, Star, Menu,
+  Building2, Users2, Phone, Mail, AlertTriangle, Eye,
+  ChevronRight, Lock, ArrowRight, Radio, LogIn
 } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import amparaLogo from "@/assets/ampara-logo.png";
 
-/* ── helpers ── */
-function formatPhone(value: string): string {
-  const digits = value.replace(/\D/g, "").slice(0, 11);
-  if (digits.length <= 2) return digits;
-  if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
-  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
-}
-
 function scrollTo(id: string) {
   document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
 }
 
-/* ── data ── */
 const NAV_LINKS = [
   { label: "Sobre", id: "sobre" },
   { label: "Funcionalidades", id: "funcionalidades" },
@@ -77,44 +67,17 @@ const IMPACT_NUMBERS = [
   { value: "24/7", label: "Monitoramento contínuo" },
 ];
 
-/* ══════════════════════════════════════════════════ */
 export default function LandingPage() {
   const navigate = useNavigate();
-  const { register } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
-
-  /* ── cadastro form state ── */
-  const [form, setForm] = useState({ nome: "", email: "", telefone: "", senha: "", termos: false });
-  const [showSenha, setShowSenha] = useState(false);
-  const [regError, setRegError] = useState("");
-  const [regLoading, setRegLoading] = useState(false);
-
-  /* ── contact form state ── */
+  const [trackCode, setTrackCode] = useState("");
   const [contact, setContact] = useState({ nome: "", email: "", mensagem: "" });
 
-  const handleRegister = async (e: React.FormEvent) => {
+  const handleTrack = (e: React.FormEvent) => {
     e.preventDefault();
-    setRegError("");
-    if (!form.nome.trim()) { setRegError("Nome é obrigatório"); return; }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) { setRegError("Email inválido"); return; }
-    if (form.telefone.replace(/\D/g, "").length < 10) { setRegError("Telefone deve ter no mínimo 10 dígitos"); return; }
-    if (form.senha.length < 6) { setRegError("Senha deve ter no mínimo 6 caracteres"); return; }
-    if (!form.termos) { setRegError("Aceite os termos para continuar"); return; }
-
-    setRegLoading(true);
-    const result = await register({
-      nome_completo: form.nome.trim(),
-      telefone: form.telefone,
-      email: form.email.trim().toLowerCase(),
-      senha: form.senha,
-      termos_aceitos: form.termos,
-    });
-    if (result.success) {
-      navigate(`/validar-email?email=${encodeURIComponent(result.email!)}`);
-    } else {
-      setRegError(result.error || "Erro ao cadastrar");
-    }
-    setRegLoading(false);
+    const code = trackCode.trim();
+    if (!code) return;
+    navigate(`/${code}`);
   };
 
   const handleContact = (e: React.FormEvent) => {
@@ -140,17 +103,17 @@ export default function LandingPage() {
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b border-border">
         <div className="max-w-7xl mx-auto flex items-center justify-between px-4 py-3">
           <img src={amparaLogo} alt="AMPARA Mulher" className="h-9" />
-          {/* desktop nav */}
           <nav className="hidden lg:flex items-center gap-6">
             <NavItems />
           </nav>
           <div className="hidden lg:flex items-center gap-3">
-            <Link to="/login" className="text-sm font-medium text-foreground/70 hover:text-primary transition-colors">Entrar</Link>
-            <button onClick={() => scrollTo("cadastro")} className="ampara-btn-primary !w-auto !py-2 flex items-center gap-2">
+            <Link to="/login" className="ampara-btn-secondary !w-auto !py-2 flex items-center gap-2">
+              <LogIn className="w-4 h-4" /> Portal da Mulher
+            </Link>
+            <Link to="/cadastro" className="ampara-btn-primary !w-auto !py-2 flex items-center gap-2">
               <Shield className="w-4 h-4" /> Cadastre-se
-            </button>
+            </Link>
           </div>
-          {/* mobile */}
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>
               <button className="lg:hidden p-2 text-foreground" aria-label="Menu">
@@ -160,10 +123,12 @@ export default function LandingPage() {
             <SheetContent side="right" className="w-72 pt-12 flex flex-col gap-4">
               <NavItems onNav={() => setMobileOpen(false)} />
               <hr className="border-border" />
-              <Link to="/login" className="text-sm font-medium text-foreground/70" onClick={() => setMobileOpen(false)}>Entrar</Link>
-              <button onClick={() => { scrollTo("cadastro"); setMobileOpen(false); }} className="ampara-btn-primary flex items-center justify-center gap-2">
+              <Link to="/login" className="ampara-btn-secondary flex items-center justify-center gap-2" onClick={() => setMobileOpen(false)}>
+                <LogIn className="w-4 h-4" /> Portal da Mulher
+              </Link>
+              <Link to="/cadastro" className="ampara-btn-primary flex items-center justify-center gap-2" onClick={() => setMobileOpen(false)}>
                 <Shield className="w-4 h-4" /> Cadastre-se
-              </button>
+              </Link>
             </SheetContent>
           </Sheet>
         </div>
@@ -178,15 +143,37 @@ export default function LandingPage() {
               AMPARA Mulher — <span className="text-primary">Proteção</span>, monitoramento e apoio para você
             </h1>
             <p className="text-lg text-muted-foreground max-w-lg">
-              No AMPARA Mulher, você nunca está sozinha. Cadastre-se e tenha acesso a ferramentas de monitoramento, suporte personalizado e uma rede de apoio pronta para ajudar em qualquer situação de risco.
+              No AMPARA Mulher, você nunca está sozinha. Uma plataforma de monitoramento, suporte personalizado e uma rede de apoio pronta para ajudar em qualquer situação de risco.
             </p>
             <div className="flex flex-wrap gap-3">
-              <button onClick={() => scrollTo("cadastro")} className="ampara-btn-primary !w-auto text-lg flex items-center gap-2">
+              <Link to="/cadastro" className="ampara-btn-primary !w-auto text-lg flex items-center gap-2">
                 <Shield className="w-5 h-5" /> Cadastre-se agora
-              </button>
+              </Link>
               <button onClick={() => scrollTo("sobre")} className="ampara-btn-secondary !w-auto flex items-center gap-2">
                 Saiba mais <ArrowRight className="w-4 h-4" />
               </button>
+            </div>
+
+            {/* ── Tracking code box ── */}
+            <div className="mt-4 p-4 rounded-2xl border border-border bg-card">
+              <p className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
+                <Radio className="w-4 h-4 text-primary" /> Monitorar link temporário
+              </p>
+              <form onSubmit={handleTrack} className="flex gap-2">
+                <input
+                  className="ampara-input flex-1"
+                  placeholder="Digite o código (ex: 482731)"
+                  value={trackCode}
+                  onChange={(e) => setTrackCode(e.target.value.replace(/\s/g, ""))}
+                  maxLength={20}
+                />
+                <button type="submit" disabled={!trackCode.trim()} className="ampara-btn-primary !w-auto !py-2.5 flex items-center gap-2 shrink-0">
+                  <MapPin className="w-4 h-4" /> Monitorar
+                </button>
+              </form>
+              <p className="text-xs text-muted-foreground mt-2">
+                Insira o código recebido para acompanhar a localização em tempo real.
+              </p>
             </div>
           </div>
           {/* hero illustration */}
@@ -229,7 +216,6 @@ export default function LandingPage() {
               </div>
             ))}
           </div>
-          {/* impact numbers */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-12">
             {IMPACT_NUMBERS.map((n) => (
               <div key={n.label} className="ampara-card text-center py-6">
@@ -276,9 +262,9 @@ export default function LandingPage() {
             ))}
           </div>
           <div className="text-center mt-10">
-            <button onClick={() => scrollTo("cadastro")} className="ampara-btn-primary !w-auto text-base flex items-center gap-2 mx-auto">
+            <Link to="/cadastro" className="ampara-btn-primary !w-auto text-base inline-flex items-center gap-2 mx-auto">
               <Shield className="w-5 h-5" /> Comece agora
-            </button>
+            </Link>
           </div>
         </div>
       </section>
@@ -327,11 +313,10 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ══════ CADASTRO ══════ */}
+      {/* ══════ FAÇA PARTE ══════ */}
       <section id="cadastro" className="py-16 md:py-24 text-primary-foreground" style={{ background: "var(--ampara-panel-bg)" }}>
         <div className="max-w-7xl mx-auto px-4">
-          <div className="grid md:grid-cols-2 gap-12 items-start">
-            {/* benefícios */}
+          <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="space-y-6">
               <h2 className="text-2xl md:text-3xl font-bold">Faça Parte da Rede AMPARA</h2>
               <p className="text-primary-foreground/80 text-base">
@@ -355,53 +340,17 @@ export default function LandingPage() {
                 <Lock className="w-4 h-4" /> Seus dados são protegidos por criptografia de ponta a ponta.
               </p>
             </div>
-            {/* formulário */}
-            <form onSubmit={handleRegister} className="bg-card rounded-2xl p-6 md:p-8 space-y-4 text-foreground">
-              <h3 className="text-lg font-semibold text-foreground">Cadastre-se gratuitamente</h3>
-              {regError && (
-                <div className="rounded-xl bg-destructive/10 border border-destructive/20 p-3 text-sm text-destructive">{regError}</div>
-              )}
-              <div>
-                <label className="block text-sm font-medium mb-1.5">Nome completo</label>
-                <input className="ampara-input" placeholder="Seu nome completo" value={form.nome} maxLength={100}
-                  onChange={(e) => setForm({ ...form, nome: e.target.value })} />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1.5">Email</label>
-                <input type="email" className="ampara-input" placeholder="seu@email.com" value={form.email} maxLength={255}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })} />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1.5">Telefone</label>
-                <input type="tel" className="ampara-input" placeholder="(00) 00000-0000" value={form.telefone}
-                  onChange={(e) => setForm({ ...form, telefone: formatPhone(e.target.value) })} />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1.5">Senha</label>
-                <div className="relative">
-                  <input type={showSenha ? "text" : "password"} className="ampara-input pr-12" placeholder="Mínimo 6 caracteres"
-                    value={form.senha} onChange={(e) => setForm({ ...form, senha: e.target.value })} />
-                  <button type="button" onClick={() => setShowSenha(!showSenha)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
-                    {showSenha ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                  </button>
-                </div>
-              </div>
-              <label className="flex items-start gap-3 cursor-pointer">
-                <input type="checkbox" checked={form.termos} onChange={(e) => setForm({ ...form, termos: e.target.checked })}
-                  className="mt-0.5 h-4 w-4 rounded border-input text-primary accent-primary" />
-                <span className="text-sm text-muted-foreground">
-                  Aceito os <span className="text-primary font-medium">termos de uso</span> e{" "}
-                  <Link to="/privacidade" className="text-primary font-medium hover:underline">política de privacidade</Link>
-                </span>
-              </label>
-              <button type="submit" disabled={regLoading} className="ampara-btn-primary flex items-center justify-center gap-2">
-                {regLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Shield className="w-5 h-5" /> Cadastre-se agora</>}
-              </button>
-              <p className="text-center text-sm text-muted-foreground">
-                Já tem uma conta? <Link to="/login" className="text-primary font-medium hover:underline">Entrar</Link>
+            <div className="flex flex-col items-center gap-6 text-center">
+              <p className="text-primary-foreground/90 text-lg max-w-md">
+                Sua segurança é prioridade. Faça parte da nossa comunidade e nunca esteja sozinha!
               </p>
-            </form>
+              <Link to="/cadastro" className="ampara-btn-primary !bg-card !text-primary hover:!opacity-90 !w-auto text-lg inline-flex items-center gap-2 px-10 py-4">
+                <Shield className="w-6 h-6" /> Cadastre-se gratuitamente
+              </Link>
+              <p className="text-primary-foreground/60 text-sm">
+                Já tem uma conta? <Link to="/login" className="text-primary-foreground font-medium underline">Acessar o Portal</Link>
+              </p>
+            </div>
           </div>
         </div>
       </section>
@@ -439,7 +388,6 @@ export default function LandingPage() {
           <h2 className="ampara-section-title">Contato e Suporte</h2>
           <p className="ampara-section-subtitle">Estamos aqui para ajudar. Entre em contato ou acione ajuda de emergência.</p>
 
-          {/* emergency banner */}
           <div className="flex flex-wrap items-center justify-center gap-4 mt-8 p-4 rounded-2xl border border-destructive/30 bg-destructive/5">
             <AlertTriangle className="w-6 h-6 text-destructive" />
             <span className="font-semibold text-destructive">Em caso de emergência:</span>
@@ -500,7 +448,8 @@ export default function LandingPage() {
               <h4 className="font-semibold mb-3">Institucional</h4>
               <div className="flex flex-col gap-2">
                 <Link to="/privacidade" className="text-sm text-primary-foreground/70 hover:text-primary-foreground transition-colors">Política de Privacidade</Link>
-                <Link to="/login" className="text-sm text-primary-foreground/70 hover:text-primary-foreground transition-colors">Área da Usuária</Link>
+                <Link to="/login" className="text-sm text-primary-foreground/70 hover:text-primary-foreground transition-colors">Portal da Mulher</Link>
+                <Link to="/cadastro" className="text-sm text-primary-foreground/70 hover:text-primary-foreground transition-colors">Cadastre-se</Link>
                 <Link to="/transparencia" className="text-sm text-primary-foreground/70 hover:text-primary-foreground transition-colors">Portal de Transparência</Link>
               </div>
             </div>
