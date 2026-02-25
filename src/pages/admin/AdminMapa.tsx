@@ -172,8 +172,8 @@ export default function AdminMapa() {
 
   // Helper: convert period to { since, periodDays, periodHours }
   const getPeriodRange = useCallback((p: string) => {
-    const hoursMap: Record<string, number> = { "7d": 168, "30d": 720, "6m": 4320, "12m": 8760 };
-    const daysMap: Record<string, number> = { "7d": 7, "30d": 30, "6m": 180, "12m": 365 };
+    const hoursMap: Record<string, number> = { "7d": 168, "30d": 720, "6m": 4320, "12m": 8760, "2a": 17520, "3a": 26280 };
+    const daysMap: Record<string, number> = { "7d": 7, "30d": 30, "6m": 180, "12m": 365, "2a": 730, "3a": 1095 };
     if (hoursMap[p]) {
       return { since: new Date(Date.now() - hoursMap[p] * 3600000).toISOString(), periodDays: daysMap[p], periodHours: hoursMap[p] };
     }
@@ -788,7 +788,7 @@ export default function AdminMapa() {
         </div>
         <div className="flex items-center gap-2">
           <div className="flex gap-1 items-center">
-            {([["7d", "7 dias"], ["30d", "30 dias"], ["6m", "6 meses"]] as [string, string][]).map(([key, label]) => (
+            {([["7d", "7 dias"], ["30d", "30 dias"], ["6m", "6 meses"], ["12m", "1 ano"], ["2a", "2 anos"], ["3a", "3 anos"]] as [string, string][]).map(([key, label]) => (
               <button key={key} onClick={() => setPeriod(key)}
                 className="px-3 py-1.5 text-xs rounded-md border transition-colors"
                 style={{ borderColor: period === key ? "hsl(224 76% 33%)" : "hsl(220 13% 91%)", background: period === key ? "hsl(224 76% 33%)" : "transparent", color: period === key ? "#fff" : "hsl(220 9% 46%)", fontWeight: period === key ? 600 : 400 }}>
