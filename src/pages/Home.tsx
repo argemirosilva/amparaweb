@@ -18,7 +18,7 @@ export default function HomePage() {
           <Button
             onClick={() => navigate("/busca-perfil")}
             variant="outline"
-            className="sm:hidden h-auto gap-1.5 border-white/20 text-white hover:bg-white/10 flex-col px-4 min-w-[90px]"
+            className="sm:hidden h-auto gap-1.5 border-primary/30 text-primary hover:bg-primary/10 flex-col px-4 min-w-[90px]"
           >
             <UserSearch className="w-5 h-5" />
             <span className="text-[10px] leading-tight text-center">Pesquisar<br/>parceiro</span>
@@ -27,7 +27,7 @@ export default function HomePage() {
         <Button
           onClick={() => navigate("/busca-perfil")}
           variant="outline"
-          className="hidden sm:flex w-full gap-2 border-white/20 text-white hover:bg-white/10"
+          className="hidden sm:flex w-full gap-2 border-primary/30 text-primary hover:bg-primary/10"
         >
           <UserSearch className="w-4 h-4" />
           Pesquisar parceiro

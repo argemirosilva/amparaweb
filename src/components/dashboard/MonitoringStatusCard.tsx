@@ -115,30 +115,30 @@ export default function MonitoringStatusCard() {
   }
 
   return (
-    <div className="rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm px-4 py-3">
+    <div className="ampara-card px-4 py-3">
       <div className="flex items-center gap-2.5">
         <GradientIcon icon={Ear} size="sm" />
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-white">
+          <p className="text-sm font-semibold text-primary">
             {state?.type === "monitoring" || state?.type === "monitoring_no_window" ? "Monitorando" : "Monitoramento"}
           </p>
           {state?.type === "monitoring" && (
-            <p className="text-xs font-medium text-blue-300">
+            <p className="text-xs font-medium text-blue-600">
               até {state.fim}
             </p>
           )}
           {state?.type === "next_today" && (
-            <p className="text-xs font-medium text-blue-300">
+            <p className="text-xs font-medium text-blue-600">
               Próximo período hoje às {state.inicio}
             </p>
           )}
           {state?.type === "next_other_day" && (
-            <p className="text-xs font-medium text-blue-300">
+            <p className="text-xs font-medium text-blue-600">
               Próximo período {state.dayLabel} às {state.inicio}
             </p>
           )}
           {state?.type === "no_schedule" && (
-            <p className="text-xs font-medium text-white/50">
+            <p className="text-xs font-medium text-muted-foreground">
               Nenhum período agendado
             </p>
           )}

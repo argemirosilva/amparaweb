@@ -20,7 +20,7 @@ export default function BottomNav() {
   const navigate = useNavigate();
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#1a1040]/95 backdrop-blur-md border-t border-white/10 safe-area-bottom">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border safe-area-bottom">
       <div className="flex items-end justify-evenly h-14 px-2">
         {items.map((item) => {
           const active = location.pathname === item.url;
@@ -32,13 +32,13 @@ export default function BottomNav() {
                 key={item.url}
                 onClick={() => navigate(item.url)}
                 className={`flex flex-col items-center justify-center -mt-4 transition-colors ${
-                  active ? "text-white" : "text-white/50 hover:text-white/80"
+                  active ? "text-primary" : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 <div className={`w-12 h-12 rounded-full flex items-center justify-center shadow-lg ${
                   active
-                    ? "bg-gradient-to-br from-[#D41A8A] to-[#6B2FA8] text-white"
-                    : "bg-white/10 border-2 border-white/20 text-white/80"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-card border-2 border-primary/30 text-primary"
                 }`}>
                   <item.icon className="w-6 h-6" />
                 </div>
@@ -53,8 +53,8 @@ export default function BottomNav() {
               onClick={() => navigate(item.url)}
               className={`flex-1 flex flex-col items-center justify-center gap-0.5 pb-1 transition-colors ${
                 active
-                  ? "text-white"
-                  : "text-white/50 hover:text-white/80"
+                  ? "text-primary"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               <item.icon className="w-5 h-5" />

@@ -9,7 +9,7 @@ export default function AppLayout() {
   return (
     <ProtectedRoute>
       <SidebarProvider>
-        <div className="min-h-screen flex w-full max-w-[100vw] overflow-x-hidden bg-gradient-to-br from-[#1a1040] via-[#193275] to-[#1a1040]">
+        <div className="min-h-screen flex w-full max-w-[100vw] overflow-x-hidden">
           {/* Sidebar only on md+ */}
           <div className="hidden md:block">
             <AppSidebar />

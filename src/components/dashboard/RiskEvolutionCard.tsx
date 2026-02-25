@@ -104,14 +104,14 @@ export default function RiskEvolutionCard() {
     : "";
 
   return (
-    <div className="rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm overflow-hidden !p-0">
+    <div className="ampara-card overflow-hidden !p-0">
       <div className="p-4 space-y-3">
           {/* Header */}
           <div className="flex items-center justify-between">
-            <p className="text-sm font-semibold text-white">
+            <p className="text-sm font-semibold">
               Evolução do Risco
             </p>
-            <span className="text-[10px] text-white/50">últimos 30 dias</span>
+            <span className="text-[10px] text-muted-foreground">últimos 30 dias</span>
           </div>
 
           {/* Content */}
@@ -209,14 +209,14 @@ export default function RiskEvolutionCard() {
               {/* Expandable report */}
               <button
                 onClick={() => setExpanded(!expanded)}
-                className="w-full flex items-center justify-center gap-1 text-xs text-white/50 hover:text-white transition-colors py-1"
+                className="w-full flex items-center justify-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors py-1"
               >
                 {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                 {expanded ? "Ocultar detalhes" : "Como estou?"}
               </button>
 
               {expanded && sessionToken && (
-                <div className="pt-2 border-t border-white/10">
+                <div className="pt-2 border-t border-border/50">
                   <MacroReportCard
                     sessionToken={sessionToken}
                     windowDays={window}
@@ -225,7 +225,7 @@ export default function RiskEvolutionCard() {
               )}
             </>
           ) : (
-            <p className="text-sm text-white/50">Nenhuma avaliação disponível.</p>
+            <p className="text-sm text-muted-foreground">Nenhuma avaliação disponível.</p>
           )}
       </div>
     </div>

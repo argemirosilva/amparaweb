@@ -111,7 +111,7 @@ export default function DeviceStatusCard() {
 
   if (loading) {
     return (
-      <div className="rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm p-5">
+      <div className="ampara-card p-5">
         <Skeleton className="h-24 w-full" />
       </div>
     );
@@ -123,7 +123,7 @@ export default function DeviceStatusCard() {
 
   return (
     <>
-      <div className={`rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm p-5 relative overflow-hidden transition-all duration-500 ${
+      <div className={`ampara-card p-5 relative overflow-hidden transition-all duration-500 ${
         panicActive ? "animate-[panic-pulse_2s_ease-in-out_infinite] ring-2 ring-destructive/50" : ""
       }`}>
         {/* Panic banner */}
@@ -210,7 +210,7 @@ export default function DeviceStatusCard() {
         </div>
 
         {/* Title + device name */}
-        <p className="text-sm font-semibold text-white mb-0.5 truncate">
+        <p className="text-sm font-semibold text-primary mb-0.5 truncate">
           {noDevice
             ? (error || "Nenhum dispositivo")
             : ((device.dispositivo_info || "App móvel Ampara").split(" ")[0])}
