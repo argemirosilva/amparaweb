@@ -14,7 +14,7 @@ import heroWoman from "@/assets/hero-woman.png";
 import partnerFacimus from "@/assets/partner-facimus.png";
 import partnerHpe from "@/assets/partner-hpe.svg";
 import partnerOrizon from "@/assets/orizon-tech-logo.png";
-import partnerAggregar from "@/assets/partner-aggregar.png";
+import partnerAggregar from "@/assets/partner-aggregar-new.jpg";
 import partnerSinergytech from "@/assets/partner-sinergytech.png";
 
 // ── Shared gradient palette ──
