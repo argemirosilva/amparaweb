@@ -20,6 +20,7 @@ import DocApi from "./pages/DocApi";
 import Rastreamento from "./pages/Rastreamento";
 import Suporte from "./pages/Suporte";
 import Privacidade from "./pages/Privacidade";
+import LandingPage from "./pages/LandingPage";
 
 import PortalLayout from "./components/institucional/PortalLayout";
 import TransparenciaHome from "./pages/transparencia/TransparenciaHome";
@@ -61,7 +62,7 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Routes>
-            <Route path="/" element={<Navigate to="/login" replace />} />
+            <Route path="/" element={<LandingPage />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/cadastro" element={<Cadastro />} />
             <Route path="/validar-email" element={<ValidarEmail />} />
