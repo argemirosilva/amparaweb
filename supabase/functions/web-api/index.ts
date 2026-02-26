@@ -74,7 +74,7 @@ Dado os critérios de busca da usuária e uma lista de candidatos do banco de da
 2. Converter score em probabilidade (max 99%): >=85→90-99%, 70-84→70-89%, 55-69→50-69%, 40-54→30-49%, 25-39→15-29%, <25→<15%
 3. Para cada candidato, listar match_breakdown com status (completo/parcial/nao_bateu/conflitante)
 4. Calcular risk_level (Baixo/Médio/Alto/Crítico) e violence_probabilities com base nos incidents
-5. Retornar os top 10 ordenados por probabilidade
+5. Retornar SOMENTE os top 5 com probabilidade >= 30%, ordenados por probabilidade. Se nenhum atingir 30%, retorne array vazio.
 
 RETORNE APENAS JSON válido com a estrutura:
 {
@@ -564,7 +564,7 @@ serve(async (req) => {
         };
 
         // Prepare candidate summaries for AI (privacy-safe)
-        const candidateSummaries = candidates.slice(0, 50).map((c: any) => ({
+        const candidateSummaries = candidates.slice(0, 30).map((c: any) => ({
           id: c.id,
           display_name_masked: c.display_name_masked,
           name_normalized: c.name_normalized,
@@ -603,11 +603,17 @@ serve(async (req) => {
 
         try {
           const aiResult = await rankCandidatesWithAI(searchInput, candidateSummaries);
+          // Filter by minimum probability threshold
+          if (aiResult.results) {
+            aiResult.results = aiResult.results
+              .filter((r: any) => r.probability_percent >= 30)
+              .slice(0, 5);
+          }
           return json({ success: true, ...aiResult });
         } catch (e) {
           console.error("AI ranking error, falling back to SQL scoring:", e);
           // Fallback: return SQL-scored results without AI
-          const fallbackResults = candidates.slice(0, 10).map((c: any) => {
+          const fallbackResults = candidates.slice(0, 5).map((c: any) => {
             const score = Math.min(99, Math.round((c.name_similarity || 0) * 60 + (c.quality_score || 0) * 0.4));
             const prob = score >= 85 ? Math.min(99, 90 + Math.round(score - 85)) :
                          score >= 70 ? 70 + Math.round((score - 70) * 1.3) :
@@ -634,7 +640,8 @@ serve(async (req) => {
               flags: c.flags || [],
             };
           });
-          return json({ success: true, results: fallbackResults, query_summary: searchInput });
+          const filtered = fallbackResults.filter((r: any) => r.probability_percent >= 30).slice(0, 5);
+          return json({ success: true, results: filtered, query_summary: searchInput });
         }
       }
 
