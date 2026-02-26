@@ -162,11 +162,13 @@ export function BuscaPerfilForm({ onSubmit, loading }: Props) {
       {/* Submit */}
       <button
         onClick={() => onSubmit(form)}
-        disabled={loading || filledCount === 0}
+        disabled={loading || filledCount < 2}
         className="ampara-btn-primary flex items-center justify-center gap-2"
       >
         <Search className="w-4 h-4" />
-        Buscar correspondências {filledCount > 0 && `(${filledCount} campo${filledCount > 1 ? "s" : ""})`}
+        {filledCount < 2
+          ? `Preencha pelo menos 2 campos (${filledCount}/2)`
+          : `Buscar correspondências (${filledCount} campo${filledCount > 1 ? "s" : ""})`}
       </button>
 
       <p className="text-xs text-muted-foreground text-center leading-relaxed">

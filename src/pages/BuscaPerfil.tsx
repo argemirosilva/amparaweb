@@ -70,9 +70,9 @@ export default function BuscaPerfilPage() {
 
   const handleSearch = async (data: SearchFormData) => {
     setError("");
-    const hasAny = Object.values(data).some(v => v && String(v).trim());
-    if (!hasAny) {
-      setError("Preencha pelo menos um campo para buscar");
+    const filled = Object.entries(data).filter(([, v]) => v && String(v).trim());
+    if (filled.length < 2) {
+      setError("Preencha pelo menos 2 campos para uma busca mais precisa");
       return;
     }
 
