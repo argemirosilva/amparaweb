@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { type SearchResult } from "@/pages/BuscaPerfil";
+import { type SearchResult, type SearchFormData } from "@/pages/BuscaPerfil";
 import { ChevronDown, ChevronUp, Shield, AlertTriangle, MapPin, CheckCircle2, MinusCircle, XCircle, Ban, Crosshair, Flag } from "lucide-react";
 
 const STATUS_ICON: Record<string, React.ReactNode> = {
@@ -36,6 +36,38 @@ const VIOLENCE_LABELS: Record<string, string> = {
   ameaca_perseguicao: "Ameaça/Perseguição",
 };
 
+/** Campos sensíveis do breakdown e qual campo do formulário controla sua exibição */
+const SENSITIVE_FIELD_MAP: Record<string, keyof SearchFormData> = {
+  nome: "nome",
+  nome_mae: "nome_mae",
+  nome_pai: "nome_pai",
+  telefone: "final_telefone",
+  ddd: "ddd",
+  cidade: "cidade_uf",
+  bairro: "bairro",
+  profissao: "profissao",
+  placa: "placa_parcial",
+  cor_raca: "cor_raca",
+  escolaridade: "escolaridade",
+  empresa: "empresa",
+  idade: "idade_aprox",
+};
+
+/** Filtra o nome exibido para mostrar apenas partes que a usuária digitou */
+function filterDisplayName(maskedName: string, userInput: string): string {
+  if (!userInput.trim()) return "Perfil encontrado";
+  const inputParts = userInput.trim().toLowerCase().split(/\s+/);
+  const nameParts = maskedName.split(/\s+/);
+  const filtered = nameParts.map((part) => {
+    const partLower = part.toLowerCase().replace(/[*]/g, "");
+    if (inputParts.some((ip) => partLower.includes(ip) || ip.includes(partLower))) {
+      return part;
+    }
+    return part.length > 1 ? part[0] + "***" : "***";
+  });
+  return filtered.join(" ");
+}
+
 function ProbabilityBar({ percent }: { percent: number }) {
   const color = percent >= 70 ? "bg-destructive" : percent >= 40 ? "bg-orange-500" : "bg-yellow-500";
   return (
@@ -48,16 +80,21 @@ function ProbabilityBar({ percent }: { percent: number }) {
   );
 }
 
-function ResultCard({ result }: { result: SearchResult }) {
+function ResultCard({ result, searchInput }: { result: SearchResult; searchInput: SearchFormData }) {
   const [expanded, setExpanded] = useState(false);
+
+  const displayName = filterDisplayName(result.display_name_masked, searchInput.nome);
+  const showLocation = !!(searchInput.cidade_uf.trim() || searchInput.bairro.trim());
+  const showSecurityBadge = searchInput.forca_seguranca === "sim" && result.forca_seguranca;
+  const showWeaponBadge = searchInput.tem_arma === "sim" && result.tem_arma_em_casa;
 
   return (
     <div className="ampara-card !p-4 space-y-3">
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <p className="font-bold text-foreground">{result.display_name_masked}</p>
-          {result.location_summary && (
+          <p className="font-bold text-foreground">{displayName}</p>
+          {showLocation && result.location_summary && (
             <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
               <MapPin className="w-3 h-3" /> {result.location_summary}
             </p>
@@ -68,14 +105,14 @@ function ResultCard({ result }: { result: SearchResult }) {
         </span>
       </div>
 
-      {/* Danger badges */}
+      {/* Danger badges — only if user provided the data */}
       <div className="flex flex-wrap gap-1.5">
-        {result.forca_seguranca && (
+        {showSecurityBadge && (
           <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold bg-orange-100 text-orange-800">
             <Shield className="w-3 h-3" /> Força de segurança
           </span>
         )}
-        {result.tem_arma_em_casa && (
+        {showWeaponBadge && (
           <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold bg-red-100 text-red-800">
             <Crosshair className="w-3 h-3" /> Possui arma
           </span>
@@ -86,16 +123,6 @@ function ResultCard({ result }: { result: SearchResult }) {
           </span>
         ))}
       </div>
-
-      {/* Xingamentos */}
-      {result.xingamentos_frequentes && result.xingamentos_frequentes.length > 0 && (
-        <div className="flex flex-wrap gap-1">
-          <span className="text-xs text-muted-foreground mr-1">Xingamentos:</span>
-          {result.xingamentos_frequentes.slice(0, 5).map((x, i) => (
-            <span key={i} className="text-xs bg-muted px-1.5 py-0.5 rounded italic">"{x}"</span>
-          ))}
-        </div>
-      )}
 
       {/* Probability */}
       <ProbabilityBar percent={result.probability_percent} />
@@ -129,25 +156,31 @@ function ResultCard({ result }: { result: SearchResult }) {
 
       {expanded && (
         <div className="space-y-3 pt-1 border-t border-border">
-          {/* Match breakdown */}
+          {/* Match breakdown — hide candidate values for fields the user didn't provide */}
           {result.match_breakdown.length > 0 && (
             <div>
               <p className="text-xs font-semibold text-foreground mb-1.5">Detalhamento</p>
               <div className="space-y-1">
-                {result.match_breakdown.map((m, i) => (
-                  <div key={i} className="flex items-center gap-2 text-xs">
-                    {STATUS_ICON[m.status] || null}
-                    <span className="font-medium text-foreground capitalize">{m.field}:</span>
-                    <span className="text-muted-foreground truncate">
-                      {m.user_value_masked} → {m.candidate_value_masked}
-                    </span>
-                  </div>
-                ))}
+                {result.match_breakdown.map((m, i) => {
+                  const formField = SENSITIVE_FIELD_MAP[m.field];
+                  const userProvided = formField ? !!searchInput[formField]?.trim() : false;
+                  return (
+                    <div key={i} className="flex items-center gap-2 text-xs">
+                      {STATUS_ICON[m.status] || null}
+                      <span className="font-medium text-foreground capitalize">{m.field}:</span>
+                      <span className="text-muted-foreground truncate">
+                        {userProvided
+                          ? `${m.user_value_masked} → ${m.candidate_value_masked}`
+                          : STATUS_LABEL[m.status] || m.status}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
 
-          {/* Violence probabilities */}
+          {/* Violence probabilities — always visible */}
           {Object.keys(result.violence_probabilities).length > 0 && (
             <div>
               <p className="text-xs font-semibold text-foreground mb-1.5">Probabilidade por tipo de violência</p>
@@ -202,7 +235,7 @@ function ResultCard({ result }: { result: SearchResult }) {
   );
 }
 
-export function BuscaPerfilResults({ results }: { results: SearchResult[] }) {
+export function BuscaPerfilResults({ results, searchInput }: { results: SearchResult[]; searchInput: SearchFormData }) {
   if (results.length === 0) {
     return (
       <div className="ampara-card !p-6 text-center space-y-2">
@@ -223,7 +256,7 @@ export function BuscaPerfilResults({ results }: { results: SearchResult[] }) {
       </p>
 
       {results.map((r) => (
-        <ResultCard key={r.profile_id} result={r} />
+        <ResultCard key={r.profile_id} result={r} searchInput={searchInput} />
       ))}
 
       {weakResults.length > 0 && weakResults.length === results.length && (

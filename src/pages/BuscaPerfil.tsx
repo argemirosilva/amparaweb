@@ -152,7 +152,7 @@ export default function BuscaPerfilPage() {
           >
             <ArrowLeft className="w-4 h-4" /> Nova busca
           </button>
-          <BuscaPerfilResults results={results} />
+          <BuscaPerfilResults results={results} searchInput={formData} />
         </div>
       )}
     </div>
