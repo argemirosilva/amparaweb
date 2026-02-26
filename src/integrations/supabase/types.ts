@@ -1979,53 +1979,111 @@ export type Database = {
         Returns: boolean
       }
       normalize_text: { Args: { input: string }; Returns: string }
-      search_agressor_candidates: {
-        Args: {
-          p_age_approx?: number
-          p_alias?: string
-          p_city_uf?: string
-          p_ddd?: string
-          p_father_first?: string
-          p_mother_first?: string
-          p_name?: string
-          p_neighborhood?: string
-          p_phone_last_digits?: string
-          p_plate_prefix?: string
-          p_profession?: string
-        }
-        Returns: {
-          aliases: string[]
-          appearance_tags: string[]
-          approx_age_max: number
-          approx_age_min: number
-          data_nascimento: string
-          display_name_masked: string
-          father_first_name: string
-          father_name_partial_normalized: string
-          flags: string[]
-          forca_seguranca: boolean
-          id: string
-          last_incident_at: string
-          mother_first_name: string
-          mother_name_partial_normalized: string
-          name_normalized: string
-          name_similarity: number
-          neighborhoods: string[]
-          nome: string
-          phone_clues: Json
-          primary_city_uf: string
-          profession: string
-          quality_score: number
-          reference_points: string[]
-          risk_level: string
-          risk_score: number
-          sector: string
-          tem_arma_em_casa: boolean
-          total_vinculos: number
-          vehicles: Json
-          violence_profile_probs: Json
-        }[]
-      }
+      search_agressor_candidates:
+        | {
+            Args: {
+              p_age_approx?: number
+              p_alias?: string
+              p_city_uf?: string
+              p_ddd?: string
+              p_father_first?: string
+              p_mother_first?: string
+              p_name?: string
+              p_neighborhood?: string
+              p_phone_last_digits?: string
+              p_plate_prefix?: string
+              p_profession?: string
+            }
+            Returns: {
+              aliases: string[]
+              appearance_tags: string[]
+              approx_age_max: number
+              approx_age_min: number
+              data_nascimento: string
+              display_name_masked: string
+              father_first_name: string
+              father_name_partial_normalized: string
+              flags: string[]
+              forca_seguranca: boolean
+              id: string
+              last_incident_at: string
+              mother_first_name: string
+              mother_name_partial_normalized: string
+              name_normalized: string
+              name_similarity: number
+              neighborhoods: string[]
+              nome: string
+              phone_clues: Json
+              primary_city_uf: string
+              profession: string
+              quality_score: number
+              reference_points: string[]
+              risk_level: string
+              risk_score: number
+              sector: string
+              tem_arma_em_casa: boolean
+              total_vinculos: number
+              vehicles: Json
+              violence_profile_probs: Json
+            }[]
+          }
+        | {
+            Args: {
+              p_age_approx?: number
+              p_alias?: string
+              p_city_uf?: string
+              p_company?: string
+              p_cor_raca?: string
+              p_ddd?: string
+              p_escolaridade?: string
+              p_father_first?: string
+              p_forca_seguranca?: boolean
+              p_mother_first?: string
+              p_name?: string
+              p_neighborhood?: string
+              p_phone_last_digits?: string
+              p_plate_prefix?: string
+              p_profession?: string
+              p_tem_arma?: boolean
+              p_xingamentos?: string
+            }
+            Returns: {
+              aliases: string[]
+              appearance_tags: string[]
+              approx_age_max: number
+              approx_age_min: number
+              company_public: string
+              cor_raca: string
+              data_nascimento: string
+              display_name_masked: string
+              escolaridade: string
+              father_first_name: string
+              father_name_partial_normalized: string
+              flags: string[]
+              forca_seguranca: boolean
+              id: string
+              last_incident_at: string
+              mother_first_name: string
+              mother_name_partial_normalized: string
+              name_normalized: string
+              name_similarity: number
+              neighborhoods: string[]
+              nome: string
+              phone_clues: Json
+              primary_city_uf: string
+              profession: string
+              quality_score: number
+              reference_points: string[]
+              risk_level: string
+              risk_score: number
+              sector: string
+              tem_arma_em_casa: boolean
+              total_vinculos: number
+              vehicles: Json
+              violence_profile_probs: Json
+              xingamentos_frequentes: string[]
+            }[]
+          }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
       unaccent: { Args: { "": string }; Returns: string }

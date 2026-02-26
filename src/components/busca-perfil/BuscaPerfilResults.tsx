@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { type SearchResult } from "@/pages/BuscaPerfil";
-import { ChevronDown, ChevronUp, Shield, AlertTriangle, MapPin, CheckCircle2, MinusCircle, XCircle, Ban } from "lucide-react";
+import { ChevronDown, ChevronUp, Shield, AlertTriangle, MapPin, CheckCircle2, MinusCircle, XCircle, Ban, Crosshair, Flag } from "lucide-react";
 
 const STATUS_ICON: Record<string, React.ReactNode> = {
   completo: <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />,
@@ -67,6 +67,35 @@ function ResultCard({ result }: { result: SearchResult }) {
           {result.risk_level}
         </span>
       </div>
+
+      {/* Danger badges */}
+      <div className="flex flex-wrap gap-1.5">
+        {result.forca_seguranca && (
+          <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold bg-orange-100 text-orange-800">
+            <Shield className="w-3 h-3" /> Força de segurança
+          </span>
+        )}
+        {result.tem_arma_em_casa && (
+          <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold bg-red-100 text-red-800">
+            <Crosshair className="w-3 h-3" /> Possui arma
+          </span>
+        )}
+        {(result.flags || []).map((f, i) => (
+          <span key={i} className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-destructive/10 text-destructive">
+            <Flag className="w-3 h-3" /> {f}
+          </span>
+        ))}
+      </div>
+
+      {/* Xingamentos */}
+      {result.xingamentos_frequentes && result.xingamentos_frequentes.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          <span className="text-xs text-muted-foreground mr-1">Xingamentos:</span>
+          {result.xingamentos_frequentes.slice(0, 5).map((x, i) => (
+            <span key={i} className="text-xs bg-muted px-1.5 py-0.5 rounded italic">"{x}"</span>
+          ))}
+        </div>
+      )}
 
       {/* Probability */}
       <ProbabilityBar percent={result.probability_percent} />
