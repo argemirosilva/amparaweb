@@ -61,13 +61,16 @@ async function rankCandidatesWithAI(searchInput: any, candidates: any[]) {
   const systemPrompt = `Você é um módulo de análise forense de perfis para proteção de mulheres contra violência doméstica.
 Dado os critérios de busca da usuária e uma lista de candidatos do banco de dados, você deve:
 1. Pontuar cada candidato (0-100) com base nos pesos:
-   - Contato parcial: DDD bate +10, final 4 dígitos +25, 2-3 dígitos +10
-   - Nome muito similar +25, só primeiro nome +12, apelido similar +12
-   - Pai/mãe primeiro nome bate +10 cada, parcial similar +15 cada
-   - Cidade/UF bate +18, bairro +10, referência +6
-   - Profissão/setor +10
-   - Placa parcial forte +18, cor/modelo +8
-   - Conflitos fortes: -25 a -40
+    - Contato parcial: DDD bate +10, final 4 dígitos +25, 2-3 dígitos +10
+    - Nome muito similar +25, só primeiro nome +12, apelido similar +12
+    - Pai/mãe primeiro nome bate +10 cada, parcial similar +15 cada
+    - Cidade/UF bate +18, bairro +10, referência +6
+    - Profissão/setor +10, empresa +12
+    - Placa parcial forte +18, cor/modelo +8
+    - Força de segurança bate +10, arma bate +8
+    - Cor/raça bate +8, escolaridade bate +6
+    - Xingamentos coincidem +15 (padrão comportamental forte)
+    - Conflitos fortes: -25 a -40
 2. Converter score em probabilidade (max 99%): >=85→90-99%, 70-84→70-89%, 55-69→50-69%, 40-54→30-49%, 25-39→15-29%, <25→<15%
 3. Para cada candidato, listar match_breakdown com status (completo/parcial/nao_bateu/conflitante)
 4. Calcular risk_level (Baixo/Médio/Alto/Crítico) e violence_probabilities com base nos incidents
@@ -87,7 +90,11 @@ RETORNE APENAS JSON válido com a estrutura:
     "risk_level": "Baixo|Médio|Alto|Crítico",
     "violence_probabilities": {"psicologica": number, "moral": number, "patrimonial": number, "fisica": number, "sexual": number, "ameaca_perseguicao": number},
     "explanation_short": "string",
-    "guidance": ["string"]
+    "guidance": ["string"],
+    "forca_seguranca": boolean_or_null,
+    "tem_arma_em_casa": boolean_or_null,
+    "xingamentos_frequentes": ["string"],
+    "flags": ["string"]
   }],
   "query_summary": {}
 }`;
@@ -481,10 +488,13 @@ serve(async (req) => {
           cidade_uf, bairro,
           profissao,
           placa_parcial,
+          forca_seguranca, tem_arma,
+          cor_raca, escolaridade,
+          empresa, xingamentos,
         } = params;
 
         // Need at least one search parameter
-        const hasAny = [nome, apelido, nome_pai, nome_mae, ddd, final_telefone, cidade_uf, bairro, profissao, placa_parcial].some(v => v && String(v).trim());
+        const hasAny = [nome, apelido, nome_pai, nome_mae, ddd, final_telefone, cidade_uf, bairro, profissao, placa_parcial, forca_seguranca, tem_arma, cor_raca, escolaridade, empresa, xingamentos].some(v => v && String(v).trim());
         if (!hasAny) {
           return json({ error: "Forneça pelo menos um critério de busca" }, 400);
         }
@@ -502,6 +512,12 @@ serve(async (req) => {
           p_profession: profissao?.trim() || null,
           p_plate_prefix: placa_parcial?.trim() || null,
           p_age_approx: idade_aprox ? parseInt(String(idade_aprox)) : null,
+          p_forca_seguranca: forca_seguranca === "sim" ? true : forca_seguranca === "nao" ? false : null,
+          p_tem_arma: tem_arma === "sim" ? true : tem_arma === "nao" ? false : null,
+          p_cor_raca: cor_raca?.trim() || null,
+          p_escolaridade: escolaridade?.trim() || null,
+          p_company: empresa?.trim() || null,
+          p_xingamentos: xingamentos?.trim() || null,
         });
 
         if (searchErr) {
@@ -539,6 +555,12 @@ serve(async (req) => {
           bairro: bairro?.trim() || null,
           profissao: profissao?.trim() || null,
           placa_parcial: placa_parcial?.trim() || null,
+          forca_seguranca: forca_seguranca || null,
+          tem_arma: tem_arma || null,
+          cor_raca: cor_raca?.trim() || null,
+          escolaridade: escolaridade?.trim() || null,
+          empresa: empresa?.trim() || null,
+          xingamentos: xingamentos?.trim() || null,
         };
 
         // Prepare candidate summaries for AI (privacy-safe)
@@ -556,10 +578,14 @@ serve(async (req) => {
           neighborhoods: c.neighborhoods || [],
           profession: c.profession,
           sector: c.sector,
+          company_public: c.company_public,
           phone_clues: c.phone_clues || [],
           vehicles: c.vehicles || [],
           forca_seguranca: c.forca_seguranca,
           tem_arma_em_casa: c.tem_arma_em_casa,
+          cor_raca: c.cor_raca,
+          escolaridade: c.escolaridade,
+          xingamentos_frequentes: c.xingamentos_frequentes || [],
           risk_score: c.risk_score,
           risk_level: c.risk_level,
           violence_profile_probs: c.violence_profile_probs,
@@ -602,6 +628,10 @@ serve(async (req) => {
               violence_probabilities: c.violence_profile_probs || {},
               explanation_short: "Ranking calculado sem IA (fallback).",
               guidance: ["Adicione mais dados para refinar a busca"],
+              forca_seguranca: c.forca_seguranca,
+              tem_arma_em_casa: c.tem_arma_em_casa,
+              xingamentos_frequentes: c.xingamentos_frequentes || [],
+              flags: c.flags || [],
             };
           });
           return json({ success: true, results: fallbackResults, query_summary: searchInput });

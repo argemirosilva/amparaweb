@@ -25,6 +25,10 @@ export interface SearchResult {
   violence_probabilities: Record<string, number>;
   explanation_short: string;
   guidance: string[];
+  forca_seguranca?: boolean;
+  tem_arma_em_casa?: boolean;
+  xingamentos_frequentes?: string[];
+  flags?: string[];
 }
 
 export interface SearchFormData {
@@ -38,6 +42,12 @@ export interface SearchFormData {
   bairro: string;
   profissao: string;
   placa_parcial: string;
+  forca_seguranca: string;
+  tem_arma: string;
+  cor_raca: string;
+  escolaridade: string;
+  empresa: string;
+  xingamentos: string;
 }
 
 export const emptySearchForm: SearchFormData = {
@@ -46,6 +56,9 @@ export const emptySearchForm: SearchFormData = {
   ddd: "", final_telefone: "",
   cidade_uf: "", bairro: "",
   profissao: "", placa_parcial: "",
+  forca_seguranca: "", tem_arma: "",
+  cor_raca: "", escolaridade: "",
+  empresa: "", xingamentos: "",
 };
 
 export default function BuscaPerfilPage() {
@@ -77,6 +90,12 @@ export default function BuscaPerfilPage() {
     if (data.bairro.trim()) payload.bairro = data.bairro.trim();
     if (data.profissao.trim()) payload.profissao = data.profissao.trim();
     if (data.placa_parcial.trim()) payload.placa_parcial = data.placa_parcial.trim();
+    if (data.forca_seguranca) payload.forca_seguranca = data.forca_seguranca;
+    if (data.tem_arma) payload.tem_arma = data.tem_arma;
+    if (data.cor_raca.trim()) payload.cor_raca = data.cor_raca.trim();
+    if (data.escolaridade.trim()) payload.escolaridade = data.escolaridade.trim();
+    if (data.empresa.trim()) payload.empresa = data.empresa.trim();
+    if (data.xingamentos.trim()) payload.xingamentos = data.xingamentos.trim();
 
     const { ok, data: resp } = await callWebApi("searchAgressorAdvanced", sessionToken!, payload);
     setSearching(false);

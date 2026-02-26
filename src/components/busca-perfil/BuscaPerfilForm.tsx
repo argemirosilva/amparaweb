@@ -93,10 +93,67 @@ export function BuscaPerfilForm({ onSubmit, loading }: Props) {
               value={form.profissao} onChange={e => set("profissao", e.target.value)} maxLength={60}
             />
             <input
+              type="text" className="ampara-input" placeholder="Empresa ou local de trabalho"
+              value={form.empresa} onChange={e => set("empresa", e.target.value)} maxLength={80}
+            />
+            <input
               type="text" className="ampara-input" placeholder="Placa parcial (ex: ABC1)"
               value={form.placa_parcial}
               onChange={e => set("placa_parcial", e.target.value.toUpperCase().slice(0, 7))}
               maxLength={7}
+            />
+          </div>
+
+          <div className="ampara-card !p-3 space-y-2">
+            <p className="text-sm font-semibold text-foreground">Características</p>
+            <select
+              className="ampara-input"
+              value={form.cor_raca} onChange={e => set("cor_raca", e.target.value)}
+            >
+              <option value="">Cor/Raça (não sei)</option>
+              <option value="Branca">Branca</option>
+              <option value="Preta">Preta</option>
+              <option value="Parda">Parda</option>
+              <option value="Indígena">Indígena</option>
+              <option value="Amarela">Amarela</option>
+            </select>
+            <select
+              className="ampara-input"
+              value={form.escolaridade} onChange={e => set("escolaridade", e.target.value)}
+            >
+              <option value="">Escolaridade (não sei)</option>
+              <option value="Fundamental incompleto">Fundamental incompleto</option>
+              <option value="Fundamental completo">Fundamental completo</option>
+              <option value="Médio incompleto">Médio incompleto</option>
+              <option value="Médio completo">Médio completo</option>
+              <option value="Superior incompleto">Superior incompleto</option>
+              <option value="Superior completo">Superior completo</option>
+              <option value="Pós-graduação">Pós-graduação</option>
+            </select>
+          </div>
+
+          <div className="ampara-card !p-3 space-y-2">
+            <p className="text-sm font-semibold text-foreground">Perfil de risco</p>
+            <select
+              className="ampara-input"
+              value={form.forca_seguranca} onChange={e => set("forca_seguranca", e.target.value)}
+            >
+              <option value="">Força de segurança? (não sei)</option>
+              <option value="sim">Sim</option>
+              <option value="nao">Não</option>
+            </select>
+            <select
+              className="ampara-input"
+              value={form.tem_arma} onChange={e => set("tem_arma", e.target.value)}
+            >
+              <option value="">Tem arma em casa? (não sei)</option>
+              <option value="sim">Sim</option>
+              <option value="nao">Não</option>
+            </select>
+            <input
+              type="text" className="ampara-input"
+              placeholder="Xingamentos que ele costuma usar (separe por vírgula)"
+              value={form.xingamentos} onChange={e => set("xingamentos", e.target.value)} maxLength={200}
             />
           </div>
         </>
