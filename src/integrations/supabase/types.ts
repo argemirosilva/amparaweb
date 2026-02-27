@@ -1754,6 +1754,7 @@ export type Database = {
           expires_at: string
           id: string
           ip_address: string | null
+          origin: string
           revoked_at: string | null
           token_hash: string
           user_agent: string | null
@@ -1764,6 +1765,7 @@ export type Database = {
           expires_at: string
           id?: string
           ip_address?: string | null
+          origin?: string
           revoked_at?: string | null
           token_hash: string
           user_agent?: string | null
@@ -1774,6 +1776,7 @@ export type Database = {
           expires_at?: string
           id?: string
           ip_address?: string | null
+          origin?: string
           revoked_at?: string | null
           token_hash?: string
           user_agent?: string | null
