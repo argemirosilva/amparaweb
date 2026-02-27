@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDeviceStatus } from "@/hooks/useDeviceStatus";
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/contexts/AuthContext";
 import { callWebApi } from "@/services/webApiService";
 import { toast } from "@/hooks/use-toast";
@@ -78,7 +79,7 @@ function formatDateTime(iso: string): string {
 }
 
 export default function DeviceStatusCard() {
-  const { device, location, geo, addressLoading, loading, error } = useDeviceStatus();
+  const { device, location, locationInterval, geo, addressLoading, loading, error } = useDeviceStatus();
   const { usuario, sessionToken } = useAuth();
   const navigate = useNavigate();
   const firstName = (usuario?.nome_completo || "").split(" ")[0];
@@ -239,31 +240,53 @@ export default function DeviceStatusCard() {
             const recentGps = location?.created_at
               ? Date.now() - new Date(location.created_at).getTime() < 330_000
               : false;
+
+            const formatInterval = (s: number) => {
+              if (s < 60) return `~${s}s`;
+              if (s < 3600) return `~${Math.round(s / 60)}min`;
+              return `~${Math.round(s / 3600)}h`;
+            };
+
+            const tooltipText = recentGps
+              ? `Localização ativa${locationInterval ? ` — atualizando a cada ${formatInterval(locationInterval)}` : ""}`
+              : location?.created_at
+                ? `Sem atualização recente · Última: ${timeSince(location.created_at)}`
+                : "Sem dados de GPS";
+
             return (
-              <button
-                onClick={() => navigate("/mapa")}
-                className={`inline-flex items-center gap-0.5 text-[10px] font-medium transition-colors ${
-                  !online
-                    ? "text-muted-foreground"
-                    : panicActive
-                      ? "text-destructive"
-                      : recentGps
-                        ? "text-emerald-500"
-                        : "text-muted-foreground"
-                }`}
-                title="Ver localização"
-              >
-                <MapPin className={`w-3.5 h-3.5 ${
-                  !online
-                    ? ""
-                    : panicActive
-                      ? "animate-pulse"
-                      : recentGps
-                        ? "animate-pulse"
-                        : ""
-                }`} />
-                GPS
-              </button>
+              <TooltipProvider delayDuration={300}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => navigate("/mapa")}
+                      className={`inline-flex items-center gap-0.5 text-[10px] font-medium transition-colors ${
+                        !online
+                          ? "text-muted-foreground"
+                          : panicActive
+                            ? "text-destructive"
+                            : recentGps
+                              ? "text-emerald-500"
+                              : "text-muted-foreground"
+                      }`}
+                      title=""
+                    >
+                      <MapPin className={`w-3.5 h-3.5 ${
+                        !online
+                          ? ""
+                          : panicActive
+                            ? "animate-pulse"
+                            : recentGps
+                              ? "animate-pulse"
+                              : ""
+                      }`} />
+                      GPS
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="max-w-[200px] text-center">
+                    <p className="text-xs">{tooltipText}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             );
           })()}
         </div>
