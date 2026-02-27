@@ -104,33 +104,49 @@ function getTranscriptionPreview(transcricao: string | null): string | null {
   return null;
 }
 
-function formatDate(iso: string, compact = false): string {
+function formatDate(iso: string, tz?: string | null, compact = false): string {
   const d = new Date(iso);
-  if (compact) return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
-  return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" });
+  const opts: Intl.DateTimeFormatOptions = compact
+    ? { day: "2-digit", month: "2-digit" }
+    : { day: "2-digit", month: "short", year: "numeric" };
+  if (tz) opts.timeZone = tz;
+  return d.toLocaleDateString("pt-BR", opts);
 }
 
-function formatTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+function formatTime(iso: string, tz?: string | null): string {
+  const opts: Intl.DateTimeFormatOptions = { hour: "2-digit", minute: "2-digit" };
+  if (tz) opts.timeZone = tz;
+  return new Date(iso).toLocaleTimeString("pt-BR", opts);
 }
 
-function getDateLabel(iso: string): string {
+function getDateLabel(iso: string, tz?: string | null): string {
   const d = new Date(iso);
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const target = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const tzOpts: Intl.DateTimeFormatOptions = tz ? { timeZone: tz } : {};
+  const formatter = new Intl.DateTimeFormat("pt-BR", { year: "numeric", month: "2-digit", day: "2-digit", ...tzOpts });
+  const parts = formatter.formatToParts(d);
+  const year = parseInt(parts.find(p => p.type === "year")!.value);
+  const month = parseInt(parts.find(p => p.type === "month")!.value) - 1;
+  const day = parseInt(parts.find(p => p.type === "day")!.value);
+  const target = new Date(year, month, day);
+
+  const nowParts = formatter.formatToParts(new Date());
+  const nowYear = parseInt(nowParts.find(p => p.type === "year")!.value);
+  const nowMonth = parseInt(nowParts.find(p => p.type === "month")!.value) - 1;
+  const nowDay = parseInt(nowParts.find(p => p.type === "day")!.value);
+  const today = new Date(nowYear, nowMonth, nowDay);
+
   const diff = Math.floor((today.getTime() - target.getTime()) / 86400000);
 
   if (diff === 0) return "Hoje";
   if (diff === 1) return "Ontem";
   if (diff >= 2 && diff <= 6) {
-    const weekday = d.toLocaleDateString("pt-BR", { weekday: "long" });
+    const weekday = d.toLocaleDateString("pt-BR", { weekday: "long", ...tzOpts });
     return weekday.charAt(0).toUpperCase() + weekday.slice(1);
   }
-  if (d.getFullYear() === now.getFullYear()) {
-    return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "long" });
+  if (year === nowYear) {
+    return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "long", ...tzOpts });
   }
-  return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
+  return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric", ...tzOpts });
 }
 
 function getDisplayTime(g: Gravacao): string {
@@ -141,9 +157,11 @@ function groupByDate(items: Gravacao[]): { label: string; items: Gravacao[] }[] 
   const groups: Map<string, { label: string; items: Gravacao[] }> = new Map();
   for (const g of items) {
     const displayTime = getDisplayTime(g);
-    const key = new Date(displayTime).toLocaleDateString("pt-BR");
+    const tz = g.timezone;
+    const tzOpts: Intl.DateTimeFormatOptions = tz ? { timeZone: tz } : {};
+    const key = new Date(displayTime).toLocaleDateString("pt-BR", tzOpts);
     if (!groups.has(key)) {
-      groups.set(key, { label: getDateLabel(displayTime), items: [] });
+      groups.set(key, { label: getDateLabel(displayTime, tz), items: [] });
     }
     groups.get(key)!.items.push(g);
   }
@@ -435,7 +453,7 @@ export default function GravacoesPage() {
                         <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
                           <div className="flex items-center gap-1.5">
                             <span className="text-[11px] font-medium text-foreground">
-                              {formatTime(getDisplayTime(g))}
+                              {formatTime(getDisplayTime(g), g.timezone)}
                             </span>
                             {(() => {
                               const device = getDeviceLabel(g.device_id);
