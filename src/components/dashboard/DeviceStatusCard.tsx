@@ -134,7 +134,14 @@ export default function DeviceStatusCard() {
               <AlertTriangle className="w-3.5 h-3.5" />
               PÂNICO ATIVO
               {device?.panicShareCode && (
-                <span className="ml-1 font-mono text-[10px] opacity-80">#{device.panicShareCode}</span>
+                <a
+                  href={`https://amparamulher.com.br/${device.panicShareCode}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ml-1 font-mono text-[10px] opacity-80 underline underline-offset-2 hover:opacity-100 transition-opacity"
+                >
+                  #{device.panicShareCode}
+                </a>
               )}
               <AlertTriangle className="w-3.5 h-3.5" />
             </div>
