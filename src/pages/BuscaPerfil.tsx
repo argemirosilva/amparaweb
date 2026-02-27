@@ -151,12 +151,12 @@ export default function BuscaPerfilPage() {
         <>
           <BuscaPerfilForm onSubmit={handleSearch} loading={searching} />
           {searching && (
-            <div className="flex flex-col items-center justify-center gap-3 py-10">
+            <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm">
               <div className="relative">
-                <div className="w-12 h-12 rounded-full border-4 border-primary/20" />
-                <Loader2 className="w-12 h-12 animate-spin text-primary absolute inset-0" />
+                <div className="w-14 h-14 rounded-full border-4 border-primary/20" />
+                <Loader2 className="w-14 h-14 animate-spin text-primary absolute inset-0" />
               </div>
-              <span className="text-sm text-muted-foreground">Analisando correspondências com IA...</span>
+              <span className="mt-4 text-sm text-muted-foreground font-medium">Analisando correspondências com IA...</span>
             </div>
           )}
         </>
