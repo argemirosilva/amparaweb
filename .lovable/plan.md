@@ -1,23 +1,38 @@
 
 
-## Retornar sucesso ao rejeitar GPS por device mismatch/not registered
+## Tornar pingMobile read-only para vinculo de dispositivo
 
-### Problema
-Quando o backend rejeita um envio de GPS por `NO_DEVICE_REGISTERED` ou `DEVICE_MISMATCH` no handler `enviarLocalizacaoGPS`, ele retorna `success: false` com HTTP 403. Isso faz o app tratar como erro, quando na verdade deveria simplesmente ignorar silenciosamente.
+### Problema atual
+O `handlePing` ainda faz rotacao de dispositivo quando nao ha sessao ativa. Dois dispositivos com device_ids diferentes (`af9a2be7...` e `37CA6534...`) ficam alternando pings, e como nao ha sessao ativa no momento, cada ping deleta o outro e se registra. Isso cria um loop de rotacao infinito que impede gravacoes de funcionar.
 
-### Mudanca
+### Mudanca proposta
 
-**Arquivo:** `supabase/functions/mobile-api/index.ts`
+**Arquivo:** `supabase/functions/mobile-api/index.ts` (handlePing, linhas ~616-673)
 
-1. **Linha 1377** (`NO_DEVICE_REGISTERED`): Trocar de `jsonResponse({ success: false, error: "NO_DEVICE_REGISTERED" }, 403)` para `jsonResponse({ success: true, message: "GPS ignorado - dispositivo nao registrado", skipped: true })` (HTTP 200).
+Substituir toda a logica do bloco `else` (quando `existing` e null, ou seja, device_id nao esta registrado) por um comportamento puramente passivo:
 
-2. **Linha 1385** (`DEVICE_MISMATCH`): Trocar de `jsonResponse({ success: false, error: "DEVICE_MISMATCH" }, 403)` para `jsonResponse({ success: true, message: "GPS ignorado - dispositivo diferente", skipped: true })` (HTTP 200).
+- Se o `device_id` do ping ja esta registrado para o usuario: **atualizar** normalmente (como ja faz).
+- Se o `device_id` NAO esta registrado: **ignorar silenciosamente** o ping. Retornar `{ success: true, skipped: true, status: "device_not_bound" }`. Nao deletar, nao inserir, nao rotacionar.
 
-O campo `skipped: true` permite que o app saiba que o GPS nao foi gravado, mas sem tratar como erro.
+O vinculo de dispositivo so deve acontecer no **login** (handleLogin). O ping nunca altera quem e o dispositivo ativo.
 
-### Secao Tecnica
+### Secao tecnica
 
 **Arquivo modificado:** `supabase/functions/mobile-api/index.ts`
-- Linha 1377: Trocar retorno de erro 403 para sucesso 200 com `skipped: true`
-- Linha 1385: Trocar retorno de erro 403 para sucesso 200 com `skipped: true`
+
+Bloco a substituir (linhas 621-673 aproximadamente):
+
+```text
+ANTES (else branch):
+  - Consulta currentDevice
+  - Consulta activeSession e activePanic
+  - Se sessao ativa: ignora (ja implementado)
+  - Se nao: deleta device antigo, insere novo
+
+DEPOIS (else branch):
+  - Log: "Ping from unbound device {deviceId}, ignoring"
+  - Return jsonResponse({ success: true, skipped: true, status: "device_not_bound", message: "Dispositivo nao vinculado - faca login para vincular" })
+```
+
+Isso elimina completamente a rotacao de dispositivo no ping, tornando-o read-only no que diz respeito ao vinculo. O login ja insere o device_status corretamente.
 
