@@ -2127,7 +2127,7 @@ async function handleReportarStatusGravacao(
     // Check if there's already an active session for this user (any device)
     const { data: existingSession } = await supabase
       .from("monitoramento_sessoes")
-      .select("id")
+      .select("id, device_id")
       .eq("user_id", userId)
       .eq("status", "ativa")
       .maybeSingle();
@@ -2172,7 +2172,55 @@ async function handleReportarStatusGravacao(
       });
     }
 
-    // Session already exists — update origem if changed and ensure device_status reflects recording
+    // Session exists — check if same device or different
+    if (existingSession.device_id !== deviceId) {
+      // Different device — seal old session and create new one
+      await sealAllActiveSessions(supabase, userId, "device_rotation", ip);
+
+      // Reset old device flags
+      await supabase
+        .from("device_status")
+        .update({ is_recording: false, is_monitoring: false })
+        .eq("user_id", userId)
+        .neq("device_id", deviceId);
+
+      const { data: rotatedSession } = await supabase
+        .from("monitoramento_sessoes")
+        .insert({
+          user_id: userId,
+          device_id: deviceId,
+          status: "ativa",
+          origem: origemGravacao && validOrigens.includes(origemGravacao) ? origemGravacao : "manual",
+        })
+        .select("id")
+        .single();
+
+      console.log(`Device rotation in reportarStatus: sealed old session, created ${rotatedSession?.id} for device ${deviceId}, origem: ${origemGravacao}`);
+
+      await supabase
+        .from("device_status")
+        .update({ is_recording: true })
+        .eq("user_id", userId)
+        .eq("device_id", deviceId);
+
+      await supabase.from("audit_logs").insert({
+        user_id: userId,
+        action_type: "session_device_rotation",
+        success: true,
+        ip_address: ip,
+        details: { new_session_id: rotatedSession?.id, old_session_id: existingSession.id, old_device: existingSession.device_id, new_device: deviceId },
+      });
+
+      return jsonResponse({
+        success: true,
+        message: "Sessão anterior selada, nova sessão criada para novo dispositivo",
+        sessao_id: rotatedSession?.id,
+        origem_gravacao: origemGravacao,
+        servidor_timestamp: new Date().toISOString(),
+      });
+    }
+
+    // Same device — update origem if changed and ensure device_status reflects recording
     if (origemGravacao && validOrigens.includes(origemGravacao)) {
       await supabase
         .from("monitoramento_sessoes")
