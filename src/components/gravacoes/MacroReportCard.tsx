@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { callWebApi } from "@/services/webApiService";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +13,8 @@ import {
   Lightbulb,
   BookOpen,
   Heart,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
 
 interface MacroReport {
@@ -54,6 +56,8 @@ export default function MacroReportCard({
   const [loaded, setLoaded] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [ttsState, setTtsState] = useState<"idle" | "loading" | "playing">("idle");
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const fetchReport = useCallback(async () => {
     setLoading(true);
@@ -90,7 +94,45 @@ export default function MacroReportCard({
     setGenerating(false);
   };
 
+  const stopTts = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+    setTtsState("idle");
+  }, []);
+
+  const playPanorama = useCallback(async (text: string) => {
+    if (ttsState === "playing") {
+      stopTts();
+      return;
+    }
+    setTtsState("loading");
+    try {
+      const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+      const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/tts-panorama`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", apikey: SUPABASE_KEY },
+        body: JSON.stringify({ text, session_token: sessionToken }),
+      });
+      if (!res.ok) throw new Error("TTS falhou");
+      const { audioContent } = await res.json();
+      const audio = new Audio(`data:audio/mp3;base64,${audioContent}`);
+      audioRef.current = audio;
+      audio.onended = () => setTtsState("idle");
+      audio.onerror = () => setTtsState("idle");
+      await audio.play();
+      setTtsState("playing");
+    } catch {
+      setTtsState("idle");
+    }
+  }, [ttsState, sessionToken, stopTts]);
+
+  useEffect(() => () => stopTts(), [stopTts]);
+
   if (loading && !loaded) {
+
     return (
       <div className="flex items-center gap-2 py-4 justify-center">
         <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
@@ -164,9 +206,27 @@ export default function MacroReportCard({
       {/* Panorama */}
       {panorama && (
         <div className="rounded-lg bg-muted/30 border border-border/50 p-3 space-y-1.5">
-          <div className="flex items-center gap-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-            <BookOpen className="w-3 h-3" />
-            Panorama
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+              <BookOpen className="w-3 h-3" />
+              Panorama
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0 shrink-0"
+              onClick={() => playPanorama(panorama)}
+              disabled={ttsState === "loading"}
+              title={ttsState === "playing" ? "Parar áudio" : "Ouvir panorama"}
+            >
+              {ttsState === "loading" ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : ttsState === "playing" ? (
+                <VolumeX className="w-3.5 h-3.5" />
+              ) : (
+                <Volume2 className="w-3.5 h-3.5" />
+              )}
+            </Button>
           </div>
           <p className="text-xs text-foreground/90 leading-relaxed">{panorama}</p>
         </div>
