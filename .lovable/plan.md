@@ -1,37 +1,21 @@
 
 
-## Problema Identificado
+## Trocar icone de Suporte para icone de chat
 
-O card do dispositivo mostra "Monitorando" porque:
-1. O campo `is_monitoring` na tabela `device_status` ainda esta `true` (o app mobile continua reportando assim nos pings)
-2. O hook `useDeviceStatus` copia `is_monitoring` diretamente do banco **sem validar** se existe uma sessao de monitoramento ativa em `monitoramento_sessoes`
+Substituir o icone `Headset` por `MessageCircle` (do lucide-react) em todos os pontos de navegacao de suporte do usuario. O `MessageCircle` remete visualmente a um chat/conversa.
 
-O `is_recording` ja tem essa validacao cruzada, mas `is_monitoring` nao.
+### Arquivos afetados
 
-## Plano de Correcao
+1. **`src/components/layout/AppSidebar.tsx`** - Trocar import e uso de `Headset` por `MessageCircle` (menu lateral e footer)
+2. **`src/components/layout/BottomNav.tsx`** - Nao tem suporte, nada a fazer
+3. **`src/components/gravacoes/GravacaoExpandedContent.tsx`** - Trocar `Headset` por `MessageCircle` no botao "Pedir ajuda"
+4. **`src/pages/support/SupportHome.tsx`** - Trocar `Headset` por `MessageCircle` no titulo da pagina
 
-### 1. Corrigir o hook useDeviceStatus (correcao definitiva)
+**Nota:** Os arquivos admin (`AdminLayout.tsx`) manterao o icone `Headset` pois sao para operadores de suporte, nao usuarios finais.
 
-No arquivo `src/hooks/useDeviceStatus.ts`, alterar a linha 123 para aplicar a mesma logica de validacao cruzada:
+### Detalhes tecnicos
 
-- Se `device_status.is_monitoring = true` mas **nao existe** sessao ativa em `monitoramento_sessoes`, sobrescrever para `false`
-- Isso garante que mesmo que o app mobile envie `is_monitoring: true` por engano, o dashboard nao mostra o indicador se nao houver sessao real
-
-```typescript
-// Antes:
-is_monitoring: deviceRes.data.is_monitoring,
-
-// Depois:
-is_monitoring: deviceRes.data.is_monitoring && hasActiveMonitor ? true : false,
-```
-
-### 2. Corrigir o dado no banco (correcao imediata)
-
-Criar uma migracao para resetar `is_monitoring = false` no `device_status` da usuaria, eliminando o estado inconsistente atual.
-
-### Secao Tecnica
-
-**Arquivo modificado:** `src/hooks/useDeviceStatus.ts`  
-**Linha afetada:** 123  
-**Migracao SQL:** UPDATE em `device_status` para resetar `is_monitoring`
+- Importar `MessageCircle` de `lucide-react` no lugar de `Headset`
+- Manter todos os tamanhos e classes CSS iguais
+- 4 arquivos, substituicao direta de icone
 
