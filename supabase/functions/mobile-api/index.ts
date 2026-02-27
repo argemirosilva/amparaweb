@@ -1417,6 +1417,41 @@ async function handleAcionarPanico(
     });
   }
 
+  // Create GPS sharing link directly (don't rely on WhatsApp fire-and-forget)
+  // First check user config
+  const { data: userConfig } = await supabase
+    .from("usuarios")
+    .select("compartilhar_gps_panico, gps_duracao_minutos")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (userConfig?.compartilhar_gps_panico !== false) {
+    // Deactivate any previous active share links
+    await supabase
+      .from("compartilhamento_gps")
+      .update({ ativo: false })
+      .eq("user_id", user.id)
+      .eq("ativo", true);
+
+    // Generate 6-digit numeric code
+    const rnd = new Uint8Array(6);
+    crypto.getRandomValues(rnd);
+    let shareCode = "";
+    for (let i = 0; i < 6; i++) shareCode += String(rnd[i] % 10);
+
+    const duracaoMin = userConfig?.gps_duracao_minutos || 30;
+    const expiraEm = new Date(Date.now() + duracaoMin * 60 * 1000).toISOString();
+
+    await supabase.from("compartilhamento_gps").insert({
+      user_id: user.id,
+      codigo: shareCode,
+      tipo: "panico",
+      alerta_id: alerta.id,
+      expira_em: expiraEm,
+      ativo: true,
+    });
+  }
+
   await supabase.from("audit_logs").insert({
     user_id: user.id,
     action_type: "panico_acionado",
