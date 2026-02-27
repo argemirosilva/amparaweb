@@ -1426,12 +1426,11 @@ async function handleAcionarPanico(
     .maybeSingle();
 
   if (userConfig?.compartilhar_gps_panico !== false) {
-    // Deactivate any previous active share links
+    // Delete any previous share links
     await supabase
       .from("compartilhamento_gps")
-      .update({ ativo: false })
-      .eq("user_id", user.id)
-      .eq("ativo", true);
+      .delete()
+      .eq("user_id", user.id);
 
     // Generate 6-digit numeric code
     const rnd = new Uint8Array(6);
@@ -1554,10 +1553,10 @@ async function handleCancelarPanico(
     },
   });
 
-  // Deactivate GPS sharing linked to this alert
+  // Delete GPS sharing linked to this alert
   await supabase
     .from("compartilhamento_gps")
-    .update({ ativo: false })
+    .delete()
     .eq("user_id", user.id)
     .eq("alerta_id", alerta.id);
 

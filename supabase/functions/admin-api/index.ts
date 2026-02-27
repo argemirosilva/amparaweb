@@ -420,10 +420,10 @@ serve(async (req) => {
         return json({ error: "target_user_id e codigo são obrigatórios" }, 400);
       }
 
-      // Deactivate existing test links with same code
+      // Delete existing test links with same code
       await supabase
         .from("compartilhamento_gps")
-        .update({ ativo: false })
+        .delete()
         .eq("codigo", codigo)
         .eq("tipo", "teste");
 
