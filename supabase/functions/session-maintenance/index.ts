@@ -165,6 +165,11 @@ serve(async (req) => {
   }
 
   try {
+    let body: Record<string, unknown> | null = null;
+    try {
+      body = await req.json();
+    } catch { /* no body or invalid json — ok for cron */ }
+
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
@@ -316,8 +321,11 @@ serve(async (req) => {
       }
     }
 
-    // ── Step 2: Process sessions awaiting finalization (with 30s tolerance) ──
-    const cutoff = new Date(Date.now() - 30 * 1000).toISOString();
+    // ── Step 2: Process sessions awaiting finalization (with 30s tolerance unless skipped) ──
+    const skipTolerance = body?.skip_tolerance === true;
+    const cutoff = skipTolerance
+      ? new Date().toISOString()
+      : new Date(Date.now() - 30 * 1000).toISOString();
 
     const { data: pendingSessions } = await supabase
       .from("monitoramento_sessoes")
