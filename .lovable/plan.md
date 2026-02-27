@@ -1,21 +1,45 @@
 
 
-## Trocar icone de Suporte para icone de chat
+## Problema
 
-Substituir o icone `Headset` por `MessageCircle` (do lucide-react) em todos os pontos de navegacao de suporte do usuario. O `MessageCircle` remete visualmente a um chat/conversa.
+O app mobile chama `syncConfigMobile` a cada ping. Quando o horario atual esta dentro de um periodo agendado, o backend cria automaticamente uma sessao de monitoramento -- **sem verificar se ha um panico ativo**. Resultado: panico e monitoramento coexistem, o que nao deveria acontecer.
 
-### Arquivos afetados
+Alem disso, `handleAcionarPanico` nao sela sessoes de monitoramento ativas ao criar o alerta (so sela no cancelamento).
 
-1. **`src/components/layout/AppSidebar.tsx`** - Trocar import e uso de `Headset` por `MessageCircle` (menu lateral e footer)
-2. **`src/components/layout/BottomNav.tsx`** - Nao tem suporte, nada a fazer
-3. **`src/components/gravacoes/GravacaoExpandedContent.tsx`** - Trocar `Headset` por `MessageCircle` no botao "Pedir ajuda"
-4. **`src/pages/support/SupportHome.tsx`** - Trocar `Headset` por `MessageCircle` no titulo da pagina
+## Correcoes
 
-**Nota:** Os arquivos admin (`AdminLayout.tsx`) manterao o icone `Headset` pois sao para operadores de suporte, nao usuarios finais.
+### 1. Backend: Nao criar sessao de monitoramento durante panico ativo
 
-### Detalhes tecnicos
+No arquivo `supabase/functions/mobile-api/index.ts`, na logica do `syncConfigMobile` (linha ~778), antes de criar uma nova sessao de monitoramento, verificar se existe um alerta de panico ativo para a usuaria. Se sim, pular a criacao da sessao.
 
-- Importar `MessageCircle` de `lucide-react` no lugar de `Headset`
-- Manter todos os tamanhos e classes CSS iguais
-- 4 arquivos, substituicao direta de icone
+```text
+Fluxo atual:
+  sync -> dentro do horario? -> existe sessao ativa? -> NAO -> cria sessao
 
+Fluxo corrigido:
+  sync -> dentro do horario? -> panico ativo? -> SIM -> pula criacao
+                                              -> NAO -> existe sessao? -> cria sessao
+```
+
+### 2. Backend: Selar sessoes ativas ao acionar panico
+
+No mesmo arquivo, na funcao `handleAcionarPanico` (linha ~1408), adicionar chamada a `sealAllActiveSessions` e resetar flags do `device_status` logo apos criar o alerta. Isso garante que ao acionar panico, qualquer monitoramento em andamento e encerrado.
+
+### 3. Frontend: Ocultar indicador de monitoramento durante panico
+
+No arquivo `src/components/dashboard/DeviceStatusCard.tsx`, alterar a condicao do indicador de gravacao/monitoramento (linha ~179) para nao exibir quando `panicActive` e verdadeiro. O banner de panico ja comunica a situacao de emergencia.
+
+### 4. Correcao imediata no banco
+
+Selar a sessao de monitoramento ativa atual (id `71a29a0d-...`) e resetar os flags no `device_status` da usuaria.
+
+---
+
+### Secao Tecnica
+
+**Arquivos modificados:**
+- `supabase/functions/mobile-api/index.ts` — Duas alteracoes:
+  1. Em `syncConfigMobile` (~linha 778): consultar `alertas_panico` com `status = 'ativo'` antes de criar sessao. Se existir, nao criar.
+  2. Em `handleAcionarPanico` (~linha 1408): adicionar `sealAllActiveSessions(supabase, user.id, "panico_acionado", ip)` + reset de `device_status`
+- `src/components/dashboard/DeviceStatusCard.tsx` — Linha 179: condicao `(device?.is_recording || device?.is_monitoring) && !panicActive`
+- Migracao SQL para selar sessao orfã e resetar flags
