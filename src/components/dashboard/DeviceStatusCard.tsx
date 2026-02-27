@@ -200,7 +200,7 @@ export default function DeviceStatusCard() {
               </span>
             )}
             {device.is_recording && device.lastSegmentIdx != null && (
-              <span className="ml-auto text-[9px] opacity-60 font-normal">seg #{device.lastSegmentIdx}</span>
+              <span className="ml-auto text-[9px] opacity-60 font-normal tabular-nums">#{device.lastSegmentIdx}</span>
             )}
           </div>
         )}
