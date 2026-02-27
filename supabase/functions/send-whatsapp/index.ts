@@ -263,23 +263,39 @@ async function notifyGuardiansAlert(
       (tipo === "alto") ? usuario.compartilhar_gps_risco_alto : true;
 
     if (shouldShare) {
-      // Generate 6-digit numeric code
-      const rnd = new Uint8Array(6);
-      crypto.getRandomValues(rnd);
-      let codigo = "";
-      for (let i = 0; i < 6; i++) codigo += String(rnd[i] % 10);
+      // Check if a share link already exists for this alert (created by panic handler)
+      let codigo: string | null = null;
+      if (alertaId) {
+        const { data: existingShare } = await supabase
+          .from("compartilhamento_gps")
+          .select("codigo")
+          .eq("alerta_id", alertaId)
+          .eq("ativo", true)
+          .maybeSingle();
+        if (existingShare) {
+          codigo = existingShare.codigo;
+        }
+      }
 
-      const duracaoMin = usuario.gps_duracao_minutos || 30;
-      const expiraEm = new Date(Date.now() + duracaoMin * 60 * 1000).toISOString();
+      if (!codigo) {
+        // Generate 6-digit numeric code
+        const rnd = new Uint8Array(6);
+        crypto.getRandomValues(rnd);
+        codigo = "";
+        for (let i = 0; i < 6; i++) codigo += String(rnd[i] % 10);
 
-      await supabase.from("compartilhamento_gps").insert({
-        user_id: userId,
-        codigo,
-        tipo: tipo === "panico" ? "panico" : "alerta",
-        alerta_id: alertaId || null,
-        expira_em: expiraEm,
-        ativo: true,
-      });
+        const duracaoMin = usuario.gps_duracao_minutos || 30;
+        const expiraEm = new Date(Date.now() + duracaoMin * 60 * 1000).toISOString();
+
+        await supabase.from("compartilhamento_gps").insert({
+          user_id: userId,
+          codigo,
+          tipo: tipo === "panico" ? "panico" : "alerta",
+          alerta_id: alertaId || null,
+          expira_em: expiraEm,
+          ativo: true,
+        });
+      }
 
       shareLink = `https://amparamulher.com.br/${codigo}`;
     }
