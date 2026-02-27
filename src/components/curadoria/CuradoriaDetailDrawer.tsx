@@ -109,7 +109,7 @@ const fmtDate = (iso: string) => {
 const fmtDuration = (s: number | null) => {
   if (!s) return "—";
   const m = Math.floor(s / 60);
-  const sec = s % 60;
+  const sec = Math.floor(s % 60);
   return `${m}m${sec.toString().padStart(2, "0")}s`;
 };
 
