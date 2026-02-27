@@ -180,9 +180,9 @@ export default function DeviceStatusCard() {
           <div className={`absolute left-0 right-0 flex items-center justify-center gap-1 text-[10px] font-medium py-0.5 ${
             panicActive ? "top-[24px]" : "top-0"
           } ${
-            device.is_recording
+          device.is_recording
               ? "bg-destructive/10 text-destructive"
-              : "bg-primary/10 text-primary"
+              : "bg-emerald-50 text-emerald-700"
           }`}>
             <span className="relative flex h-1.5 w-1.5">
               <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-60 ${
