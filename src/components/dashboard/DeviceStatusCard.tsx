@@ -235,7 +235,7 @@ export default function DeviceStatusCard() {
                   {online ? "Online" : "Offline"}
                 </span>
               </TooltipTrigger>
-              <TooltipContent side="bottom" className="max-w-[220px] text-center">
+              <TooltipContent side="right" className="max-w-[220px] text-center">
                 <p className="text-xs">
                   {online
                     ? "Dispositivo logado e conectado ao servidor"
