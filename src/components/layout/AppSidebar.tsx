@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import { NavLink } from "@/components/NavLink";
 import {
   LayoutDashboard,
@@ -78,9 +79,18 @@ export default function AppSidebar() {
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton onClick={() => navigate("/support")} className="w-fit">
-              <Headset className="w-5 h-5 shrink-0 text-muted-foreground" />
-            </SidebarMenuButton>
+            <TooltipProvider delayDuration={300}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <SidebarMenuButton onClick={() => navigate("/support")} className="w-fit">
+                    <Headset className="w-5 h-5 shrink-0 text-muted-foreground" />
+                  </SidebarMenuButton>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  <p className="text-xs">Suporte Técnico</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton onClick={handleLogout}>
