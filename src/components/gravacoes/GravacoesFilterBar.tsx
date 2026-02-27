@@ -1,13 +1,6 @@
 import { useState, useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Search, Filter, X, ChevronDown } from "lucide-react";
 
@@ -18,8 +11,6 @@ interface GravacoesFilterBarProps {
   onDateFromChange: (v: string) => void;
   dateTo: string;
   onDateToChange: (v: string) => void;
-  deviceFilter: string;
-  onDeviceFilterChange: (v: string) => void;
   onClear: () => void;
   hasActiveFilters: boolean;
 }
@@ -31,8 +22,6 @@ export default function GravacoesFilterBar({
   onDateFromChange,
   dateTo,
   onDateToChange,
-  deviceFilter,
-  onDeviceFilterChange,
   onClear,
   hasActiveFilters,
 }: GravacoesFilterBarProps) {
@@ -100,16 +89,6 @@ export default function GravacoesFilterBar({
               className="h-7 text-xs w-[130px]"
             />
           </div>
-          <Select value={deviceFilter} onValueChange={onDeviceFilterChange}>
-            <SelectTrigger className="h-7 text-xs w-[110px]">
-              <SelectValue placeholder="Origem" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos</SelectItem>
-              <SelectItem value="web">Web</SelectItem>
-              <SelectItem value="mobile">Celular</SelectItem>
-            </SelectContent>
-          </Select>
         </div>
       )}
     </div>
