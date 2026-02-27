@@ -275,22 +275,18 @@ export default function DeviceStatusCard() {
                       className={`inline-flex items-center gap-0.5 text-[10px] font-medium transition-colors ${
                         !online
                           ? "text-muted-foreground"
-                          : panicActive
-                            ? "text-destructive"
-                            : recentGps
-                              ? "text-emerald-500"
-                              : "text-muted-foreground"
+                          : recentGps
+                            ? "text-emerald-500"
+                            : "text-muted-foreground"
                       }`}
                       title=""
                     >
                       <MapPin className={`w-3.5 h-3.5 ${
                         !online
                           ? ""
-                          : panicActive
+                          : recentGps
                             ? "animate-pulse"
-                            : recentGps
-                              ? "animate-pulse"
-                              : ""
+                            : ""
                       }`} />
                       GPS
                     </button>
