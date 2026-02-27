@@ -2397,7 +2397,7 @@ async function handleReportarStatusGravacao(
           Authorization: `Bearer ${serviceKey}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({}),
+        body: JSON.stringify({ skip_tolerance: true }),
       }).catch((e) => console.error("session-maintenance immediate trigger error:", e));
 
       return jsonResponse({
