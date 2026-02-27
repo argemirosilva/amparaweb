@@ -42,10 +42,16 @@ async function getGcpAccessToken(): Promise<string> {
   // Import PEM private key
   const pem = rawKey
     .replace(/\\n/g, "\n")
-    .replace(/-----BEGIN PRIVATE KEY-----/, "")
-    .replace(/-----END PRIVATE KEY-----/, "")
-    .replace(/\s/g, "");
-  const binaryKey = Uint8Array.from(atob(pem), (c) => c.charCodeAt(0));
+    .replace(/-+BEGIN PRIVATE KEY-+/g, "")
+    .replace(/-+END PRIVATE KEY-+/g, "")
+    .replace(/[\s\r\n]/g, "");
+
+  // Decode base64 using Deno's built-in decoder for robustness
+  const binaryStr = atob(pem);
+  const binaryKey = new Uint8Array(binaryStr.length);
+  for (let i = 0; i < binaryStr.length; i++) {
+    binaryKey[i] = binaryStr.charCodeAt(i);
+  }
 
   const cryptoKey = await crypto.subtle.importKey(
     "pkcs8",
