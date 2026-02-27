@@ -619,56 +619,14 @@ async function handlePing(
         .update(deviceData)
         .eq("id", existing.id);
     } else {
-      // New device — check if there's already a registered device with an active session
-      const { data: currentDevice } = await supabase
-        .from("device_status")
-        .select("id, device_id")
-        .eq("user_id", userId)
-        .maybeSingle();
-
-      if (currentDevice) {
-        // Check if there's an active monitoring session or panic alert tied to the current device
-        const { data: activeSession } = await supabase
-          .from("monitoramento_sessoes")
-          .select("id")
-          .eq("user_id", userId)
-          .eq("status", "ativa")
-          .maybeSingle();
-
-        const { data: activePanicCheck } = await supabase
-          .from("alertas_panico")
-          .select("id")
-          .eq("user_id", userId)
-          .eq("status", "ativo")
-          .maybeSingle();
-
-        if (activeSession || activePanicCheck) {
-          // There's an active session/panic on another device — silently ignore this ping
-          console.log(`[handlePing] Ignored ping from new device ${deviceId} — active session exists on device ${currentDevice.device_id}`);
-          return jsonResponse({
-            success: true,
-            status: "ignored",
-            message: "Outro dispositivo ativo com sessao em andamento",
-            skipped: true,
-            servidor_timestamp: new Date().toISOString(),
-          });
-        }
-      }
-
-      // No active session — safe to rotate devices
-      if (currentDevice) {
-        await supabase
-          .from("device_status")
-          .delete()
-          .eq("user_id", userId)
-          .neq("device_id", deviceId);
-        console.log(`Replaced old device(s) for user ${userId}, new device: ${deviceId}`);
-      }
-
-      await supabase.from("device_status").insert({
-        user_id: userId,
-        device_id: deviceId,
-        ...deviceData,
+      // Device not bound — ping is read-only, never rotates devices
+      console.log(`[handlePing] Ping from unbound device ${deviceId} for user ${userId}, ignoring`);
+      return jsonResponse({
+        success: true,
+        skipped: true,
+        status: "device_not_bound",
+        message: "Dispositivo nao vinculado - faca login para vincular",
+        servidor_timestamp: new Date().toISOString(),
       });
     }
   }
