@@ -833,8 +833,52 @@ async function handleSyncConfig(
               .select("id")
               .single();
             sessaoId = newSession?.id || null;
-          } else {
+          } else if (existingSession.device_id === deviceId) {
+            // Same device — reuse session
             sessaoId = existingSession.id;
+          } else {
+            // Different device — seal old session and create new one for the new device
+            await sealAllActiveSessions(supabase, user.id, "device_rotation", ip);
+
+            // Reset old device flags
+            await supabase
+              .from("device_status")
+              .update({ is_recording: false, is_monitoring: false })
+              .eq("user_id", user.id)
+              .neq("device_id", deviceId);
+
+            // Create new session (same window logic as above)
+            const [hi2, mi2] = periodo.inicio.split(":").map(Number);
+            const [hf2, mf2] = periodo.fim.split(":").map(Number);
+
+            const wsLocal = new Date(clientNow);
+            wsLocal.setUTCHours(hi2, mi2, 0, 0);
+            const weLocal = new Date(clientNow);
+            weLocal.setUTCHours(hf2, mf2, 0, 0);
+
+            let wsUtc: Date;
+            let weUtc: Date;
+            if (tzOffset !== undefined) {
+              wsUtc = new Date(wsLocal.getTime() + tzOffset * 60 * 1000);
+              weUtc = new Date(weLocal.getTime() + tzOffset * 60 * 1000);
+            } else {
+              wsUtc = new Date(wsLocal.getTime() + 3 * 60 * 60 * 1000);
+              weUtc = new Date(weLocal.getTime() + 3 * 60 * 60 * 1000);
+            }
+
+            const { data: rotatedSession } = await supabase
+              .from("monitoramento_sessoes")
+              .insert({
+                user_id: user.id,
+                device_id: deviceId,
+                status: "ativa",
+                window_start_at: wsUtc.toISOString(),
+                window_end_at: weUtc.toISOString(),
+                origem: "automatico",
+              })
+              .select("id")
+              .single();
+            sessaoId = rotatedSession?.id || null;
           }
           } // close activePanic else
         }
