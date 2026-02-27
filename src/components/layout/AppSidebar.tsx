@@ -78,9 +78,8 @@ export default function AppSidebar() {
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton onClick={() => navigate("/support")}>
+            <SidebarMenuButton onClick={() => navigate("/support")} className="w-fit">
               <Headset className="w-5 h-5 shrink-0 text-muted-foreground" />
-              <span className="group-data-[collapsible=icon]:hidden text-muted-foreground">Suporte</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
