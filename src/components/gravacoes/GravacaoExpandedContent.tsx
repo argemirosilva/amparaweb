@@ -3,7 +3,7 @@ import { toast } from "@/hooks/use-toast";
 import { callWebApi } from "@/services/webApiService";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { FileText, Trash2, Headset, RotateCcw } from "lucide-react";
+import { FileText, Trash2, MessageCircle, RotateCcw } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -344,7 +344,7 @@ function SupportShortcut({ gravacao }: { gravacao: Gravacao }) {
         navigate(`/support/new?category=recording_question&resource_type=recording&resource_id=${gravacao.id}&resource_label=${encodeURIComponent(label)}`);
       }}
     >
-      <Headset className="w-3.5 h-3.5" />
+      <MessageCircle className="w-3.5 h-3.5" />
       Pedir ajuda
     </Button>
   );
