@@ -1,12 +1,23 @@
 
 
-## ✅ Garantir que "Monitorando" so apareca apos confirmacao do dispositivo
+## Retornar sucesso ao rejeitar GPS por device mismatch/not registered
 
-### Implementado
+### Problema
+Quando o backend rejeita um envio de GPS por `NO_DEVICE_REGISTERED` ou `DEVICE_MISMATCH` no handler `enviarLocalizacaoGPS`, ele retorna `success: false` com HTTP 403. Isso faz o app tratar como erro, quando na verdade deveria simplesmente ignorar silenciosamente.
 
-1. **Ping não aceita mais `is_recording`/`is_monitoring`** — flags controlados exclusivamente por `reportarStatusMonitoramento` e `reportarStatusGravacao`
-2. **syncConfigMobile cria sessões com `aguardando_dispositivo`** — não aparecem como ativas no frontend
-3. **Promoção automática** — `handleReportarStatusMonitoramento` promove sessões para `ativa` quando dispositivo confirma (`janela_iniciada`/`ativado`/`retomado`)
-4. **`handleReportarStatusGravacao`** — busca sessões `ativa` ou `aguardando_dispositivo`, cria nova sessão já como `ativa` (confirmação implícita)
-5. **`sealAllActiveSessions`** — também sela sessões `aguardando_dispositivo`
-6. **Consultas de sessão existente no syncConfig** — incluem `aguardando_dispositivo` para evitar duplicação
+### Mudanca
+
+**Arquivo:** `supabase/functions/mobile-api/index.ts`
+
+1. **Linha 1377** (`NO_DEVICE_REGISTERED`): Trocar de `jsonResponse({ success: false, error: "NO_DEVICE_REGISTERED" }, 403)` para `jsonResponse({ success: true, message: "GPS ignorado - dispositivo nao registrado", skipped: true })` (HTTP 200).
+
+2. **Linha 1385** (`DEVICE_MISMATCH`): Trocar de `jsonResponse({ success: false, error: "DEVICE_MISMATCH" }, 403)` para `jsonResponse({ success: true, message: "GPS ignorado - dispositivo diferente", skipped: true })` (HTTP 200).
+
+O campo `skipped: true` permite que o app saiba que o GPS nao foi gravado, mas sem tratar como erro.
+
+### Secao Tecnica
+
+**Arquivo modificado:** `supabase/functions/mobile-api/index.ts`
+- Linha 1377: Trocar retorno de erro 403 para sucesso 200 com `skipped: true`
+- Linha 1385: Trocar retorno de erro 403 para sucesso 200 com `skipped: true`
+
