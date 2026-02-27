@@ -39,6 +39,9 @@ export function useAuth() {
   return ctx;
 }
 
+// Shared session-expired event for cross-component reactivity
+const SESSION_EXPIRED_EVENT = "ampara:session_expired";
+
 async function callFunction(name: string, body: Record<string, any>) {
   const res = await fetch(`${SUPABASE_URL}/functions/v1/${name}`, {
     method: "POST",
@@ -59,6 +62,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
   const [loading, setLoading] = useState(true);
 
+  const clearSession = useCallback(() => {
+    localStorage.removeItem("ampara_session_token");
+    setSessionToken(null);
+    setUsuario(null);
+  }, []);
+
   const checkSession = useCallback(async () => {
     const token = localStorage.getItem("ampara_session_token");
     if (!token) {
@@ -71,20 +80,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUsuario(data.usuario);
         setSessionToken(token);
       } else {
-        localStorage.removeItem("ampara_session_token");
-        setSessionToken(null);
-        setUsuario(null);
+        clearSession();
       }
     } catch {
-      localStorage.removeItem("ampara_session_token");
-      setSessionToken(null);
+      clearSession();
     }
     setLoading(false);
-  }, []);
+  }, [clearSession]);
 
   useEffect(() => {
     checkSession();
   }, [checkSession]);
+
+  // Listen for session-expired events dispatched by webApiService
+  useEffect(() => {
+    const handler = () => clearSession();
+    window.addEventListener(SESSION_EXPIRED_EVENT, handler);
+    return () => window.removeEventListener(SESSION_EXPIRED_EVENT, handler);
+  }, [clearSession]);
 
   const login = async (email: string, senha: string) => {
     const { ok, data } = await callFunction("auth-login", { email, senha });
