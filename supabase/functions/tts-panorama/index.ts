@@ -16,75 +16,82 @@ async function hashToken(token: string): Promise<string> {
   ).join("");
 }
 
-/** Build a signed JWT for Google Cloud using service-account credentials. */
+/* ---------- Google OAuth2 (same pattern as generate-emotional-avatars) ---------- */
+
+async function importPrivateKey(pem: string): Promise<CryptoKey> {
+  let b64 = pem;
+  b64 = b64.replace(/\\n/g, "\n");
+  b64 = b64.replace(/-----BEGIN PRIVATE KEY-----/g, "");
+  b64 = b64.replace(/-----END PRIVATE KEY-----/g, "");
+  b64 = b64.replace(/[\n\r\s]/g, "");
+
+  const miieIdx = b64.indexOf("MIIE");
+  if (miieIdx > 0) {
+    b64 = b64.substring(miieIdx);
+  }
+
+  const binaryDer = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+  return crypto.subtle.importKey(
+    "pkcs8",
+    binaryDer,
+    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+}
+
+function base64url(data: Uint8Array | string): string {
+  const bytes =
+    typeof data === "string" ? new TextEncoder().encode(data) : data;
+  return btoa(String.fromCharCode(...bytes))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+}
+
 async function getGcpAccessToken(): Promise<string> {
   const email = Deno.env.get("GCP_CLIENT_EMAIL")!;
   const rawKey = Deno.env.get("GCP_PRIVATE_KEY")!;
 
   const now = Math.floor(Date.now() / 1000);
-  const header = { alg: "RS256", typ: "JWT" };
-  const payload = {
-    iss: email,
-    scope: "https://www.googleapis.com/auth/cloud-platform",
-    aud: "https://oauth2.googleapis.com/token",
-    iat: now,
-    exp: now + 3600,
-  };
+  const tokenUri = "https://oauth2.googleapis.com/token";
 
-  const enc = (obj: unknown) =>
-    btoa(JSON.stringify(obj))
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_")
-      .replace(/=+$/, "");
-
-  const unsignedJwt = `${enc(header)}.${enc(payload)}`;
-
-  // Import PEM private key
-  const pem = rawKey
-    .replace(/\\n/g, "\n")
-    .replace(/-+BEGIN PRIVATE KEY-+/g, "")
-    .replace(/-+END PRIVATE KEY-+/g, "")
-    .replace(/[\s\r\n]/g, "");
-
-  // Decode base64 using Deno's built-in decoder for robustness
-  const binaryStr = atob(pem);
-  const binaryKey = new Uint8Array(binaryStr.length);
-  for (let i = 0; i < binaryStr.length; i++) {
-    binaryKey[i] = binaryStr.charCodeAt(i);
-  }
-
-  const cryptoKey = await crypto.subtle.importKey(
-    "pkcs8",
-    binaryKey,
-    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
-    false,
-    ["sign"]
+  const header = base64url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
+  const payload = base64url(
+    JSON.stringify({
+      iss: email,
+      scope: "https://www.googleapis.com/auth/cloud-platform",
+      aud: tokenUri,
+      iat: now,
+      exp: now + 3600,
+    })
   );
 
-  const signature = await crypto.subtle.sign(
-    "RSASSA-PKCS1-v1_5",
-    cryptoKey,
-    new TextEncoder().encode(unsignedJwt)
+  const key = await importPrivateKey(rawKey);
+  const sig = new Uint8Array(
+    await crypto.subtle.sign(
+      "RSASSA-PKCS1-v1_5",
+      key,
+      new TextEncoder().encode(`${header}.${payload}`)
+    )
   );
-  const sig64 = btoa(String.fromCharCode(...new Uint8Array(signature)))
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/, "");
+  const jwt = `${header}.${payload}.${base64url(sig)}`;
 
-  const signedJwt = `${unsignedJwt}.${sig64}`;
-
-  // Exchange for access token
-  const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
+  const tokenRes = await fetch(tokenUri, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${signedJwt}`,
+    body: new URLSearchParams({
+      grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
+      assertion: jwt,
+    }),
   });
 
-  const tokenData = await tokenRes.json();
-  if (!tokenData.access_token) {
-    throw new Error(`GCP token error: ${JSON.stringify(tokenData)}`);
+  if (!tokenRes.ok) {
+    const txt = await tokenRes.text();
+    throw new Error(`GCP token error: ${tokenRes.status} ${txt}`);
   }
-  return tokenData.access_token;
+  const { access_token } = await tokenRes.json();
+  return access_token;
 }
 
 serve(async (req) => {
@@ -122,10 +129,7 @@ serve(async (req) => {
       );
     }
 
-    // Truncate text to avoid abuse (max ~5000 chars)
     const safeText = text.slice(0, 5000);
-
-    // Get GCP access token and call TTS
     const accessToken = await getGcpAccessToken();
 
     const ttsRes = await fetch(
