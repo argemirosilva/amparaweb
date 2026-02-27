@@ -1374,7 +1374,7 @@ async function handleEnviarLocalizacaoGPS(
       .maybeSingle();
 
     if (!device && (activePanic || activeMonitor || alertaId)) {
-      return jsonResponse({ success: false, error: "NO_DEVICE_REGISTERED" }, 403);
+      return jsonResponse({ success: true, message: "GPS ignorado - dispositivo nao registrado", skipped: true });
     }
 
     // During active panic, ALWAYS accept GPS regardless of device_id.
@@ -1382,7 +1382,7 @@ async function handleEnviarLocalizacaoGPS(
     // and rejecting GPS during an emergency is dangerous.
     // Only enforce device mismatch when there's NO active panic but there IS an active monitor.
     if (!activePanic && activeMonitor && activeMonitor.device_id && activeMonitor.device_id !== deviceId) {
-      return jsonResponse({ success: false, error: "DEVICE_MISMATCH" }, 403);
+      return jsonResponse({ success: true, message: "GPS ignorado - dispositivo diferente", skipped: true });
     }
   }
 
