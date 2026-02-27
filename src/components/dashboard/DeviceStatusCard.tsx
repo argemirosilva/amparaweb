@@ -175,8 +175,8 @@ export default function DeviceStatusCard() {
             </AlertDialog>
           </div>
         )}
-        {/* Recording / Monitoring indicator */}
-        {(device?.is_recording || device?.is_monitoring) && (
+        {/* Recording / Monitoring indicator (hidden during panic — banner already communicates emergency) */}
+        {(device?.is_recording || device?.is_monitoring) && !panicActive && (
           <div className={`absolute left-0 right-0 flex items-center justify-center gap-1 text-[10px] font-medium py-0.5 ${
             panicActive ? "top-[24px]" : "top-0"
           } ${

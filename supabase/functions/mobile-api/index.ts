@@ -776,6 +776,19 @@ async function handleSyncConfig(
         gravacaoFim = periodo.fim;
 
         if (deviceId && agendamento) {
+          // Skip session creation if there's an active panic alert
+          const { data: activePanic } = await supabase
+            .from("alertas_panico")
+            .select("id")
+            .eq("user_id", user.id)
+            .eq("status", "ativo")
+            .limit(1)
+            .maybeSingle();
+
+          if (activePanic) {
+            // Panic is active — do NOT create monitoring session
+            sessaoId = null;
+          } else {
           // Check existing active session for this user (any device)
           const { data: existingSession } = await supabase
             .from("monitoramento_sessoes")
@@ -823,6 +836,7 @@ async function handleSyncConfig(
           } else {
             sessaoId = existingSession.id;
           }
+          } // close activePanic else
         }
         break;
       }
@@ -1406,6 +1420,15 @@ async function handleAcionarPanico(
     .single();
 
   if (!alerta) return errorResponse("Erro ao criar alerta", 500);
+
+  // Seal any active monitoring sessions — panic takes priority
+  await sealAllActiveSessions(supabase, user.id, "panico_acionado", ip);
+
+  // Reset device_status flags so dashboard doesn't show monitoring during panic
+  await supabase
+    .from("device_status")
+    .update({ is_monitoring: false, is_recording: false })
+    .eq("user_id", user.id);
 
   if (latitude !== undefined && longitude !== undefined) {
     await supabase.from("localizacoes").insert({
