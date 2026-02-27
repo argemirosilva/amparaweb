@@ -345,7 +345,7 @@ function SupportShortcut({ gravacao }: { gravacao: Gravacao }) {
       }}
     >
       <MessageCircle className="w-3.5 h-3.5" />
-      Pedir ajuda
+      Pedir suporte
     </Button>
   );
 }
