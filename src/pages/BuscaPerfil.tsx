@@ -1,10 +1,9 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { callWebApi } from "@/services/webApiService";
-import AppLayout from "@/components/layout/AppLayout";
 import { BuscaPerfilForm } from "@/components/busca-perfil/BuscaPerfilForm";
 import { BuscaPerfilResults } from "@/components/busca-perfil/BuscaPerfilResults";
-import { Loader2, UserSearch, ArrowLeft } from "lucide-react";
+import { Loader2, UserSearch, ArrowLeft, ShieldAlert } from "lucide-react";
 
 export interface SearchResult {
   profile_id: string;
@@ -111,29 +110,40 @@ export default function BuscaPerfilPage() {
   };
 
   return (
-    <div className="p-4 pb-24 max-w-2xl mx-auto space-y-4">
-      <div className="flex items-center gap-3 mb-2">
-        <div className="ampara-icon-circle">
-          <UserSearch className="w-5 h-5" />
-        </div>
-        <div>
-          <h1 className="text-lg font-bold text-foreground">Pesquisar Parceiro</h1>
-          <p className="text-xs text-muted-foreground">Pesquise por dados parciais — nunca expomos dados sensíveis</p>
+    <div className="p-4 pb-24 max-w-2xl mx-auto space-y-5">
+      {/* Hero header */}
+      <div className="relative overflow-hidden rounded-2xl ampara-gradient-bg p-5 text-primary-foreground">
+        <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-white/10 -translate-y-8 translate-x-8" />
+        <div className="absolute bottom-0 left-0 w-20 h-20 rounded-full bg-white/5 translate-y-6 -translate-x-4" />
+        <div className="relative flex items-center gap-4">
+          <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm">
+            <UserSearch className="w-6 h-6" />
+          </div>
+          <div>
+            <h1 className="text-lg font-bold">Pesquisar Parceiro</h1>
+            <p className="text-sm text-white/80">Pesquise por dados parciais — nunca expomos dados sensíveis</p>
+          </div>
         </div>
       </div>
 
-      <div className="rounded-xl bg-muted/50 border border-border p-4 space-y-2">
-        <p className="text-xs text-muted-foreground leading-relaxed">
-          Cruza dados parciais que você conhece com relatos anônimos de outras mulheres para indicar possíveis riscos. Quanto mais campos preencher, melhor o resultado.
-        </p>
-        <p className="text-xs text-amber-600 dark:text-amber-400 leading-relaxed font-medium">
-          ⚠ Resultados indicativos — baseados em relatos voluntários, não auditados. Não substituem denúncias formais.
-        </p>
+      {/* Info box */}
+      <div className="rounded-xl border border-border bg-card p-4 space-y-2.5">
+        <div className="flex items-start gap-3">
+          <ShieldAlert className="w-5 h-5 text-primary mt-0.5 shrink-0" />
+          <div className="space-y-1.5">
+            <p className="text-sm text-foreground leading-relaxed">
+              Cruza dados parciais com relatos anônimos de outras mulheres para indicar possíveis riscos. Quanto mais campos preencher, melhor o resultado.
+            </p>
+            <p className="text-xs text-amber-600 dark:text-amber-400 leading-relaxed font-medium">
+              ⚠ Resultados indicativos — baseados em relatos voluntários, não auditados. Não substituem denúncias formais.
+            </p>
+          </div>
+        </div>
       </div>
 
       {error && (
-        <div className="rounded-xl bg-destructive/10 border border-destructive/20 p-3 text-sm text-destructive">
-          {error}
+        <div className="rounded-xl bg-destructive/10 border border-destructive/20 p-3 text-sm text-destructive flex items-center gap-2">
+          <span className="shrink-0">❌</span> {error}
         </div>
       )}
 
@@ -141,9 +151,12 @@ export default function BuscaPerfilPage() {
         <>
           <BuscaPerfilForm onSubmit={handleSearch} loading={searching} />
           {searching && (
-            <div className="flex items-center justify-center gap-2 py-8 text-muted-foreground">
-              <Loader2 className="w-5 h-5 animate-spin" />
-              <span className="text-sm">Analisando correspondências com IA...</span>
+            <div className="flex flex-col items-center justify-center gap-3 py-10">
+              <div className="relative">
+                <div className="w-12 h-12 rounded-full border-4 border-primary/20" />
+                <Loader2 className="w-12 h-12 animate-spin text-primary absolute inset-0" />
+              </div>
+              <span className="text-sm text-muted-foreground">Analisando correspondências com IA...</span>
             </div>
           )}
         </>
@@ -151,7 +164,7 @@ export default function BuscaPerfilPage() {
         <div className="space-y-4">
           <button
             onClick={() => setResults(null)}
-            className="ampara-btn-secondary !py-2 !px-4 text-sm flex items-center gap-1"
+            className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors"
           >
             <ArrowLeft className="w-4 h-4" /> Nova busca
           </button>
