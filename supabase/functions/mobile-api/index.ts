@@ -330,7 +330,7 @@ async function sealAllActiveSessions(
     .from("monitoramento_sessoes")
     .select("id")
     .eq("user_id", userId)
-    .eq("status", "ativa");
+    .in("status", ["ativa", "aguardando_dispositivo"]);
 
   if (!activeSessions || activeSessions.length === 0) return 0;
 
@@ -608,8 +608,8 @@ async function handlePing(
     if (body.dispositivo_info !== undefined) deviceData.dispositivo_info = body.dispositivo_info;
     else if (body.device_model !== undefined) deviceData.dispositivo_info = body.device_model;
     if (body.versao_app !== undefined) deviceData.versao_app = body.versao_app;
-    if (body.is_recording !== undefined) deviceData.is_recording = body.is_recording;
-    if (body.is_monitoring !== undefined) deviceData.is_monitoring = body.is_monitoring;
+    // is_recording and is_monitoring are NOT accepted from ping.
+    // They must be set exclusively by reportarStatusMonitoramento / reportarStatusGravacao.
     if (body.timezone !== undefined) deviceData.timezone = body.timezone;
     if (body.timezone_offset_minutes !== undefined) deviceData.timezone_offset_minutes = body.timezone_offset_minutes;
 
@@ -794,7 +794,7 @@ async function handleSyncConfig(
             .from("monitoramento_sessoes")
             .select("id, device_id")
             .eq("user_id", user.id)
-            .eq("status", "ativa")
+            .in("status", ["ativa", "aguardando_dispositivo"])
             .maybeSingle();
 
           if (!existingSession) {
@@ -825,7 +825,7 @@ async function handleSyncConfig(
               .insert({
                 user_id: user.id,
                 device_id: deviceId,
-                status: "ativa",
+                status: "aguardando_dispositivo",
                 window_start_at: windowStartUtc.toISOString(),
                 window_end_at: windowEndUtc.toISOString(),
                 origem: "automatico",
@@ -871,7 +871,7 @@ async function handleSyncConfig(
               .insert({
                 user_id: user.id,
                 device_id: deviceId,
-                status: "ativa",
+                status: "aguardando_dispositivo",
                 window_start_at: wsUtc.toISOString(),
                 window_end_at: weUtc.toISOString(),
                 origem: "automatico",
@@ -2056,14 +2056,24 @@ async function handleReportarStatusMonitoramento(
     .eq("user_id", userId)
     .eq("device_id", deviceId);
 
-  // If finalizing, seal active session
+  // If activating, promote aguardando_dispositivo -> ativa
+  if (isActive) {
+    await supabase
+      .from("monitoramento_sessoes")
+      .update({ status: "ativa" })
+      .eq("user_id", userId)
+      .eq("device_id", deviceId)
+      .eq("status", "aguardando_dispositivo");
+  }
+
+  // If finalizing, seal active session (including aguardando_dispositivo)
   if (isFinalizing) {
     const { data: activeSession } = await supabase
       .from("monitoramento_sessoes")
       .select("id")
       .eq("user_id", userId)
       .eq("device_id", deviceId)
-      .eq("status", "ativa")
+      .in("status", ["ativa", "aguardando_dispositivo"])
       .maybeSingle();
 
     if (activeSession) {
@@ -2128,9 +2138,9 @@ async function handleReportarStatusGravacao(
     // Check if there's already an active session for this user (any device)
     const { data: existingSession } = await supabase
       .from("monitoramento_sessoes")
-      .select("id, device_id")
+      .select("id, device_id, status")
       .eq("user_id", userId)
-      .eq("status", "ativa")
+      .in("status", ["ativa", "aguardando_dispositivo"])
       .maybeSingle();
 
     if (!existingSession) {
