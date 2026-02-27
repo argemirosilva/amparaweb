@@ -26,6 +26,10 @@ export function BuscaPerfilForm({ onSubmit, loading }: Props) {
           value={form.nome} onChange={e => set("nome", e.target.value)} maxLength={100}
         />
         <input
+          type="text" className="ampara-input" placeholder="CPF (parcial ou completo)"
+          value={form.cpf} onChange={e => set("cpf", e.target.value.replace(/\D/g, "").slice(0, 11))} maxLength={11}
+        />
+        <input
           type="number" className="ampara-input" placeholder="Idade aproximada"
           value={form.idade_aprox} onChange={e => set("idade_aprox", e.target.value)}
           min={15} max={100}

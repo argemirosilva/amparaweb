@@ -40,6 +40,7 @@ interface AgressorForm {
   tipo_vinculo: string;
   data_nascimento: string;
   telefone: string;
+  cpf: string;
   nome_pai_parcial: string;
   nome_mae_parcial: string;
   forca_seguranca: boolean;
@@ -87,7 +88,7 @@ export default function OnboardingPage() {
   // Step 3 - Aggressor
   const [agressorMode, setAgressorMode] = useState<"new" | "search" | null>(null);
   const [agressor, setAgressor] = useState<AgressorForm>({
-    nome: "", tipo_vinculo: "", data_nascimento: "", telefone: "",
+    nome: "", tipo_vinculo: "", data_nascimento: "", telefone: "", cpf: "",
     nome_pai_parcial: "", nome_mae_parcial: "",
     forca_seguranca: false, tem_arma_em_casa: false,
     apelido: "", cidade_uf: "", bairro: "", profissao: "", placa_parcial: "",
@@ -160,7 +161,7 @@ export default function OnboardingPage() {
     if (!agressor.nome.trim()) { setError("Nome do agressor é obrigatório"); return; }
     if (!agressor.tipo_vinculo) { setError("Tipo de vínculo é obrigatório"); return; }
     setLoading(true);
-    const payload: Record<string, any> = { ...agressor };
+    const payload: Record<string, any> = { ...agressor, cpf: agressor.cpf.replace(/\D/g, "") };
     // Add privacy-first fields
     if (agressor.apelido.trim()) payload.aliases = [agressor.apelido.trim()];
     if (agressor.cidade_uf.trim()) payload.primary_city_uf = agressor.cidade_uf.trim();
@@ -360,6 +361,17 @@ export default function OnboardingPage() {
                 <label className="block text-sm font-medium text-foreground mb-1.5">Telefone</label>
                 <input type="tel" className="ampara-input" placeholder="(00) 00000-0000" value={agressor.telefone}
                   onChange={e => setAgressor({ ...agressor, telefone: formatPhone(e.target.value) })} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1.5">CPF</label>
+                <input type="text" className="ampara-input" placeholder="000.000.000-00" value={agressor.cpf} maxLength={14}
+                  onChange={e => {
+                    const digits = e.target.value.replace(/\D/g, "").slice(0, 11);
+                    const masked = digits.replace(/(\d{3})(\d{3})?(\d{3})?(\d{2})?/, (_, a, b, c, d) =>
+                      [a, b, c].filter(Boolean).join(".") + (d ? `-${d}` : "")
+                    );
+                    setAgressor({ ...agressor, cpf: masked });
+                  }} />
               </div>
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1.5">Nome da mãe</label>
