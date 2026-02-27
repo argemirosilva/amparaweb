@@ -2,17 +2,12 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { callSupportApi } from "@/services/supportApiService";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, MessageSquare, Clock } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { toast } from "@/hooks/use-toast";
+import { Search, MessageSquare, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { callWebApi } from "@/services/webApiService";
 
 const STATUS_LABELS: Record<string, string> = {
   open: "Aberto",
@@ -51,14 +46,6 @@ export default function SuporteTickets() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [search, setSearch] = useState("");
-  const [showCreate, setShowCreate] = useState(false);
-  const [newUserId, setNewUserId] = useState("");
-  const [newCategory, setNewCategory] = useState("other");
-  const [creating, setCreating] = useState(false);
-
-  // Search users for creating session
-  const [userResults, setUserResults] = useState<any[]>([]);
-  const [userSearch, setUserSearch] = useState("");
 
   const fetchSessions = async () => {
     if (!sessionToken) return;
@@ -73,34 +60,6 @@ export default function SuporteTickets() {
 
   useEffect(() => { fetchSessions(); }, [sessionToken, statusFilter, categoryFilter]);
 
-  const searchUsers = async (q: string) => {
-    setUserSearch(q);
-    if (q.length < 3 || !sessionToken) { setUserResults([]); return; }
-    // Use admin-api or direct query to find users
-    const { data } = await callWebApi("searchUserByEmail", sessionToken, { query: q });
-    // Fallback: search in the sessions user list
-    setUserResults(data?.users || []);
-  };
-
-  const handleCreate = async () => {
-    if (!newUserId || !sessionToken) return;
-    setCreating(true);
-    const { ok, data } = await callSupportApi("createSession", sessionToken, {
-      target_user_id: newUserId,
-      category: newCategory,
-    });
-    if (ok) {
-      toast({ title: "Sessão criada", description: "Ticket de suporte criado com sucesso." });
-      setShowCreate(false);
-      setNewUserId("");
-      fetchSessions();
-      navigate(`/admin/suporte/${data.session.id}`);
-    } else {
-      toast({ title: "Erro", description: data.error, variant: "destructive" });
-    }
-    setCreating(false);
-  };
-
   const filtered = sessions.filter((s) => {
     if (!search) return true;
     const userName = s.usuarios?.nome_completo?.toLowerCase() || "";
@@ -112,9 +71,6 @@ export default function SuporteTickets() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold" style={{ color: "hsl(220 13% 18%)" }}>Suporte Técnico</h1>
-        <Button onClick={() => setShowCreate(true)} className="gap-2">
-          <Plus className="w-4 h-4" /> Nova Sessão
-        </Button>
       </div>
 
       {/* Filters */}
@@ -185,39 +141,6 @@ export default function SuporteTickets() {
           ))}
         </div>
       )}
-
-      {/* Create Dialog */}
-      <Dialog open={showCreate} onOpenChange={setShowCreate}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Nova Sessão de Suporte</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label>ID da Usuária</Label>
-              <Input placeholder="UUID da usuária" value={newUserId} onChange={(e) => setNewUserId(e.target.value)} />
-              <p className="text-xs text-muted-foreground mt-1">Cole o ID da usuária que solicitou suporte.</p>
-            </div>
-            <div>
-              <Label>Categoria</Label>
-              <Select value={newCategory} onValueChange={setNewCategory}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {Object.entries(CATEGORY_LABELS).map(([k, v]) => (
-                    <SelectItem key={k} value={k}>{v}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCreate(false)}>Cancelar</Button>
-            <Button onClick={handleCreate} disabled={!newUserId || creating}>
-              {creating ? "Criando..." : "Criar Sessão"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
