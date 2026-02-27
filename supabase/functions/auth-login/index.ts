@@ -102,6 +102,13 @@ serve(async (req) => {
       });
     }
 
+    // Revoke all previous active sessions for this user
+    await supabase
+      .from("user_sessions")
+      .update({ revoked_at: new Date().toISOString() })
+      .eq("user_id", user.id)
+      .is("revoked_at", null);
+
     // Create session
     const token = generateToken(64);
     const tokenHash = await hashToken(token);

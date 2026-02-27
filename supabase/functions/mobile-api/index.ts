@@ -444,6 +444,13 @@ async function handleLogin(
     });
   }
 
+  // Revoke all previous active sessions for this user
+  await supabase
+    .from("user_sessions")
+    .update({ revoked_at: new Date().toISOString() })
+    .eq("user_id", user.id)
+    .is("revoked_at", null);
+
   // Generate access_token (session)
   const accessToken = generateToken(64);
   const accessTokenHash = await hashToken(accessToken);
@@ -455,6 +462,13 @@ async function handleLogin(
     expires_at: expiresAt,
     ip_address: ip,
   });
+
+  // Revoke all previous refresh tokens
+  await supabase
+    .from("refresh_tokens")
+    .update({ revoked_at: new Date().toISOString() })
+    .eq("user_id", user.id)
+    .is("revoked_at", null);
 
   // Generate refresh_token
   const refreshToken = generateToken(64);
