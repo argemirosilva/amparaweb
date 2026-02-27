@@ -102,14 +102,8 @@ serve(async (req) => {
       });
     }
 
-    // Revoke all previous active sessions for this user
-    await supabase
-      .from("user_sessions")
-      .update({ revoked_at: new Date().toISOString() })
-      .eq("user_id", user.id)
-      .is("revoked_at", null);
-
-    // Create session
+    // Web sessions: do NOT revoke previous sessions (multi-session allowed)
+    // Create session with origin = 'web'
     const token = generateToken(64);
     const tokenHash = await hashToken(token);
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
@@ -120,6 +114,7 @@ serve(async (req) => {
       expires_at: expiresAt,
       ip_address: ip,
       user_agent: req.headers.get("user-agent") || null,
+      origin: "web",
     });
 
     // Update last access

@@ -444,11 +444,12 @@ async function handleLogin(
     });
   }
 
-  // Revoke all previous active sessions for this user
+  // Revoke only previous MOBILE sessions for this user (web sessions stay active)
   await supabase
     .from("user_sessions")
     .update({ revoked_at: new Date().toISOString() })
     .eq("user_id", user.id)
+    .eq("origin", "mobile")
     .is("revoked_at", null);
 
   // Generate access_token (session)
@@ -461,6 +462,7 @@ async function handleLogin(
     token_hash: accessTokenHash,
     expires_at: expiresAt,
     ip_address: ip,
+    origin: "mobile",
   });
 
   // Revoke all previous refresh tokens
@@ -551,6 +553,7 @@ async function handleRefreshToken(
     token_hash: newAccessTokenHash,
     expires_at: accessExpiresAt,
     ip_address: ip,
+    origin: "mobile",
   });
 
   // Generate new refresh_token
