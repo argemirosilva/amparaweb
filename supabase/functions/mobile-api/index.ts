@@ -1377,7 +1377,11 @@ async function handleEnviarLocalizacaoGPS(
       return jsonResponse({ success: false, error: "NO_DEVICE_REGISTERED" }, 403);
     }
 
-    if (activePanic && activePanic.device_id && activePanic.device_id !== deviceId) {
+    // During active panic, ALWAYS accept GPS regardless of device_id.
+    // The panic alert may have been created by a previous device before rotation,
+    // and rejecting GPS during an emergency is dangerous.
+    // Only enforce device mismatch when there's NO active panic but there IS an active monitor.
+    if (!activePanic && activeMonitor && activeMonitor.device_id && activeMonitor.device_id !== deviceId) {
       return jsonResponse({ success: false, error: "DEVICE_MISMATCH" }, 403);
     }
   }
