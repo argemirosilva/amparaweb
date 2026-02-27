@@ -11,5 +11,11 @@ export async function callWebApi(action: string, sessionToken: string, params: R
     body: JSON.stringify({ action, session_token: sessionToken, ...params }),
   });
   const data = await res.json();
+
+  // If session was revoked/expired, notify AuthContext to auto-logout
+  if (res.status === 401) {
+    window.dispatchEvent(new Event("ampara:session_expired"));
+  }
+
   return { ok: res.ok, status: res.status, data };
 }
