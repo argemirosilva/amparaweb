@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { type SearchResult, type SearchFormData } from "@/pages/BuscaPerfil";
-import { ChevronDown, ChevronUp, Shield, AlertTriangle, MapPin, CheckCircle2, MinusCircle, XCircle, Ban, Crosshair, Flag } from "lucide-react";
+import { ChevronDown, ChevronUp, Shield, MapPin, CheckCircle2, MinusCircle, XCircle, Ban, Crosshair, Flag, TrendingUp, AlertTriangle, Info } from "lucide-react";
 
 const STATUS_ICON: Record<string, React.ReactNode> = {
   completo: <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />,
@@ -10,21 +10,21 @@ const STATUS_ICON: Record<string, React.ReactNode> = {
 };
 
 const STATUS_LABEL: Record<string, string> = {
-  completo: "✅ Completo",
-  parcial: "🟡 Parcial",
-  nao_bateu: "❌ Não bateu",
-  conflitante: "⛔ Conflitante",
+  completo: "Completo",
+  parcial: "Parcial",
+  nao_bateu: "Não bateu",
+  conflitante: "Conflitante",
 };
 
-const RISK_COLORS: Record<string, string> = {
-  "Baixo": "bg-green-100 text-green-800",
-  "baixo": "bg-green-100 text-green-800",
-  "Médio": "bg-yellow-100 text-yellow-800",
-  "medio": "bg-yellow-100 text-yellow-800",
-  "Alto": "bg-orange-100 text-orange-800",
-  "alto": "bg-orange-100 text-orange-800",
-  "Crítico": "bg-red-100 text-red-800",
-  "critico": "bg-red-100 text-red-800",
+const RISK_CONFIG: Record<string, { bg: string; text: string; border: string; icon: React.ReactNode }> = {
+  "Baixo": { bg: "bg-green-50 dark:bg-green-950/30", text: "text-green-700 dark:text-green-400", border: "border-green-200 dark:border-green-800", icon: <CheckCircle2 className="w-3.5 h-3.5" /> },
+  "baixo": { bg: "bg-green-50 dark:bg-green-950/30", text: "text-green-700 dark:text-green-400", border: "border-green-200 dark:border-green-800", icon: <CheckCircle2 className="w-3.5 h-3.5" /> },
+  "Médio": { bg: "bg-yellow-50 dark:bg-yellow-950/30", text: "text-yellow-700 dark:text-yellow-400", border: "border-yellow-200 dark:border-yellow-800", icon: <AlertTriangle className="w-3.5 h-3.5" /> },
+  "medio": { bg: "bg-yellow-50 dark:bg-yellow-950/30", text: "text-yellow-700 dark:text-yellow-400", border: "border-yellow-200 dark:border-yellow-800", icon: <AlertTriangle className="w-3.5 h-3.5" /> },
+  "Alto": { bg: "bg-orange-50 dark:bg-orange-950/30", text: "text-orange-700 dark:text-orange-400", border: "border-orange-200 dark:border-orange-800", icon: <TrendingUp className="w-3.5 h-3.5" /> },
+  "alto": { bg: "bg-orange-50 dark:bg-orange-950/30", text: "text-orange-700 dark:text-orange-400", border: "border-orange-200 dark:border-orange-800", icon: <TrendingUp className="w-3.5 h-3.5" /> },
+  "Crítico": { bg: "bg-red-50 dark:bg-red-950/30", text: "text-red-700 dark:text-red-400", border: "border-red-200 dark:border-red-800", icon: <AlertTriangle className="w-3.5 h-3.5" /> },
+  "critico": { bg: "bg-red-50 dark:bg-red-950/30", text: "text-red-700 dark:text-red-400", border: "border-red-200 dark:border-red-800", icon: <AlertTriangle className="w-3.5 h-3.5" /> },
 };
 
 const VIOLENCE_LABELS: Record<string, string> = {
@@ -36,7 +36,6 @@ const VIOLENCE_LABELS: Record<string, string> = {
   ameaca_perseguicao: "Ameaça/Perseguição",
 };
 
-/** Campos sensíveis do breakdown e qual campo do formulário controla sua exibição */
 const SENSITIVE_FIELD_MAP: Record<string, keyof SearchFormData> = {
   nome: "nome",
   nome_mae: "nome_mae",
@@ -54,16 +53,13 @@ const SENSITIVE_FIELD_MAP: Record<string, keyof SearchFormData> = {
   cpf: "cpf",
 };
 
-/** Filtra o nome exibido para mostrar apenas partes que a usuária digitou */
 function filterDisplayName(maskedName: string, userInput: string): string {
   if (!userInput.trim()) return "Perfil encontrado";
   const inputParts = userInput.trim().toLowerCase().split(/\s+/);
   const nameParts = maskedName.split(/\s+/);
   const filtered = nameParts.map((part) => {
     const partLower = part.toLowerCase().replace(/[*]/g, "");
-    if (inputParts.some((ip) => partLower.includes(ip) || ip.includes(partLower))) {
-      return part;
-    }
+    if (inputParts.some((ip) => partLower.includes(ip) || ip.includes(partLower))) return part;
     return part.length > 1 ? part[0] + "***" : "***";
   });
   return filtered.join(" ");
@@ -72,16 +68,19 @@ function filterDisplayName(maskedName: string, userInput: string): string {
 function ProbabilityBar({ percent }: { percent: number }) {
   const color = percent >= 70 ? "bg-destructive" : percent >= 40 ? "bg-orange-500" : "bg-yellow-500";
   return (
-    <div className="flex items-center gap-2">
-      <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
-        <div className={`h-full rounded-full ${color} transition-all`} style={{ width: `${percent}%` }} />
+    <div className="space-y-1">
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-muted-foreground font-medium">Probabilidade de correspondência</span>
+        <span className="text-sm font-bold tabular-nums text-foreground">{percent}%</span>
       </div>
-      <span className="text-sm font-bold tabular-nums min-w-[3ch] text-right">{percent}%</span>
+      <div className="h-2.5 rounded-full bg-muted overflow-hidden">
+        <div className={`h-full rounded-full ${color} transition-all duration-500 ease-out`} style={{ width: `${percent}%` }} />
+      </div>
     </div>
   );
 }
 
-function ResultCard({ result, searchInput }: { result: SearchResult; searchInput: SearchFormData }) {
+function ResultCard({ result, searchInput, index }: { result: SearchResult; searchInput: SearchFormData; index: number }) {
   const [expanded, setExpanded] = useState(false);
 
   const displayName = filterDisplayName(result.display_name_masked, searchInput.nome);
@@ -89,149 +88,168 @@ function ResultCard({ result, searchInput }: { result: SearchResult; searchInput
   const showSecurityBadge = searchInput.forca_seguranca === "sim" && result.forca_seguranca;
   const showWeaponBadge = searchInput.tem_arma === "sim" && result.tem_arma_em_casa;
 
+  const riskConfig = RISK_CONFIG[result.risk_level] || { bg: "bg-muted", text: "text-muted-foreground", border: "border-border", icon: <Info className="w-3.5 h-3.5" /> };
+
   return (
-    <div className="ampara-card !p-4 space-y-3">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex-1 min-w-0">
-          <p className="font-bold text-foreground">{displayName}</p>
-          {showLocation && result.location_summary && (
-            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-              <MapPin className="w-3 h-3" /> {result.location_summary}
-            </p>
-          )}
-        </div>
-        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${RISK_COLORS[result.risk_level] || "bg-muted text-muted-foreground"}`}>
-          {result.risk_level}
-        </span>
-      </div>
+    <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
+      {/* Top accent */}
+      <div className={`h-1 ${result.probability_percent >= 70 ? "bg-destructive" : result.probability_percent >= 40 ? "bg-orange-400" : "bg-yellow-400"}`} />
 
-      {/* Danger badges — only if user provided the data */}
-      <div className="flex flex-wrap gap-1.5">
-        {showSecurityBadge && (
-          <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold bg-orange-100 text-orange-800">
-            <Shield className="w-3 h-3" /> Força de segurança
-          </span>
-        )}
-        {showWeaponBadge && (
-          <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold bg-red-100 text-red-800">
-            <Crosshair className="w-3 h-3" /> Possui arma
-          </span>
-        )}
-        {(result.flags || []).map((f, i) => (
-          <span key={i} className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-destructive/10 text-destructive">
-            <Flag className="w-3 h-3" /> {f}
-          </span>
-        ))}
-      </div>
-
-      {/* Probability */}
-      <ProbabilityBar percent={result.probability_percent} />
-
-      {/* Signals summary */}
-      {result.strong_signals.length > 0 && (
-        <div className="flex flex-wrap gap-1">
-          {result.strong_signals.map((s, i) => (
-            <span key={i} className="ampara-tag !py-0.5 !px-2 text-xs">✅ {s}</span>
-          ))}
-        </div>
-      )}
-      {result.conflicts.length > 0 && (
-        <div className="flex flex-wrap gap-1">
-          {result.conflicts.map((c, i) => (
-            <span key={i} className="inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-xs font-medium bg-destructive/10 text-destructive">
-              ⛔ {c}
-            </span>
-          ))}
-        </div>
-      )}
-
-      {/* Expand/collapse */}
-      <button
-        onClick={() => setExpanded(!expanded)}
-        className="w-full text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center gap-1"
-      >
-        {expanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-        {expanded ? "Menos detalhes" : "Ver detalhes do match"}
-      </button>
-
-      {expanded && (
-        <div className="space-y-3 pt-1 border-t border-border">
-          {/* Match breakdown — hide candidate values for fields the user didn't provide */}
-          {result.match_breakdown.length > 0 && (
-            <div>
-              <p className="text-xs font-semibold text-foreground mb-1.5">Detalhamento</p>
-              <div className="space-y-1">
-                {result.match_breakdown.map((m, i) => {
-                  const formField = SENSITIVE_FIELD_MAP[m.field];
-                  const userProvided = formField ? !!searchInput[formField]?.trim() : false;
-                  return (
-                    <div key={i} className="flex items-center gap-2 text-xs">
-                      {STATUS_ICON[m.status] || null}
-                      <span className="font-medium text-foreground capitalize">{m.field}:</span>
-                      <span className="text-muted-foreground truncate">
-                        {userProvided
-                          ? `${m.user_value_masked} → ${m.candidate_value_masked}`
-                          : STATUS_LABEL[m.status] || m.status}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
+      <div className="p-4 space-y-3.5">
+        {/* Header row */}
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="flex items-center justify-center w-9 h-9 rounded-full bg-primary/10 text-primary font-bold text-sm shrink-0">
+              {index + 1}
             </div>
-          )}
+            <div className="min-w-0">
+              <p className="font-bold text-foreground truncate">{displayName}</p>
+              {showLocation && result.location_summary && (
+                <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                  <MapPin className="w-3 h-3 shrink-0" /> {result.location_summary}
+                </p>
+              )}
+            </div>
+          </div>
+          <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg whitespace-nowrap border ${riskConfig.bg} ${riskConfig.text} ${riskConfig.border}`}>
+            {riskConfig.icon} {result.risk_level}
+          </span>
+        </div>
 
-          {/* Violence probabilities — always visible */}
-          {Object.keys(result.violence_probabilities).length > 0 && (
-            <div>
-              <p className="text-xs font-semibold text-foreground mb-1.5">Probabilidade por tipo de violência</p>
-              <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
-                {Object.entries(result.violence_probabilities)
-                  .sort(([, a], [, b]) => (b as number) - (a as number))
-                  .map(([type, prob]) => (
-                    <div key={type} className="flex items-center gap-2 text-xs">
-                      <span className="text-muted-foreground min-w-[80px]">{VIOLENCE_LABELS[type] || type}</span>
-                      <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
-                        <div
-                          className="h-full rounded-full bg-destructive/70"
-                          style={{ width: `${prob}%` }}
-                        />
+        {/* Danger badges */}
+        {(showSecurityBadge || showWeaponBadge || (result.flags || []).length > 0) && (
+          <div className="flex flex-wrap gap-1.5">
+            {showSecurityBadge && (
+              <span className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold bg-orange-50 dark:bg-orange-950/30 text-orange-700 dark:text-orange-400 border border-orange-200 dark:border-orange-800">
+                <Shield className="w-3 h-3" /> Força de segurança
+              </span>
+            )}
+            {showWeaponBadge && (
+              <span className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800">
+                <Crosshair className="w-3 h-3" /> Possui arma
+              </span>
+            )}
+            {(result.flags || []).map((f, i) => (
+              <span key={i} className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium bg-destructive/10 text-destructive border border-destructive/20">
+                <Flag className="w-3 h-3" /> {f}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Probability */}
+        <ProbabilityBar percent={result.probability_percent} />
+
+        {/* Strong signals */}
+        {result.strong_signals.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {result.strong_signals.map((s, i) => (
+              <span key={i} className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800">
+                <CheckCircle2 className="w-3 h-3" /> {s}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Conflicts */}
+        {result.conflicts.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {result.conflicts.map((c, i) => (
+              <span key={i} className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800">
+                <Ban className="w-3 h-3" /> {c}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Expand/collapse */}
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="w-full flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-border py-2 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+        >
+          {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+          {expanded ? "Menos detalhes" : "Ver detalhes do match"}
+        </button>
+
+        {expanded && (
+          <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
+            {/* Match breakdown */}
+            {result.match_breakdown.length > 0 && (
+              <div className="rounded-xl bg-muted/30 p-3 space-y-2">
+                <p className="text-xs font-semibold text-foreground">Detalhamento do Match</p>
+                <div className="space-y-1.5">
+                  {result.match_breakdown.map((m, i) => {
+                    const formField = SENSITIVE_FIELD_MAP[m.field];
+                    const userProvided = formField ? !!searchInput[formField]?.trim() : false;
+                    return (
+                      <div key={i} className="flex items-center gap-2 text-xs py-0.5">
+                        {STATUS_ICON[m.status] || null}
+                        <span className="font-medium text-foreground capitalize min-w-[60px]">{m.field}</span>
+                        <span className="text-muted-foreground truncate">
+                          {userProvided
+                            ? `${m.user_value_masked} → ${m.candidate_value_masked}`
+                            : STATUS_LABEL[m.status] || m.status}
+                        </span>
                       </div>
-                      <span className="tabular-nums font-medium">{prob}%</span>
-                    </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Violence probabilities */}
+            {Object.keys(result.violence_probabilities).length > 0 && (
+              <div className="rounded-xl bg-muted/30 p-3 space-y-2">
+                <p className="text-xs font-semibold text-foreground">Probabilidade por tipo de violência</p>
+                <div className="space-y-2">
+                  {Object.entries(result.violence_probabilities)
+                    .sort(([, a], [, b]) => (b as number) - (a as number))
+                    .map(([type, prob]) => (
+                      <div key={type} className="space-y-0.5">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-muted-foreground">{VIOLENCE_LABELS[type] || type}</span>
+                          <span className="tabular-nums font-medium text-foreground">{prob}%</span>
+                        </div>
+                        <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                          <div className="h-full rounded-full bg-destructive/60 transition-all" style={{ width: `${prob}%` }} />
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
+
+            {/* Weak signals */}
+            {result.weak_signals.length > 0 && (
+              <div className="rounded-xl bg-muted/30 p-3 space-y-1.5">
+                <p className="text-xs font-semibold text-foreground">Sinais fracos</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {result.weak_signals.map((s, i) => (
+                    <span key={i} className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-lg">🟡 {s}</span>
                   ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Weak signals */}
-          {result.weak_signals.length > 0 && (
-            <div>
-              <p className="text-xs font-semibold text-foreground mb-1">Sinais fracos</p>
-              <div className="flex flex-wrap gap-1">
-                {result.weak_signals.map((s, i) => (
-                  <span key={i} className="text-xs text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full">🟡 {s}</span>
-                ))}
+            {/* Explanation */}
+            <p className="text-xs text-muted-foreground italic px-1">{result.explanation_short}</p>
+
+            {/* Guidance */}
+            {result.guidance.length > 0 && (
+              <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 space-y-1.5">
+                <p className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                  <Info className="w-3.5 h-3.5 text-primary" /> Sugestões
+                </p>
+                <ul className="text-xs text-muted-foreground space-y-1 pl-5">
+                  {result.guidance.map((g, i) => (
+                    <li key={i} className="list-disc">{g}</li>
+                  ))}
+                </ul>
               </div>
-            </div>
-          )}
-
-          {/* Explanation */}
-          <p className="text-xs text-muted-foreground italic">{result.explanation_short}</p>
-
-          {/* Guidance */}
-          {result.guidance.length > 0 && (
-            <div className="bg-muted/50 rounded-lg p-2.5">
-              <p className="text-xs font-semibold text-foreground mb-1">Sugestões</p>
-              <ul className="text-xs text-muted-foreground space-y-0.5">
-                {result.guidance.map((g, i) => (
-                  <li key={i}>• {g}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </div>
-      )}
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -239,9 +257,12 @@ function ResultCard({ result, searchInput }: { result: SearchResult; searchInput
 export function BuscaPerfilResults({ results, searchInput }: { results: SearchResult[]; searchInput: SearchFormData }) {
   if (results.length === 0) {
     return (
-      <div className="ampara-card !p-6 text-center space-y-2">
+      <div className="rounded-2xl border border-border bg-card p-8 text-center space-y-3">
+        <div className="flex items-center justify-center w-14 h-14 rounded-full bg-muted mx-auto">
+          <Info className="w-6 h-6 text-muted-foreground" />
+        </div>
         <p className="text-sm font-semibold text-foreground">Nenhuma correspondência encontrada</p>
-        <p className="text-xs text-muted-foreground">
+        <p className="text-xs text-muted-foreground max-w-xs mx-auto">
           Tente adicionar mais dados à busca: bairro, idade, primeiro nome do pai ou da mãe.
         </p>
       </div>
@@ -251,27 +272,29 @@ export function BuscaPerfilResults({ results, searchInput }: { results: SearchRe
   const weakResults = results.filter(r => r.probability_percent < 30);
 
   return (
-    <div className="space-y-3">
-      <p className="text-sm text-muted-foreground">
-        {results.length} resultado{results.length > 1 ? "s" : ""} — ordenados por probabilidade
-      </p>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-medium text-foreground">
+          {results.length} resultado{results.length > 1 ? "s" : ""}
+        </p>
+        <p className="text-xs text-muted-foreground">Ordenados por probabilidade</p>
+      </div>
 
-      {results.map((r) => (
-        <ResultCard key={r.profile_id} result={r} searchInput={searchInput} />
+      {results.map((r, i) => (
+        <ResultCard key={r.profile_id} result={r} searchInput={searchInput} index={i} />
       ))}
 
       {weakResults.length > 0 && weakResults.length === results.length && (
-        <div className="bg-muted/50 rounded-xl p-4 text-center space-y-1">
+        <div className="rounded-xl border border-border bg-muted/30 p-4 text-center space-y-1.5">
           <p className="text-sm font-medium text-foreground">Resultados com baixa probabilidade</p>
           <p className="text-xs text-muted-foreground">
-            Tente adicionar 1 dado extra para reduzir a ambiguidade: bairro, faixa etária, primeiro nome da mãe ou placa parcial.
+            Tente adicionar 1 dado extra: bairro, faixa etária, nome da mãe ou placa parcial.
           </p>
         </div>
       )}
 
-      <p className="text-xs text-muted-foreground text-center leading-relaxed pt-2">
-        ⚠️ Estes resultados são estimativas probabilísticas e nunca representam certeza.
-        Dados sensíveis são mascarados e nunca armazenados em forma completa.
+      <p className="text-xs text-muted-foreground text-center leading-relaxed pt-1">
+        ⚠️ Estimativas probabilísticas, não certezas. Dados sensíveis são mascarados e nunca armazenados em forma completa.
       </p>
     </div>
   );

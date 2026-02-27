@@ -1,10 +1,21 @@
 import { useState } from "react";
-import { Search, ChevronDown, ChevronUp } from "lucide-react";
+import { Search, ChevronDown, ChevronUp, User, Users, MapPin, Phone, Briefcase, Fingerprint } from "lucide-react";
 import { type SearchFormData, emptySearchForm } from "@/pages/BuscaPerfil";
 
 interface Props {
   onSubmit: (data: SearchFormData) => void;
   loading: boolean;
+}
+
+function SectionHeader({ icon: Icon, title }: { icon: React.ElementType; title: string }) {
+  return (
+    <div className="flex items-center gap-2 pb-1">
+      <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-primary/10">
+        <Icon className="w-3.5 h-3.5 text-primary" />
+      </div>
+      <p className="text-sm font-semibold text-foreground">{title}</p>
+    </div>
+  );
 }
 
 export function BuscaPerfilForm({ onSubmit, loading }: Props) {
@@ -17,65 +28,72 @@ export function BuscaPerfilForm({ onSubmit, loading }: Props) {
   const filledCount = Object.values(form).filter(v => v.trim()).length;
 
   return (
-    <div className="space-y-3">
-      {/* Primary fields */}
-      <div className="ampara-card !p-3 space-y-2">
-        <p className="text-sm font-semibold text-foreground">Identificação</p>
-        <input
-          type="text" className="ampara-input" placeholder="Nome (parcial ou completo)"
-          value={form.nome} onChange={e => set("nome", e.target.value)} maxLength={100}
-        />
-        <input
-          type="text" className="ampara-input" placeholder="CPF (parcial ou completo)"
-          value={form.cpf} onChange={e => set("cpf", e.target.value.replace(/\D/g, "").slice(0, 11))} maxLength={11}
-        />
-        <input
-          type="number" className="ampara-input" placeholder="Idade aproximada"
-          value={form.idade_aprox} onChange={e => set("idade_aprox", e.target.value)}
-          min={15} max={100}
-        />
-      </div>
-
-      <div className="ampara-card !p-3 space-y-2">
-        <p className="text-sm font-semibold text-foreground">Família (só 1º nome basta)</p>
-        <input
-          type="text" className="ampara-input" placeholder="Primeiro nome da mãe"
-          value={form.nome_mae} onChange={e => set("nome_mae", e.target.value)} maxLength={50}
-        />
-        <input
-          type="text" className="ampara-input" placeholder="Primeiro nome do pai"
-          value={form.nome_pai} onChange={e => set("nome_pai", e.target.value)} maxLength={50}
-        />
-      </div>
-
-      <div className="ampara-card !p-3 space-y-2">
-        <p className="text-sm font-semibold text-foreground">Localização aproximada</p>
-        <div className="flex gap-2">
+    <div className="space-y-4">
+      {/* Identificação */}
+      <div className="rounded-xl border border-border bg-card p-4 space-y-3">
+        <SectionHeader icon={User} title="Identificação" />
+        <div className="space-y-2.5">
           <input
-            type="text" className="ampara-input flex-1" placeholder="Cidade/UF (ex: São Paulo/SP)"
-            value={form.cidade_uf} onChange={e => set("cidade_uf", e.target.value)} maxLength={60}
+            type="text" className="ampara-input" placeholder="Nome (parcial ou completo)"
+            value={form.nome} onChange={e => set("nome", e.target.value)} maxLength={100}
+          />
+          <input
+            type="text" className="ampara-input" placeholder="CPF (parcial ou completo)"
+            value={form.cpf} onChange={e => set("cpf", e.target.value.replace(/\D/g, "").slice(0, 11))} maxLength={11}
+          />
+          <input
+            type="number" className="ampara-input" placeholder="Idade aproximada"
+            value={form.idade_aprox} onChange={e => set("idade_aprox", e.target.value)}
+            min={15} max={100}
           />
         </div>
-        <input
-          type="text" className="ampara-input" placeholder="Bairro ou região"
-          value={form.bairro} onChange={e => set("bairro", e.target.value)} maxLength={60}
-        />
+      </div>
+
+      {/* Família */}
+      <div className="rounded-xl border border-border bg-card p-4 space-y-3">
+        <SectionHeader icon={Users} title="Família (só 1º nome basta)" />
+        <div className="space-y-2.5">
+          <input
+            type="text" className="ampara-input" placeholder="Primeiro nome da mãe"
+            value={form.nome_mae} onChange={e => set("nome_mae", e.target.value)} maxLength={50}
+          />
+          <input
+            type="text" className="ampara-input" placeholder="Primeiro nome do pai"
+            value={form.nome_pai} onChange={e => set("nome_pai", e.target.value)} maxLength={50}
+          />
+        </div>
+      </div>
+
+      {/* Localização */}
+      <div className="rounded-xl border border-border bg-card p-4 space-y-3">
+        <SectionHeader icon={MapPin} title="Localização aproximada" />
+        <div className="space-y-2.5">
+          <input
+            type="text" className="ampara-input" placeholder="Cidade/UF (ex: São Paulo/SP)"
+            value={form.cidade_uf} onChange={e => set("cidade_uf", e.target.value)} maxLength={60}
+          />
+          <input
+            type="text" className="ampara-input" placeholder="Bairro ou região"
+            value={form.bairro} onChange={e => set("bairro", e.target.value)} maxLength={60}
+          />
+        </div>
       </div>
 
       {/* Expandable extras */}
       <button
         onClick={() => setShowMore(!showMore)}
-        className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center gap-1 py-1"
+        className="w-full flex items-center justify-center gap-2 rounded-xl border border-dashed border-border py-2.5 text-sm text-muted-foreground hover:text-foreground hover:border-primary/40 hover:bg-primary/5 transition-all"
       >
         {showMore ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-        {showMore ? "Menos campos" : "Mais campos (contato, trabalho, veículo)"}
+        {showMore ? "Menos campos" : "Mais campos (contato, trabalho, veículo...)"}
       </button>
 
       {showMore && (
-        <>
-           <div className="ampara-card !p-3 space-y-2">
-            <p className="text-sm font-semibold text-foreground">Contato parcial</p>
-            <div className="flex gap-2">
+        <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+          {/* Contato */}
+          <div className="rounded-xl border border-border bg-card p-4 space-y-3">
+            <SectionHeader icon={Phone} title="Contato parcial" />
+            <div className="flex gap-2.5">
               <input
                 type="text" className="ampara-input w-24" placeholder="DDD"
                 value={form.ddd} onChange={e => set("ddd", e.target.value.replace(/\D/g, "").slice(0, 2))}
@@ -90,64 +108,83 @@ export function BuscaPerfilForm({ onSubmit, loading }: Props) {
             </div>
           </div>
 
-          <div className="ampara-card !p-3 space-y-2">
-            <p className="text-sm font-semibold text-foreground">Trabalho / Veículo</p>
-            <input
-              type="text" className="ampara-input" placeholder="Profissão ou setor"
-              value={form.profissao} onChange={e => set("profissao", e.target.value)} maxLength={60}
-            />
-            <input
-              type="text" className="ampara-input" placeholder="Empresa ou local de trabalho"
-              value={form.empresa} onChange={e => set("empresa", e.target.value)} maxLength={80}
-            />
-            <input
-              type="text" className="ampara-input" placeholder="Placa parcial (ex: ABC1)"
-              value={form.placa_parcial}
-              onChange={e => set("placa_parcial", e.target.value.toUpperCase().slice(0, 7))}
-              maxLength={7}
-            />
+          {/* Trabalho / Veículo */}
+          <div className="rounded-xl border border-border bg-card p-4 space-y-3">
+            <SectionHeader icon={Briefcase} title="Trabalho / Veículo" />
+            <div className="space-y-2.5">
+              <input
+                type="text" className="ampara-input" placeholder="Profissão ou setor"
+                value={form.profissao} onChange={e => set("profissao", e.target.value)} maxLength={60}
+              />
+              <input
+                type="text" className="ampara-input" placeholder="Empresa ou local de trabalho"
+                value={form.empresa} onChange={e => set("empresa", e.target.value)} maxLength={80}
+              />
+              <input
+                type="text" className="ampara-input" placeholder="Placa parcial (ex: ABC1)"
+                value={form.placa_parcial}
+                onChange={e => set("placa_parcial", e.target.value.toUpperCase().slice(0, 7))}
+                maxLength={7}
+              />
+            </div>
           </div>
 
-          <div className="ampara-card !p-3 space-y-2">
-            <p className="text-sm font-semibold text-foreground">Características</p>
-            <select
-              className="ampara-input"
-              value={form.cor_raca} onChange={e => set("cor_raca", e.target.value)}
-            >
-              <option value="">Cor/Raça (não sei)</option>
-              <option value="Branca">Branca</option>
-              <option value="Preta">Preta</option>
-              <option value="Parda">Parda</option>
-              <option value="Indígena">Indígena</option>
-              <option value="Amarela">Amarela</option>
-            </select>
-            <select
-              className="ampara-input"
-              value={form.escolaridade} onChange={e => set("escolaridade", e.target.value)}
-            >
-              <option value="">Escolaridade (não sei)</option>
-              <option value="Fundamental incompleto">Fundamental incompleto</option>
-              <option value="Fundamental completo">Fundamental completo</option>
-              <option value="Médio incompleto">Médio incompleto</option>
-              <option value="Médio completo">Médio completo</option>
-              <option value="Superior incompleto">Superior incompleto</option>
-              <option value="Superior completo">Superior completo</option>
-              <option value="Pós-graduação">Pós-graduação</option>
-            </select>
+          {/* Características */}
+          <div className="rounded-xl border border-border bg-card p-4 space-y-3">
+            <SectionHeader icon={Fingerprint} title="Características" />
+            <div className="space-y-2.5">
+              <select
+                className="ampara-input"
+                value={form.cor_raca} onChange={e => set("cor_raca", e.target.value)}
+              >
+                <option value="">Cor/Raça (não sei)</option>
+                <option value="Branca">Branca</option>
+                <option value="Preta">Preta</option>
+                <option value="Parda">Parda</option>
+                <option value="Indígena">Indígena</option>
+                <option value="Amarela">Amarela</option>
+              </select>
+              <select
+                className="ampara-input"
+                value={form.escolaridade} onChange={e => set("escolaridade", e.target.value)}
+              >
+                <option value="">Escolaridade (não sei)</option>
+                <option value="Fundamental incompleto">Fundamental incompleto</option>
+                <option value="Fundamental completo">Fundamental completo</option>
+                <option value="Médio incompleto">Médio incompleto</option>
+                <option value="Médio completo">Médio completo</option>
+                <option value="Superior incompleto">Superior incompleto</option>
+                <option value="Superior completo">Superior completo</option>
+                <option value="Pós-graduação">Pós-graduação</option>
+              </select>
+              <select
+                className="ampara-input"
+                value={form.forca_seguranca} onChange={e => set("forca_seguranca", e.target.value)}
+              >
+                <option value="">Força de segurança? (não sei)</option>
+                <option value="sim">Sim</option>
+                <option value="nao">Não</option>
+              </select>
+            </div>
           </div>
+        </div>
+      )}
 
-          <div className="ampara-card !p-3 space-y-2">
-            <p className="text-sm font-semibold text-foreground">Perfil de risco</p>
-            <select
-              className="ampara-input"
-              value={form.forca_seguranca} onChange={e => set("forca_seguranca", e.target.value)}
-            >
-              <option value="">Força de segurança? (não sei)</option>
-              <option value="sim">Sim</option>
-              <option value="nao">Não</option>
-            </select>
+      {/* Filled count indicator */}
+      {filledCount > 0 && (
+        <div className="flex items-center justify-center gap-2">
+          <div className="flex gap-1">
+            {Array.from({ length: Math.min(filledCount, 8) }).map((_, i) => (
+              <div key={i} className="w-2 h-2 rounded-full bg-primary" />
+            ))}
+            {Array.from({ length: Math.max(0, 2 - filledCount) }).map((_, i) => (
+              <div key={i} className="w-2 h-2 rounded-full bg-muted" />
+            ))}
           </div>
-        </>
+          <span className="text-xs text-muted-foreground">
+            {filledCount} campo{filledCount > 1 ? "s" : ""} preenchido{filledCount > 1 ? "s" : ""}
+          </span>
+        </div>
       )}
 
       {/* Submit */}
@@ -158,13 +195,13 @@ export function BuscaPerfilForm({ onSubmit, loading }: Props) {
       >
         <Search className="w-4 h-4" />
         {filledCount < 2
-          ? `Preencha pelo menos 2 campos (${filledCount}/2)`
-          : `Buscar correspondências (${filledCount} campo${filledCount > 1 ? "s" : ""})`}
+          ? `Preencha pelo menos 2 campos`
+          : `Buscar correspondências`}
       </button>
 
       <p className="text-xs text-muted-foreground text-center leading-relaxed">
         Quanto mais dados você informar, mais precisa será a busca.
-        Nenhum dado completo é armazenado — apenas pistas parciais e mascaradas.
+        Nenhum dado completo é armazenado.
       </p>
     </div>
   );
