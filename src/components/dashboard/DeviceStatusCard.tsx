@@ -305,8 +305,11 @@ export default function DeviceStatusCard() {
             <TooltipProvider delayDuration={300}>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className="inline-flex items-center">
-                    <Ear className="w-3.5 h-3.5 text-emerald-500 animate-pulse" />
+                  <span className="relative inline-flex items-center justify-center w-5 h-5">
+                    <span className="absolute inset-0 rounded-full border border-emerald-400/60 animate-[sound-wave_1.8s_ease-out_infinite]" />
+                    <span className="absolute inset-0 rounded-full border border-emerald-400/40 animate-[sound-wave_1.8s_ease-out_0.6s_infinite]" />
+                    <span className="absolute inset-0 rounded-full border border-emerald-400/20 animate-[sound-wave_1.8s_ease-out_1.2s_infinite]" />
+                    <Ear className="relative w-3 h-3 text-emerald-500" />
                   </span>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="max-w-[200px] text-center">
