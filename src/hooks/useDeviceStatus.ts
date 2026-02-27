@@ -120,7 +120,7 @@ export function useDeviceStatus(): DeviceStatusResult {
             // Trust device flags, but override to FALSE only when DB confirms activity ended.
             // Recording is valid if there's a pending gravacao OR an active monitoring session.
             is_recording: deviceRes.data.is_recording && !hasPendingRecording && !hasActiveMonitor ? false : deviceRes.data.is_recording,
-            is_monitoring: deviceRes.data.is_monitoring,
+            is_monitoring: deviceRes.data.is_monitoring && hasActiveMonitor,
             panicActive: hasActivePanic,
             panicStartedAt: panicRes.data?.criado_em ?? null,
             monitoringStartedAt: monitorRes.data?.iniciado_em ?? null,
