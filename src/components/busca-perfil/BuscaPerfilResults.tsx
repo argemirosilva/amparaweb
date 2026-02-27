@@ -51,6 +51,7 @@ const SENSITIVE_FIELD_MAP: Record<string, keyof SearchFormData> = {
   escolaridade: "escolaridade",
   empresa: "empresa",
   idade: "idade_aprox",
+  cpf: "cpf",
 };
 
 /** Filtra o nome exibido para mostrar apenas partes que a usuária digitou */

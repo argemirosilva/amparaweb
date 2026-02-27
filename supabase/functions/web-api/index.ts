@@ -492,13 +492,18 @@ serve(async (req) => {
           forca_seguranca, tem_arma,
           cor_raca, escolaridade,
           empresa, xingamentos,
+          cpf,
         } = params;
 
         // Need at least one search parameter
-        const hasAny = [nome, apelido, nome_pai, nome_mae, ddd, final_telefone, cidade_uf, bairro, profissao, placa_parcial, forca_seguranca, tem_arma, cor_raca, escolaridade, empresa, xingamentos].some(v => v && String(v).trim());
+        const hasAny = [nome, apelido, nome_pai, nome_mae, ddd, final_telefone, cidade_uf, bairro, profissao, placa_parcial, forca_seguranca, tem_arma, cor_raca, escolaridade, empresa, xingamentos, cpf].some(v => v && String(v).trim());
         if (!hasAny) {
           return json({ error: "Forneça pelo menos um critério de busca" }, 400);
         }
+
+        // Extract CPF last 4 digits for search
+        const cpfDigits = cpf ? String(cpf).replace(/\D/g, "") : "";
+        const cpfLast4 = cpfDigits.length >= 4 ? cpfDigits.slice(-4) : null;
 
         // Phase A: SQL recall via the search_agressor_candidates function
         const { data: candidates, error: searchErr } = await supabase.rpc("search_agressor_candidates", {
@@ -519,6 +524,7 @@ serve(async (req) => {
           p_escolaridade: escolaridade?.trim() || null,
           p_company: empresa?.trim() || null,
           p_xingamentos: xingamentos?.trim() || null,
+          p_cpf_last4: cpfLast4,
         });
 
         if (searchErr) {
@@ -562,6 +568,7 @@ serve(async (req) => {
           escolaridade: escolaridade?.trim() || null,
           empresa: empresa?.trim() || null,
           xingamentos: xingamentos?.trim() || null,
+          cpf: cpfLast4 ? `***${cpfLast4}` : null,
         };
 
         // Prepare candidate summaries for AI (privacy-safe)
@@ -671,7 +678,7 @@ serve(async (req) => {
 
       case "createAgressor": {
         const {
-          nome, data_nascimento, telefone, nome_pai_parcial, nome_mae_parcial,
+          nome, data_nascimento, telefone, cpf, nome_pai_parcial, nome_mae_parcial,
           forca_seguranca, tem_arma_em_casa, tipo_vinculo,
           // New privacy-first fields
           aliases, approx_age_min, approx_age_max,
@@ -685,6 +692,17 @@ serve(async (req) => {
         if (!nome?.trim()) return json({ error: "Nome do agressor é obrigatório" }, 400);
         if (!tipo_vinculo?.trim()) return json({ error: "Tipo de vínculo é obrigatório" }, 400);
 
+        // Hash CPF and store only last 4 digits
+        const cpfDigits = cpf ? String(cpf).replace(/\D/g, "") : "";
+        let cpfHashValue: string | null = null;
+        let cpfLast4Value: string | null = null;
+        if (cpfDigits.length >= 4) {
+          const encoder = new TextEncoder();
+          const hashBuffer = await crypto.subtle.digest("SHA-256", encoder.encode(cpfDigits));
+          cpfHashValue = Array.from(new Uint8Array(hashBuffer), (b) => b.toString(16).padStart(2, "0")).join("");
+          cpfLast4Value = cpfDigits.slice(-4);
+        }
+
         // Create aggressor record with expanded fields
         const insertData: Record<string, any> = {
           nome: nome.trim(),
@@ -694,6 +712,8 @@ serve(async (req) => {
           nome_mae_parcial: nome_mae_parcial?.trim() || null,
           forca_seguranca: forca_seguranca || false,
           tem_arma_em_casa: tem_arma_em_casa || false,
+          cpf_hash: cpfHashValue,
+          cpf_last4: cpfLast4Value,
         };
 
         // Add new privacy-first fields if provided
@@ -894,6 +914,20 @@ serve(async (req) => {
             } else {
               upd[key] = agressorUpdates[key];
             }
+          }
+        }
+
+        // Handle CPF separately (hash + last4)
+        if (agressorUpdates.cpf !== undefined) {
+          const cpfDigits = agressorUpdates.cpf ? String(agressorUpdates.cpf).replace(/\D/g, "") : "";
+          if (cpfDigits.length >= 4) {
+            const encoder = new TextEncoder();
+            const hashBuffer = await crypto.subtle.digest("SHA-256", encoder.encode(cpfDigits));
+            upd.cpf_hash = Array.from(new Uint8Array(hashBuffer), (b) => b.toString(16).padStart(2, "0")).join("");
+            upd.cpf_last4 = cpfDigits.slice(-4);
+          } else {
+            upd.cpf_hash = null;
+            upd.cpf_last4 = null;
           }
         }
 

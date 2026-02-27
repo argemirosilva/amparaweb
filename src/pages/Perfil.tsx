@@ -101,6 +101,7 @@ interface AgressorEditForm {
   tipo_vinculo: string;
   data_nascimento: string;
   telefone: string;
+  cpf: string;
   nome_pai_parcial: string;
   nome_mae_parcial: string;
   forca_seguranca: boolean;
@@ -255,6 +256,7 @@ export default function PerfilPage() {
       tipo_vinculo: v.tipo_vinculo || "",
       data_nascimento: ag.data_nascimento || "",
       telefone: ag.telefone || "",
+      cpf: "",
       nome_pai_parcial: ag.nome_pai_parcial || "",
       nome_mae_parcial: ag.nome_mae_parcial || "",
       forca_seguranca: ag.forca_seguranca || false,
@@ -287,6 +289,7 @@ export default function PerfilPage() {
       nome: agressorForm.nome,
       data_nascimento: agressorForm.data_nascimento || null,
       telefone: agressorForm.telefone || null,
+      cpf: agressorForm.cpf ? agressorForm.cpf.replace(/\D/g, "") : null,
       nome_pai_parcial: agressorForm.nome_pai_parcial || null,
       nome_mae_parcial: agressorForm.nome_mae_parcial || null,
       forca_seguranca: agressorForm.forca_seguranca,
@@ -647,6 +650,18 @@ export default function PerfilPage() {
                         <label className="block text-xs font-medium text-muted-foreground mb-1">Telefone</label>
                         <input type="tel" className="ampara-input text-sm" placeholder="(00) 00000-0000" value={agressorForm.telefone}
                           onChange={e => setAgressorForm({ ...agressorForm, telefone: formatPhone(e.target.value) })} />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-medium text-muted-foreground mb-1">CPF</label>
+                        <input type="text" className="ampara-input text-sm" placeholder="000.000.000-00" value={agressorForm.cpf} maxLength={14}
+                          onChange={e => {
+                            const digits = e.target.value.replace(/\D/g, "").slice(0, 11);
+                            const masked = digits.replace(/(\d{3})(\d{3})?(\d{3})?(\d{2})?/, (_: string, a: string, b?: string, c?: string, d?: string) =>
+                              [a, b, c].filter(Boolean).join(".") + (d ? `-${d}` : "")
+                            );
+                            setAgressorForm({ ...agressorForm, cpf: masked });
+                          }} />
                       </div>
 
 
