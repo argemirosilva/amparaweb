@@ -168,7 +168,8 @@ export default function AdminMapa() {
   const [showDevices, setShowDevices] = useState(true);
   const [loading, setLoading] = useState(false);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
-  const [period, setPeriod] = useState<string>("30d");
+  const [period, setPeriodState] = useState<string>(() => localStorage.getItem("admin_dash_period") || "30d");
+  const setPeriod = (p: string) => { localStorage.setItem("admin_dash_period", p); setPeriodState(p); };
 
   // Helper: convert period to { since, periodDays, periodHours }
   const getPeriodRange = useCallback((p: string) => {
