@@ -1,45 +1,39 @@
 
 
-## Mostrar indicador de gravacao junto com o banner de panico
+## Garantir que "Monitorando" so apareca apos confirmacao do dispositivo
 
 ### Problema
+O status "Monitorando" aparece no dashboard sem o dispositivo ter confirmado que iniciou. Isso acontece porque o `syncConfigMobile` cria sessoes com `status: "ativa"` imediatamente (baseado no agendamento), e o ping aceita flags `is_monitoring`/`is_recording` do payload sem validacao.
 
-Duas causas impedem o label "Gravando" de aparecer durante panico ativo:
+### Mudancas
 
-1. **Frontend** (`DeviceStatusCard.tsx`, linha 179): a condicao `&& !panicActive` esconde o indicador de gravacao/monitoramento quando ha panico ativo
-2. **Backend** (`handleAcionarPanico`): ao acionar panico, o `device_status` e resetado com `is_monitoring: false`, fazendo o frontend achar que nao ha atividade — mesmo que a sessao de monitoramento exista no banco
+#### 1. Remover aceitacao de `is_recording` e `is_monitoring` no ping
+**Arquivo:** `supabase/functions/mobile-api/index.ts` (linhas 611-612)
 
-### Correcoes
+Remover as duas linhas que permitem o ping sobrescrever esses flags. Eles devem ser controlados exclusivamente por `reportarStatusMonitoramento` e `reportarStatusGravacao`.
 
-#### 1. Frontend: Remover filtro `!panicActive` do indicador
+#### 2. Usar status intermediario `aguardando_dispositivo` nas sessoes criadas pelo syncConfig
+**Arquivo:** `supabase/functions/mobile-api/index.ts`
 
-No `DeviceStatusCard.tsx`, linha 179, mudar:
+Nas 3 insercoes de `monitoramento_sessoes` dentro do `syncConfigMobile` (linhas 828, 874, e possivelmente outras), trocar `status: "ativa"` por `status: "aguardando_dispositivo"`.
 
-```
-(device?.is_recording || device?.is_monitoring) && !panicActive
-```
+O frontend ja filtra por `status: "ativa"`, entao sessoes em `aguardando_dispositivo` nao aparecerao como ativas.
 
-Para:
+#### 3. Promover sessao para "ativa" quando o dispositivo confirmar
+**Arquivo:** `supabase/functions/mobile-api/index.ts`
 
-```
-(device?.is_recording || device?.is_monitoring)
-```
+- Em `handleReportarStatusMonitoramento` (linha 2049): quando `isActive` (janela_iniciada/ativado/retomado), alem de atualizar `device_status`, promover sessoes `aguardando_dispositivo` para `ativa` no mesmo device_id.
 
-E ajustar o posicionamento (`top`) para que o indicador apareca abaixo do banner de panico quando ambos estao ativos (ja existe logica parcial para isso com `panicActive ? "top-[24px]" : "top-0"`).
-
-#### 2. Backend: Nao resetar `is_monitoring` ao acionar panico
-
-No `handleAcionarPanico` do `mobile-api/index.ts`, remover o update que seta `is_monitoring: false` no `device_status`. O panico cria sua propria sessao de monitoramento — resetar o flag contradiz isso.
-
-Manter apenas o `sealAllActiveSessions` para fechar sessoes anteriores (de agendamento/manual), mas a nova sessao de panico que e criada pelo `reportarStatusGravacao` deve poder setar os flags normalmente.
-
-#### 3. Backend: Garantir que `reportarStatusGravacao` com origem panico sete os flags
-
-Verificar que quando o dispositivo reporta `status: "iniciada"` com `origem: "botao_panico"`, os flags `is_recording: true` e/ou `is_monitoring: true` sao setados no `device_status`.
+- Em `handleReportarStatusGravacao` (linhas 2129-2134): ao buscar sessao existente, incluir `aguardando_dispositivo` no filtro (usar `.in("status", ["ativa", "aguardando_dispositivo"])`) e promover para `ativa`.
 
 ### Secao Tecnica
 
 **Arquivos modificados:**
-- `src/components/dashboard/DeviceStatusCard.tsx` — Remover `&& !panicActive` da condicao de exibicao do indicador (linha 179)
-- `supabase/functions/mobile-api/index.ts` — Em `handleAcionarPanico`, remover o reset de `is_monitoring: false` no device_status
 
+1. `supabase/functions/mobile-api/index.ts`:
+   - Linha 611-612: Remover `is_recording` e `is_monitoring` do ping
+   - Linhas 828, 874: Trocar `status: "ativa"` por `status: "aguardando_dispositivo"` no syncConfig
+   - Linha ~2049-2057: Em `handleReportarStatusMonitoramento`, promover sessao `aguardando_dispositivo` -> `ativa` quando `isActive`
+   - Linha ~2129-2134: Em `handleReportarStatusGravacao`, incluir `aguardando_dispositivo` no filtro e promover
+
+2. `src/hooks/useDeviceStatus.ts`: Nenhuma mudanca necessaria — a validacao cruzada existente (`is_monitoring && hasActiveMonitor`) ja cobre o caso corretamente.
