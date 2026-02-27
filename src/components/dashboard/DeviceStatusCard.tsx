@@ -18,7 +18,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Smartphone, Clock, BatteryFull, BatteryMedium, BatteryLow, BatteryCharging, Wifi, WifiOff, MapPin, Mic, AlertTriangle, XCircle } from "lucide-react";
+import { Smartphone, Clock, BatteryFull, BatteryMedium, BatteryLow, BatteryCharging, Wifi, WifiOff, MapPin, Mic, AlertTriangle, XCircle, Ear } from "lucide-react";
 import GradientIcon from "@/components/ui/gradient-icon";
 
 function timeSince(date: string): string {
@@ -186,37 +186,29 @@ export default function DeviceStatusCard() {
           </div>
         )}
         {/* Recording / Monitoring indicator */}
-        {(device?.is_recording || device?.is_monitoring) && (
+        {device?.is_recording && (
           <div className={`absolute left-0 right-0 flex items-center justify-center gap-1 text-[10px] font-medium py-0.5 ${
             panicActive ? "top-[24px]" : "top-0"
-          } ${
-          device.is_recording
-              ? "bg-destructive/10 text-destructive"
-              : "bg-emerald-50 text-emerald-700"
-          }`}>
+          } bg-destructive/10 text-destructive`}>
             <span className="relative flex h-1.5 w-1.5">
-              <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-60 ${
-                device.is_recording ? "bg-destructive" : "bg-emerald-400"
-              }`} />
-              <span className={`relative inline-flex rounded-full h-1.5 w-1.5 ${
-                device.is_recording ? "bg-destructive" : "bg-emerald-500"
-              }`} />
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-60 bg-destructive" />
+              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-destructive" />
             </span>
             <Mic className="w-2.5 h-2.5" />
-            {device.is_recording ? `Gravando ${formatElapsed(elapsed)}` : "Monitorando"}
+            {`Gravando ${formatElapsed(elapsed)}`}
             {device.origem && (
               <span className="ml-0.5 opacity-70">
                 ({{ botao_manual: "Manual", manual: "Manual", automatico: "Detecção", deteccao: "Detecção", botao_panico: "Pânico", panico: "Pânico", agendado: "Agendado", agendamento: "Agendado", comando_voz: "Voz" }[device.origem] ?? device.origem})
               </span>
             )}
-            {device.is_recording && device.lastSegmentIdx != null && (
+            {device.lastSegmentIdx != null && (
               <span className="ml-auto text-[9px] opacity-60 font-normal tabular-nums">#{device.lastSegmentIdx}</span>
             )}
           </div>
         )}
 
         {/* Icon */}
-        <div className={panicActive && (device?.is_recording || device?.is_monitoring) ? "mt-10" : panicActive ? "mt-4" : (device?.is_recording || device?.is_monitoring) ? "mt-4" : ""}>
+        <div className={panicActive && device?.is_recording ? "mt-10" : panicActive ? "mt-4" : device?.is_recording ? "mt-4" : ""}>
         <GradientIcon icon={Smartphone} size="sm" />
         </div>
 
@@ -308,6 +300,21 @@ export default function DeviceStatusCard() {
               </TooltipProvider>
             );
           })()}
+          {/* Ear icon when monitoring (not recording) */}
+          {device?.is_monitoring && !device?.is_recording && online && (
+            <TooltipProvider delayDuration={300}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="inline-flex items-center">
+                    <Ear className="w-3.5 h-3.5 text-emerald-500 animate-pulse" />
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="max-w-[200px] text-center">
+                  <p className="text-xs">Monitoramento ativo — escutando o ambiente</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
         </div>
 
         {device && device.last_ping_at && (Date.now() - new Date(device.last_ping_at).getTime() >= 600_000) && (
