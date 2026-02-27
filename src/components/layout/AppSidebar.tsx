@@ -9,7 +9,7 @@ import {
   Settings,
   LogOut,
   Search,
-  Headset,
+  MessageCircle,
 } from "lucide-react";
 import {
   Sidebar,
@@ -27,7 +27,7 @@ const menuItems = [
   { title: "Dashboard", url: "/home", icon: LayoutDashboard },
   { title: "Gravações", url: "/gravacoes", icon: Mic },
   { title: "Pesquisar Parceiro", url: "/busca-perfil", icon: Search },
-  { title: "Suporte", url: "/support", icon: Headset },
+  { title: "Suporte", url: "/support", icon: MessageCircle },
   { title: "Perfil", url: "/perfil", icon: UserCircle },
   { title: "Configurações", url: "/configuracoes", icon: Settings },
 ];
@@ -83,7 +83,7 @@ export default function AppSidebar() {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <SidebarMenuButton onClick={() => navigate("/support")} className="w-fit">
-                    <Headset className="w-5 h-5 shrink-0 text-muted-foreground" />
+                    <MessageCircle className="w-5 h-5 shrink-0 text-muted-foreground" />
                   </SidebarMenuButton>
                 </TooltipTrigger>
                 <TooltipContent side="right">

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Headset, Plus, AlertTriangle, Loader2, ShieldCheck, Clock, ChevronRight } from "lucide-react";
+import { MessageCircle, Plus, AlertTriangle, Loader2, ShieldCheck, Clock, ChevronRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -68,7 +68,7 @@ export default function SupportHome() {
     <div className="space-y-5 animate-fade-in">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-display font-bold text-foreground flex items-center gap-2">
-          <Headset className="w-6 h-6 text-primary" />
+          <MessageCircle className="w-6 h-6 text-primary" />
           Suporte Técnico
         </h1>
       </div>
