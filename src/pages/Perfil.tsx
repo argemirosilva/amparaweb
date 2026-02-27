@@ -652,14 +652,14 @@ export default function PerfilPage() {
 
                       <div className="grid grid-cols-2 gap-2">
                         <div>
-                          <label className="block text-xs font-medium text-muted-foreground mb-1">Nome do pai</label>
-                          <input type="text" className="ampara-input text-sm" placeholder="Parcial" value={agressorForm.nome_pai_parcial}
-                            onChange={e => setAgressorForm({ ...agressorForm, nome_pai_parcial: e.target.value })} />
-                        </div>
-                        <div>
                           <label className="block text-xs font-medium text-muted-foreground mb-1">Nome da mãe</label>
                           <input type="text" className="ampara-input text-sm" placeholder="Parcial" value={agressorForm.nome_mae_parcial}
                             onChange={e => setAgressorForm({ ...agressorForm, nome_mae_parcial: e.target.value })} />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-muted-foreground mb-1">Nome do pai</label>
+                          <input type="text" className="ampara-input text-sm" placeholder="Parcial" value={agressorForm.nome_pai_parcial}
+                            onChange={e => setAgressorForm({ ...agressorForm, nome_pai_parcial: e.target.value })} />
                         </div>
                       </div>
 

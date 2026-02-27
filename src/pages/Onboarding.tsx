@@ -362,14 +362,14 @@ export default function OnboardingPage() {
                   onChange={e => setAgressor({ ...agressor, telefone: formatPhone(e.target.value) })} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1.5">Nome do pai</label>
-                <input type="text" className="ampara-input" placeholder="Pode ser parcial" value={agressor.nome_pai_parcial} maxLength={100}
-                  onChange={e => setAgressor({ ...agressor, nome_pai_parcial: e.target.value })} />
-              </div>
-              <div>
                 <label className="block text-sm font-medium text-foreground mb-1.5">Nome da mãe</label>
                 <input type="text" className="ampara-input" placeholder="Pode ser parcial" value={agressor.nome_mae_parcial} maxLength={100}
                   onChange={e => setAgressor({ ...agressor, nome_mae_parcial: e.target.value })} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1.5">Nome do pai</label>
+                <input type="text" className="ampara-input" placeholder="Pode ser parcial" value={agressor.nome_pai_parcial} maxLength={100}
+                  onChange={e => setAgressor({ ...agressor, nome_pai_parcial: e.target.value })} />
               </div>
 
               {/* Cor e escolaridade */}

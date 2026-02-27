@@ -35,12 +35,12 @@ export function BuscaPerfilForm({ onSubmit, loading }: Props) {
       <div className="ampara-card !p-3 space-y-2">
         <p className="text-sm font-semibold text-foreground">Família (só 1º nome basta)</p>
         <input
-          type="text" className="ampara-input" placeholder="Primeiro nome do pai"
-          value={form.nome_pai} onChange={e => set("nome_pai", e.target.value)} maxLength={50}
-        />
-        <input
           type="text" className="ampara-input" placeholder="Primeiro nome da mãe"
           value={form.nome_mae} onChange={e => set("nome_mae", e.target.value)} maxLength={50}
+        />
+        <input
+          type="text" className="ampara-input" placeholder="Primeiro nome do pai"
+          value={form.nome_pai} onChange={e => set("nome_pai", e.target.value)} maxLength={50}
         />
       </div>
 

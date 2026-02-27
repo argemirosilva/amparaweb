@@ -73,7 +73,8 @@ Dado os critérios de busca da usuária e uma lista de candidatos do banco de da
     - Conflitos fortes: -25 a -40
 2. Converter score em probabilidade (max 99%): >=85→90-99%, 70-84→70-89%, 55-69→50-69%, 40-54→30-49%, 25-39→15-29%, <25→<15%
 3. Para cada candidato, listar match_breakdown com status (completo/parcial/nao_bateu/conflitante)
-4. Calcular risk_level (Baixo/Médio/Alto/Crítico) e violence_probabilities com base nos incidents
+4. Calcular risk_level (Baixo/Médio/Alto/Crítico) e violence_probabilities com base nos incidents e violence_profile_probs do candidato.
+   IMPORTANTE: violence_probabilities DEVE ser sempre preenchido com pelo menos os tipos principais (psicologica, moral, patrimonial, fisica, sexual, ameaca_perseguicao). Se não houver dados de incidentes, use o risk_level do candidato para estimar probabilidades proporcionais. NUNCA retorne violence_probabilities vazio.
 5. Retornar SOMENTE os top 5 com probabilidade >= 30%, ordenados por probabilidade. Se nenhum atingir 30%, retorne array vazio.
 
 RETORNE APENAS JSON válido com a estrutura:
@@ -621,6 +622,29 @@ serve(async (req) => {
                          score >= 40 ? 30 + Math.round((score - 40) * 1.3) :
                          score >= 25 ? 15 + Math.round((score - 25) * 1) :
                          Math.max(5, score);
+
+            // Derive violence_probabilities from incidents if profile probs are empty
+            let violenceProbs = c.violence_profile_probs || {};
+            if (!violenceProbs || Object.keys(violenceProbs).length === 0) {
+              const incidents = incidentsByAggressor[c.id] || [];
+              if (incidents.length > 0) {
+                const typeCounts: Record<string, number> = {};
+                let total = 0;
+                for (const inc of incidents) {
+                  for (const vt of (inc.violence_types || [])) {
+                    typeCounts[vt] = (typeCounts[vt] || 0) + (inc.severity || 3);
+                    total += (inc.severity || 3);
+                  }
+                }
+                if (total > 0) {
+                  violenceProbs = {};
+                  for (const [type, count] of Object.entries(typeCounts)) {
+                    violenceProbs[type] = Math.min(95, Math.round((count as number / total) * 100));
+                  }
+                }
+              }
+            }
+
             return {
               profile_id: c.id,
               display_name_masked: c.display_name_masked || "Desconhecido",
@@ -631,7 +655,7 @@ serve(async (req) => {
               weak_signals: [],
               conflicts: [],
               risk_level: c.risk_level || "Baixo",
-              violence_probabilities: c.violence_profile_probs || {},
+              violence_probabilities: violenceProbs,
               explanation_short: "Ranking calculado sem IA (fallback).",
               guidance: ["Adicione mais dados para refinar a busca"],
               forca_seguranca: c.forca_seguranca,
