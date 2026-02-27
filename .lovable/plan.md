@@ -1,18 +1,44 @@
 
 
-## Tornar pingMobile e syncConfigMobile read-only
+# Fallback de coordenadas no acionamento de panico
 
-### Status: ✅ Implementado
+## Problema
+Quando o app iOS aciona panico, pode ainda nao ter enviado coordenadas nesse request (ou envia 0,0). O alerta fica registrado sem localizacao, mesmo que o ultimo ping ja tenha enviado GPS valido segundos antes.
 
-### Mudanças realizadas
+## Solucao
+Na funcao `handleAcionarPanico` do `mobile-api/index.ts`, apos extrair `latitude`/`longitude` do body, verificar se sao validas. Se nao forem (null, undefined, ou ambas zero), consultar a ultima localizacao valida da tabela `localizacoes` para aquele `user_id`.
 
-**1. pingMobile** — Tornado read-only para vínculo de dispositivo:
-- Se o `device_id` do ping já está registrado: atualiza normalmente.
-- Se o `device_id` NÃO está registrado: ignora silenciosamente, retorna `{ success: true, skipped: true, status: "device_not_bound" }`.
-- O vínculo de dispositivo só acontece no login.
+## Detalhes tecnicos
 
-**2. syncConfigMobile** — Tornado read-only para sessões de monitoramento:
-- Removida toda a lógica de criação automática de sessões (`origem: automatico`).
-- Removida a rotação de dispositivos (que usava `ip` inexistente, causando `ReferenceError`).
-- Agora apenas consulta se existe uma sessão ativa e retorna o `sessao_id`.
-- A criação de sessões acontece exclusivamente via `reportarStatusGravacao` / `reportarStatusMonitoramento`.
+### Arquivo: `supabase/functions/mobile-api/index.ts`
+
+Na funcao `handleAcionarPanico`, apos as linhas 1369-1370 (extracao de lat/lon do body), adicionar fallback:
+
+```typescript
+const loc = body.localizacao as Record<string, unknown> | undefined;
+let latitude = (body.latitude ?? loc?.latitude) as number | undefined;
+let longitude = (body.longitude ?? loc?.longitude) as number | undefined;
+
+// Fallback: if no valid coords from request, use latest known location from pings
+if (latitude == null || longitude == null || (latitude === 0 && longitude === 0)) {
+  const { data: lastLoc } = await supabase
+    .from("localizacoes")
+    .select("latitude, longitude")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (lastLoc && (lastLoc.latitude !== 0 || lastLoc.longitude !== 0)) {
+    latitude = lastLoc.latitude;
+    longitude = lastLoc.longitude;
+  }
+}
+```
+
+### Impacto
+- Contrato da API nao muda (mesmos campos de entrada e saida)
+- Se o app ja envia coordenadas validas, nada muda
+- Se nao envia, o alerta e a notificacao aos guardioes/COPOM ja saem com a localizacao mais recente disponivel
+- Retrocompativel com Android e futuras versoes do iOS
+
