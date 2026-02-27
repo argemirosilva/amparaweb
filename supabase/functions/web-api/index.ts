@@ -1120,6 +1120,14 @@ serve(async (req) => {
         // Delete recording
         await supabase.from("gravacoes").delete().eq("id", gravacao_id).eq("user_id", userId);
 
+        // Audit log
+        await supabase.from("audit_logs").insert({
+          user_id: userId,
+          action_type: "gravacao_deleted",
+          success: true,
+          details: { gravacao_id, nivel_risco: analise?.nivel_risco || "sem_analise" },
+        });
+
         return json({ success: true });
       }
 
