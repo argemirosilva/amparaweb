@@ -1468,11 +1468,8 @@ async function handleAcionarPanico(
   // Seal any active monitoring sessions — panic takes priority
   await sealAllActiveSessions(supabase, user.id, "panico_acionado", ip);
 
-  // Reset only is_monitoring — is_recording will be set by the panic recording itself
-  await supabase
-    .from("device_status")
-    .update({ is_monitoring: false })
-    .eq("user_id", user.id);
+  // Do NOT reset is_monitoring here — the panic session created by reportarStatusGravacao
+  // will set is_recording/is_monitoring flags. Resetting them here would hide the indicator.
 
   if (latitude !== undefined && longitude !== undefined) {
     await supabase.from("localizacoes").insert({
