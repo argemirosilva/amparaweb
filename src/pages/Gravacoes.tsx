@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import AudioRecorderCard from "@/components/dashboard/AudioRecorderCard";
 import GravacaoExpandedContent from "@/components/gravacoes/GravacaoExpandedContent";
+import GravacoesFilterBar from "@/components/gravacoes/GravacoesFilterBar";
 import GradientIcon from "@/components/ui/gradient-icon";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
@@ -184,8 +185,21 @@ export default function GravacoesPage() {
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [batchDeleting, setBatchDeleting] = useState(false);
+  const [searchText, setSearchText] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [deviceFilter, setDeviceFilter] = useState("all");
   const perPage = 15;
-  
+
+  // Debounce search text
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchText);
+      setPage(1);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchText]);
 
   const semRiscoIds = gravacoes.filter(g => !g.nivel_risco || g.nivel_risco === "sem_risco").map(g => g.id);
 
@@ -239,34 +253,36 @@ export default function GravacoesPage() {
     });
   }, [sessionToken]);
 
+  const buildFilterParams = useCallback(() => {
+    const p: Record<string, any> = { page, per_page: perPage };
+    if (filterRisco) p.nivel_risco = filterRisco;
+    if (debouncedSearch) p.search_text = debouncedSearch;
+    if (dateFrom) p.date_from = dateFrom;
+    if (dateTo) p.date_to = dateTo;
+    if (deviceFilter && deviceFilter !== "all") p.device_type = deviceFilter;
+    return p;
+  }, [page, filterRisco, debouncedSearch, dateFrom, dateTo, deviceFilter]);
+
   const loadData = useCallback(async () => {
     if (!sessionToken) return;
     setLoading(true);
-    const res = await callWebApi("getGravacoes", sessionToken, {
-      page,
-      per_page: perPage,
-      ...(filterRisco ? { nivel_risco: filterRisco } : {}),
-    });
+    const res = await callWebApi("getGravacoes", sessionToken, buildFilterParams());
     if (res.ok) {
       setGravacoes(res.data.gravacoes);
       setTotal(res.data.total);
     }
     setLoading(false);
-  }, [sessionToken, page, filterRisco]);
+  }, [sessionToken, buildFilterParams]);
 
 
   const handleRefresh = useCallback(async () => {
     if (!sessionToken) return;
-    const res = await callWebApi("getGravacoes", sessionToken, {
-      page,
-      per_page: perPage,
-      ...(filterRisco ? { nivel_risco: filterRisco } : {}),
-    });
+    const res = await callWebApi("getGravacoes", sessionToken, buildFilterParams());
     if (res.ok) {
       setGravacoes(res.data.gravacoes);
       setTotal(res.data.total);
     }
-  }, [sessionToken, page, filterRisco]);
+  }, [sessionToken, buildFilterParams]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
@@ -347,6 +363,20 @@ export default function GravacoesPage() {
           );
         })}
       </div>
+
+      {/* Advanced Filters */}
+      <GravacoesFilterBar
+        searchText={searchText}
+        onSearchTextChange={setSearchText}
+        dateFrom={dateFrom}
+        onDateFromChange={(v) => { setDateFrom(v); setPage(1); }}
+        dateTo={dateTo}
+        onDateToChange={(v) => { setDateTo(v); setPage(1); }}
+        deviceFilter={deviceFilter}
+        onDeviceFilterChange={(v) => { setDeviceFilter(v); setPage(1); }}
+        onClear={() => { setSearchText(""); setDateFrom(""); setDateTo(""); setDeviceFilter("all"); setPage(1); }}
+        hasActiveFilters={!!searchText || !!dateFrom || !!dateTo || (deviceFilter !== "all")}
+      />
 
       {/* Content */}
       <PullToRefresh onRefresh={handleRefresh} disabled={!isMobile || loading}>

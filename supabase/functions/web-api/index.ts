@@ -1015,7 +1015,7 @@ serve(async (req) => {
 
       // ========== GRAVAÇÕES ==========
       case "getGravacoes": {
-        const { page = 1, per_page = 20, status: filterStatus, nivel_risco: filterNivelRisco } = params;
+        const { page = 1, per_page = 20, status: filterStatus, nivel_risco: filterNivelRisco, search_text, date_from, date_to, device_type } = params;
         const offset = (page - 1) * per_page;
 
         // If filtering by nivel_risco, first get matching gravacao_ids from analises
@@ -1041,6 +1041,13 @@ serve(async (req) => {
 
         if (filterStatus) query = query.eq("status", filterStatus);
         if (nivelRiscoIds) query = query.in("id", nivelRiscoIds);
+        if (search_text && search_text.trim()) {
+          query = query.ilike("transcricao", `%${search_text.trim()}%`);
+        }
+        if (date_from) query = query.gte("created_at", date_from);
+        if (date_to) query = query.lte("created_at", date_to + "T23:59:59.999Z");
+        if (device_type === "web") query = query.eq("device_id", "web");
+        if (device_type === "mobile") query = query.neq("device_id", "web").not("device_id", "is", null);
 
         const { data, count, error } = await query;
         if (error) return json({ error: "Erro ao buscar gravações" }, 500);
