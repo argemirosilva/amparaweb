@@ -136,7 +136,36 @@ export function normalizeAnalysisOutput(parsed: any): any {
     parsed.categorias = parsed.categorias.map(normalizeTipoViolencia);
   }
 
+  // Normalize nivel_risco to valid values only
+  parsed.nivel_risco = normalizeNivelRisco(parsed.nivel_risco);
+
   return parsed;
+}
+
+const VALID_NIVEL_RISCO = ["sem_risco", "moderado", "alto", "critico"];
+
+const NIVEL_RISCO_MAP: Record<string, string> = {
+  "risco_elevado_escalada": "critico",
+  "ameaca_risco": "critico",
+  "elevado": "alto",
+  "grave": "critico",
+  "leve": "moderado",
+  "baixo": "sem_risco",
+  "nenhum": "sem_risco",
+  "sem risco": "sem_risco",
+};
+
+function normalizeNivelRisco(nivel: string | undefined | null): string {
+  if (!nivel) return "sem_risco";
+  const lower = nivel.trim().toLowerCase();
+  if (VALID_NIVEL_RISCO.includes(lower)) return lower;
+  if (NIVEL_RISCO_MAP[lower]) return NIVEL_RISCO_MAP[lower];
+  // If contains "critico" or "escalada" → critico
+  if (lower.includes("critico") || lower.includes("escalada") || lower.includes("ameaca")) return "critico";
+  if (lower.includes("alto") || lower.includes("elevado")) return "alto";
+  if (lower.includes("moderado")) return "moderado";
+  console.warn(`Unknown nivel_risco "${nivel}", defaulting to "moderado"`);
+  return "moderado";
 }
 
 function normalizeTipoViolencia(tipo: string): string {
