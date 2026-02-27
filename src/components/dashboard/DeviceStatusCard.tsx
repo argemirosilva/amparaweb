@@ -219,16 +219,29 @@ export default function DeviceStatusCard() {
 
         {/* Status badge row */}
         <div className="flex items-center gap-2">
-          <span
-            className={`inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full shrink-0 ${
-              online
-                ? "bg-emerald-500/10 text-emerald-600"
-                : "bg-muted text-muted-foreground"
-            }`}
-          >
-            {online ? <Wifi className="w-2 h-2" /> : <WifiOff className="w-2 h-2" />}
-            {online ? "Online" : "Offline"}
-          </span>
+          <TooltipProvider delayDuration={300}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span
+                  className={`inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full shrink-0 ${
+                    online
+                      ? "bg-emerald-500/10 text-emerald-600"
+                      : "bg-muted text-muted-foreground"
+                  }`}
+                >
+                  {online ? <Wifi className="w-2 h-2" /> : <WifiOff className="w-2 h-2" />}
+                  {online ? "Online" : "Offline"}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="max-w-[220px] text-center">
+                <p className="text-xs">
+                  {online
+                    ? "Dispositivo logado e conectado ao servidor"
+                    : "Dispositivo desconectado ou sem internet"}
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
           {device && online && <BatteryIndicator percent={device.bateria_percentual} charging={device.is_charging} />}
           {device && !online && (
             <span className="inline-flex items-center gap-0.5">
