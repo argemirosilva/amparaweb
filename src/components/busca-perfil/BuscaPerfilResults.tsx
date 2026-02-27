@@ -103,7 +103,7 @@ function ResultCard({ result, searchInput, index }: { result: SearchResult; sear
               {index + 1}
             </div>
             <div className="min-w-0">
-              <p className="font-bold text-foreground truncate">{displayName}</p>
+              <p className="font-semibold text-foreground text-sm">Perfil #{index + 1}</p>
               {showLocation && result.location_summary && (
                 <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
                   <MapPin className="w-3 h-3 shrink-0" /> {result.location_summary}
@@ -112,7 +112,7 @@ function ResultCard({ result, searchInput, index }: { result: SearchResult; sear
             </div>
           </div>
           <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg whitespace-nowrap border ${riskConfig.bg} ${riskConfig.text} ${riskConfig.border}`}>
-            {riskConfig.icon} {result.risk_level}
+            {riskConfig.icon} Risco {result.risk_level}
           </span>
         </div>
 
