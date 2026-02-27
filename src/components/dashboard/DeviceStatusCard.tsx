@@ -133,6 +133,9 @@ export default function DeviceStatusCard() {
             <div className="flex items-center gap-1.5">
               <AlertTriangle className="w-3.5 h-3.5" />
               PÂNICO ATIVO
+              {device?.panicShareCode && (
+                <span className="ml-1 font-mono text-[10px] opacity-80">#{device.panicShareCode}</span>
+              )}
               <AlertTriangle className="w-3.5 h-3.5" />
             </div>
             <AlertDialog>

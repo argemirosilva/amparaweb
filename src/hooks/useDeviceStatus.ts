@@ -13,6 +13,7 @@ interface DeviceData {
   last_ping_at: string | null;
   updated_at: string | null;
   panicActive: boolean;
+  panicShareCode: string | null;
   recordingStartedAt: string | null;
   monitoringStartedAt: string | null;
   panicStartedAt: string | null;
@@ -53,7 +54,7 @@ export function useDeviceStatus(): DeviceStatusResult {
   const fetchData = useCallback(async () => {
     if (!usuario) return;
     try {
-      const [deviceRes, locationRes, panicRes, monitorRes, recordingRes, segmentRes] = await Promise.all([
+      const [deviceRes, locationRes, panicRes, monitorRes, recordingRes, segmentRes, gpsShareRes] = await Promise.all([
         supabase
           .from("device_status")
           .select("status, bateria_percentual, is_charging, dispositivo_info, is_recording, is_monitoring, last_ping_at, updated_at")
@@ -97,6 +98,15 @@ export function useDeviceStatus(): DeviceStatusResult {
           .order("created_at", { ascending: false })
           .limit(1)
           .maybeSingle(),
+        supabase
+          .from("compartilhamento_gps")
+          .select("codigo")
+          .eq("user_id", usuario.id)
+          .eq("ativo", true)
+          .eq("tipo", "panico")
+          .order("criado_em", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
       ]);
 
       if (deviceRes.error) throw deviceRes.error;
@@ -122,6 +132,7 @@ export function useDeviceStatus(): DeviceStatusResult {
             is_recording: deviceRes.data.is_recording && !hasPendingRecording && !hasActiveMonitor ? false : deviceRes.data.is_recording,
             is_monitoring: deviceRes.data.is_monitoring && hasActiveMonitor,
             panicActive: hasActivePanic,
+            panicShareCode: gpsShareRes.data?.codigo ?? null,
             panicStartedAt: panicRes.data?.criado_em ?? null,
             monitoringStartedAt: monitorRes.data?.iniciado_em ?? null,
             recordingStartedAt: recordingRes.data?.created_at ?? monitorRes.data?.iniciado_em ?? null,
