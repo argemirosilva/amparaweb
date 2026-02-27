@@ -1,56 +1,45 @@
 
 
-# Privacidade nos Resultados da Pesquisa
+# Recalculo Periodico do Perfil de Risco dos Agressores
 
-## Principio
-Exibir nos resultados **apenas os dados sensiveis que a propria usuaria forneceu** na busca. Nunca revelar informacoes que ela nao conhecia antes.
+## Objetivo
+Criar um job agendado (cron) que roda a cada 7 dias e recalcula o `violence_profile_probs`, `risk_score`, `risk_level` e `flags` de todos os agressores com base nos incidentes acumulados. Isso garante que os dados exibidos na busca estejam sempre atualizados, mesmo sem novas buscas ou incidentes.
+
+## Como funciona hoje
+A funcao `recalculateAgressorRisk` ja existe em `web-api/index.ts` e recalcula o perfil de um agressor individual. Porem, ela so e chamada quando um novo incidente e registrado (`reportIncident`). Se nenhum incidente novo for adicionado, os dados ficam congelados.
 
 ## Mudancas
 
-### 1. Remover xingamentos dos resultados (BuscaPerfilResults.tsx)
-- Remover completamente o bloco de "Xingamentos" (linhas 90-98) do card de resultado
-- Manter os xingamentos no payload de busca (servem para matching interno), mas nao exibi-los
+### 1. Criar edge function `recalculate-aggressors/index.ts`
+- Busca todos os agressores que possuem ao menos 1 incidente
+- Para cada agressor, executa a mesma logica de `recalculateAgressorRisk` (copiada/adaptada para funcionar de forma independente)
+- Registra no `audit_logs` o total de agressores atualizados
+- Protegida: so executa se chamada via cron (sem necessidade de sessao de usuario)
 
-### 2. Passar os dados do formulario para o componente de resultados
-- `BuscaPerfil.tsx`: passar `formData` como prop para `BuscaPerfilResults`
-- `BuscaPerfilResults`: receber `searchInput: SearchFormData` e repassar para cada `ResultCard`
+### 2. Registrar cron job no banco
+- Usar `pg_cron` + `pg_net` para agendar a chamada da edge function a cada 7 dias (domingos as 04:00 UTC)
+- Formato: `0 4 * * 0` (todo domingo as 04h)
 
-### 3. Filtrar nome exibido com base no input da usuaria
-- No `ResultCard`, em vez de exibir `display_name_masked` diretamente, cruzar com `searchInput.nome`
-- Se a usuaria digitou "Carlos", exibir apenas as partes do nome que contenham "Carlos" (ex: "Carlos S***" em vez de "Carlos Roberto Silva")
-- Se nenhum nome foi fornecido, exibir um placeholder generico como "Perfil #1"
+### 3. Adicionar ao `config.toml`
+- Registrar `[functions.recalculate-aggressors]` com `verify_jwt = false`
 
-### 4. Filtrar dados sensiveis no match breakdown
-- No detalhamento expandido, so exibir `candidate_value_masked` se o campo correspondente foi preenchido pela usuaria
-- Se a usuaria nao informou `nome_mae`, a linha do breakdown mostra apenas o status (bateu/nao bateu) sem revelar o valor do candidato
-- Campos nao-sensiveis (risk_level, probabilidade, tipo de violencia) continuam sempre visiveis
+## Detalhes Tecnicos
 
-### 5. Filtrar badges de perigo
-- Badge "Forca de seguranca" so aparece se a usuaria marcou `forca_seguranca = "sim"` na busca
-- Badge "Possui arma" so aparece se a usuaria marcou `tem_arma = "sim"` na busca
-- Flags do sistema continuam visiveis (sao alertas genericos, nao dados pessoais)
-
-### 6. Filtrar localizacao
-- `location_summary` so aparece se a usuaria preencheu `cidade_uf` ou `bairro`
-
-## Arquivos modificados
-
-1. **`src/pages/BuscaPerfil.tsx`** -- passar `formData` como prop para `BuscaPerfilResults`
-2. **`src/components/busca-perfil/BuscaPerfilResults.tsx`** -- receber `searchInput`, aplicar filtros de privacidade em nome, badges, breakdown e localizacao; remover xingamentos
-
-## Logica de filtragem (resumo)
+A nova edge function:
 
 ```text
-Campo resultado     | Exibe se...
---------------------|------------------------------------------
-Nome                | usuaria forneceu nome (mostra so partes que ela digitou)
-Localizacao         | usuaria forneceu cidade_uf ou bairro
-Forca de seguranca  | usuaria marcou "sim"
-Possui arma         | usuaria marcou "sim"  
-Xingamentos         | NUNCA (removido)
-Breakdown valores   | campo correspondente foi preenchido
-Risk level          | SEMPRE (nao e dado pessoal)
-Probabilidade       | SEMPRE
-Tipo violencia      | SEMPRE
-Flags               | SEMPRE (alertas do sistema)
+1. Busca todos os IDs de agressores distintos na tabela aggressor_incidents
+2. Para cada agressor_id:
+   - Busca incidentes (violence_types, severity, occurred_at_month, pattern_tags, confidence)
+   - Calcula violence_profile_probs, risk_score, risk_level, flags (mesma logica existente)
+   - Atualiza a tabela agressores
+3. Registra audit_log com { action_type: "recalculate_aggressors_cron", total, updated, errors }
 ```
+
+O cron sera configurado via SQL insert (nao migration), chamando a URL da edge function com o anon key.
+
+## Arquivos criados/modificados
+
+1. **Criar** `supabase/functions/recalculate-aggressors/index.ts` -- edge function com a logica de recalculo em lote
+2. **Atualizar** `supabase/config.toml` -- adicionar entrada da nova funcao (automatico)
+3. **SQL insert** -- registrar o cron job semanal via `pg_cron`
