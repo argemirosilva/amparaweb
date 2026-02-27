@@ -1424,10 +1424,10 @@ async function handleAcionarPanico(
   // Seal any active monitoring sessions — panic takes priority
   await sealAllActiveSessions(supabase, user.id, "panico_acionado", ip);
 
-  // Reset device_status flags so dashboard doesn't show monitoring during panic
+  // Reset only is_monitoring — is_recording will be set by the panic recording itself
   await supabase
     .from("device_status")
-    .update({ is_monitoring: false, is_recording: false })
+    .update({ is_monitoring: false })
     .eq("user_id", user.id);
 
   if (latitude !== undefined && longitude !== undefined) {
