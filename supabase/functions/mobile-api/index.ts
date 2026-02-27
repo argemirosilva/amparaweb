@@ -784,112 +784,16 @@ async function handleSyncConfig(
         gravacaoInicio = periodo.inicio;
         gravacaoFim = periodo.fim;
 
-        if (deviceId && agendamento) {
-          // Skip session creation if there's an active panic alert
-          const { data: activePanic } = await supabase
-            .from("alertas_panico")
-            .select("id")
-            .eq("user_id", user.id)
-            .eq("status", "ativo")
-            .limit(1)
-            .maybeSingle();
-
-          if (activePanic) {
-            // Panic is active — do NOT create monitoring session
-            sessaoId = null;
-          } else {
-          // Check existing active session for this user (any device)
+        // syncConfigMobile is READ-ONLY: never create or rotate sessions.
+        // Just check if there's an existing active session for this user.
+        if (deviceId) {
           const { data: existingSession } = await supabase
             .from("monitoramento_sessoes")
-            .select("id, device_id")
+            .select("id")
             .eq("user_id", user.id)
             .in("status", ["ativa", "aguardando_dispositivo"])
             .maybeSingle();
-
-          if (!existingSession) {
-            // Seal any lingering active sessions before creating new one
-            await sealAllActiveSessions(supabase, user.id, "nova_sessao");
-
-            // Calculate window_start_at and window_end_at in UTC
-            const [hi, mi] = periodo.inicio.split(":").map(Number);
-            const [hf, mf] = periodo.fim.split(":").map(Number);
-
-            const windowStartLocal = new Date(clientNow);
-            windowStartLocal.setUTCHours(hi, mi, 0, 0);
-            const windowEndLocal = new Date(clientNow);
-            windowEndLocal.setUTCHours(hf, mf, 0, 0);
-
-            let windowStartUtc: Date;
-            let windowEndUtc: Date;
-            if (tzOffset !== undefined) {
-              windowStartUtc = new Date(windowStartLocal.getTime() + tzOffset * 60 * 1000);
-              windowEndUtc = new Date(windowEndLocal.getTime() + tzOffset * 60 * 1000);
-            } else {
-              windowStartUtc = new Date(windowStartLocal.getTime() + 3 * 60 * 60 * 1000);
-              windowEndUtc = new Date(windowEndLocal.getTime() + 3 * 60 * 60 * 1000);
-            }
-
-            const { data: newSession } = await supabase
-              .from("monitoramento_sessoes")
-              .insert({
-                user_id: user.id,
-                device_id: deviceId,
-                status: "aguardando_dispositivo",
-                window_start_at: windowStartUtc.toISOString(),
-                window_end_at: windowEndUtc.toISOString(),
-                origem: "automatico",
-              })
-              .select("id")
-              .single();
-            sessaoId = newSession?.id || null;
-          } else if (existingSession.device_id === deviceId) {
-            // Same device — reuse session
-            sessaoId = existingSession.id;
-          } else {
-            // Different device — seal old session and create new one for the new device
-            await sealAllActiveSessions(supabase, user.id, "device_rotation", ip);
-
-            // Reset old device flags
-            await supabase
-              .from("device_status")
-              .update({ is_recording: false, is_monitoring: false })
-              .eq("user_id", user.id)
-              .neq("device_id", deviceId);
-
-            // Create new session (same window logic as above)
-            const [hi2, mi2] = periodo.inicio.split(":").map(Number);
-            const [hf2, mf2] = periodo.fim.split(":").map(Number);
-
-            const wsLocal = new Date(clientNow);
-            wsLocal.setUTCHours(hi2, mi2, 0, 0);
-            const weLocal = new Date(clientNow);
-            weLocal.setUTCHours(hf2, mf2, 0, 0);
-
-            let wsUtc: Date;
-            let weUtc: Date;
-            if (tzOffset !== undefined) {
-              wsUtc = new Date(wsLocal.getTime() + tzOffset * 60 * 1000);
-              weUtc = new Date(weLocal.getTime() + tzOffset * 60 * 1000);
-            } else {
-              wsUtc = new Date(wsLocal.getTime() + 3 * 60 * 60 * 1000);
-              weUtc = new Date(weLocal.getTime() + 3 * 60 * 60 * 1000);
-            }
-
-            const { data: rotatedSession } = await supabase
-              .from("monitoramento_sessoes")
-              .insert({
-                user_id: user.id,
-                device_id: deviceId,
-                status: "aguardando_dispositivo",
-                window_start_at: wsUtc.toISOString(),
-                window_end_at: weUtc.toISOString(),
-                origem: "automatico",
-              })
-              .select("id")
-              .single();
-            sessaoId = rotatedSession?.id || null;
-          }
-          } // close activePanic else
+          sessaoId = existingSession?.id || null;
         }
         break;
       }
