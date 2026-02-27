@@ -27,7 +27,6 @@ const menuItems = [
   { title: "Dashboard", url: "/home", icon: LayoutDashboard },
   { title: "Gravações", url: "/gravacoes", icon: Mic },
   { title: "Pesquisar Parceiro", url: "/busca-perfil", icon: Search },
-  { title: "Suporte", url: "/support", icon: MessageCircle },
   { title: "Perfil", url: "/perfil", icon: UserCircle },
   { title: "Configurações", url: "/configuracoes", icon: Settings },
 ];
