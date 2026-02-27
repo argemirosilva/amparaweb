@@ -2388,9 +2388,21 @@ async function handleReportarStatusGravacao(
         details: { session_id: activeSession.id, sealed_reason: motivoParada || "manual", origem: origemGravacao, total_segmentos: totalSegmentos },
       });
 
+      // ── Fire-and-forget: trigger session-maintenance immediately for concatenation + processing ──
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      fetch(`${supabaseUrl}/functions/v1/session-maintenance`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${serviceKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({}),
+      }).catch((e) => console.error("session-maintenance immediate trigger error:", e));
+
       return jsonResponse({
         success: true,
-        message: "Status da gravação atualizado",
+        message: "Status da gravação atualizado, processamento iniciado",
         sessao_id: activeSession.id,
         status: "aguardando_finalizacao",
         total_segmentos: totalSegmentos ?? null,
