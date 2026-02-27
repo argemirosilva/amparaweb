@@ -1,44 +1,65 @@
 
 
-# Fallback de coordenadas no acionamento de panico
+## Ouvir o Panorama com Google Cloud TTS
 
-## Problema
-Quando o app iOS aciona panico, pode ainda nao ter enviado coordenadas nesse request (ou envia 0,0). O alerta fica registrado sem localizacao, mesmo que o ultimo ping ja tenha enviado GPS valido segundos antes.
+Adicionar um botao de audio no card "Como estou?" (MacroReportCard) que converte o texto do panorama narrativo em fala usando o Google Cloud Text-to-Speech.
 
-## Solucao
-Na funcao `handleAcionarPanico` do `mobile-api/index.ts`, apos extrair `latitude`/`longitude` do body, verificar se sao validas. Se nao forem (null, undefined, ou ambas zero), consultar a ultima localizacao valida da tabela `localizacoes` para aquele `user_id`.
+### O que muda para voce
 
-## Detalhes tecnicos
+- Um botao com icone de alto-falante aparece ao lado do titulo "Panorama" dentro do card "Como estou?"
+- Ao tocar, o texto e enviado para o Google e retorna como audio, tocando automaticamente
+- Enquanto carrega, o botao mostra um spinner; enquanto toca, mostra icone de "parar"
+- Tocar novamente para o audio
 
-### Arquivo: `supabase/functions/mobile-api/index.ts`
+### Plano tecnico
 
-Na funcao `handleAcionarPanico`, apos as linhas 1369-1370 (extracao de lat/lon do body), adicionar fallback:
+**1. Nova Edge Function `tts-panorama`**
+- Arquivo: `supabase/functions/tts-panorama/index.ts`
+- Recebe `{ text, session_token }` via POST
+- Valida sessao (reutiliza logica de hash de token existente)
+- Usa as credenciais GCP ja configuradas (`GCP_PROJECT_ID`, `GCP_CLIENT_EMAIL`, `GCP_PRIVATE_KEY`) para gerar JWT e autenticar com a API do Google Cloud
+- Chama `https://texttospeech.googleapis.com/v1/text:synthesize` com voz `pt-BR-Wavenet-A` (feminina, natural)
+- Retorna o audio base64 como `application/json` com o campo `audioContent`
+- CORS configurado para chamadas web
 
-```typescript
-const loc = body.localizacao as Record<string, unknown> | undefined;
-let latitude = (body.latitude ?? loc?.latitude) as number | undefined;
-let longitude = (body.longitude ?? loc?.longitude) as number | undefined;
+**2. Atualizar `supabase/config.toml`** (nao editavel diretamente, sera incluido automaticamente com o deploy)
+- Adicionar entrada `[functions.tts-panorama]` com `verify_jwt = false`
 
-// Fallback: if no valid coords from request, use latest known location from pings
-if (latitude == null || longitude == null || (latitude === 0 && longitude === 0)) {
-  const { data: lastLoc } = await supabase
-    .from("localizacoes")
-    .select("latitude, longitude")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+**3. Atualizar `MacroReportCard.tsx`**
+- Adicionar botao com icone `Volume2` (lucide) ao lado do titulo "Panorama"
+- Estados: idle, loading, playing
+- Ao clicar:
+  - Chama a edge function `tts-panorama` passando o texto do panorama e o `sessionToken`
+  - Decodifica o base64 retornado em um `AudioBuffer` ou usa `new Audio()` com data URI
+  - Reproduz o audio
+- Ao clicar novamente ou ao terminar: para a reproducao
+- Icones: `Volume2` (idle), `Loader2` (loading), `VolumeX` (playing/parar)
 
-  if (lastLoc && (lastLoc.latitude !== 0 || lastLoc.longitude !== 0)) {
-    latitude = lastLoc.latitude;
-    longitude = lastLoc.longitude;
-  }
-}
+### Fluxo
+
+```text
+Usuaria toca no botao de audio
+       |
+       v
+Frontend POST -> tts-panorama edge function
+       |
+       v
+Edge function autentica sessao
+       |
+       v
+Edge function gera JWT GCP -> chama Google TTS API
+       |
+       v
+Retorna audioContent (base64 MP3)
+       |
+       v
+Frontend decodifica e reproduz
 ```
 
-### Impacto
-- Contrato da API nao muda (mesmos campos de entrada e saida)
-- Se o app ja envia coordenadas validas, nada muda
-- Se nao envia, o alerta e a notificacao aos guardioes/COPOM ja saem com a localizacao mais recente disponivel
-- Retrocompativel com Android e futuras versoes do iOS
+### Arquivos envolvidos
+
+| Arquivo | Acao |
+|---|---|
+| `supabase/functions/tts-panorama/index.ts` | Criar |
+| `src/components/gravacoes/MacroReportCard.tsx` | Editar - adicionar botao TTS |
 
