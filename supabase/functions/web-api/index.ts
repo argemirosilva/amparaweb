@@ -1572,12 +1572,11 @@ serve(async (req) => {
         const duracaoMin = usr?.gps_duracao_minutos || 30;
         const expiraEm = new Date(Date.now() + duracaoMin * 60 * 1000).toISOString();
 
-        // Deactivate previous links
+        // Delete previous links
         await supabase
           .from("compartilhamento_gps")
-          .update({ ativo: false })
-          .eq("user_id", userId)
-          .eq("ativo", true);
+          .delete()
+          .eq("user_id", userId);
 
         // Generate 6-digit numeric code
         const arr = new Uint8Array(6);
@@ -1610,9 +1609,8 @@ serve(async (req) => {
       case "deactivateShareLink": {
         await supabase
           .from("compartilhamento_gps")
-          .update({ ativo: false })
-          .eq("user_id", userId)
-          .eq("ativo", true);
+          .delete()
+          .eq("user_id", userId);
         return json({ success: true });
       }
 
@@ -1902,10 +1900,10 @@ RETORNE APENAS JSON válido:
           .update({ is_recording: false, is_monitoring: false })
           .eq("user_id", userId);
 
-        // Deactivate GPS sharing linked to this alert
+        // Delete GPS sharing linked to this alert
         await supabase
           .from("compartilhamento_gps")
-          .update({ ativo: false })
+          .delete()
           .eq("user_id", userId)
           .eq("alerta_id", alerta.id);
 

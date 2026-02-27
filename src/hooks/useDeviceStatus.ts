@@ -102,9 +102,7 @@ export function useDeviceStatus(): DeviceStatusResult {
           .from("compartilhamento_gps")
           .select("codigo")
           .eq("user_id", usuario.id)
-          .eq("ativo", true)
           .eq("tipo", "panico")
-          .gte("expira_em", new Date().toISOString())
           .order("criado_em", { ascending: false })
           .limit(1)
           .maybeSingle(),
