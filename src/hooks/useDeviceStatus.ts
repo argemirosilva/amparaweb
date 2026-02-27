@@ -30,6 +30,7 @@ interface LocationData {
 export interface DeviceStatusResult {
   device: DeviceData | null;
   location: LocationData | null;
+  locationInterval: number | null;
   geo: GeoResult | null;
   addressLoading: boolean;
   loading: boolean;
@@ -41,6 +42,7 @@ export function useDeviceStatus(): DeviceStatusResult {
   const { usuario } = useAuth();
   const [device, setDevice] = useState<DeviceData | null>(null);
   const [location, setLocation] = useState<LocationData | null>(null);
+  const [locationInterval, setLocationInterval] = useState<number | null>(null);
   const [geo, setGeo] = useState<GeoResult | null>(null);
   const [addressLoading, setAddressLoading] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -64,8 +66,7 @@ export function useDeviceStatus(): DeviceStatusResult {
           .select("latitude, longitude, precisao_metros, created_at")
           .eq("user_id", usuario.id)
           .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle(),
+          .limit(2),
         supabase
           .from("alertas_panico")
           .select("id, criado_em")
@@ -101,6 +102,12 @@ export function useDeviceStatus(): DeviceStatusResult {
       if (deviceRes.error) throw deviceRes.error;
       if (locationRes.error) throw locationRes.error;
 
+      const locations = locationRes.data ?? [];
+      const latestLocation = locations[0] ?? null;
+      const interval = locations.length >= 2
+        ? Math.round((new Date(locations[0].created_at).getTime() - new Date(locations[1].created_at).getTime()) / 1000)
+        : null;
+
       // Derive actual states from multiple sources for accuracy
       // If device says recording but no pending gravacao exists, it already stopped
       const hasPendingRecording = !!recordingRes.data;
@@ -123,7 +130,8 @@ export function useDeviceStatus(): DeviceStatusResult {
           }
         : null;
       setDevice(deviceData);
-      setLocation(locationRes.data);
+      setLocation(latestLocation);
+      setLocationInterval(interval);
       setError(null);
       setLastFetch(new Date());
     } catch {
@@ -234,5 +242,5 @@ export function useDeviceStatus(): DeviceStatusResult {
     return () => clearInterval(id);
   }, [fetchData, isActive]);
 
-  return { device, location, geo, addressLoading, loading, error, lastFetch };
+  return { device, location, locationInterval, geo, addressLoading, loading, error, lastFetch };
 }
