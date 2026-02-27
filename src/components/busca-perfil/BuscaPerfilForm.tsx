@@ -142,14 +142,6 @@ export function BuscaPerfilForm({ onSubmit, loading }: Props) {
               <option value="sim">Sim</option>
               <option value="nao">Não</option>
             </select>
-            <select
-              className="ampara-input"
-              value={form.tem_arma} onChange={e => set("tem_arma", e.target.value)}
-            >
-              <option value="">Tem arma em casa? (não sei)</option>
-              <option value="sim">Sim</option>
-              <option value="nao">Não</option>
-            </select>
             <input
               type="text" className="ampara-input"
               placeholder="Xingamentos que ele costuma usar (separe por vírgula)"
