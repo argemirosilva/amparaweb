@@ -1366,8 +1366,24 @@ async function handleAcionarPanico(
   const tipoAcionamento = (body.tipo_acionamento as string) || "botao_panico";
   // Accept coordinates from body.latitude/longitude OR body.localizacao.latitude/longitude
   const loc = body.localizacao as Record<string, unknown> | undefined;
-  const latitude = (body.latitude ?? loc?.latitude) as number | undefined;
-  const longitude = (body.longitude ?? loc?.longitude) as number | undefined;
+  let latitude = (body.latitude ?? loc?.latitude) as number | undefined;
+  let longitude = (body.longitude ?? loc?.longitude) as number | undefined;
+
+  // Fallback: if no valid coords from request, use latest known location from pings
+  if (latitude == null || longitude == null || (latitude === 0 && longitude === 0)) {
+    const { data: lastLoc } = await supabase
+      .from("localizacoes")
+      .select("latitude, longitude")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (lastLoc && (lastLoc.latitude !== 0 || lastLoc.longitude !== 0)) {
+      latitude = lastLoc.latitude;
+      longitude = lastLoc.longitude;
+    }
+  }
 
   const { data: alerta } = await supabase
     .from("alertas_panico")
