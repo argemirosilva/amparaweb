@@ -178,7 +178,7 @@ serve(async (req) => {
     const { data: orphanSessions } = await supabase
       .from("monitoramento_sessoes")
       .select("id, user_id")
-      .eq("status", "ativa")
+      .in("status", ["ativa", "aguardando_dispositivo"])
       .lt("created_at", orphanCutoff);
 
     if (orphanSessions && orphanSessions.length > 0) {
@@ -220,11 +220,69 @@ serve(async (req) => {
       }
     }
 
-    // ── Step 1: Expire active sessions whose window_end_at has passed ──
+    // ── Step 0b: Auto-expire sessions paused by interruption > 5 min ──
+    // These are ativa sessions where is_recording=false for > 5 min (pausada_interrupcao)
+    const interruptCutoff = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+    const { data: pausedDevices } = await supabase
+      .from("device_status")
+      .select("user_id, device_id")
+      .eq("is_recording", false)
+      .eq("is_monitoring", false)
+      .lt("updated_at", interruptCutoff);
+
+    if (pausedDevices && pausedDevices.length > 0) {
+      for (const dev of pausedDevices) {
+        // Find ativa sessions for this user+device that have segments (not orphans)
+        const { data: pausedSessions } = await supabase
+          .from("monitoramento_sessoes")
+          .select("id, user_id")
+          .eq("user_id", dev.user_id)
+          .eq("device_id", dev.device_id)
+          .eq("status", "ativa");
+
+        if (pausedSessions) {
+          for (const session of pausedSessions) {
+            // Check last segment time
+            const { data: lastSeg } = await supabase
+              .from("gravacoes_segmentos")
+              .select("created_at")
+              .eq("monitor_session_id", session.id)
+              .order("created_at", { ascending: false })
+              .limit(1)
+              .maybeSingle();
+
+            if (lastSeg && lastSeg.created_at < interruptCutoff) {
+              const now = new Date().toISOString();
+              await supabase
+                .from("monitoramento_sessoes")
+                .update({
+                  status: "aguardando_finalizacao",
+                  closed_at: now,
+                  sealed_reason: "interrupcao_timeout",
+                  finalizado_em: now,
+                })
+                .eq("id", session.id);
+
+              await supabase.from("audit_logs").insert({
+                user_id: session.user_id,
+                action_type: "session_sealed",
+                success: true,
+                details: { session_id: session.id, sealed_reason: "interrupcao_timeout" },
+              });
+
+              results.push({ action: "interrupcao_timeout", session_id: session.id });
+              console.log(`Auto-expired interrupted session ${session.id} (paused > 5min)`);
+            }
+          }
+        }
+      }
+    }
+
+    // ── Step 1: Expire active/aguardando sessions whose window_end_at has passed ──
     const { data: expiredSessions } = await supabase
       .from("monitoramento_sessoes")
       .select("id, user_id")
-      .eq("status", "ativa")
+      .in("status", ["ativa", "aguardando_dispositivo"])
       .not("window_end_at", "is", null)
       .lt("window_end_at", new Date().toISOString());
 

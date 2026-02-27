@@ -2126,9 +2126,31 @@ async function handleReportarStatusGravacao(
 
   if (!statusGravacao) return errorResponse("status_gravacao obrigatório", 400);
 
-  const validStatuses = ["iniciada", "pausada", "retomada", "finalizada", "enviando", "erro"];
+  const validStatuses = ["iniciada", "pausada", "retomada", "finalizada", "enviando", "erro", "pausada_interrupcao", "retomada_interrupcao"];
   if (!validStatuses.includes(statusGravacao)) {
     return errorResponse(`status_gravacao inválido. Valores aceitos: ${validStatuses.join(", ")}`, 400);
+  }
+
+  // ── Idempotency check ──
+  const idempotencyKey = body.idempotency_key as string | undefined;
+  if (idempotencyKey) {
+    const { data: existingLog } = await supabase
+      .from("audit_logs")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("action_type", "reportar_status_gravacao")
+      .contains("details", { idempotency_key: idempotencyKey })
+      .limit(1)
+      .maybeSingle();
+
+    if (existingLog) {
+      return jsonResponse({
+        success: true,
+        message: "Requisição já processada (idempotente)",
+        idempotency_key: idempotencyKey,
+        servidor_timestamp: new Date().toISOString(),
+      });
+    }
   }
 
   const validOrigens = ["automatico", "botao_panico", "agendado", "comando_voz", "botao_manual"];
@@ -2394,7 +2416,7 @@ async function handleReportarStatusGravacao(
 
   // ── Status update for device ──
   if (deviceId) {
-    const isRecording = ["iniciada", "retomada", "enviando"].includes(statusGravacao);
+    const isRecording = ["iniciada", "retomada", "enviando", "retomada_interrupcao"].includes(statusGravacao);
     await supabase
       .from("device_status")
       .update({ is_recording: isRecording })
@@ -2407,7 +2429,7 @@ async function handleReportarStatusGravacao(
     action_type: "reportar_status_gravacao",
     success: true,
     ip_address: ip,
-    details: { status_gravacao: statusGravacao, origem_gravacao: origemGravacao, motivo_parada: motivoParada, device_id: deviceId },
+    details: { status_gravacao: statusGravacao, origem_gravacao: origemGravacao, motivo_parada: motivoParada, device_id: deviceId, ...(idempotencyKey ? { idempotency_key: idempotencyKey } : {}) },
   });
 
   return jsonResponse({
