@@ -1,64 +1,45 @@
 
 
-## Corrigir: Uma sessao por dispositivo — novo dispositivo mata a anterior
+## Mostrar indicador de gravacao junto com o banner de panico
 
-### Problema identificado
+### Problema
 
-Na logica de `syncConfigMobile` (linha 793-838), quando o horario esta dentro de um periodo agendado e ja existe uma sessao ativa, o codigo simplesmente reutiliza o `sessaoId` da sessao existente — **mesmo que ela pertenca a um dispositivo diferente**.
+Duas causas impedem o label "Gravando" de aparecer durante panico ativo:
 
-```text
-Fluxo atual (bugado):
-  novo device pinga -> dentro do horario? -> existe sessao ativa? -> SIM -> reutiliza sessao (mesmo de outro device)
+1. **Frontend** (`DeviceStatusCard.tsx`, linha 179): a condicao `&& !panicActive` esconde o indicador de gravacao/monitoramento quando ha panico ativo
+2. **Backend** (`handleAcionarPanico`): ao acionar panico, o `device_status` e resetado com `is_monitoring: false`, fazendo o frontend achar que nao ha atividade — mesmo que a sessao de monitoramento exista no banco
 
-Fluxo correto:
-  novo device pinga -> dentro do horario? -> existe sessao ativa?
-    -> SIM, mesmo device -> reutiliza
-    -> SIM, outro device -> sela a antiga, reseta flags do device antigo, cria nova sessao
-    -> NAO -> cria nova sessao
+### Correcoes
+
+#### 1. Frontend: Remover filtro `!panicActive` do indicador
+
+No `DeviceStatusCard.tsx`, linha 179, mudar:
+
 ```
-
-### Correcao
-
-**Arquivo:** `supabase/functions/mobile-api/index.ts`
-
-Na secao de `syncConfigMobile` (~linhas 793-838), alterar o bloco `else` (quando `existingSession` existe) para verificar se o `device_id` da sessao existente e diferente do device atual. Se for diferente:
-
-1. Chamar `sealAllActiveSessions(supabase, user.id, "device_rotation", ip)` para selar a sessao antiga
-2. Resetar os flags `is_recording` e `is_monitoring` do device antigo no `device_status`
-3. Criar uma nova sessao para o novo dispositivo
-
-Se for o mesmo device, manter o comportamento atual (reutilizar a sessao).
-
-### Secao Tecnica
-
-**Unico arquivo modificado:** `supabase/functions/mobile-api/index.ts`
-
-Trecho a alterar (linhas ~836-838):
-
-De:
-```typescript
-} else {
-  sessaoId = existingSession.id;
-}
+(device?.is_recording || device?.is_monitoring) && !panicActive
 ```
 
 Para:
-```typescript
-} else if (existingSession.device_id === deviceId) {
-  // Same device — reuse session
-  sessaoId = existingSession.id;
-} else {
-  // Different device — seal old session and create new one
-  await sealAllActiveSessions(supabase, user.id, "device_rotation");
-  // Reset old device flags
-  await supabase
-    .from("device_status")
-    .update({ is_recording: false, is_monitoring: false })
-    .eq("user_id", user.id)
-    .neq("device_id", deviceId);
-  // Create new session for new device (same logic as !existingSession block above)
-  // ... (replicar criacao de sessao com window_start/end)
-}
+
+```
+(device?.is_recording || device?.is_monitoring)
 ```
 
-A logica de criacao da nova sessao sera identica ao bloco ja existente (linhas 804-835), apenas replicada no novo branch.
+E ajustar o posicionamento (`top`) para que o indicador apareca abaixo do banner de panico quando ambos estao ativos (ja existe logica parcial para isso com `panicActive ? "top-[24px]" : "top-0"`).
+
+#### 2. Backend: Nao resetar `is_monitoring` ao acionar panico
+
+No `handleAcionarPanico` do `mobile-api/index.ts`, remover o update que seta `is_monitoring: false` no `device_status`. O panico cria sua propria sessao de monitoramento — resetar o flag contradiz isso.
+
+Manter apenas o `sealAllActiveSessions` para fechar sessoes anteriores (de agendamento/manual), mas a nova sessao de panico que e criada pelo `reportarStatusGravacao` deve poder setar os flags normalmente.
+
+#### 3. Backend: Garantir que `reportarStatusGravacao` com origem panico sete os flags
+
+Verificar que quando o dispositivo reporta `status: "iniciada"` com `origem: "botao_panico"`, os flags `is_recording: true` e/ou `is_monitoring: true` sao setados no `device_status`.
+
+### Secao Tecnica
+
+**Arquivos modificados:**
+- `src/components/dashboard/DeviceStatusCard.tsx` — Remover `&& !panicActive` da condicao de exibicao do indicador (linha 179)
+- `supabase/functions/mobile-api/index.ts` — Em `handleAcionarPanico`, remover o reset de `is_monitoring: false` no device_status
+
