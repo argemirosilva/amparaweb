@@ -312,8 +312,11 @@ export default function DeviceStatusCard() {
                     <Ear className="relative w-3 h-3 text-emerald-500" />
                   </span>
                 </TooltipTrigger>
-                <TooltipContent side="bottom" className="max-w-[200px] text-center">
-                  <p className="text-xs">Monitoramento ativo — escutando o ambiente</p>
+                <TooltipContent side="bottom" className="max-w-[240px] text-center space-y-1 py-2">
+                  <p className="text-xs font-semibold">Monitoramento ativo</p>
+                  <p className="text-[11px] text-muted-foreground leading-snug">
+                    O dispositivo está escutando o ambiente em busca de situações de perigo, conforme o cronograma de segurança configurado.
+                  </p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
