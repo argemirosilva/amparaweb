@@ -1404,8 +1404,35 @@ async function handleAcionarPanico(
   // Seal any active monitoring sessions — panic takes priority
   await sealAllActiveSessions(supabase, user.id, "panico_acionado", ip);
 
-  // Do NOT reset is_monitoring here — the panic session created by reportarStatusGravacao
-  // will set is_recording/is_monitoring flags. Resetting them here would hide the indicator.
+  // Immediately create a new panic session so segments arriving have an active session
+  const deviceId = body.device_id as string || null;
+  const { data: panicSession } = await supabase
+    .from("monitoramento_sessoes")
+    .insert({
+      user_id: user.id,
+      device_id: deviceId,
+      status: "ativa",
+      origem: "botao_panico",
+    })
+    .select("id")
+    .single();
+
+  if (panicSession) {
+    console.log(`Created panic monitoring session ${panicSession.id} for user ${user.id}`);
+    await supabase.from("audit_logs").insert({
+      user_id: user.id,
+      action_type: "session_created",
+      success: true,
+      ip_address: ip,
+      details: { session_id: panicSession.id, origem: "botao_panico", trigger: "panico_acionado" },
+    });
+  }
+
+  // Set recording flags on device
+  await supabase
+    .from("device_status")
+    .update({ is_recording: true, is_monitoring: true })
+    .eq("user_id", user.id);
 
   if (latitude !== undefined && longitude !== undefined) {
     await supabase.from("localizacoes").insert({
@@ -1660,8 +1687,8 @@ async function handleReceberAudio(
   const { data: activeSession } = await sessionQuery.maybeSingle();
 
   if (!activeSession) {
-    // ── GRACE WINDOW: try to attach to a recently-sealed session (≤60s) ──
-    const graceCutoff = new Date(Date.now() - 60_000).toISOString();
+    // ── GRACE WINDOW: try to attach to a recently-sealed session (≤120s) ──
+    const graceCutoff = new Date(Date.now() - 120_000).toISOString();
     let recentQuery = supabase
       .from("monitoramento_sessoes")
       .select("id")
