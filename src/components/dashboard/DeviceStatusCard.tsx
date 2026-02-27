@@ -217,28 +217,24 @@ export default function DeviceStatusCard() {
         </p>
 
         {/* Status badge row */}
-        <div className="flex items-center justify-between gap-2">
-          {/* Status badge + battery */}
-          <div className="flex items-center gap-2">
-            <span
-              className={`inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full shrink-0 ${
-                online
-                  ? "bg-emerald-500/10 text-emerald-600"
-                  : "bg-muted text-muted-foreground"
-              }`}
-            >
-              {online ? <Wifi className="w-2 h-2" /> : <WifiOff className="w-2 h-2" />}
-              {online ? "Online" : "Offline"}
+        <div className="flex items-center gap-2">
+          <span
+            className={`inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full shrink-0 ${
+              online
+                ? "bg-emerald-500/10 text-emerald-600"
+                : "bg-muted text-muted-foreground"
+            }`}
+          >
+            {online ? <Wifi className="w-2 h-2" /> : <WifiOff className="w-2 h-2" />}
+            {online ? "Online" : "Offline"}
+          </span>
+          {device && online && <BatteryIndicator percent={device.bateria_percentual} charging={device.is_charging} />}
+          {device && !online && (
+            <span className="inline-flex items-center gap-0.5">
+              <BatteryLow className="w-4.5 h-4.5 text-muted-foreground" />
             </span>
-            {device && online && <BatteryIndicator percent={device.bateria_percentual} charging={device.is_charging} />}
-            {device && !online && (
-              <span className="inline-flex items-center gap-0.5">
-                <BatteryLow className="w-4.5 h-4.5 text-muted-foreground" />
-              </span>
-            )}
-          </div>
-
-          {/* GPS button */}
+          )}
+          {/* GPS */}
           {(() => {
             const recentGps = location?.created_at
               ? Date.now() - new Date(location.created_at).getTime() < 330_000
@@ -246,14 +242,14 @@ export default function DeviceStatusCard() {
             return (
               <button
                 onClick={() => navigate("/mapa")}
-                className={`inline-flex items-center gap-1 text-[10px] font-medium transition-colors ${
+                className={`inline-flex items-center gap-0.5 text-[10px] font-medium transition-colors ${
                   !online
                     ? "text-muted-foreground"
                     : panicActive
                       ? "text-destructive"
                       : recentGps
-                        ? "text-blue-500"
-                        : "text-primary hover:text-primary/80"
+                        ? "text-emerald-500"
+                        : "text-muted-foreground"
                 }`}
                 title="Ver localização"
               >
