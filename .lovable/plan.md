@@ -1,26 +1,31 @@
 
-# Adicionar Modo Direcionado ao Gerador de Audios
 
-## Problema
-O gerador de audios esta com `randomMode = true` fixo (hardcoded), impossibilitando direcionar a geracao para uma usuaria especifica como "Ana Paula". Para testar o relatorio "Como estou?", precisamos gerar audios concentrados em uma unica usuaria.
+# Tooltip no GPS com Status e Intervalo de Atualizacao
 
-## Mudancas
+## O que muda
 
-### 1. Tornar `randomMode` um estado togglevel (`src/pages/admin/AdminGeradorAudios.tsx`)
+### 1. Hook `useDeviceStatus` -- buscar 2 ultimas localizacoes
+- Alterar a query de `localizacoes` para buscar `limit(2)` em vez de `limit(1)`
+- Expor um novo campo `locationInterval` (em segundos) calculado pela diferenca entre `created_at` das 2 ultimas localizacoes
+- Manter `location` como a mais recente (sem breaking change)
 
-- Trocar `const randomMode = true` por `const [randomMode, setRandomMode] = useState(true)`
-- Adicionar um toggle (Switch) na UI para alternar entre "Aleatorio" e "Direcionado"
-- Quando em modo direcionado, exibir:
-  - Seletor de usuaria (ja existe `targetUserId` e `usuarios` no state)
-  - Seletor de tipo de audio (violencia / briga saudavel) -- ja existe `audioMode`
-- O card de info no topo muda conforme o modo selecionado
-
-### 2. UI do modo direcionado
-- Mostrar um card com o selector de usuaria (dropdown com nome + email)
-- Mostrar selector de tipo de audio
-- O botao de gerar mostra o nome da usuaria selecionada
+### 2. Componente `DeviceStatusCard` -- adicionar Tooltip no GPS
+- Importar `Tooltip, TooltipTrigger, TooltipContent, TooltipProvider` de `@/components/ui/tooltip`
+- Envolver o botao GPS com o Tooltip
+- Conteudo do tooltip:
+  - **Verde (GPS recente)**: "Localizacao ativa -- atualizando a cada ~Xs"
+  - **Cinza (GPS desatualizado/offline)**: "Sem atualizacao recente de GPS" com o tempo desde a ultima posicao
 
 ### Detalhes tecnicos
-- Linha 112: `const randomMode = true` vira `const [randomMode, setRandomMode] = useState(true)`
-- Adicionar card condicional com Select de usuario e Select de audioMode quando `!randomMode`
-- A logica de `handleStart` ja suporta ambos os modos (linhas 171-250), so precisa do toggle na UI
+
+**`src/hooks/useDeviceStatus.ts`**:
+- Query de localizacoes passa de `.limit(1).maybeSingle()` para `.limit(2)`
+- Calcula intervalo: `locations[0].created_at - locations[1].created_at` em segundos
+- Adiciona `locationInterval: number | null` ao retorno
+
+**`src/components/dashboard/DeviceStatusCard.tsx`**:
+- Importa componentes de Tooltip
+- Envolve o botao GPS existente com `TooltipProvider > Tooltip > TooltipTrigger/TooltipContent`
+- Formata intervalo: "a cada ~30s", "a cada ~1min", etc.
+- Texto contextual baseado no estado (verde/cinza/vermelho)
+
