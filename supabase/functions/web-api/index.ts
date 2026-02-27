@@ -71,12 +71,12 @@ Dado os critérios de busca da usuária e uma lista de candidatos do banco de da
     - Cor/raça bate +8, escolaridade bate +6
     - Xingamentos coincidem +15 (padrão comportamental forte)
     - Conflitos fortes: -25 a -40
-2. Converter score em probabilidade (max 99%): >=85→90-99%, 70-84→70-89%, 55-69→50-69%, 40-54→30-49%, 25-39→15-29%, <25→<15%
-3. Para cada candidato, listar match_breakdown com status (completo/parcial/nao_bateu/conflitante)
+ 2. Converter score em probabilidade (max 85%): >=85→70-85%, 70-84→55-69%, 55-69→40-54%, 40-54→25-39%, 25-39→10-24%, <25→<10%. NUNCA atribua probabilidade acima de 85% — dados parciais jamais permitem certeza. Seja CONSERVADOR: na dúvida, reduza a probabilidade.
+ 3. Para cada candidato, listar match_breakdown com status (completo/parcial/nao_bateu/conflitante)
  4. Calcular risk_level (Baixo/Médio/Alto/Crítico) e violence_probabilities com base nos incidents e violence_profile_probs do candidato.
    IMPORTANTE: violence_probabilities DEVE ser sempre preenchido com os tipos: psicologica, moral, patrimonial, fisica, sexual, ameaca_perseguicao.
    Os valores devem ser DIFERENCIADOS e realistas — NÃO coloque todos iguais. Use os dados de incidentes, xingamentos, flags e violence_profile_probs para variar. Ex: se há xingamentos frequentes, psicologica e moral devem ser mais altos que fisica. Se há ameaças, ameaca_perseguicao deve ser mais alto. Se não há dados suficientes, use o risk_level para estimar com variação (ex: Baixo → 5-15% variando por tipo, Alto → 40-70% variando).
-5. Retornar SOMENTE os top 5 com probabilidade >= 30%, ordenados por probabilidade. Se nenhum atingir 30%, retorne array vazio.
+ 5. Retornar SOMENTE os top 5 com probabilidade >= 25%, ordenados por probabilidade. Se nenhum atingir 25%, retorne array vazio.
 
 RETORNE APENAS JSON válido com a estrutura:
 {
@@ -615,7 +615,7 @@ serve(async (req) => {
           // Filter by minimum probability threshold
           if (aiResult.results) {
             aiResult.results = aiResult.results
-              .filter((r: any) => r.probability_percent >= 30)
+              .filter((r: any) => r.probability_percent >= 25)
               .slice(0, 5);
           }
           return json({ success: true, ...aiResult });
@@ -672,7 +672,7 @@ serve(async (req) => {
               flags: c.flags || [],
             };
           });
-          const filtered = fallbackResults.filter((r: any) => r.probability_percent >= 30).slice(0, 5);
+          const filtered = fallbackResults.filter((r: any) => r.probability_percent >= 25).slice(0, 5);
           return json({ success: true, results: filtered, query_summary: searchInput });
         }
       }
