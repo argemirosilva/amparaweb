@@ -189,7 +189,7 @@ export default function GravacoesPage() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
-  const [deviceFilter, setDeviceFilter] = useState("all");
+  
   const perPage = 15;
 
   // Debounce search text
@@ -259,9 +259,8 @@ export default function GravacoesPage() {
     if (debouncedSearch) p.search_text = debouncedSearch;
     if (dateFrom) p.date_from = dateFrom;
     if (dateTo) p.date_to = dateTo;
-    if (deviceFilter && deviceFilter !== "all") p.device_type = deviceFilter;
     return p;
-  }, [page, filterRisco, debouncedSearch, dateFrom, dateTo, deviceFilter]);
+  }, [page, filterRisco, debouncedSearch, dateFrom, dateTo]);
 
   const loadData = useCallback(async () => {
     if (!sessionToken) return;
@@ -372,10 +371,8 @@ export default function GravacoesPage() {
         onDateFromChange={(v) => { setDateFrom(v); setPage(1); }}
         dateTo={dateTo}
         onDateToChange={(v) => { setDateTo(v); setPage(1); }}
-        deviceFilter={deviceFilter}
-        onDeviceFilterChange={(v) => { setDeviceFilter(v); setPage(1); }}
-        onClear={() => { setSearchText(""); setDateFrom(""); setDateTo(""); setDeviceFilter("all"); setPage(1); }}
-        hasActiveFilters={!!searchText || !!dateFrom || !!dateTo || (deviceFilter !== "all")}
+        onClear={() => { setSearchText(""); setDateFrom(""); setDateTo(""); setPage(1); }}
+        hasActiveFilters={!!searchText || !!dateFrom || !!dateTo}
       />
 
       {/* Content */}
