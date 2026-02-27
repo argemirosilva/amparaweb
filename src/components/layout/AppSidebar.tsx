@@ -78,6 +78,12 @@ export default function AppSidebar() {
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
+            <SidebarMenuButton onClick={() => navigate("/support")}>
+              <Headset className="w-5 h-5 shrink-0 text-muted-foreground" />
+              <span className="group-data-[collapsible=icon]:hidden text-muted-foreground">Suporte</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
             <SidebarMenuButton onClick={handleLogout}>
               <LogOut className="w-5 h-5 shrink-0 text-destructive" />
               <span className="group-data-[collapsible=icon]:hidden text-destructive">Sair</span>
