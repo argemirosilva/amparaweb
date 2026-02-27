@@ -1405,12 +1405,21 @@ async function handleAcionarPanico(
   await sealAllActiveSessions(supabase, user.id, "panico_acionado", ip);
 
   // Immediately create a new panic session so segments arriving have an active session
-  const deviceId = body.device_id as string || null;
+  // Use the BOUND device_id from device_status, not body.device_id (which may differ)
+  const { data: boundDevice } = await supabase
+    .from("device_status")
+    .select("device_id")
+    .eq("user_id", user.id)
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const panicDeviceId = boundDevice?.device_id || (body.device_id as string) || null;
   const { data: panicSession } = await supabase
     .from("monitoramento_sessoes")
     .insert({
       user_id: user.id,
-      device_id: deviceId,
+      device_id: panicDeviceId,
       status: "ativa",
       origem: "botao_panico",
     })
