@@ -73,9 +73,7 @@ Dado os critérios de busca da usuária e uma lista de candidatos do banco de da
     - Conflitos fortes: -25 a -40
  2. Converter score em probabilidade (max 85%): >=85→70-85%, 70-84→55-69%, 55-69→40-54%, 40-54→25-39%, 25-39→10-24%, <25→<10%. NUNCA atribua probabilidade acima de 85% — dados parciais jamais permitem certeza. Seja CONSERVADOR: na dúvida, reduza a probabilidade.
  3. Para cada candidato, listar match_breakdown com status (completo/parcial/nao_bateu/conflitante)
- 4. Calcular risk_level (Baixo/Médio/Alto/Crítico) e violence_probabilities com base nos incidents e violence_profile_probs do candidato.
-   IMPORTANTE: violence_probabilities DEVE ser sempre preenchido com os tipos: psicologica, moral, patrimonial, fisica, sexual, ameaca_perseguicao.
-   Os valores devem ser DIFERENCIADOS e realistas — NÃO coloque todos iguais. Use os dados de incidentes, xingamentos, flags e violence_profile_probs para variar. Ex: se há xingamentos frequentes, psicologica e moral devem ser mais altos que fisica. Se há ameaças, ameaca_perseguicao deve ser mais alto. Se não há dados suficientes, use o risk_level para estimar com variação (ex: Baixo → 5-15% variando por tipo, Alto → 40-70% variando).
+  4. Calcular risk_level (Baixo/Médio/Alto/Crítico) com base nos incidents e flags do candidato. NÃO calcule violence_probabilities — elas serão preenchidas automaticamente pelo sistema a partir dos dados armazenados.
  5. Retornar SOMENTE os top 5 com probabilidade >= 25%, ordenados por probabilidade. Se nenhum atingir 25%, retorne array vazio.
 
 RETORNE APENAS JSON válido com a estrutura:
@@ -90,7 +88,7 @@ RETORNE APENAS JSON válido com a estrutura:
     "weak_signals": ["string"],
     "conflicts": ["string"],
     "risk_level": "Baixo|Médio|Alto|Crítico",
-    "violence_probabilities": {"psicologica": number, "moral": number, "patrimonial": number, "fisica": number, "sexual": number, "ameaca_perseguicao": number},
+    "violence_probabilities": {},
     "explanation_short": "string",
     "guidance": ["string"],
     "forca_seguranca": boolean_or_null,
@@ -610,13 +608,34 @@ serve(async (req) => {
           })),
         }));
 
+        // Deterministic fallback for violence_probabilities based on risk_level
+        const defaultViolenceProbsByLevel: Record<string, Record<string, number>> = {
+          baixo:   { psicologica: 10, moral: 8, patrimonial: 5, fisica: 3, sexual: 2, ameaca_perseguicao: 5 },
+          medio:   { psicologica: 35, moral: 25, patrimonial: 20, fisica: 15, sexual: 8, ameaca_perseguicao: 20 },
+          alto:    { psicologica: 55, moral: 40, patrimonial: 30, fisica: 35, sexual: 15, ameaca_perseguicao: 45 },
+          critico: { psicologica: 75, moral: 55, patrimonial: 40, fisica: 60, sexual: 25, ameaca_perseguicao: 65 },
+        };
+
+        // Helper to get stored violence probs or deterministic fallback
+        const getStoredViolenceProbs = (candidateId: string) => {
+          const candidate = candidates.find((c: any) => c.id === candidateId);
+          if (!candidate) return defaultViolenceProbsByLevel["baixo"];
+          const stored = candidate.violence_profile_probs;
+          if (stored && typeof stored === "object" && Object.keys(stored).length > 0) return stored;
+          return defaultViolenceProbsByLevel[(candidate.risk_level || "baixo").toLowerCase()] || defaultViolenceProbsByLevel["baixo"];
+        };
+
         try {
           const aiResult = await rankCandidatesWithAI(searchInput, candidateSummaries);
-          // Filter by minimum probability threshold
+          // Filter by minimum probability threshold and override violence_probabilities
           if (aiResult.results) {
             aiResult.results = aiResult.results
               .filter((r: any) => r.probability_percent >= 25)
-              .slice(0, 5);
+              .slice(0, 5)
+              .map((r: any) => ({
+                ...r,
+                violence_probabilities: getStoredViolenceProbs(r.profile_id),
+              }));
           }
           return json({ success: true, ...aiResult });
         } catch (e) {
