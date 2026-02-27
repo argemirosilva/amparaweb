@@ -146,11 +146,6 @@ export function BuscaPerfilForm({ onSubmit, loading }: Props) {
               <option value="sim">Sim</option>
               <option value="nao">Não</option>
             </select>
-            <input
-              type="text" className="ampara-input"
-              placeholder="Xingamentos que ele costuma usar (separe por vírgula)"
-              value={form.xingamentos} onChange={e => set("xingamentos", e.target.value)} maxLength={200}
-            />
           </div>
         </>
       )}
