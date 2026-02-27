@@ -1,38 +1,18 @@
 
 
-## Tornar pingMobile read-only para vinculo de dispositivo
+## Tornar pingMobile e syncConfigMobile read-only
 
-### Problema atual
-O `handlePing` ainda faz rotacao de dispositivo quando nao ha sessao ativa. Dois dispositivos com device_ids diferentes (`af9a2be7...` e `37CA6534...`) ficam alternando pings, e como nao ha sessao ativa no momento, cada ping deleta o outro e se registra. Isso cria um loop de rotacao infinito que impede gravacoes de funcionar.
+### Status: ✅ Implementado
 
-### Mudanca proposta
+### Mudanças realizadas
 
-**Arquivo:** `supabase/functions/mobile-api/index.ts` (handlePing, linhas ~616-673)
+**1. pingMobile** — Tornado read-only para vínculo de dispositivo:
+- Se o `device_id` do ping já está registrado: atualiza normalmente.
+- Se o `device_id` NÃO está registrado: ignora silenciosamente, retorna `{ success: true, skipped: true, status: "device_not_bound" }`.
+- O vínculo de dispositivo só acontece no login.
 
-Substituir toda a logica do bloco `else` (quando `existing` e null, ou seja, device_id nao esta registrado) por um comportamento puramente passivo:
-
-- Se o `device_id` do ping ja esta registrado para o usuario: **atualizar** normalmente (como ja faz).
-- Se o `device_id` NAO esta registrado: **ignorar silenciosamente** o ping. Retornar `{ success: true, skipped: true, status: "device_not_bound" }`. Nao deletar, nao inserir, nao rotacionar.
-
-O vinculo de dispositivo so deve acontecer no **login** (handleLogin). O ping nunca altera quem e o dispositivo ativo.
-
-### Secao tecnica
-
-**Arquivo modificado:** `supabase/functions/mobile-api/index.ts`
-
-Bloco a substituir (linhas 621-673 aproximadamente):
-
-```text
-ANTES (else branch):
-  - Consulta currentDevice
-  - Consulta activeSession e activePanic
-  - Se sessao ativa: ignora (ja implementado)
-  - Se nao: deleta device antigo, insere novo
-
-DEPOIS (else branch):
-  - Log: "Ping from unbound device {deviceId}, ignoring"
-  - Return jsonResponse({ success: true, skipped: true, status: "device_not_bound", message: "Dispositivo nao vinculado - faca login para vincular" })
-```
-
-Isso elimina completamente a rotacao de dispositivo no ping, tornando-o read-only no que diz respeito ao vinculo. O login ja insere o device_status corretamente.
-
+**2. syncConfigMobile** — Tornado read-only para sessões de monitoramento:
+- Removida toda a lógica de criação automática de sessões (`origem: automatico`).
+- Removida a rotação de dispositivos (que usava `ip` inexistente, causando `ReferenceError`).
+- Agora apenas consulta se existe uma sessão ativa e retorna o `sessao_id`.
+- A criação de sessões acontece exclusivamente via `reportarStatusGravacao` / `reportarStatusMonitoramento`.
