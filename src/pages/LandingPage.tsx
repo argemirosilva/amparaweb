@@ -440,8 +440,8 @@ export default function LandingPage() {
           <div className="grid md:grid-cols-2 gap-6 mt-12">
             {/* Card: Para você */}
             <div className="rounded-2xl p-7 bg-white border border-border hover:shadow-xl transition-all duration-300 group flex flex-col">
-              <div className="w-14 h-14 rounded-2xl bg-rose-100 flex items-center justify-center mb-5 group-hover:bg-rose-200 transition-colors">
-                <Heart className="w-7 h-7 text-rose-600" />
+              <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-5 group-hover:bg-primary/15 transition-colors">
+                <Heart className="w-7 h-7 text-primary" />
               </div>
               <h3 className="text-lg md:text-xl font-bold text-foreground mb-2">O que isso muda na sua vida</h3>
               <p className="text-sm text-muted-foreground leading-relaxed mb-4">
@@ -449,15 +449,15 @@ export default function LandingPage() {
               </p>
               <ul className="space-y-3 mt-auto">
                 <li className="flex items-start gap-2 text-sm text-muted-foreground">
-                  <Check className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+                   <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                   <span>Suas provas ficam guardadas com segurança e podem te ajudar na justiça</span>
                 </li>
                 <li className="flex items-start gap-2 text-sm text-muted-foreground">
-                  <Check className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+                   <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                   <span>Quanto mais mulheres usam, mais o sistema aprende a proteger melhor</span>
                 </li>
                 <li className="flex items-start gap-2 text-sm text-muted-foreground">
-                  <Check className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+                  <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                   <span>Você faz parte de algo maior: ajuda outras mulheres sem se expor</span>
                 </li>
               </ul>
@@ -465,8 +465,8 @@ export default function LandingPage() {
 
             {/* Card: Para o poder público */}
             <div className="rounded-2xl p-7 bg-white border border-border hover:shadow-xl transition-all duration-300 group flex flex-col">
-              <div className="w-14 h-14 rounded-2xl bg-sky-100 flex items-center justify-center mb-5 group-hover:bg-sky-200 transition-colors">
-                <Database className="w-7 h-7 text-sky-600" />
+              <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-5 group-hover:bg-primary/15 transition-colors">
+                <Database className="w-7 h-7 text-primary" />
               </div>
               <h3 className="text-lg md:text-xl font-bold text-foreground mb-2">O que isso muda no Brasil</h3>
               <p className="text-sm text-muted-foreground leading-relaxed mb-4">
@@ -474,15 +474,15 @@ export default function LandingPage() {
               </p>
               <ul className="space-y-3 mt-auto">
                 <li className="flex items-start gap-2 text-sm text-muted-foreground">
-                  <Check className="w-4 h-4 text-sky-500 shrink-0 mt-0.5" />
+                   <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                   <span>Dados disponíveis em tempo real para órgãos públicos e ONGs — não mais com atraso de meses ou anos</span>
                 </li>
                 <li className="flex items-start gap-2 text-sm text-muted-foreground">
-                  <Check className="w-4 h-4 text-sky-500 shrink-0 mt-0.5" />
+                   <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                   <span>Políticas públicas criadas com base em dados concretos e atualizados</span>
                 </li>
                 <li className="flex items-start gap-2 text-sm text-muted-foreground">
-                  <Check className="w-4 h-4 text-sky-500 shrink-0 mt-0.5" />
+                  <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                   <span>Delegacias, abrigos e serviços direcionados para onde mais se precisa</span>
                 </li>
               </ul>
