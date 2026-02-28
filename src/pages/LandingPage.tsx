@@ -252,26 +252,26 @@ export default function LandingPage() {
 
       {/* ══════ STICKY SUB-NAV (Azure-style) ══════ */}
       <div ref={subNavRef} className="sticky top-[61px] z-40 bg-white border-b border-border shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 flex items-center justify-between">
-          <nav className="flex items-center gap-0 overflow-x-auto scrollbar-none">
-            {SUB_NAV.map((s) =>
-            <button
-              key={s.id}
-              onClick={() => scrollTo(s.id)}
-              className={`px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
-              activeSection === s.id ?
-              "border-primary text-primary" :
-              "border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/30"}`
-              }>
+        
 
-                {s.label}
-              </button>
-            )}
-          </nav>
-          <Link to="/cadastro" className="hidden md:flex ampara-btn-primary !w-auto text-xs !py-1.5 !px-4 items-center gap-1.5 shrink-0">
-            Cadastre-se
-          </Link>
-        </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
       </div>
 
       {/* ══════ SOBRE ══════ */}
