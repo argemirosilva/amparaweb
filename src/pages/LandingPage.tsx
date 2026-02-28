@@ -350,8 +350,8 @@ export default function LandingPage() {
           <div className="grid md:grid-cols-3 gap-6 mt-12">
             {/* Pilar 1 — Proteção */}
             <div className="rounded-2xl p-7 bg-white border border-border hover:shadow-xl transition-all duration-300 group flex flex-col">
-              <div className="w-14 h-14 rounded-2xl bg-rose-100 flex items-center justify-center mb-5 group-hover:bg-rose-200 transition-colors">
-                <Shield className="w-7 h-7 text-rose-600" />
+              <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-5 group-hover:bg-primary/15 transition-colors">
+                <Shield className="w-7 h-7 text-primary" />
               </div>
               <h3 className="text-lg md:text-xl font-bold text-foreground mb-2">Te protege</h3>
               <p className="text-sm text-muted-foreground leading-relaxed mb-4">
@@ -359,15 +359,15 @@ export default function LandingPage() {
               </p>
               <ul className="space-y-2 mt-auto">
                 <li className="flex items-start gap-2 text-xs text-muted-foreground">
-                  <Check className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+                   <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                   <span>Botão de pânico que avisa seus guardiões na hora</span>
                 </li>
                 <li className="flex items-start gap-2 text-xs text-muted-foreground">
-                  <Check className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+                   <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                   <span>Compartilha sua localização com quem você confia</span>
                 </li>
                 <li className="flex items-start gap-2 text-xs text-muted-foreground">
-                  <Check className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+                   <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                   <span>Senha secreta pra situações de perigo</span>
                 </li>
               </ul>
@@ -375,8 +375,8 @@ export default function LandingPage() {
 
             {/* Pilar 2 — Monitoramento e Dados */}
             <div className="rounded-2xl p-7 bg-white border border-border hover:shadow-xl transition-all duration-300 group flex flex-col">
-              <div className="w-14 h-14 rounded-2xl bg-sky-100 flex items-center justify-center mb-5 group-hover:bg-sky-200 transition-colors">
-                <Activity className="w-7 h-7 text-sky-600" />
+              <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-5 group-hover:bg-primary/15 transition-colors">
+                <Activity className="w-7 h-7 text-primary" />
               </div>
               <h3 className="text-lg md:text-xl font-bold text-foreground mb-2">Te acompanha</h3>
               <p className="text-sm text-muted-foreground leading-relaxed mb-4">
@@ -384,15 +384,15 @@ export default function LandingPage() {
               </p>
               <ul className="space-y-2 mt-auto">
                 <li className="flex items-start gap-2 text-xs text-muted-foreground">
-                  <Check className="w-4 h-4 text-sky-500 shrink-0 mt-0.5" />
+                   <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                   <span>Grava o som ao redor sem ninguém perceber</span>
                 </li>
                 <li className="flex items-start gap-2 text-xs text-muted-foreground">
-                  <Check className="w-4 h-4 text-sky-500 shrink-0 mt-0.5" />
+                   <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                   <span>Analisa automaticamente o que foi dito</span>
                 </li>
                 <li className="flex items-start gap-2 text-xs text-muted-foreground">
-                  <Check className="w-4 h-4 text-sky-500 shrink-0 mt-0.5" />
+                   <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                   <span>Gera relatórios que servem como prova</span>
                 </li>
               </ul>
@@ -400,8 +400,8 @@ export default function LandingPage() {
 
             {/* Pilar 3 — Orientação */}
             <div className="rounded-2xl p-7 bg-white border border-border hover:shadow-xl transition-all duration-300 group flex flex-col">
-              <div className="w-14 h-14 rounded-2xl bg-emerald-100 flex items-center justify-center mb-5 group-hover:bg-emerald-200 transition-colors">
-                <BookOpen className="w-7 h-7 text-emerald-600" />
+              <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-5 group-hover:bg-primary/15 transition-colors">
+                <BookOpen className="w-7 h-7 text-primary" />
               </div>
               <h3 className="text-lg md:text-xl font-bold text-foreground mb-2">Te orienta</h3>
               <p className="text-sm text-muted-foreground leading-relaxed mb-4">
@@ -409,15 +409,15 @@ export default function LandingPage() {
               </p>
               <ul className="space-y-2 mt-auto">
                 <li className="flex items-start gap-2 text-xs text-muted-foreground">
-                  <Check className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                   <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                   <span>Ligue 180 e 190 direto pelo aplicativo</span>
                 </li>
                 <li className="flex items-start gap-2 text-xs text-muted-foreground">
-                  <Check className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                   <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                   <span>Informações sobre seus direitos e a Lei Maria da Penha</span>
                 </li>
                 <li className="flex items-start gap-2 text-xs text-muted-foreground">
-                  <Check className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                  <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                   <span>Suporte humano pra te ouvir e te ajudar</span>
                 </li>
               </ul>
