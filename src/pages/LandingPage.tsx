@@ -633,7 +633,7 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto px-4">
           <div className="grid sm:grid-cols-3 gap-8">
             <div>
-              <img src={amparaLogo} alt="AMPARA" className="h-10 brightness-0 invert mb-3" />
+              
               <p className="text-white/60 text-xs leading-relaxed">
                 Proteção, monitoramento e apoio para mulheres em situação de vulnerabilidade. Tecnologia a serviço da vida.
               </p>
