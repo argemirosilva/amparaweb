@@ -676,6 +676,14 @@ export default function LandingPage() {
             </div>
           </div>
 
+          {/* Developer logo */}
+          <div className="mt-6 pt-4 border-t border-white/10">
+            <p className="text-[10px] text-white/40 text-center uppercase tracking-widest mb-4">Desenvolvedor</p>
+            <div className="flex items-center justify-center">
+              <img src={partnerOrizon} alt="Orizon Tech" className="h-8 md:h-10 object-contain brightness-0 invert opacity-50 hover:opacity-80 transition-opacity" />
+            </div>
+          </div>
+
           <hr className="border-white/10 my-6" />
           <p className="text-center text-xs text-white/40">© {new Date().getFullYear()} AMPARA Mulher. Todos os direitos reservados.</p>
         </div>
