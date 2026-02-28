@@ -5,7 +5,8 @@ import {
   Heart, Users, TrendingUp, Smartphone, Mic, FileUp,
   MapPin, Search, Headphones, Settings, Check, Star, Menu,
   Building2, Users2, Phone, Mail,
-  ChevronRight, Lock, ArrowRight, Radio, LogIn, UserPlus, Eye } from
+  ChevronRight, Lock, ArrowRight, Radio, LogIn, UserPlus, Eye,
+  Shield, BookOpen, Activity } from
 "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -32,14 +33,14 @@ const NAV_LINKS = [
 
 
 const FEATURES = [
-{ icon: TrendingUp, title: "Evolução do Risco", desc: "Acompanhe a análise dos últimos 30 dias com alertas críticos e tendências de risco." },
-{ icon: Smartphone, title: "Monitoramento de Dispositivos", desc: "Acompanhe o status online, bateria e localização do seu dispositivo em tempo real." },
-{ icon: Mic, title: "Gravação de Áudio", desc: "Grave áudios automaticamente e envie para análise inteligente com total privacidade." },
-{ icon: FileUp, title: "Envio de Arquivos", desc: "Envie evidências e documentos de forma segura e criptografada." },
-{ icon: MapPin, title: "Localização via GPS", desc: "Compartilhe sua localização em tempo real com guardiões e redes de apoio." },
-{ icon: Search, title: "Pesquisa de Parceiros", desc: "Encontre perfis de agressores cadastrados para identificar padrões de risco." },
-{ icon: Headphones, title: "Suporte Dedicado", desc: "Atendimento humanizado com equipe treinada para situações de vulnerabilidade." },
-{ icon: Settings, title: "Configurações Avançadas", desc: "Personalize alertas, agendamentos de monitoramento e senha de coerção." }];
+{ icon: TrendingUp, title: "Seu Nível de Segurança", desc: "Veja como está sua situação nos últimos dias. O sistema te avisa se algo mudar." },
+{ icon: Smartphone, title: "Saber se seu celular está protegido", desc: "Confira se seu celular está conectado e funcionando direitinho com o AMPARA." },
+{ icon: Mic, title: "Grava o que acontece ao redor", desc: "O celular grava o som ao redor de forma discreta, pra você ter provas se precisar." },
+{ icon: FileUp, title: "Guarda provas com segurança", desc: "Salva fotos, áudios e documentos num lugar seguro, só você tem acesso." },
+{ icon: MapPin, title: "Compartilha onde você está", desc: "Suas pessoas de confiança podem ver onde você está em tempo real, se precisar." },
+{ icon: Search, title: "Consulta sobre agressores", desc: "Veja se outras mulheres já denunciaram a mesma pessoa. Informação salva vidas." },
+{ icon: Headphones, title: "Alguém pra te ouvir", desc: "Uma equipe preparada pra te atender com respeito e cuidado, quando você precisar." },
+{ icon: Settings, title: "Você controla tudo", desc: "Escolha quando o monitoramento liga, quem recebe alertas e como tudo funciona." }];
 
 
 const STEPS = [
@@ -76,6 +77,7 @@ const IMPACT_NUMBERS = [
 /* ── Sub-nav links ── */
 const SUB_NAV = [
 { label: "Sobre", id: "sobre" },
+{ label: "Ecossistema", id: "ecossistema" },
 { label: "Funcionalidades", id: "funcionalidades" },
 { label: "Como Funciona", id: "como-funciona" },
 { label: "Segurança", id: "seguranca" },
@@ -216,8 +218,8 @@ export default function LandingPage() {
               AMPARA Mulher
             </h1>
             <p className="text-base md:text-lg text-muted-foreground max-w-lg leading-relaxed">
-              Proteção, monitoramento e apoio para mulheres em situação de vulnerabilidade. Uma plataforma gratuita com tecnologia de inteligência artificial.
-            </p>
+               Você não está sozinha. O AMPARA te protege, acompanha sua situação e te orienta sobre seus direitos — tudo pelo celular, de graça e em total sigilo.
+             </p>
             <div className="flex flex-wrap gap-3 pt-2">
               <Link to="/cadastro" className="ampara-btn-primary !w-auto text-sm md:text-base !py-2.5 !px-6 flex items-center gap-2">
                 Cadastre-se gratuitamente
@@ -287,8 +289,8 @@ export default function LandingPage() {
           <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-3">Sobre</p>
           <h2 className="text-2xl md:text-4xl font-bold text-foreground max-w-2xl">Proteção integral com tecnologia e acolhimento</h2>
           <p className="text-muted-foreground mt-3 max-w-2xl text-sm md:text-base leading-relaxed">
-            Uma plataforma criada para proteger, monitorar e apoiar mulheres em situação de vulnerabilidade, com tecnologia acessível, acolhimento e informação.
-          </p>
+             O AMPARA é como ter uma rede de apoio no seu bolso. Ele cuida da sua segurança, guarda provas quando você precisar e te mostra o caminho para buscar ajuda.
+           </p>
 
           <div className="grid md:grid-cols-3 gap-6 mt-12">
             {[
@@ -316,7 +318,96 @@ export default function LandingPage() {
             )}
           </div>
         </div>
+       </section>
+
+      {/* ══════ ECOSSISTEMA — 3 pilares visuais ══════ */}
+      <section id="ecossistema" className="py-16 md:py-24 relative overflow-hidden" style={{ background: "linear-gradient(180deg, hsl(175, 35%, 95%), hsl(200, 30%, 96%), hsl(260, 20%, 97%))" }}>
+        <div className="max-w-6xl mx-auto px-4">
+          <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-3">Ecossistema</p>
+          <h2 className="text-2xl md:text-4xl font-bold text-foreground max-w-2xl">O que o AMPARA faz por você</h2>
+          <p className="text-muted-foreground mt-3 max-w-2xl text-sm md:text-base leading-relaxed">
+            São 3 formas de te ajudar, tudo no seu celular, sem custo e com total sigilo.
+          </p>
+
+          <div className="grid md:grid-cols-3 gap-6 mt-12">
+            {/* Pilar 1 — Proteção */}
+            <div className="rounded-2xl p-7 bg-white border border-border hover:shadow-xl transition-all duration-300 group flex flex-col">
+              <div className="w-14 h-14 rounded-2xl bg-rose-100 flex items-center justify-center mb-5 group-hover:bg-rose-200 transition-colors">
+                <Shield className="w-7 h-7 text-rose-600" />
+              </div>
+              <h3 className="text-lg md:text-xl font-bold text-foreground mb-2">Te protege</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed mb-4">
+                Como ter alguém de confiança sempre por perto. O sistema avisa suas pessoas de confiança quando você precisa de ajuda.
+              </p>
+              <ul className="space-y-2 mt-auto">
+                <li className="flex items-start gap-2 text-xs text-muted-foreground">
+                  <Check className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+                  <span>Botão de pânico que avisa seus guardiões na hora</span>
+                </li>
+                <li className="flex items-start gap-2 text-xs text-muted-foreground">
+                  <Check className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+                  <span>Compartilha sua localização com quem você confia</span>
+                </li>
+                <li className="flex items-start gap-2 text-xs text-muted-foreground">
+                  <Check className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+                  <span>Senha secreta pra situações de perigo</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* Pilar 2 — Monitoramento e Dados */}
+            <div className="rounded-2xl p-7 bg-white border border-border hover:shadow-xl transition-all duration-300 group flex flex-col">
+              <div className="w-14 h-14 rounded-2xl bg-sky-100 flex items-center justify-center mb-5 group-hover:bg-sky-200 transition-colors">
+                <Activity className="w-7 h-7 text-sky-600" />
+              </div>
+              <h3 className="text-lg md:text-xl font-bold text-foreground mb-2">Te acompanha</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed mb-4">
+                Como um diário que guarda tudo pra você. Grava áudios, analisa riscos e cria relatórios que podem ser usados como prova.
+              </p>
+              <ul className="space-y-2 mt-auto">
+                <li className="flex items-start gap-2 text-xs text-muted-foreground">
+                  <Check className="w-4 h-4 text-sky-500 shrink-0 mt-0.5" />
+                  <span>Grava o som ao redor sem ninguém perceber</span>
+                </li>
+                <li className="flex items-start gap-2 text-xs text-muted-foreground">
+                  <Check className="w-4 h-4 text-sky-500 shrink-0 mt-0.5" />
+                  <span>Analisa automaticamente o que foi dito</span>
+                </li>
+                <li className="flex items-start gap-2 text-xs text-muted-foreground">
+                  <Check className="w-4 h-4 text-sky-500 shrink-0 mt-0.5" />
+                  <span>Gera relatórios que servem como prova</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* Pilar 3 — Orientação */}
+            <div className="rounded-2xl p-7 bg-white border border-border hover:shadow-xl transition-all duration-300 group flex flex-col">
+              <div className="w-14 h-14 rounded-2xl bg-emerald-100 flex items-center justify-center mb-5 group-hover:bg-emerald-200 transition-colors">
+                <BookOpen className="w-7 h-7 text-emerald-600" />
+              </div>
+              <h3 className="text-lg md:text-xl font-bold text-foreground mb-2">Te orienta</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed mb-4">
+                Como uma amiga que sabe onde buscar ajuda. Mostra seus direitos, números de emergência e caminhos para sair da situação.
+              </p>
+              <ul className="space-y-2 mt-auto">
+                <li className="flex items-start gap-2 text-xs text-muted-foreground">
+                  <Check className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                  <span>Ligue 180 e 190 direto pelo aplicativo</span>
+                </li>
+                <li className="flex items-start gap-2 text-xs text-muted-foreground">
+                  <Check className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                  <span>Informações sobre seus direitos e a Lei Maria da Penha</span>
+                </li>
+                <li className="flex items-start gap-2 text-xs text-muted-foreground">
+                  <Check className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                  <span>Suporte humano pra te ouvir e te ajudar</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
       </section>
+
 
       {/* ══════ FUNCIONALIDADES ══════ */}
       <section id="funcionalidades" className="py-16 md:py-24" style={{ background: "linear-gradient(180deg, hsl(260, 20%, 97%), hsl(200, 20%, 96%))" }}>
