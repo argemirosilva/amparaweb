@@ -82,10 +82,10 @@ const FLOW_TRIGGERS = [
 ];
 
 const FLOW_PIPELINE = [
-  { icon: Upload, title: "Envio ao Servidor", desc: "Áudios e dados são enviados e analisados por inteligência artificial", color: "hsl(200, 70%, 50%)" },
-  { icon: Activity, title: "Orientação Personalizada", desc: "Você recebe análises sobre sua situação com dicas de segurança e reflexões sobre a relação", color: "hsl(270, 50%, 55%)" },
-  { icon: MessageCircle, title: "Alerta aos Guardiões", desc: "Se configurado, seus guardiões recebem notificação via WhatsApp com sua localização", color: "hsl(145, 60%, 40%)", configurable: true },
-  { icon: Phone, title: "Chamada de Emergência", desc: "Se habilitado, o sistema liga automaticamente para 190 (Polícia) e 180 (Delegacia da Mulher)", color: "hsl(0, 70%, 50%)", configurable: true },
+  { icon: Upload, title: "Envio ao Servidor", desc: "Áudios e dados são enviados e analisados por inteligência artificial" },
+  { icon: Activity, title: "Orientação Personalizada", desc: "Você recebe análises sobre sua situação com dicas de segurança e reflexões sobre a relação" },
+  { icon: MessageCircle, title: "Alerta aos Guardiões", desc: "Se configurado, seus guardiões recebem notificação via WhatsApp com sua localização", configurable: true },
+  { icon: Phone, title: "Chamada de Emergência", desc: "Se habilitado, o sistema liga automaticamente para 190 (Polícia) e 180 (Delegacia da Mulher)", configurable: true },
 ];
 /* ── Sub-nav links ── */
 const SUB_NAV = [
@@ -569,7 +569,7 @@ export default function LandingPage() {
           {/* Desktop: horizontal 4-column pipeline */}
           <div className="hidden lg:flex items-start mt-14 relative gap-4">
             {/* Connector line */}
-            <div className="absolute top-[56px] left-[12%] right-[8%] h-0.5 bg-gradient-to-r from-[hsl(270,60%,55%)] via-[hsl(200,70%,50%)] to-[hsl(0,70%,50%)] opacity-25 rounded-full" />
+            <div className="absolute top-[56px] left-[12%] right-[8%] h-0.5 bg-primary/25 rounded-full" />
 
             {/* Card 1: Trigger options */}
             <div className="flex-1 relative z-10 flex flex-col items-center text-center">
@@ -578,7 +578,7 @@ export default function LandingPage() {
                 <div className="space-y-3">
                   {FLOW_TRIGGERS.map((t) => (
                     <div key={t.title} className="flex items-center gap-3 text-left">
-                      <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: "hsl(270, 60%, 55%)" }}>
+                      <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center shrink-0">
                         <t.icon className="w-4 h-4 text-white" />
                       </div>
                       <div>
@@ -596,8 +596,7 @@ export default function LandingPage() {
             {FLOW_PIPELINE.map((step, i) => (
               <div key={step.title} className="flex-1 relative z-10 flex flex-col items-center text-center pt-3">
                 <div
-                  className="w-14 h-14 rounded-full flex items-center justify-center shadow-md mb-3 border-2 border-white"
-                  style={{ backgroundColor: step.color }}
+                  className="w-14 h-14 rounded-full bg-primary flex items-center justify-center shadow-md mb-3 border-2 border-white"
                 >
                   <step.icon className="w-6 h-6 text-white" />
                 </div>
@@ -623,7 +622,7 @@ export default function LandingPage() {
               <div className="space-y-3">
                 {FLOW_TRIGGERS.map((t) => (
                   <div key={t.title} className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: "hsl(270, 60%, 55%)" }}>
+                    <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center shrink-0">
                       <t.icon className="w-4 h-4 text-white" />
                     </div>
                     <div>
@@ -637,13 +636,12 @@ export default function LandingPage() {
 
             {/* Pipeline steps */}
             <div className="relative pl-8">
-              <div className="absolute left-[15px] top-2 bottom-2 w-0.5 bg-gradient-to-b from-[hsl(200,70%,50%)] via-[hsl(145,60%,40%)] to-[hsl(0,70%,50%)] opacity-30 rounded-full" />
+              <div className="absolute left-[15px] top-2 bottom-2 w-0.5 bg-primary/25 rounded-full" />
               <div className="space-y-8">
                 {FLOW_PIPELINE.map((step) => (
                   <div key={step.title} className="flex items-start gap-4 relative">
                     <div
-                      className="w-10 h-10 rounded-full flex items-center justify-center shadow-md shrink-0 border-2 border-white absolute -left-8"
-                      style={{ backgroundColor: step.color }}
+                      className="w-10 h-10 rounded-full bg-primary flex items-center justify-center shadow-md shrink-0 border-2 border-white absolute -left-8"
                     >
                       <step.icon className="w-4 h-4 text-white" />
                     </div>
