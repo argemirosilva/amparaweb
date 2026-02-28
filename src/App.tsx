@@ -110,7 +110,6 @@ const App = () => (
             </Route>
             <Route path="/suporte" element={<Suporte />} />
             <Route path="/privacidade" element={<Privacidade />} />
-            <Route path="/doc-api" element={<DocApi />} />
             <Route path="/:codigo" element={<Rastreamento />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
