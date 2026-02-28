@@ -75,10 +75,13 @@ const IMPACT_NUMBERS = [
 { value: "100%", label: "Gratuito para todas" }];
 
 
-const FLOW_STEPS = [
-  { icon: Ear, title: "Monitoramento Ativo", desc: "O celular escuta o ambiente nos horários que você definir", color: "hsl(270, 60%, 55%)" },
-  { icon: Mic, title: "Gravação Manual", desc: "Você também pode gravar manualmente a qualquer momento", color: "hsl(250, 55%, 55%)" },
-  { icon: Radio, title: "Botão de Pânico", desc: "Em situações de emergência, acione com um toque", color: "hsl(340, 70%, 50%)" },
+const FLOW_TRIGGERS = [
+  { icon: Ear, title: "Monitoramento Ativo", desc: "Escuta o ambiente nos horários definidos" },
+  { icon: Mic, title: "Gravação Manual", desc: "Grave a qualquer momento" },
+  { icon: Radio, title: "Botão de Pânico", desc: "Acione com um toque" },
+];
+
+const FLOW_PIPELINE = [
   { icon: Upload, title: "Envio ao Servidor", desc: "Áudios e dados são enviados e analisados por inteligência artificial", color: "hsl(200, 70%, 50%)" },
   { icon: MessageCircle, title: "Alerta aos Guardiões", desc: "Seus guardiões recebem notificação via WhatsApp com sua localização", color: "hsl(145, 60%, 40%)" },
   { icon: Phone, title: "Chamada de Emergência", desc: "O sistema liga automaticamente para 190 (Polícia) e 180 (Delegacia da Mulher)", color: "hsl(0, 70%, 50%)" },
@@ -562,12 +565,35 @@ export default function LandingPage() {
             Do monitoramento ao acionamento de autoridades — cada etapa funciona automaticamente para sua segurança.
           </p>
 
-          {/* Desktop: horizontal pipeline */}
-          <div className="hidden lg:flex items-start justify-between mt-14 relative">
-            {/* Connector line behind */}
-            <div className="absolute top-7 left-[8%] right-[8%] h-0.5 bg-gradient-to-r from-[hsl(270,60%,55%)] via-[hsl(200,70%,50%)] to-[hsl(0,70%,50%)] opacity-30 rounded-full" />
-            {FLOW_STEPS.map((step, i) => (
-              <div key={step.title} className="flex flex-col items-center text-center flex-1 relative z-10">
+          {/* Desktop: horizontal 4-column pipeline */}
+          <div className="hidden lg:flex items-start mt-14 relative gap-4">
+            {/* Connector line */}
+            <div className="absolute top-[56px] left-[12%] right-[8%] h-0.5 bg-gradient-to-r from-[hsl(270,60%,55%)] via-[hsl(200,70%,50%)] to-[hsl(0,70%,50%)] opacity-25 rounded-full" />
+
+            {/* Card 1: Trigger options */}
+            <div className="flex-1 relative z-10 flex flex-col items-center text-center">
+              <div className="rounded-2xl border border-border bg-white p-5 w-full shadow-sm">
+                <p className="text-[10px] font-semibold text-primary uppercase tracking-widest mb-3">Gatilho</p>
+                <div className="space-y-3">
+                  {FLOW_TRIGGERS.map((t) => (
+                    <div key={t.title} className="flex items-center gap-3 text-left">
+                      <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: "hsl(270, 60%, 55%)" }}>
+                        <t.icon className="w-4 h-4 text-white" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-foreground leading-tight">{t.title}</p>
+                        <p className="text-[10px] text-muted-foreground leading-snug">{t.desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <ChevronRight className="absolute -right-3 top-12 w-5 h-5 text-muted-foreground/40" />
+            </div>
+
+            {/* Pipeline steps 2-4 */}
+            {FLOW_PIPELINE.map((step, i) => (
+              <div key={step.title} className="flex-1 relative z-10 flex flex-col items-center text-center pt-3">
                 <div
                   className="w-14 h-14 rounded-full flex items-center justify-center shadow-md mb-3 border-2 border-white"
                   style={{ backgroundColor: step.color }}
@@ -576,32 +602,52 @@ export default function LandingPage() {
                 </div>
                 <h3 className="text-xs font-bold text-foreground mb-1 leading-tight">{step.title}</h3>
                 <p className="text-[11px] text-muted-foreground leading-snug max-w-[140px]">{step.desc}</p>
-                {i < FLOW_STEPS.length - 1 && (
-                  <ChevronRight className="absolute -right-2 top-4 w-5 h-5 text-muted-foreground/40" />
+                {i < FLOW_PIPELINE.length - 1 && (
+                  <ChevronRight className="absolute -right-3 top-[56px] w-5 h-5 text-muted-foreground/40" />
                 )}
               </div>
             ))}
           </div>
 
           {/* Mobile/Tablet: vertical timeline */}
-          <div className="lg:hidden mt-10 relative pl-8">
-            {/* Vertical line */}
-            <div className="absolute left-[15px] top-2 bottom-2 w-0.5 bg-gradient-to-b from-[hsl(270,60%,55%)] via-[hsl(200,70%,50%)] to-[hsl(0,70%,50%)] opacity-30 rounded-full" />
-            <div className="space-y-8">
-              {FLOW_STEPS.map((step) => (
-                <div key={step.title} className="flex items-start gap-4 relative">
-                  <div
-                    className="w-10 h-10 rounded-full flex items-center justify-center shadow-md shrink-0 border-2 border-white absolute -left-8"
-                    style={{ backgroundColor: step.color }}
-                  >
-                    <step.icon className="w-4.5 h-4.5 text-white" />
+          <div className="lg:hidden mt-10 space-y-6">
+            {/* Trigger card */}
+            <div className="rounded-2xl border border-border bg-white p-5 shadow-sm">
+              <p className="text-[10px] font-semibold text-primary uppercase tracking-widest mb-3">Gatilho — escolha uma forma de iniciar</p>
+              <div className="space-y-3">
+                {FLOW_TRIGGERS.map((t) => (
+                  <div key={t.title} className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: "hsl(270, 60%, 55%)" }}>
+                      <t.icon className="w-4 h-4 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-foreground">{t.title}</p>
+                      <p className="text-xs text-muted-foreground">{t.desc}</p>
+                    </div>
                   </div>
-                  <div className="ml-6">
-                    <h3 className="text-sm font-bold text-foreground mb-0.5">{step.title}</h3>
-                    <p className="text-xs text-muted-foreground leading-relaxed">{step.desc}</p>
+                ))}
+              </div>
+            </div>
+
+            {/* Pipeline steps */}
+            <div className="relative pl-8">
+              <div className="absolute left-[15px] top-2 bottom-2 w-0.5 bg-gradient-to-b from-[hsl(200,70%,50%)] via-[hsl(145,60%,40%)] to-[hsl(0,70%,50%)] opacity-30 rounded-full" />
+              <div className="space-y-8">
+                {FLOW_PIPELINE.map((step) => (
+                  <div key={step.title} className="flex items-start gap-4 relative">
+                    <div
+                      className="w-10 h-10 rounded-full flex items-center justify-center shadow-md shrink-0 border-2 border-white absolute -left-8"
+                      style={{ backgroundColor: step.color }}
+                    >
+                      <step.icon className="w-4 h-4 text-white" />
+                    </div>
+                    <div className="ml-6">
+                      <h3 className="text-sm font-bold text-foreground mb-0.5">{step.title}</h3>
+                      <p className="text-xs text-muted-foreground leading-relaxed">{step.desc}</p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         </div>
