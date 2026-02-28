@@ -22,8 +22,8 @@ interface Assessment {
 }
 
 // Brand colors for chart
-const CHART_STROKE = "hsl(270, 60%, 42%)";
-const CHART_ACCENT = "hsl(316, 72%, 48%)";
+const CHART_STROKE = "hsl(207, 89%, 42%)";
+const CHART_ACCENT = "hsl(195, 80%, 40%)";
 
 const levelConfig: Record<string, { icon: typeof Shield; className: string }> = {
   "Sem Risco": { icon: ShieldCheck, className: "bg-green-100 text-green-700 border-green-200" },
