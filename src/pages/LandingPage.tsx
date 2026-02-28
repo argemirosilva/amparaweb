@@ -83,6 +83,7 @@ const FLOW_TRIGGERS = [
 
 const FLOW_PIPELINE = [
   { icon: Upload, title: "Envio ao Servidor", desc: "Áudios e dados são enviados e analisados por inteligência artificial", color: "hsl(200, 70%, 50%)" },
+  { icon: Activity, title: "Orientação Personalizada", desc: "Você recebe análises sobre sua situação com dicas de segurança e reflexões sobre a relação", color: "hsl(270, 50%, 55%)" },
   { icon: MessageCircle, title: "Alerta aos Guardiões", desc: "Se configurado, seus guardiões recebem notificação via WhatsApp com sua localização", color: "hsl(145, 60%, 40%)", configurable: true },
   { icon: Phone, title: "Chamada de Emergência", desc: "Se habilitado, o sistema liga automaticamente para 190 (Polícia) e 180 (Delegacia da Mulher)", color: "hsl(0, 70%, 50%)", configurable: true },
 ];
