@@ -1,64 +1,51 @@
 
 
-# Nova Secao "Dados que Mudam a Historia" + Reforco de Anonimizacao
+# Nova Secao Visual: Fluxo de Protecao
 
 ## Objetivo
-Adicionar uma secao impactante na landing page que comunique o diferencial historico do AMPARA: pela primeira vez no mundo, uma base de dados real sobre cenarios e dinamicas de violencia domestica sera construida. Explicar o que isso significa para as vitimas e para o poder publico, reforçando com linguagem acessivel que todos os dados sao anonimizados e seguros.
+Adicionar uma secao visual e intuitiva na landing page que explique passo a passo como o sistema de protecao funciona na pratica -- desde o monitoramento ate o acionamento de autoridades. Sera uma representacao tipo "pipeline" com icones conectados por setas/linhas.
 
-## O que sera adicionado
+## Onde sera inserida
+Entre a secao "Funcionalidades" e "Como Funciona" (apos linha 544), com id `fluxo` e link na sub-nav.
 
-### 1. Nova secao "Dados que Mudam a Historia" (entre Ecossistema e Funcionalidades)
+## Conteudo do Fluxo (6 etapas conectadas visualmente)
 
-Uma secao com visual de destaque contendo:
+| Etapa | Icone | Titulo | Descricao curta |
+|-------|-------|--------|-----------------|
+| 1 | Ear/Headphones | Monitoramento Ativo | O celular escuta o ambiente nos horarios que voce definir |
+| 2 | Mic | Gravacao Manual | Voce tambem pode gravar manualmente a qualquer momento |
+| 3 | Radio | Botao de Panico | Em situacoes de emergencia, acione com um toque |
+| 4 | ArrowRight/Upload | Envio ao Servidor | Audios e dados sao enviados e analisados por inteligencia artificial |
+| 5 | MessageCircle (WhatsApp) | Alerta aos Guardioes | Seus guardioes recebem notificacao via WhatsApp com sua localizacao |
+| 6 | Phone | Chamada de Emergencia | O sistema liga automaticamente para 190 (Policia) e 180 (Delegacia da Mulher) |
 
-**Titulo:** "Pela primeira vez na historia, dados reais sobre violencia domestica"
-
-**Subtitulo acessivel:** "Ate hoje, ninguem sabia de verdade o que acontece dentro de casa. O AMPARA muda isso — sem nunca expor quem voce e."
-
-**Dois blocos lado a lado:**
-
-| Bloco | Titulo | Conteudo |
-|-------|--------|----------|
-| Para voce | "O que isso muda na sua vida" | - Suas provas ficam guardadas com seguranca e podem te ajudar na justiça. - Quanto mais mulheres usam, mais o sistema aprende a proteger melhor. - Voce faz parte de algo maior: ajuda outras mulheres sem se expor. |
-| Para o poder publico | "O que isso muda no Brasil" | - Governos vao saber onde e como a violencia acontece de verdade. - Politicas publicas deixam de ser baseadas em "achismo". - Delegacias e abrigos podem ser colocados onde mais se precisa. |
-
-**Bloco de destaque sobre anonimizacao (abaixo dos dois cards):**
-
-Um banner/callout com icone de cadeado enfatizando:
-- "Ninguem — nem o governo, nem a policia, nem nos — consegue saber quem voce e pelos dados do painel."
-- K-anonimato: so mostramos dados quando existem pelo menos 5 casos parecidos.
-- Atraso de 48 horas: nada aparece em tempo real.
-- Conformidade total com a LGPD.
-
-### 2. Atualizar a secao de Seguranca existente
-
-Adicionar um bullet point extra na lista de seguranca reforçando a anonimizacao dos dados publicos:
-- "Dados publicos sao 100% anonimizados — impossivel identificar qualquer pessoa"
-
-### 3. Adicionar link "Dados" na sub-nav
-
-Incluir o novo item no array `SUB_NAV` para que a navegacao sticky aponte para a nova secao.
-
----
+## Design Visual
+- Layout horizontal no desktop (6 colunas com setas/linhas conectoras entre cada etapa)
+- Layout vertical no mobile (lista empilhada com linha vertical conectora)
+- Cada etapa: icone dentro de circulo colorido + titulo em negrito + descricao curta abaixo
+- Linha pontilhada ou solida conectando as etapas com gradiente de cor (do roxo ao vermelho)
+- Fundo limpo (bg-background) para contrastar com secoes adjacentes
 
 ## Detalhes Tecnicos
 
 ### Arquivo modificado
 - **`src/pages/LandingPage.tsx`** (unico arquivo)
 
-### Alteracoes especificas
+### Alteracoes
 
-1. **Importar icone `Database`** do lucide-react (linha 4-10)
-2. **Adicionar "Dados" ao array `SUB_NAV`** (entre "Ecossistema" e "Funcionalidades", linha ~81)
-3. **Inserir nova secao `id="dados"`** entre a secao Ecossistema (linha ~409) e Funcionalidades (linha ~412), contendo:
-   - Titulo e subtitulo impactantes
-   - Grid 2 colunas com cards "Para voce" e "Para o poder publico"
-   - Banner de anonimizacao com icone Lock e bullets explicativos
-4. **Adicionar bullet extra na secao Seguranca** (linha ~503): "Dados publicos sao 100% anonimizados"
+1. **Importar icones adicionais**: `MessageCircle`, `Upload` do lucide-react (alguns ja importados)
+2. **Adicionar "Fluxo" ao array `SUB_NAV`**: entre "Funcionalidades" e "Como Funciona"
+3. **Criar array `FLOW_STEPS`** com os 6 passos (icone, titulo, descricao, cor)
+4. **Inserir nova secao `id="fluxo"`** apos Funcionalidades (linha ~544), com:
+   - Titulo: "Como o AMPARA te protege na pratica"
+   - Grid responsivo com os 6 passos
+   - Conectores visuais (borders/pseudo-elements via Tailwind) entre etapas
+   - No desktop: layout horizontal com seta entre cada card
+   - No mobile: layout vertical com linha lateral
 
-### Estilo visual
-- Fundo com gradiente suave (consistente com demais secoes)
-- Cards com `rounded-2xl`, bordas e sombras no hover
-- Banner de anonimizacao com fundo escuro (primary) e texto branco para destaque
-- Responsivo: 1 coluna no mobile, 2 colunas no desktop para os cards
+### Estilo
+- Cards com icone circular colorido (cada passo com cor distinta para guiar o olhar)
+- Setas/conectores usando `ChevronRight` entre cards no desktop
+- Linha vertical com bolinhas no mobile (timeline style)
+- Responsivo: `grid-cols-2 md:grid-cols-3 lg:grid-cols-6`
 
