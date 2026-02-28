@@ -3,9 +3,9 @@ import { useNavigate, Link } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import {
   Heart, Users, TrendingUp, Smartphone, Mic, FileUp,
-   MapPin, Search, Headphones, Settings, Check, Star, Menu,
-   Building2, Users2, Phone, Mail,
-   ChevronRight, Lock, ArrowRight, Radio, LogIn, UserPlus, Eye } from
+  MapPin, Search, Headphones, Settings, Check, Star, Menu,
+  Building2, Users2, Phone, Mail,
+  ChevronRight, Lock, ArrowRight, Radio, LogIn, UserPlus, Eye } from
 "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -423,36 +423,36 @@ export default function LandingPage() {
       </section>
 
       {/* ══════ DEPOIMENTOS ══════ */}
-      <section id="depoimentos" className="py-16 md:py-24 bg-background">
-        <div className="max-w-6xl mx-auto px-4">
-          <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-3">Depoimentos</p>
-          <h2 className="text-2xl md:text-4xl font-bold text-foreground max-w-2xl">Histórias reais de quem já faz parte</h2>
-          <p className="text-muted-foreground mt-3 max-w-2xl text-sm md:text-base">
-            Mulheres que encontraram proteção e apoio na rede AMPARA.
-          </p>
+      
 
-          <div className="grid md:grid-cols-3 gap-6 mt-12">
-            {TESTIMONIALS.map((t) =>
-            <div key={t.name} className="rounded-2xl p-6 bg-card border border-border hover:shadow-lg transition-all duration-300">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-primary-foreground bg-primary/80">
-                    {t.initials}
-                  </div>
-                  <div>
-                    <p className="font-semibold text-foreground text-sm">{t.name}</p>
-                    <div className="flex gap-0.5">
-                      {Array.from({ length: t.stars }).map((_, i) =>
-                    <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                    )}
-                    </div>
-                  </div>
-                </div>
-                <p className="text-sm text-muted-foreground leading-relaxed italic">"{t.text}"</p>
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
       {/* ══════ FAQ ══════ */}
       <section id="faq" className="py-16 md:py-24" style={{ background: "hsl(260, 20%, 97%)" }}>
