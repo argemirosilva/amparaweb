@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { AuthLayout } from "@/components/auth/AuthLayout";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
+import amparaLogo from "@/assets/ampara-logo.png";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -38,68 +38,87 @@ export default function LoginPage() {
   };
 
   return (
-    <AuthLayout title="" subtitle="">
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {verified && (
-          <div className="rounded-xl bg-accent border border-border p-3 text-sm text-accent-foreground opacity-0 animate-fade-in">
-            Email verificado com sucesso! Faça login para continuar.
-          </div>
-        )}
-
-        {error && (
-          <div className="rounded-xl bg-destructive/10 border border-destructive/20 p-3 text-sm text-destructive opacity-0 animate-fade-in">
-            {error}
-          </div>
-        )}
-
-        <div className="opacity-0 animate-fade-in" style={{ animationDelay: "100ms" }}>
-          <label className="block text-sm font-medium text-foreground mb-1.5">Email</label>
-          <input
-            type="email"
-            className="ampara-input"
-            placeholder="seu@email.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            maxLength={255}
-          />
+    <div className="min-h-[100dvh] flex items-center justify-center p-4 bg-background">
+      <div className="w-full max-w-md animate-fade-in">
+        {/* Logo */}
+        <div className="text-center mb-6">
+          <img src={amparaLogo} alt="AMPARA" className="w-24 h-24 mx-auto mb-2 object-contain" />
+          <p className="text-xs font-semibold text-primary uppercase tracking-widest">Portal da Mulher</p>
         </div>
 
-        <div className="opacity-0 animate-fade-in" style={{ animationDelay: "200ms" }}>
-          <label className="block text-sm font-medium text-foreground mb-1.5">Senha</label>
-          <div className="relative">
-            <input
-              type={showSenha ? "text" : "password"}
-              className="ampara-input pr-12"
-              placeholder="Sua senha"
-              value={senha}
-              onChange={(e) => setSenha(e.target.value)}
-            />
+        {/* Card */}
+        <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+          <h2 className="text-xl font-bold text-foreground mb-1">Acesse sua conta</h2>
+          <p className="text-sm text-muted-foreground mb-5">Entre com seu email e senha para continuar</p>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {verified && (
+              <div className="rounded-lg bg-accent border border-border p-3 text-sm text-accent-foreground">
+                Email verificado com sucesso! Faça login para continuar.
+              </div>
+            )}
+
+            {error && (
+              <div className="rounded-lg bg-destructive/10 border border-destructive/20 p-3 text-sm text-destructive">
+                {error}
+              </div>
+            )}
+
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1.5">Email</label>
+              <input
+                type="email"
+                className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm outline-none transition-colors focus:ring-2 focus:ring-ring/40 focus:border-primary placeholder:text-muted-foreground"
+                placeholder="seu@email.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                maxLength={255}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1.5">Senha</label>
+              <div className="relative">
+                <input
+                  type={showSenha ? "text" : "password"}
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2.5 pr-12 text-sm outline-none transition-colors focus:ring-2 focus:ring-ring/40 focus:border-primary placeholder:text-muted-foreground"
+                  placeholder="Sua senha"
+                  value={senha}
+                  onChange={(e) => setSenha(e.target.value)}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowSenha(!showSenha)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {showSenha ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
+              </div>
+            </div>
+
             <button
-              type="button"
-              onClick={() => setShowSenha(!showSenha)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              type="submit"
+              disabled={loading}
+              className="w-full rounded-lg py-2.5 px-4 text-sm font-semibold text-primary-foreground transition-opacity disabled:opacity-60"
+              style={{ background: "hsl(var(--primary))" }}
             >
-              {showSenha ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : "Acessar"}
             </button>
-          </div>
-        </div>
 
-        <button type="submit" disabled={loading} className="ampara-btn-primary mt-2 opacity-0 animate-fade-in" style={{ animationDelay: "300ms" }}>
-          {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : "Acessar"}
-        </button>
-
-        <div className="flex items-center justify-between pt-2 opacity-0 animate-fade-in" style={{ animationDelay: "400ms" }}>
-          <Link to="/esqueci-senha" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-            Esqueceu a senha?
-          </Link>
-          <p className="text-sm text-muted-foreground">
-            Não está cadastrada?{" "}
-            <Link to="/cadastro" className="text-primary font-medium hover:underline">
-              Proteja-se
-            </Link>
-          </p>
+            <div className="flex items-center justify-between pt-2">
+              <Link to="/esqueci-senha" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                Esqueceu a senha?
+              </Link>
+              <p className="text-sm text-muted-foreground">
+                Não está cadastrada?{" "}
+                <Link to="/cadastro" className="text-primary font-medium hover:underline">
+                  Proteja-se
+                </Link>
+              </p>
+            </div>
+          </form>
         </div>
-      </form>
-    </AuthLayout>
+      </div>
+    </div>
   );
 }
