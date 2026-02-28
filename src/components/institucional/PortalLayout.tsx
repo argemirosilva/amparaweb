@@ -26,7 +26,7 @@ export default function PortalLayout() {
           <div className="hidden sm:block">
             <p
               className="text-sm font-semibold leading-tight"
-              style={{ color: "hsl(224 76% 33%)", fontFamily: "Inter, Roboto, sans-serif" }}
+              style={{ color: "hsl(207 89% 42%)", fontFamily: "Inter, Roboto, sans-serif" }}
             >
               AMPARA — Painel de Transparência
             </p>
@@ -44,8 +44,8 @@ export default function PortalLayout() {
                 style={{
                   fontFamily: "Inter, Roboto, sans-serif",
                   fontWeight: isActive ? 600 : 400,
-                  color: isActive ? "hsl(224 76% 33%)" : "hsl(220 9% 46%)",
-                  background: isActive ? "hsl(224 76% 33% / 0.08)" : "transparent",
+                  color: isActive ? "hsl(207 89% 42%)" : "hsl(220 9% 46%)",
+                  background: isActive ? "hsl(207 89% 42% / 0.08)" : "transparent",
                 }}
               >
                 {item.label}

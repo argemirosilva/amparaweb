@@ -107,7 +107,7 @@ export default function AdminLogin() {
           style={{ background: "hsl(210 17% 96%)", borderColor: "hsl(220 13% 91%)" }}
         >
           <div className="flex items-center gap-2 mb-5 pb-4" style={{ borderBottom: "1px solid hsl(220 13% 91%)" }}>
-            <ShieldCheck className="w-4 h-4" style={{ color: "hsl(224 76% 33%)" }} />
+            <ShieldCheck className="w-4 h-4" style={{ color: "hsl(207 89% 42%)" }} />
             <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "hsl(220 9% 46%)" }}>
               Autenticação Segura
             </span>
@@ -184,7 +184,7 @@ export default function AdminLogin() {
               type="submit"
               disabled={loading}
               className="w-full rounded-md px-4 py-2.5 text-sm font-semibold transition-opacity disabled:opacity-60"
-              style={{ background: "hsl(224 76% 33%)", color: "#fff" }}
+              style={{ background: "hsl(207 89% 42%)", color: "#fff" }}
             >
               {loading ? (
                 <Loader2 className="w-4 h-4 animate-spin mx-auto" />

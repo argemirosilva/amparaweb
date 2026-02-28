@@ -308,7 +308,7 @@ export default function AdminOrgaos() {
             </div>
             <div className="flex gap-2 justify-end mt-5">
               <button onClick={() => setDialogOpen(false)} className="px-4 py-2 text-xs rounded border" style={{ borderColor: "hsl(220 13% 91%)", color: "hsl(220 9% 46%)" }}>Cancelar</button>
-              <button onClick={handleSave} disabled={saving || !form.nome || !form.sigla} className="px-4 py-2 text-xs rounded font-semibold disabled:opacity-50" style={{ background: "hsl(224 76% 33%)", color: "#fff" }}>
+              <button onClick={handleSave} disabled={saving || !form.nome || !form.sigla} className="px-4 py-2 text-xs rounded font-semibold disabled:opacity-50" style={{ background: "hsl(207 89% 42%)", color: "#fff" }}>
                 {saving ? "Salvando..." : editing ? "Salvar Alterações" : "Criar Entidade"}
               </button>
             </div>

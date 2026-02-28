@@ -4,14 +4,14 @@
    ======================================================== */
 
 :root {
-  /* Institucional tokens */
+  /* Institucional tokens — Azure-inspired */
   --gov-bg: 210 17% 96%;
   --gov-card: 0 0% 100%;
-  --gov-text: 220 13% 18%;
-  --gov-text-secondary: 220 9% 46%;
-  --gov-blue: 224 76% 33%;
-  --gov-blue-hover: 224 68% 48%;
-  --gov-border: 220 13% 91%;
+  --gov-text: 210 14% 16%;
+  --gov-text-secondary: 210 9% 46%;
+  --gov-blue: 207 89% 42%;
+  --gov-blue-hover: 207 80% 48%;
+  --gov-border: 210 14% 91%;
   --gov-radius: 6px;
   --gov-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06);
 

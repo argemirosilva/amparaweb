@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
-const BRAND_COLOR: [number, number, number] = [30, 58, 138]; // hsl(224 76% 33%) ≈ rgb(30,58,138)
+const BRAND_COLOR: [number, number, number] = [14, 116, 194]; // hsl(207 89% 42%) ≈ rgb(14,116,194)
 const GRAY_TEXT: [number, number, number] = [107, 114, 128];
 const DARK_TEXT: [number, number, number] = [31, 41, 55];
 

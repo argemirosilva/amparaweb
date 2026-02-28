@@ -41,7 +41,7 @@ export default function ProtectedAdminRoute({ children, requiredRole }: Protecte
           <a
             href="/home"
             className="inline-block px-4 py-2 rounded text-sm font-semibold"
-            style={{ background: "hsl(224 76% 33%)", color: "#fff" }}
+            style={{ background: "hsl(207 89% 42%)", color: "#fff" }}
           >
             Voltar ao início
           </a>

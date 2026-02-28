@@ -9,13 +9,13 @@ import {
 import { OFFENSE_WORDS } from "@/lib/offenseWords";
 
 const COLORS = [
-  "hsl(224 76% 33%)",
-  "hsl(224 76% 45%)",
-  "hsl(260 50% 40%)",
-  "hsl(260 50% 55%)",
-  "hsl(220 13% 30%)",
-  "hsl(224 76% 55%)",
-  "hsl(280 45% 45%)",
+  "hsl(207 89% 42%)",
+  "hsl(207 89% 50%)",
+  "hsl(195 60% 40%)",
+  "hsl(195 60% 50%)",
+  "hsl(210 14% 30%)",
+  "hsl(207 89% 55%)",
+  "hsl(195 45% 45%)",
   "hsl(220 20% 45%)",
 ];
 
@@ -117,7 +117,7 @@ export default function WordCloudCard({ since }: WordCloudCardProps) {
           <button
             onClick={() => setSelectedWord(null)}
             className="flex items-center gap-1 text-xs px-2 py-1 rounded-md transition-colors hover:bg-black/5"
-            style={{ color: "hsl(224 76% 33%)" }}
+            style={{ color: "hsl(207 89% 42%)" }}
           >
             <X className="w-3 h-3" />
             Limpar filtro
@@ -128,7 +128,7 @@ export default function WordCloudCard({ since }: WordCloudCardProps) {
       {selectedWord && (
         <div
           className="flex items-center gap-2 px-3 py-1.5 rounded text-xs"
-          style={{ background: "hsl(224 76% 33% / 0.08)", color: "hsl(224 76% 33%)" }}
+          style={{ background: "hsl(207 89% 42% / 0.08)", color: "hsl(207 89% 42%)" }}
         >
           Ofensas associadas a <strong>"{selectedWord}"</strong>
         </div>
@@ -136,7 +136,7 @@ export default function WordCloudCard({ since }: WordCloudCardProps) {
 
       <div className="min-h-[180px] flex items-center justify-center">
         {loading ? (
-          <Loader2 className="w-6 h-6 animate-spin" style={{ color: "hsl(224 76% 33%)" }} />
+          <Loader2 className="w-6 h-6 animate-spin" style={{ color: "hsl(207 89% 42%)" }} />
         ) : words.length === 0 ? (
            <p className="text-xs" style={subtitleStyle}>
              Nenhuma ofensa encontrada no período.
