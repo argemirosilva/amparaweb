@@ -655,7 +655,7 @@ export default function LandingPage() {
                 <Link to="/login" className="text-xs text-white/60 hover:text-white transition-colors">Portal da Mulher</Link>
                 <Link to="/cadastro" className="text-xs text-white/60 hover:text-white transition-colors">Cadastre-se</Link>
                 <Link to="/transparencia" className="text-xs text-white/60 hover:text-white transition-colors">Portal de Transparência</Link>
-                <Link to="/admin/login" className="text-xs text-white/60 hover:text-white transition-colors flex items-center gap-1"><Shield className="w-3 h-3" /> Painel Administrativo</Link>
+                
               </div>
             </div>
           </div>
