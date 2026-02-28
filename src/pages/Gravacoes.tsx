@@ -98,7 +98,6 @@ function getTranscriptionPreview(transcricao: string | null): string | null {
       return firstText.length > 80 ? firstText.substring(0, 77) + "..." : firstText;
     }
   } catch {
-    // plain text transcription
     return transcricao.length > 80 ? transcricao.substring(0, 77) + "..." : transcricao;
   }
   return null;
@@ -210,7 +209,6 @@ export default function GravacoesPage() {
   
   const perPage = 15;
 
-  // Debounce search text
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(searchText);
@@ -261,7 +259,6 @@ export default function GravacoesPage() {
     });
   };
 
-  // Fetch user retention setting
   useEffect(() => {
     if (!sessionToken) return;
     callWebApi("getMe", sessionToken).then((res) => {
@@ -291,7 +288,6 @@ export default function GravacoesPage() {
     setLoading(false);
   }, [sessionToken, buildFilterParams]);
 
-
   const handleRefresh = useCallback(async () => {
     if (!sessionToken) return;
     const res = await callWebApi("getGravacoes", sessionToken, buildFilterParams());
@@ -303,59 +299,65 @@ export default function GravacoesPage() {
 
   useEffect(() => { loadData(); }, [loadData]);
 
-
   const totalPages = Math.max(1, Math.ceil(total / perPage));
 
   return (
-    <div className="space-y-5 animate-fade-in">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <h1 className="text-2xl font-display font-bold text-foreground">Gravações</h1>
-        <div className="flex items-center gap-2 text-sm">
-          {!selectMode && semRiscoIds.length > 0 && (
-            <Button variant="ghost" size="sm" className="text-xs gap-1 text-muted-foreground" onClick={() => setSelectMode(true)}>
-              <CheckSquare className="w-3.5 h-3.5" />
-              Selecionar
-            </Button>
-          )}
-          {selectMode && (
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" className="text-xs gap-1 text-muted-foreground" onClick={toggleSelectAll}>
-                {selected.size === semRiscoIds.length ? "Desmarcar todas" : `Selecionar todas (${semRiscoIds.length})`}
+    <div className="space-y-6 animate-fade-in max-w-4xl">
+      {/* ── Page header (Azure-style) ── */}
+      <div>
+        <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-1">Gravações</p>
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">Suas gravações de áudio</h1>
+          <div className="flex items-center gap-2 text-sm">
+            {!selectMode && semRiscoIds.length > 0 && (
+              <Button variant="outline" size="sm" className="text-xs gap-1.5 rounded-lg" onClick={() => setSelectMode(true)}>
+                <CheckSquare className="w-3.5 h-3.5" />
+                Selecionar
               </Button>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="destructive" size="sm" className="text-xs gap-1" disabled={selected.size === 0 || batchDeleting}>
-                    <Trash2 className="w-3.5 h-3.5" />
-                    {batchDeleting ? "Excluindo…" : `Excluir (${selected.size})`}
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Excluir {selected.size} gravação(ões)?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Esta ação não pode ser desfeita. As gravações selecionadas e suas análises serão removidas permanentemente.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={handleBatchDelete}>
-                      Excluir {selected.size}
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={exitSelectMode}>
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
-          )}
-          <span className="text-muted-foreground">{total} {total === 1 ? "gravação" : "gravações"}</span>
+            )}
+            {selectMode && (
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" className="text-xs gap-1 rounded-lg" onClick={toggleSelectAll}>
+                  {selected.size === semRiscoIds.length ? "Desmarcar todas" : `Selecionar todas (${semRiscoIds.length})`}
+                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" size="sm" className="text-xs gap-1 rounded-lg" disabled={selected.size === 0 || batchDeleting}>
+                      <Trash2 className="w-3.5 h-3.5" />
+                      {batchDeleting ? "Excluindo…" : `Excluir (${selected.size})`}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Excluir {selected.size} gravação(ões)?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Esta ação não pode ser desfeita. As gravações selecionadas e suas análises serão removidas permanentemente.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={handleBatchDelete}>
+                        Excluir {selected.size}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={exitSelectMode}>
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            )}
+            <span className="text-muted-foreground text-xs bg-muted px-2.5 py-1 rounded-full font-medium">
+              {total} {total === 1 ? "gravação" : "gravações"}
+            </span>
+          </div>
         </div>
       </div>
 
+      {/* ── Recorder card ── */}
       <AudioRecorderCard onUploaded={() => { setPage(1); loadData(); }} />
 
-      {/* Filters */}
+      {/* ── Risk filter pills ── */}
       <div className="flex items-center gap-2 flex-wrap">
         {["", "sem_risco", "moderado", "alto", "critico"].map((r) => {
           const isActive = filterRisco === r;
@@ -364,15 +366,17 @@ export default function GravacoesPage() {
             <button
               key={r}
               onClick={() => { setFilterRisco(r); setPage(1); }}
-              className="px-2 py-0.5 rounded-full text-[10px] md:text-xs md:px-3 md:py-1 font-medium border transition-colors whitespace-nowrap"
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all duration-200 ${
+                isActive ? "shadow-sm" : "hover:shadow-sm"
+              }`}
               style={
                 r === ""
                   ? isActive
                     ? { backgroundColor: "hsl(var(--primary))", color: "hsl(var(--primary-foreground))", borderColor: "hsl(var(--primary))" }
                     : { backgroundColor: "hsl(var(--background))", color: "hsl(var(--muted-foreground))", borderColor: "hsl(var(--border))" }
                   : isActive
-                    ? { backgroundColor: `${color}30`, color, borderColor: `${color}60` }
-                    : { backgroundColor: `${color}10`, color: `${color}cc`, borderColor: `${color}25` }
+                    ? { backgroundColor: `${color}20`, color, borderColor: `${color}50` }
+                    : { backgroundColor: "hsl(var(--background))", color: `${color}cc`, borderColor: "hsl(var(--border))" }
               }
             >
               {r === "" ? "Todas" : RISCO_LABELS[r] || r}
@@ -381,7 +385,7 @@ export default function GravacoesPage() {
         })}
       </div>
 
-      {/* Advanced Filters */}
+      {/* ── Advanced Filters ── */}
       <GravacoesFilterBar
         searchText={searchText}
         onSearchTextChange={setSearchText}
@@ -393,160 +397,177 @@ export default function GravacoesPage() {
         hasActiveFilters={!!searchText || !!dateFrom || !!dateTo}
       />
 
-      {/* Content */}
+      {/* ── Content ── */}
       <PullToRefresh onRefresh={handleRefresh} disabled={!isMobile || loading}>
-      {loading ? (
-        <div className="flex items-center justify-center py-16">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        </div>
-      ) : gravacoes.length === 0 ? (
-        <div className="ampara-card flex flex-col items-center justify-center py-16 gap-3">
-          <GradientIcon icon={Mic} size="lg" />
-          <p className="text-foreground font-medium">Nenhuma gravação encontrada</p>
-          <p className="text-sm text-muted-foreground text-center max-w-xs">
-            Grave um áudio ou envie um arquivo usando o painel acima.
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {groupByDate(gravacoes).map((group) => (
-            <div key={group.label} className="space-y-0.5">
-              <h2 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-1 pt-1">
-                {group.label}
-              </h2>
-              {group.items.map((g) => {
-                const isExpanded = expanded === g.id;
-                const statusInfo = STATUS_MAP[g.status] || { label: g.status, variant: "secondary" as const };
-
-                return (
-                  <div
-                    key={g.id}
-                    ref={isExpanded ? (el) => { if (el) setTimeout(() => el.scrollIntoView({ behavior: "smooth", block: "start" }), 100); } : undefined}
-                    className="ampara-card !p-0 !rounded-lg overflow-hidden relative"
-                    style={g.nivel_risco ? { borderLeftWidth: "2px", borderLeftStyle: "solid", borderLeftColor: `${RISCO_COLORS[g.nivel_risco] || "transparent"}90` } : undefined}
-                  >
-                    {selectMode && (!g.nivel_risco || g.nivel_risco === "sem_risco") && (
-                      <div className="flex items-center px-2 py-2" onClick={(e) => e.stopPropagation()}>
-                        <Checkbox
-                          checked={selected.has(g.id)}
-                          onCheckedChange={() => toggleSelect(g.id)}
-                        />
-                      </div>
-                    )}
-                    <button
-                      onClick={() => {
-                        if (selectMode && (!g.nivel_risco || g.nivel_risco === "sem_risco")) {
-                          toggleSelect(g.id);
-                          return;
-                        }
-                        const willExpand = !isExpanded;
-                        if (willExpand) {
-                          window.dispatchEvent(new CustomEvent("waveform-player-stop-all"));
-                        }
-                        setExpanded(isExpanded ? null : g.id);
-                      }}
-                      className="w-full px-2.5 py-2 text-left hover:bg-accent/30 transition-colors"
-                    >
-                      <div className="flex items-center gap-1">
-                        {!selectMode && <Play className="w-3 h-3 shrink-0 text-primary" />}
-
-                        <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-[11px] font-medium text-foreground">
-                              {formatTime(getDisplayTime(g), g.timezone)}
-                            </span>
-                            {(() => {
-                              const device = getDeviceLabel(g.device_id);
-                              const DeviceIcon = device.icon;
-                              return <DeviceIcon className="w-2.5 h-2.5 text-muted-foreground" />;
-                            })()}
-                            <span className="text-[9px] text-muted-foreground inline-flex items-center gap-0.5">
-                              <Clock className="w-2.5 h-2.5" />
-                              {formatDuration(g.duracao_segundos)}
-                            </span>
-                            {g.nivel_risco === "sem_risco" && (() => {
-                              const displayTime = getDisplayTime(g);
-                              const countdown = getRetentionCountdown(displayTime, retencaoDias);
-                              if (!countdown) return null;
-                              const expireAt = new Date(displayTime).getTime() + retencaoDias * 24 * 60 * 60 * 1000;
-                              const remainingHours = (expireAt - Date.now()) / (1000 * 60 * 60);
-                              const isUrgent = remainingHours < 24;
-                              return (
-                                <TooltipProvider delayDuration={300}>
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <span className={`text-[9px] inline-flex items-center gap-0.5 cursor-help ${isUrgent ? "text-destructive/70 font-medium" : "text-muted-foreground/50"}`}>
-                                        <Trash2 className="w-2.5 h-2.5" />
-                                        {countdown}
-                                      </span>
-                                    </TooltipTrigger>
-                                    <TooltipContent side="bottom" className="max-w-[220px] text-center">
-                                      <p className="text-xs">Gravações sem risco são excluídas automaticamente após <strong>{retencaoDias} dias</strong>. Você pode alterar isso em Configurações.</p>
-                                    </TooltipContent>
-                                  </Tooltip>
-                                </TooltipProvider>
-                              );
-                            })()}
-                            {(g.status === "pendente" || g.status === "processando") && (
-                              <Loader2 className="w-2.5 h-2.5 animate-spin text-muted-foreground/60" />
-                            )}
-                          </div>
-                          <div className="flex items-center gap-1 shrink-0">
-                            {g.nivel_risco && (
-                              <span
-                                className="text-[9px] font-bold px-2 py-0.5 rounded-full leading-4 border"
-                                style={{
-                                  backgroundColor: `${RISCO_COLORS[g.nivel_risco]}30`,
-                                  color: RISCO_COLORS[g.nivel_risco],
-                                  borderColor: `${RISCO_COLORS[g.nivel_risco]}50`,
-                                }}
-                              >
-                                {RISCO_LABELS[g.nivel_risco] || g.nivel_risco}
-                              </span>
-                            )}
-                            {statusInfo.variant === "destructive" && (
-                              <Badge variant={statusInfo.variant} className="text-[8px] px-1.5 py-0 leading-4">
-                                {statusInfo.label}
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </button>
-
-                    {isExpanded && (
-                      <GravacaoExpandedContent
-                        gravacao={g}
-                        sessionToken={sessionToken!}
-                        onCollapse={() => setExpanded(null)}
-                        onDeleted={() => { setExpanded(null); loadData(); }}
-                      />
-                    )}
-                  </div>
-                );
-              })}
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          </div>
+        ) : gravacoes.length === 0 ? (
+          <div className="rounded-2xl border border-border bg-card p-12 flex flex-col items-center justify-center gap-4 shadow-sm">
+            <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
+              <Mic className="w-7 h-7 text-primary" />
             </div>
-          ))}
-        </div>
-      )}
+            <div className="text-center">
+              <p className="text-foreground font-semibold text-base">Nenhuma gravação encontrada</p>
+              <p className="text-sm text-muted-foreground mt-1 max-w-xs">
+                Grave um áudio ou envie um arquivo usando o painel acima.
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {groupByDate(gravacoes).map((group) => (
+              <div key={group.label} className="space-y-2">
+                <h2 className="text-xs font-semibold text-primary uppercase tracking-widest px-1">
+                  {group.label}
+                </h2>
+                <div className="space-y-1.5">
+                  {group.items.map((g) => {
+                    const isExpanded = expanded === g.id;
+                    const statusInfo = STATUS_MAP[g.status] || { label: g.status, variant: "secondary" as const };
+
+                    return (
+                      <div
+                        key={g.id}
+                        ref={isExpanded ? (el) => { if (el) setTimeout(() => el.scrollIntoView({ behavior: "smooth", block: "start" }), 100); } : undefined}
+                        className={`rounded-xl border bg-card overflow-hidden transition-all duration-200 ${
+                          isExpanded ? "shadow-md border-primary/20" : "shadow-sm hover:shadow-md border-border"
+                        }`}
+                        style={g.nivel_risco ? { borderLeftWidth: "3px", borderLeftStyle: "solid", borderLeftColor: `${RISCO_COLORS[g.nivel_risco] || "transparent"}90` } : undefined}
+                      >
+                        {selectMode && (!g.nivel_risco || g.nivel_risco === "sem_risco") && (
+                          <div className="flex items-center px-3 py-2" onClick={(e) => e.stopPropagation()}>
+                            <Checkbox
+                              checked={selected.has(g.id)}
+                              onCheckedChange={() => toggleSelect(g.id)}
+                            />
+                          </div>
+                        )}
+                        <button
+                          onClick={() => {
+                            if (selectMode && (!g.nivel_risco || g.nivel_risco === "sem_risco")) {
+                              toggleSelect(g.id);
+                              return;
+                            }
+                            const willExpand = !isExpanded;
+                            if (willExpand) {
+                              window.dispatchEvent(new CustomEvent("waveform-player-stop-all"));
+                            }
+                            setExpanded(isExpanded ? null : g.id);
+                          }}
+                          className="w-full px-3 py-2.5 text-left hover:bg-muted/30 transition-colors"
+                        >
+                          <div className="flex items-center gap-2">
+                            {!selectMode && (
+                              <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
+                                isExpanded ? "bg-primary/15" : "bg-muted/50"
+                              }`}>
+                                <Play className={`w-3 h-3 ${isExpanded ? "text-primary" : "text-muted-foreground"}`} />
+                              </div>
+                            )}
+
+                            <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-medium text-foreground">
+                                  {formatTime(getDisplayTime(g), g.timezone)}
+                                </span>
+                                {(() => {
+                                  const device = getDeviceLabel(g.device_id);
+                                  const DeviceIcon = device.icon;
+                                  return <DeviceIcon className="w-3 h-3 text-muted-foreground" />;
+                                })()}
+                                <span className="text-xs text-muted-foreground inline-flex items-center gap-1">
+                                  <Clock className="w-3 h-3" />
+                                  {formatDuration(g.duracao_segundos)}
+                                </span>
+                                {g.nivel_risco === "sem_risco" && (() => {
+                                  const displayTime = getDisplayTime(g);
+                                  const countdown = getRetentionCountdown(displayTime, retencaoDias);
+                                  if (!countdown) return null;
+                                  const expireAt = new Date(displayTime).getTime() + retencaoDias * 24 * 60 * 60 * 1000;
+                                  const remainingHours = (expireAt - Date.now()) / (1000 * 60 * 60);
+                                  const isUrgent = remainingHours < 24;
+                                  return (
+                                    <TooltipProvider delayDuration={300}>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <span className={`text-[10px] inline-flex items-center gap-0.5 cursor-help ${isUrgent ? "text-destructive/70 font-medium" : "text-muted-foreground/50"}`}>
+                                            <Trash2 className="w-2.5 h-2.5" />
+                                            {countdown}
+                                          </span>
+                                        </TooltipTrigger>
+                                        <TooltipContent side="bottom" className="max-w-[220px] text-center">
+                                          <p className="text-xs">Gravações sem risco são excluídas automaticamente após <strong>{retencaoDias} dias</strong>. Você pode alterar isso em Configurações.</p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  );
+                                })()}
+                                {(g.status === "pendente" || g.status === "processando") && (
+                                  <Loader2 className="w-3 h-3 animate-spin text-muted-foreground/60" />
+                                )}
+                              </div>
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                {g.nivel_risco && (
+                                  <span
+                                    className="text-[10px] font-semibold px-2.5 py-0.5 rounded-lg leading-4 border"
+                                    style={{
+                                      backgroundColor: `${RISCO_COLORS[g.nivel_risco]}15`,
+                                      color: RISCO_COLORS[g.nivel_risco],
+                                      borderColor: `${RISCO_COLORS[g.nivel_risco]}30`,
+                                    }}
+                                  >
+                                    {RISCO_LABELS[g.nivel_risco] || g.nivel_risco}
+                                  </span>
+                                )}
+                                {statusInfo.variant === "destructive" && (
+                                  <Badge variant={statusInfo.variant} className="text-[8px] px-1.5 py-0 leading-4">
+                                    {statusInfo.label}
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </button>
+
+                        {isExpanded && (
+                          <GravacaoExpandedContent
+                            gravacao={g}
+                            sessionToken={sessionToken!}
+                            onCollapse={() => setExpanded(null)}
+                            onDeleted={() => { setExpanded(null); loadData(); }}
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </PullToRefresh>
 
+      {/* ── Pagination ── */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2 pt-2">
+        <div className="flex items-center justify-center gap-3 pt-2">
           <Button
             variant="outline"
             size="sm"
+            className="rounded-lg"
             disabled={page <= 1}
             onClick={() => setPage(p => p - 1)}
           >
             <ChevronLeft className="w-4 h-4" />
           </Button>
-          <span className="text-sm text-muted-foreground tabular-nums">
+          <span className="text-sm text-muted-foreground tabular-nums font-medium">
             {page} / {totalPages}
           </span>
           <Button
             variant="outline"
             size="sm"
+            className="rounded-lg"
             disabled={page >= totalPages}
             onClick={() => setPage(p => p + 1)}
           >
