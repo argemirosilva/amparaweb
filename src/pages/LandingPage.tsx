@@ -3,9 +3,9 @@ import { useNavigate, Link } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import {
   Heart, Users, TrendingUp, Smartphone, Mic, FileUp,
-  MapPin, Search, Headphones, Settings, Check, Star, Menu,
-  Building2, Users2, Phone, Mail,
-  ChevronRight, Lock, ArrowRight, Radio, LogIn, UserPlus, Shield } from
+   MapPin, Search, Headphones, Settings, Check, Star, Menu,
+   Building2, Users2, Phone, Mail,
+   ChevronRight, Lock, ArrowRight, Radio, LogIn, UserPlus, Shield, Eye } from
 "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -288,7 +288,7 @@ export default function LandingPage() {
           <div className="grid md:grid-cols-3 gap-6 mt-12">
             {[
             { icon: Heart, title: "Missão", text: "Oferecer proteção integral e suporte contínuo para mulheres em situação de risco, utilizando tecnologia acessível e humanizada." },
-            { icon: Shield, title: "Visão", text: "Ser referência nacional em proteção feminina, integrando tecnologia, redes de apoio e políticas públicas para um futuro mais seguro." },
+            { icon: Eye, title: "Visão", text: "Ser referência nacional em proteção feminina, integrando tecnologia, redes de apoio e políticas públicas para um futuro mais seguro." },
             { icon: Users, title: "Propósito", text: "Acreditamos que toda mulher merece viver sem medo. O AMPARA é a ponte entre a vulnerabilidade e a segurança plena." }].
             map((c) =>
             <div key={c.title} className="rounded-2xl p-6 bg-card border border-border hover:shadow-lg transition-all duration-300 group">
