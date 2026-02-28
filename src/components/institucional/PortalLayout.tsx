@@ -1,4 +1,5 @@
 import { Outlet, Link, useLocation } from "react-router-dom";
+import { Home } from "lucide-react";
 import amparaLogo from "@/assets/ampara-logo.png";
 
 const navItems = [
@@ -34,6 +35,18 @@ export default function PortalLayout() {
         </div>
 
         <nav className="flex items-center gap-1">
+          <Link
+            to="/"
+            className="px-3 py-2 text-sm rounded transition-colors flex items-center gap-1"
+            style={{
+              fontFamily: "Inter, Roboto, sans-serif",
+              fontWeight: 400,
+              color: "hsl(220 9% 46%)",
+            }}
+          >
+            <Home className="w-3.5 h-3.5" />
+            Site
+          </Link>
           {navItems.map((item) => {
             const isActive = pathname === item.path;
             return (
