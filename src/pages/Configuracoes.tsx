@@ -7,8 +7,12 @@ import NiveisAlertaLegenda from "@/components/configuracoes/NiveisAlertaLegenda"
 
 export default function ConfiguracoesPage() {
   return (
-    <div className="space-y-6 animate-fade-in">
-      <h1 className="text-2xl font-display font-bold text-foreground">Configurações</h1>
+    <div className="space-y-6 animate-fade-in max-w-4xl">
+      {/* Azure-style page header */}
+      <div>
+        <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-1">Preferências</p>
+        <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">Configurações</h1>
+      </div>
       <div className="max-w-lg space-y-6">
         <ChangePasswordCard />
         <MonitoringScheduleEditor />

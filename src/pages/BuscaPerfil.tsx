@@ -111,19 +111,11 @@ export default function BuscaPerfilPage() {
 
   return (
     <div className="p-4 pb-24 max-w-2xl mx-auto space-y-5">
-      {/* Hero header */}
-      <div className="relative overflow-hidden rounded-2xl ampara-gradient-bg p-5 text-primary-foreground">
-        <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-white/10 -translate-y-8 translate-x-8" />
-        <div className="absolute bottom-0 left-0 w-20 h-20 rounded-full bg-white/5 translate-y-6 -translate-x-4" />
-        <div className="relative flex items-center gap-4">
-          <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm">
-            <UserSearch className="w-6 h-6" />
-          </div>
-          <div>
-            <h1 className="text-lg font-bold">Pesquisar Parceiro</h1>
-            <p className="text-sm text-white/80">Pesquise por dados parciais — nunca expomos dados sensíveis</p>
-          </div>
-        </div>
+      {/* Azure-style page header */}
+      <div>
+        <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-1">Pesquisa</p>
+        <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">Pesquisar parceiro</h1>
+        <p className="text-sm text-muted-foreground mt-1">Pesquise por dados parciais — nunca expomos dados sensíveis</p>
       </div>
 
       {/* Info box */}
