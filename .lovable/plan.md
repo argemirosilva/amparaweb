@@ -1,78 +1,64 @@
 
 
-# Tornar o Ecossistema AMPARA Claro para Usuarias Leigas
+# Nova Secao "Dados que Mudam a Historia" + Reforco de Anonimizacao
 
-## Problema Identificado
-A landing page atual foca muito em termos tecnicosc como "inteligencia artificial", "monitoramento de dispositivos", "configuracoes avancadas" -- linguagem que nao conecta com o publico-alvo (mulheres com pouca instrucao). Falta uma secao que explique de forma visual e humana os **3 pilares** do ecossistema: Protecao, Monitoramento/Dados e Orientacao.
+## Objetivo
+Adicionar uma secao impactante na landing page que comunique o diferencial historico do AMPARA: pela primeira vez no mundo, uma base de dados real sobre cenarios e dinamicas de violencia domestica sera construida. Explicar o que isso significa para as vitimas e para o poder publico, reforçando com linguagem acessivel que todos os dados sao anonimizados e seguros.
 
-## Solucao Proposta
+## O que sera adicionado
 
-### 1. Nova secao "Ecossistema" -- visual e didatica (entre "Sobre" e "Funcionalidades")
+### 1. Nova secao "Dados que Mudam a Historia" (entre Ecossistema e Funcionalidades)
 
-Uma secao com 3 blocos grandes e visuais representando os pilares, usando linguagem simples e analogias do dia-a-dia:
+Uma secao com visual de destaque contendo:
 
-| Pilar | Icone | Titulo Simples | Explicacao Acessivel |
-|-------|-------|----------------|---------------------|
-| Protecao | Shield/Heart | "Te protege" | "Como ter alguem de confianca sempre por perto. O sistema avisa suas pessoas de confianca quando voce precisa de ajuda." |
-| Monitoramento e Dados | BarChart/Activity | "Te acompanha" | "Como um diario que guarda tudo pra voce. Grava audios, analisa riscos e cria relatorios que podem ser usados como prova." |
-| Orientacao | BookOpen/Compass | "Te orienta" | "Como uma amiga que sabe onde buscar ajuda. Mostra seus direitos, numeros de emergencia e caminhos para sair da situacao." |
+**Titulo:** "Pela primeira vez na historia, dados reais sobre violencia domestica"
 
-Cada bloco tera:
-- Icone grande e colorido
-- Titulo curto (2-3 palavras, linguagem cotidiana)
-- Frase explicativa simples (sem jargao tecnico)
-- Lista de 2-3 exemplos praticos em bullets
+**Subtitulo acessivel:** "Ate hoje, ninguem sabia de verdade o que acontece dentro de casa. O AMPARA muda isso — sem nunca expor quem voce e."
 
-### 2. Reescrever textos-chave do Hero e Sobre
+**Dois blocos lado a lado:**
 
-**Hero atual:**
-> "Protecao, monitoramento e apoio para mulheres em situacao de vulnerabilidade. Uma plataforma gratuita com tecnologia de inteligencia artificial."
+| Bloco | Titulo | Conteudo |
+|-------|--------|----------|
+| Para voce | "O que isso muda na sua vida" | - Suas provas ficam guardadas com seguranca e podem te ajudar na justiça. - Quanto mais mulheres usam, mais o sistema aprende a proteger melhor. - Voce faz parte de algo maior: ajuda outras mulheres sem se expor. |
+| Para o poder publico | "O que isso muda no Brasil" | - Governos vao saber onde e como a violencia acontece de verdade. - Politicas publicas deixam de ser baseadas em "achismo". - Delegacias e abrigos podem ser colocados onde mais se precisa. |
 
-**Hero proposto:**
-> "Voce nao esta sozinha. O AMPARA te protege, acompanha sua situacao e te orienta sobre seus direitos -- tudo pelo celular, de graca e em total sigilo."
+**Bloco de destaque sobre anonimizacao (abaixo dos dois cards):**
 
-**Secao Sobre -- subtitulo atual:**
-> "Uma plataforma criada para proteger, monitorar e apoiar mulheres..."
+Um banner/callout com icone de cadeado enfatizando:
+- "Ninguem — nem o governo, nem a policia, nem nos — consegue saber quem voce e pelos dados do painel."
+- K-anonimato: so mostramos dados quando existem pelo menos 5 casos parecidos.
+- Atraso de 48 horas: nada aparece em tempo real.
+- Conformidade total com a LGPD.
 
-**Proposto:**
-> "O AMPARA e como ter uma rede de apoio no seu bolso. Ele cuida da sua seguranca, guarda provas quando voce precisar e te mostra o caminho para buscar ajuda."
+### 2. Atualizar a secao de Seguranca existente
 
-### 3. Simplificar nomes das funcionalidades
+Adicionar um bullet point extra na lista de seguranca reforçando a anonimizacao dos dados publicos:
+- "Dados publicos sao 100% anonimizados — impossivel identificar qualquer pessoa"
 
-| Atual | Proposto |
-|-------|----------|
-| "Evolucao do Risco" | "Seu Nivel de Seguranca" |
-| "Monitoramento de Dispositivos" | "Saber se seu celular esta protegido" |
-| "Gravacao de Audio" | "Grava o que acontece ao redor" |
-| "Envio de Arquivos" | "Guarda provas com seguranca" |
-| "Localizacao via GPS" | "Compartilha onde voce esta" |
-| "Pesquisa de Parceiros" | "Consulta sobre agressores" |
-| "Suporte Dedicado" | "Alguem pra te ouvir" |
-| "Configuracoes Avancadas" | "Voce controla tudo" |
+### 3. Adicionar link "Dados" na sub-nav
 
-As descricoes tambem serao reescritas em linguagem simples.
-
-### 4. Adicionar a secao "Ecossistema" na sub-nav
-
-Adicionar o link "Ecossistema" no array `SUB_NAV` para que a navegacao sticky tambem aponte para essa nova secao.
+Incluir o novo item no array `SUB_NAV` para que a navegacao sticky aponte para a nova secao.
 
 ---
 
 ## Detalhes Tecnicos
 
-### Arquivos modificados
-- **`src/pages/LandingPage.tsx`**: Unico arquivo a ser editado
+### Arquivo modificado
+- **`src/pages/LandingPage.tsx`** (unico arquivo)
 
 ### Alteracoes especificas
-1. Adicionar nova secao `id="ecossistema"` entre as secoes "Sobre" e "Funcionalidades" (apos linha ~318, antes da linha ~321)
-2. Atualizar o texto do Hero (linhas 218-219)
-3. Atualizar subtitulo da secao Sobre (linhas 289-290)
-4. Reescrever o array `FEATURES` (linhas 34-42) com titulos e descricoes simplificados
-5. Adicionar "Ecossistema" ao array `SUB_NAV` (linha ~78)
-6. Importar icones adicionais: `Shield, BookOpen, Activity` do lucide-react
 
-### Estilo visual da nova secao
-- Fundo com gradiente suave (consistente com as demais secoes)
-- Cards grandes com `rounded-2xl`, icones de 48px, tipografia clara
-- Responsivo: 1 coluna no mobile, 3 colunas no desktop
+1. **Importar icone `Database`** do lucide-react (linha 4-10)
+2. **Adicionar "Dados" ao array `SUB_NAV`** (entre "Ecossistema" e "Funcionalidades", linha ~81)
+3. **Inserir nova secao `id="dados"`** entre a secao Ecossistema (linha ~409) e Funcionalidades (linha ~412), contendo:
+   - Titulo e subtitulo impactantes
+   - Grid 2 colunas com cards "Para voce" e "Para o poder publico"
+   - Banner de anonimizacao com icone Lock e bullets explicativos
+4. **Adicionar bullet extra na secao Seguranca** (linha ~503): "Dados publicos sao 100% anonimizados"
+
+### Estilo visual
+- Fundo com gradiente suave (consistente com demais secoes)
+- Cards com `rounded-2xl`, bordas e sombras no hover
+- Banner de anonimizacao com fundo escuro (primary) e texto branco para destaque
+- Responsivo: 1 coluna no mobile, 2 colunas no desktop para os cards
 
