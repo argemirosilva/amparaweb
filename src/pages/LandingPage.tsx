@@ -6,7 +6,8 @@ import {
   MapPin, Search, Headphones, Settings, Check, Star, Menu,
   Building2, Users2, Phone, Mail, Instagram,
   ChevronRight, Lock, ArrowRight, Radio, LogIn, UserPlus, Eye,
-  Shield, BookOpen, Activity, Database, Clock, ShieldCheck } from
+  Shield, BookOpen, Activity, Database, Clock, ShieldCheck,
+  Ear, Upload, MessageCircle } from
 "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -74,12 +75,21 @@ const IMPACT_NUMBERS = [
 { value: "100%", label: "Gratuito para todas" }];
 
 
+const FLOW_STEPS = [
+  { icon: Ear, title: "Monitoramento Ativo", desc: "O celular escuta o ambiente nos horários que você definir", color: "hsl(270, 60%, 55%)" },
+  { icon: Mic, title: "Gravação Manual", desc: "Você também pode gravar manualmente a qualquer momento", color: "hsl(250, 55%, 55%)" },
+  { icon: Radio, title: "Botão de Pânico", desc: "Em situações de emergência, acione com um toque", color: "hsl(340, 70%, 50%)" },
+  { icon: Upload, title: "Envio ao Servidor", desc: "Áudios e dados são enviados e analisados por inteligência artificial", color: "hsl(200, 70%, 50%)" },
+  { icon: MessageCircle, title: "Alerta aos Guardiões", desc: "Seus guardiões recebem notificação via WhatsApp com sua localização", color: "hsl(145, 60%, 40%)" },
+  { icon: Phone, title: "Chamada de Emergência", desc: "O sistema liga automaticamente para 190 (Polícia) e 180 (Delegacia da Mulher)", color: "hsl(0, 70%, 50%)" },
+];
 /* ── Sub-nav links ── */
 const SUB_NAV = [
 { label: "Sobre", id: "sobre" },
 { label: "Ecossistema", id: "ecossistema" },
 { label: "Dados", id: "dados" },
 { label: "Funcionalidades", id: "funcionalidades" },
+{ label: "Fluxo", id: "fluxo" },
 { label: "Como Funciona", id: "como-funciona" },
 { label: "Segurança", id: "seguranca" },
 { label: "Depoimentos", id: "depoimentos" },
@@ -543,7 +553,60 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ══════ COMO FUNCIONA ══════ */}
+      {/* ══════ FLUXO DE PROTEÇÃO ══════ */}
+      <section id="fluxo" className="py-16 md:py-24 bg-background">
+        <div className="max-w-6xl mx-auto px-4">
+          <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-3">Fluxo de Proteção</p>
+          <h2 className="text-2xl md:text-4xl font-bold text-foreground max-w-2xl">Como o AMPARA te protege na prática</h2>
+          <p className="text-muted-foreground mt-3 max-w-2xl text-sm md:text-base leading-relaxed">
+            Do monitoramento ao acionamento de autoridades — cada etapa funciona automaticamente para sua segurança.
+          </p>
+
+          {/* Desktop: horizontal pipeline */}
+          <div className="hidden lg:flex items-start justify-between mt-14 relative">
+            {/* Connector line behind */}
+            <div className="absolute top-7 left-[8%] right-[8%] h-0.5 bg-gradient-to-r from-[hsl(270,60%,55%)] via-[hsl(200,70%,50%)] to-[hsl(0,70%,50%)] opacity-30 rounded-full" />
+            {FLOW_STEPS.map((step, i) => (
+              <div key={step.title} className="flex flex-col items-center text-center flex-1 relative z-10">
+                <div
+                  className="w-14 h-14 rounded-full flex items-center justify-center shadow-md mb-3 border-2 border-white"
+                  style={{ backgroundColor: step.color }}
+                >
+                  <step.icon className="w-6 h-6 text-white" />
+                </div>
+                <h3 className="text-xs font-bold text-foreground mb-1 leading-tight">{step.title}</h3>
+                <p className="text-[11px] text-muted-foreground leading-snug max-w-[140px]">{step.desc}</p>
+                {i < FLOW_STEPS.length - 1 && (
+                  <ChevronRight className="absolute -right-2 top-4 w-5 h-5 text-muted-foreground/40" />
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Mobile/Tablet: vertical timeline */}
+          <div className="lg:hidden mt-10 relative pl-8">
+            {/* Vertical line */}
+            <div className="absolute left-[15px] top-2 bottom-2 w-0.5 bg-gradient-to-b from-[hsl(270,60%,55%)] via-[hsl(200,70%,50%)] to-[hsl(0,70%,50%)] opacity-30 rounded-full" />
+            <div className="space-y-8">
+              {FLOW_STEPS.map((step) => (
+                <div key={step.title} className="flex items-start gap-4 relative">
+                  <div
+                    className="w-10 h-10 rounded-full flex items-center justify-center shadow-md shrink-0 border-2 border-white absolute -left-8"
+                    style={{ backgroundColor: step.color }}
+                  >
+                    <step.icon className="w-4.5 h-4.5 text-white" />
+                  </div>
+                  <div className="ml-6">
+                    <h3 className="text-sm font-bold text-foreground mb-0.5">{step.title}</h3>
+                    <p className="text-xs text-muted-foreground leading-relaxed">{step.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section id="como-funciona" className="py-16 md:py-24 bg-background">
         <div className="max-w-6xl mx-auto px-4">
           <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-3">Como Funciona</p>
@@ -631,7 +694,6 @@ export default function LandingPage() {
       </section>
 
       {/* ══════ DEPOIMENTOS ══════ */}
-      
 
 
 
