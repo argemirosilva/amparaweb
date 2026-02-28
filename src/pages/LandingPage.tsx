@@ -6,7 +6,7 @@ import {
   MapPin, Search, Headphones, Settings, Check, Star, Menu,
   Building2, Users2, Phone, Mail,
   ChevronRight, Lock, ArrowRight, Radio, LogIn, UserPlus, Eye,
-  Shield, BookOpen, Activity } from
+  Shield, BookOpen, Activity, Database, Clock, ShieldCheck } from
 "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -78,6 +78,7 @@ const IMPACT_NUMBERS = [
 const SUB_NAV = [
 { label: "Sobre", id: "sobre" },
 { label: "Ecossistema", id: "ecossistema" },
+{ label: "Dados", id: "dados" },
 { label: "Funcionalidades", id: "funcionalidades" },
 { label: "Como Funciona", id: "como-funciona" },
 { label: "Segurança", id: "seguranca" },
@@ -408,6 +409,113 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ══════ DADOS QUE MUDAM A HISTÓRIA ══════ */}
+      <section id="dados" className="py-16 md:py-24 relative overflow-hidden" style={{ background: "linear-gradient(180deg, hsl(260, 20%, 97%), hsl(200, 25%, 95%), hsl(260, 15%, 97%))" }}>
+        <div className="max-w-6xl mx-auto px-4">
+          <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-3">Dados</p>
+          <h2 className="text-2xl md:text-4xl font-bold text-foreground max-w-3xl">
+            Pela primeira vez na história, dados reais sobre violência doméstica
+          </h2>
+          <p className="text-muted-foreground mt-3 max-w-2xl text-sm md:text-base leading-relaxed">
+            Até hoje, ninguém sabia de verdade o que acontece dentro de casa. O AMPARA muda isso — sem nunca expor quem você é.
+          </p>
+
+          <div className="grid md:grid-cols-2 gap-6 mt-12">
+            {/* Card: Para você */}
+            <div className="rounded-2xl p-7 bg-white border border-border hover:shadow-xl transition-all duration-300 group flex flex-col">
+              <div className="w-14 h-14 rounded-2xl bg-rose-100 flex items-center justify-center mb-5 group-hover:bg-rose-200 transition-colors">
+                <Heart className="w-7 h-7 text-rose-600" />
+              </div>
+              <h3 className="text-lg md:text-xl font-bold text-foreground mb-2">O que isso muda na sua vida</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed mb-4">
+                Quando mais mulheres participam, a proteção fica mais forte pra todas — e você nunca precisa se expor.
+              </p>
+              <ul className="space-y-3 mt-auto">
+                <li className="flex items-start gap-2 text-sm text-muted-foreground">
+                  <Check className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+                  <span>Suas provas ficam guardadas com segurança e podem te ajudar na justiça</span>
+                </li>
+                <li className="flex items-start gap-2 text-sm text-muted-foreground">
+                  <Check className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+                  <span>Quanto mais mulheres usam, mais o sistema aprende a proteger melhor</span>
+                </li>
+                <li className="flex items-start gap-2 text-sm text-muted-foreground">
+                  <Check className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+                  <span>Você faz parte de algo maior: ajuda outras mulheres sem se expor</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* Card: Para o poder público */}
+            <div className="rounded-2xl p-7 bg-white border border-border hover:shadow-xl transition-all duration-300 group flex flex-col">
+              <div className="w-14 h-14 rounded-2xl bg-sky-100 flex items-center justify-center mb-5 group-hover:bg-sky-200 transition-colors">
+                <Database className="w-7 h-7 text-sky-600" />
+              </div>
+              <h3 className="text-lg md:text-xl font-bold text-foreground mb-2">O que isso muda no Brasil</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed mb-4">
+                Pela primeira vez, o poder público vai poder agir com base em dados reais — e não em achismo.
+              </p>
+              <ul className="space-y-3 mt-auto">
+                <li className="flex items-start gap-2 text-sm text-muted-foreground">
+                  <Check className="w-4 h-4 text-sky-500 shrink-0 mt-0.5" />
+                  <span>Governos vão saber onde e como a violência acontece de verdade</span>
+                </li>
+                <li className="flex items-start gap-2 text-sm text-muted-foreground">
+                  <Check className="w-4 h-4 text-sky-500 shrink-0 mt-0.5" />
+                  <span>Políticas públicas deixam de ser baseadas em "achismo"</span>
+                </li>
+                <li className="flex items-start gap-2 text-sm text-muted-foreground">
+                  <Check className="w-4 h-4 text-sky-500 shrink-0 mt-0.5" />
+                  <span>Delegacias e abrigos podem ser colocados onde mais se precisa</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Banner de anonimização */}
+          <div className="mt-10 p-6 md:p-10 bg-primary text-primary-foreground rounded-3xl relative overflow-hidden">
+            {/* Subtle background pattern */}
+            <div className="absolute inset-0 opacity-10">
+              <div className="absolute top-4 right-4 w-32 h-32 rounded-full border-2 border-current" />
+              <div className="absolute bottom-4 left-4 w-20 h-20 rounded-full border border-current" />
+            </div>
+            <div className="relative z-10">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 rounded-2xl bg-white/15 flex items-center justify-center">
+                  <Lock className="w-6 h-6" />
+                </div>
+                <h3 className="text-xl md:text-2xl font-bold">Sua segurança é nossa prioridade absoluta</h3>
+              </div>
+              <p className="text-sm md:text-base opacity-90 max-w-2xl mb-6 leading-relaxed">
+                Ninguém — nem o governo, nem a polícia, nem nós — consegue saber quem você é pelos dados do painel público.
+              </p>
+              <div className="grid sm:grid-cols-3 gap-4">
+                <div className="flex items-start gap-3 bg-white/10 rounded-xl p-4">
+                  <ShieldCheck className="w-5 h-5 shrink-0 mt-0.5 opacity-80" />
+                  <div>
+                    <p className="text-sm font-semibold">K-anonimato</p>
+                    <p className="text-xs opacity-80 mt-1">Só mostramos dados quando existem pelo menos 5 casos parecidos na mesma região</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 bg-white/10 rounded-xl p-4">
+                  <Clock className="w-5 h-5 shrink-0 mt-0.5 opacity-80" />
+                  <div>
+                    <p className="text-sm font-semibold">Atraso de 48h</p>
+                    <p className="text-xs opacity-80 mt-1">Nenhum dado aparece em tempo real — tudo tem um atraso de segurança de 48 horas</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 bg-white/10 rounded-xl p-4">
+                  <Lock className="w-5 h-5 shrink-0 mt-0.5 opacity-80" />
+                  <div>
+                    <p className="text-sm font-semibold">LGPD</p>
+                    <p className="text-xs opacity-80 mt-1">Conformidade total com a Lei Geral de Proteção de Dados do Brasil</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* ══════ FUNCIONALIDADES ══════ */}
       <section id="funcionalidades" className="py-16 md:py-24" style={{ background: "linear-gradient(180deg, hsl(260, 20%, 97%), hsl(200, 20%, 96%))" }}>
@@ -500,7 +608,8 @@ export default function LandingPage() {
                 "Auditoria completa de acessos de suporte",
                 "Senha de coação para situações de emergência",
                 "Controle total sobre seus dados",
-                "Guardiões só recebem alertas — sem acesso a gravações"].
+                "Guardiões só recebem alertas — sem acesso a gravações",
+                "Dados públicos são 100% anonimizados — impossível identificar qualquer pessoa"].
                 map((b) =>
                 <li key={b} className="flex items-center gap-3 text-sm text-foreground">
                     <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
