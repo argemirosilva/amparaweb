@@ -337,8 +337,12 @@ export default function PerfilPage() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in max-w-2xl">
-      <h1 className="text-2xl font-display font-bold text-foreground">Perfil</h1>
+    <div className="space-y-6 animate-fade-in max-w-4xl">
+      {/* Azure-style page header */}
+      <div>
+        <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-1">Conta</p>
+        <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">Perfil</h1>
+      </div>
 
       {/* Personal Data */}
       <div className="ampara-card space-y-4">
