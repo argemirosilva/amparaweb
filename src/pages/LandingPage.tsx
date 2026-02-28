@@ -5,7 +5,7 @@ import {
   Shield, Heart, Users, TrendingUp, Smartphone, Mic, FileUp,
   MapPin, Search, Headphones, Settings, Check, Star, Menu,
   Building2, Users2, Phone, Mail, Eye,
-  ChevronRight, Lock, ArrowRight, Radio, LogIn } from
+  ChevronRight, Lock, ArrowRight, Radio, LogIn, UserPlus } from
 "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -140,7 +140,7 @@ export default function LandingPage() {
                 <LogIn className="w-4 h-4" /> Portal da Mulher
               </Link>
               <Link to="/cadastro" className="ampara-btn-primary flex items-center justify-center gap-2" onClick={() => setMobileOpen(false)}>
-                <Shield className="w-4 h-4" /> Cadastre-se
+                <UserPlus className="w-4 h-4" /> Cadastre-se
               </Link>
             </SheetContent>
           </Sheet>
@@ -167,7 +167,7 @@ export default function LandingPage() {
             </p>
             <div className="flex flex-wrap gap-2">
               <Link to="/cadastro" className="ampara-btn-primary !w-auto text-sm md:text-base !py-2 !px-5 flex items-center gap-2">
-                <Shield className="w-4 h-4" /> Cadastre-se agora
+                <UserPlus className="w-4 h-4" /> Cadastre-se agora
               </Link>
               <button onClick={() => scrollTo("sobre")} className="!w-auto flex items-center gap-2 px-4 py-2 rounded-xl border border-white/30 text-white text-sm font-semibold hover:bg-white/10 transition-colors">
                 Saiba mais <ArrowRight className="w-3.5 h-3.5" />
