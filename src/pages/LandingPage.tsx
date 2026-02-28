@@ -135,6 +135,13 @@ export default function LandingPage() {
           {l.label}
         </button>
     )}
+      <Link
+        to="/transparencia"
+        onClick={onNav}
+        className="text-sm font-medium text-foreground/70 hover:text-primary transition-colors"
+      >
+        Transparência
+      </Link>
     </>;
 
 
