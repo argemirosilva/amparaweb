@@ -64,6 +64,38 @@ export default function TransparenciaMapa() {
   const [geojson, setGeojson] = useState<any>(null);
   const [municipios, setMunicipios] = useState<{ nome: string; eventos: number }[]>([]);
   const [ufTrends, setUfTrends] = useState<Record<string, "up" | "down" | "stable">>({});
+  const geoDetectedRef = useRef(false);
+
+  // Auto-detect visitor's state via browser geolocation
+  useEffect(() => {
+    if (geoDetectedRef.current) return;
+    geoDetectedRef.current = true;
+
+    navigator.geolocation?.getCurrentPosition(
+      async (pos) => {
+        try {
+          const { latitude, longitude } = pos.coords;
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&zoom=5&addressdetails=1`,
+            { headers: { "Accept-Language": "pt-BR" } }
+          );
+          const data = await res.json();
+          const stateName = data?.address?.state;
+          if (stateName) {
+            const uf = STATE_NAME_TO_UF[stateName];
+            if (uf) {
+              setFilterUf(uf);
+              setSelectedUf(uf);
+            }
+          }
+        } catch {
+          // silently ignore
+        }
+      },
+      () => {}, // permission denied — keep national view
+      { timeout: 5000, maximumAge: 300000 }
+    );
+  }, []);
 
   // Load GeoJSON once
   useEffect(() => {
