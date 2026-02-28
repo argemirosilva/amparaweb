@@ -228,8 +228,8 @@ export default function LandingPage() {
               <Link to="/login" className="!w-auto flex items-center gap-2 px-5 py-2.5 rounded-xl border border-border text-foreground text-sm font-semibold hover:bg-muted transition-colors bg-white/80 backdrop-blur-sm">
                 Acessar o Portal
               </Link>
-              <a href="https://instagram.com/amparamulheres" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border text-foreground text-sm font-semibold hover:bg-muted transition-colors bg-white/80 backdrop-blur-sm">
-                <Instagram className="w-4 h-4" /> @amparamulheres
+              <a href="https://instagram.com/amparamulheres" target="_blank" rel="noopener noreferrer" aria-label="Instagram @amparamulheres" className="inline-flex items-center justify-center w-10 h-10 rounded-xl border border-border text-foreground hover:bg-muted transition-colors bg-white/80 backdrop-blur-sm">
+                <Instagram className="w-5 h-5" />
               </a>
             </div>
 
