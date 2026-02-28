@@ -57,14 +57,14 @@ export default function TransparenciaDadosAbertos() {
               <div className="flex gap-2 shrink-0">
                 <button
                   className="flex items-center gap-1 px-3 py-1.5 rounded border text-xs font-medium transition-colors hover:bg-gray-50"
-                  style={{ borderColor: "hsl(224 76% 33%)", color: "hsl(224 76% 33%)" }}
+                  style={{ borderColor: "hsl(207 89% 42%)", color: "hsl(207 89% 42%)" }}
                 >
                   <FileText className="w-3 h-3" />
                   CSV
                 </button>
                 <button
                   className="flex items-center gap-1 px-3 py-1.5 rounded border text-xs font-medium transition-colors hover:bg-gray-50"
-                  style={{ borderColor: "hsl(224 76% 33%)", color: "hsl(224 76% 33%)" }}
+                  style={{ borderColor: "hsl(207 89% 42%)", color: "hsl(207 89% 42%)" }}
                 >
                   <FileJson className="w-3 h-3" />
                   JSON

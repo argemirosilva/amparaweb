@@ -36,7 +36,7 @@ export default function SuporteAuditoria() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <Shield className="w-6 h-6" style={{ color: "hsl(224 76% 33%)" }} />
+        <Shield className="w-6 h-6" style={{ color: "hsl(207 89% 42%)" }} />
         <h1 className="text-2xl font-bold" style={{ color: "hsl(220 13% 18%)" }}>Auditoria de Suporte</h1>
       </div>
       <p className="text-sm text-muted-foreground">

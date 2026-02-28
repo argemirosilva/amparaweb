@@ -620,7 +620,7 @@ export default function AdminMapa() {
       map.addSource("states", { type: "geojson", data: enriched });
       map.addLayer({ id: "states-fill", type: "fill", source: "states", paint: { "fill-color": fillColorExpr as any, "fill-opacity": 0.7 } });
       map.addLayer({ id: "states-outline", type: "line", source: "states", paint: { "line-color": "hsl(220, 13%, 70%)", "line-width": 1 } });
-      map.addLayer({ id: "states-hover", type: "fill", source: "states", paint: { "fill-color": "hsl(224, 76%, 33%)", "fill-opacity": 0.15 }, filter: ["==", "uf_code", ""] });
+      map.addLayer({ id: "states-hover", type: "fill", source: "states", paint: { "fill-color": "hsl(207, 89%, 42%)", "fill-opacity": 0.15 }, filter: ["==", "uf_code", ""] });
 
       const labelFeatures = enriched.features.map((f: any) => {
         const coords = f.geometry.type === "Polygon" ? f.geometry.coordinates[0] : f.geometry.coordinates.flat(2);
@@ -670,7 +670,7 @@ export default function AdminMapa() {
           const trendPct = rt?.pct || 0;
           popup.setLngLat(e.lngLat).setHTML(`<div style="font-family:Inter,Roboto,sans-serif;font-size:11px;line-height:1.6;color:hsl(220,13%,18%)">
             <strong style="font-size:13px">${stateName}</strong>
-            <div style="background:hsl(224,76%,96%);border-radius:6px;padding:6px 8px;margin:6px 0">
+            <div style="background:hsl(207,89%,96%);border-radius:6px;padding:6px 8px;margin:6px 0">
               <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-weight:600">🎙 Gravações</span><strong style="font-size:14px">${grav}</strong></div>
               <div style="display:flex;justify-content:space-between;align-items:center;margin-top:2px">
                 <span style="color:hsl(220,9%,46%);font-size:10px">⏱ ${horas}h de áudio</span>
@@ -679,7 +679,7 @@ export default function AdminMapa() {
             </div>
             <div style="display:flex;justify-content:space-between"><span style="color:hsl(220,9%,46%)">Usuárias ativas</span><strong>${p.usuarios || 0}</strong></div>
             <div style="display:flex;justify-content:space-between"><span style="color:hsl(220,9%,46%)">Online</span><strong style="color:hsl(142,71%,35%)">${p.online || 0}</strong></div>
-            <div style="display:flex;justify-content:space-between"><span style="color:hsl(220,9%,46%)">Monitorando</span><strong style="color:hsl(224,76%,33%)">${p.monitorando || 0}</strong></div>
+            <div style="display:flex;justify-content:space-between"><span style="color:hsl(220,9%,46%)">Monitorando</span><strong style="color:hsl(207,89%,42%)">${p.monitorando || 0}</strong></div>
             <div style="display:flex;justify-content:space-between"><span style="color:hsl(220,9%,46%)">Alertas ativos</span><strong style="color:hsl(0,72%,51%)">${p.alertas || 0}</strong></div>
           </div>`).addTo(map);
         }
@@ -792,7 +792,7 @@ export default function AdminMapa() {
             {([["7d", "7 dias"], ["30d", "30 dias"], ["6m", "6 meses"], ["12m", "1 ano"], ["2a", "2 anos"], ["3a", "3 anos"]] as [string, string][]).map(([key, label]) => (
               <button key={key} onClick={() => setPeriod(key)}
                 className="px-3 py-1.5 text-xs rounded-md border transition-colors"
-                style={{ borderColor: period === key ? "hsl(224 76% 33%)" : "hsl(220 13% 91%)", background: period === key ? "hsl(224 76% 33%)" : "transparent", color: period === key ? "#fff" : "hsl(220 9% 46%)", fontWeight: period === key ? 600 : 400 }}>
+                style={{ borderColor: period === key ? "hsl(207 89% 42%)" : "hsl(220 13% 91%)", background: period === key ? "hsl(207 89% 42%)" : "transparent", color: period === key ? "#fff" : "hsl(220 9% 46%)", fontWeight: period === key ? 600 : 400 }}>
                 {label}
               </button>
             ))}
@@ -804,7 +804,7 @@ export default function AdminMapa() {
                 return years.map(y => (
                   <button key={y} onClick={() => setPeriod(y)}
                     className="px-3 py-1.5 text-xs rounded-md border transition-colors"
-                    style={{ borderColor: period === y ? "hsl(224 76% 33%)" : "hsl(220 13% 91%)", background: period === y ? "hsl(224 76% 33%)" : "transparent", color: period === y ? "#fff" : "hsl(220 9% 46%)", fontWeight: period === y ? 600 : 400 }}>
+                    style={{ borderColor: period === y ? "hsl(207 89% 42%)" : "hsl(220 13% 91%)", background: period === y ? "hsl(207 89% 42%)" : "transparent", color: period === y ? "#fff" : "hsl(220 9% 46%)", fontWeight: period === y ? 600 : 400 }}>
                     {y}
                   </button>
                 ));
@@ -816,8 +816,8 @@ export default function AdminMapa() {
                     onChange={(e) => { if (e.target.value) setPeriod(e.target.value); }}
                     className="appearance-none pl-3 pr-7 py-1.5 text-xs rounded-md border transition-colors cursor-pointer outline-none"
                     style={{
-                      borderColor: isYearSelected ? "hsl(224 76% 33%)" : "hsl(220 13% 91%)",
-                      background: isYearSelected ? "hsl(224 76% 33%)" : "transparent",
+                      borderColor: isYearSelected ? "hsl(207 89% 42%)" : "hsl(220 13% 91%)",
+                      background: isYearSelected ? "hsl(207 89% 42%)" : "transparent",
                       color: isYearSelected ? "#fff" : "hsl(220 9% 46%)",
                       fontWeight: isYearSelected ? 600 : 400,
                     }}>
@@ -899,7 +899,7 @@ export default function AdminMapa() {
               {stats[selectedUf] ? (
                 <div className="space-y-2 mb-4">
                   {[
-                    { label: "🎙 Gravações", value: stats[selectedUf].gravacoes, color: "hsl(224 76% 33%)" },
+                    { label: "🎙 Gravações", value: stats[selectedUf].gravacoes, color: "hsl(207 89% 42%)" },
                     { label: "⏱ Horas de áudio", value: `${stats[selectedUf].horasGravacao}h`, color: "hsl(262 60% 50%)" },
                     { label: "Usuárias ativas", value: stats[selectedUf].usuarios, color: "hsl(220 13% 18%)" },
                     { label: "Online", value: stats[selectedUf].online, color: "hsl(142 71% 35%)" },
@@ -933,7 +933,7 @@ export default function AdminMapa() {
                           <div className="flex items-center gap-2 flex-shrink-0">
                             {rankingMode === "gravacoes" && (
                               <>
-                                <span style={{ color: "hsl(224 76% 33%)" }}>{s.gravacoes} 🎙</span>
+                                <span style={{ color: "hsl(207 89% 42%)" }}>{s.gravacoes} 🎙</span>
                                 <span style={{ color: "hsl(262 60% 50%)" }}>{s.horasGravacao}h</span>
                               </>
                             )}
@@ -972,7 +972,7 @@ export default function AdminMapa() {
                         <div className="flex items-center gap-2 flex-shrink-0">
                           {rankingMode === "gravacoes" && (
                             <>
-                              <span className="font-bold" style={{ color: "hsl(224 76% 33%)" }}>{s.gravacoes}</span>
+                              <span className="font-bold" style={{ color: "hsl(207 89% 42%)" }}>{s.gravacoes}</span>
                               {rt && rt.trend !== "stable" && (
                                 <span className="font-bold" style={{ color: rt.trend === "up" ? "hsl(0 35% 50%)" : "hsl(160 25% 42%)" }}>
                                   {rt.trend === "up" ? "▲" : "▼"}{rt.pct}%

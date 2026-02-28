@@ -27,9 +27,9 @@ export default function GovKpiCard({ title, value, subtitle, icon: Icon, trend }
         </p>
         <div
           className="w-8 h-8 rounded flex items-center justify-center"
-          style={{ background: "hsl(224 76% 33% / 0.08)" }}
+          style={{ background: "hsl(207 89% 42% / 0.08)" }}
         >
-          <Icon className="w-4 h-4" style={{ color: "hsl(224 76% 33%)" }} />
+          <Icon className="w-4 h-4" style={{ color: "hsl(207 89% 42%)" }} />
         </div>
       </div>
       <p className="text-2xl font-bold" style={{ color: "hsl(220 13% 18%)", fontWeight: 700 }}>

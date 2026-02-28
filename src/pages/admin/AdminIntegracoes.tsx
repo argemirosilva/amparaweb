@@ -48,7 +48,7 @@ const INTEGRATION_CATEGORIES = [
     label: "Análise de IA — Lovable AI Gateway",
     description: "Modelos de inteligência artificial para análise de risco e classificação de gravações.",
     icon: Brain,
-    color: "hsl(224 76% 33%)",
+    color: "hsl(207 89% 42%)",
   },
   {
     key: "integracao_sinergytech",
@@ -171,7 +171,7 @@ export default function AdminIntegracoes() {
           <button
             onClick={() => handleChange(s.id, currentValue === "true" ? "false" : "true")}
             className="relative w-10 h-5 rounded-full transition-colors shrink-0"
-            style={{ background: currentValue === "true" ? "hsl(224 76% 33%)" : "hsl(220 13% 85%)" }}
+            style={{ background: currentValue === "true" ? "hsl(207 89% 42%)" : "hsl(220 13% 85%)" }}
           >
             <span
               className="absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform"
@@ -187,7 +187,7 @@ export default function AdminIntegracoes() {
                 <RotateCcw className="w-3.5 h-3.5" style={{ color: "hsl(220 9% 46%)" }} />
               </button>
               <button onClick={() => handleSave(s)} disabled={saving === s.id} className="p-1 rounded hover:bg-gray-100" title="Salvar">
-                <Save className="w-3.5 h-3.5" style={{ color: "hsl(224 76% 33%)" }} />
+                <Save className="w-3.5 h-3.5" style={{ color: "hsl(207 89% 42%)" }} />
               </button>
             </div>
           )}
@@ -224,7 +224,7 @@ export default function AdminIntegracoes() {
               <RotateCcw className="w-3.5 h-3.5" style={{ color: "hsl(220 9% 46%)" }} />
             </button>
             <button onClick={() => handleSave(s)} disabled={saving === s.id} className="p-1.5 rounded hover:bg-gray-100" title="Salvar">
-              <Save className="w-3.5 h-3.5" style={{ color: "hsl(224 76% 33%)" }} />
+              <Save className="w-3.5 h-3.5" style={{ color: "hsl(207 89% 42%)" }} />
             </button>
           </div>
         )}

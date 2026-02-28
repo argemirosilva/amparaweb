@@ -366,7 +366,7 @@ export default function TransparenciaMapa() {
         type: "fill",
         source: "states",
         paint: {
-          "fill-color": "hsl(224, 76%, 33%)",
+          "fill-color": "hsl(207, 89%, 42%)",
           "fill-opacity": 0.15,
         },
         filter: ["==", "uf_code", ""],
@@ -623,8 +623,8 @@ export default function TransparenciaMapa() {
                 onClick={() => setPeriod(p)}
                 className="px-3 py-1.5 text-xs rounded border transition-colors"
                 style={{
-                  borderColor: period === p ? "hsl(224 76% 33%)" : "hsl(220 13% 91%)",
-                  background: period === p ? "hsl(224 76% 33%)" : "transparent",
+                  borderColor: period === p ? "hsl(207 89% 42%)" : "hsl(220 13% 91%)",
+                  background: period === p ? "hsl(207 89% 42%)" : "transparent",
                   color: period === p ? "#fff" : "hsl(220 9% 46%)",
                   fontWeight: period === p ? 600 : 400,
                 }}
@@ -668,7 +668,7 @@ export default function TransparenciaMapa() {
             {selectedUf ? `${UF_TO_STATE_NAME[selectedUf] || selectedUf} — ${selectedUf}` : "Brasil"}
           </h3>
           {selectedUf && (
-            <span className="text-[10px] px-2 py-0.5 rounded-full font-medium" style={{ background: "hsl(224 76% 33% / 0.1)", color: "hsl(224 76% 33%)" }}>
+            <span className="text-[10px] px-2 py-0.5 rounded-full font-medium" style={{ background: "hsl(207 89% 42% / 0.1)", color: "hsl(207 89% 42%)" }}>
               {pctPais}% do país
             </span>
           )}
@@ -677,7 +677,7 @@ export default function TransparenciaMapa() {
         {/* Metric cards */}
         <div className="grid grid-cols-3 gap-2 mb-4">
           <div className="rounded-lg p-2.5 text-center" style={{ background: "hsl(210 17% 96%)" }}>
-            <p className="text-lg font-bold" style={{ color: "hsl(224 76% 33%)" }}>{currentStats.monitoradas}</p>
+            <p className="text-lg font-bold" style={{ color: "hsl(207 89% 42%)" }}>{currentStats.monitoradas}</p>
             <p className="text-[10px] leading-tight mt-0.5" style={{ color: "hsl(220 9% 46%)" }}>Monitoradas</p>
           </div>
           <div className="rounded-lg p-2.5 text-center" style={{ background: "hsl(210 17% 96%)" }}>
@@ -734,12 +734,12 @@ export default function TransparenciaMapa() {
                     style={{ background: "hsl(210 17% 96%)" }}
                   >
                     <div className="flex items-center gap-2">
-                      <span className="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold" style={{ background: "hsl(224 76% 33% / 0.1)", color: "hsl(224 76% 33%)" }}>
+                      <span className="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold" style={{ background: "hsl(207 89% 42% / 0.1)", color: "hsl(207 89% 42%)" }}>
                         {i + 1}
                       </span>
                       <span style={{ color: "hsl(220 13% 18%)" }}>{m.nome}</span>
                     </div>
-                    <span className="font-semibold" style={{ color: "hsl(224 76% 33%)" }}>{m.eventos}</span>
+                    <span className="font-semibold" style={{ color: "hsl(207 89% 42%)" }}>{m.eventos}</span>
                   </div>
                 ))}
               </div>
@@ -747,7 +747,7 @@ export default function TransparenciaMapa() {
             <button
               onClick={() => { setFilterUf(""); setSelectedUf(null); }}
               className="mt-4 w-full text-xs font-medium px-3 py-2 rounded-lg border transition-colors hover:bg-gray-50"
-              style={{ borderColor: "hsl(224 76% 33%)", color: "hsl(224 76% 33%)" }}
+              style={{ borderColor: "hsl(207 89% 42%)", color: "hsl(207 89% 42%)" }}
             >
               ← Voltar para Brasil
             </button>

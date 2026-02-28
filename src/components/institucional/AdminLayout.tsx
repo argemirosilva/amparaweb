@@ -68,13 +68,13 @@ export default function AdminLayout() {
           </button>
           <img src={amparaLogo} alt="AMPARA" className="h-10 object-contain" />
           <div className="hidden sm:flex items-center gap-2">
-            <span className="text-sm font-semibold" style={{ color: "hsl(224 76% 33%)" }}>
+            <span className="text-sm font-semibold" style={{ color: "hsl(207 89% 42%)" }}>
               Painel de Administração — AMPARA
             </span>
             {tenantSigla && (
               <span
                 className="text-xs px-2 py-0.5 rounded"
-                style={{ background: "hsl(224 76% 33% / 0.08)", color: "hsl(224 76% 33%)" }}
+                style={{ background: "hsl(207 89% 42% / 0.08)", color: "hsl(207 89% 42%)" }}
               >
                 {tenantSigla}
               </span>
@@ -132,8 +132,8 @@ export default function AdminLayout() {
                   className="flex items-center gap-3 px-3 py-2.5 rounded text-sm transition-colors"
                   style={{
                     fontWeight: isActive ? 600 : 400,
-                    color: isActive ? "hsl(224 76% 33%)" : "hsl(220 9% 46%)",
-                    background: isActive ? "hsl(224 76% 33% / 0.08)" : "transparent",
+                    color: isActive ? "hsl(207 89% 42%)" : "hsl(220 9% 46%)",
+                    background: isActive ? "hsl(207 89% 42% / 0.08)" : "transparent",
                   }}
                 >
                   <Icon className="w-4 h-4 shrink-0" />

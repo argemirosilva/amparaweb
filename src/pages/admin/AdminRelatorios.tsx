@@ -506,7 +506,7 @@ export default function AdminRelatorios() {
               onClick={() => setPeriod(p)}
               className="px-3 py-1 text-xs rounded transition-colors"
               style={{
-                background: period === p ? "hsl(224 76% 33%)" : "transparent",
+                background: period === p ? "hsl(207 89% 42%)" : "transparent",
                 color: period === p ? "#fff" : "hsl(220 9% 46%)",
                 fontWeight: period === p ? 600 : 400,
               }}
@@ -528,8 +528,8 @@ export default function AdminRelatorios() {
               onClick={() => setActiveTab(tab.id)}
               className="flex items-center gap-1.5 px-4 py-2.5 text-xs font-medium border-b-2 transition-colors -mb-px"
               style={{
-                borderColor: isActive ? "hsl(224 76% 33%)" : "transparent",
-                color: isActive ? "hsl(224 76% 33%)" : "hsl(220 9% 46%)",
+                borderColor: isActive ? "hsl(207 89% 42%)" : "transparent",
+                color: isActive ? "hsl(207 89% 42%)" : "hsl(220 9% 46%)",
               }}
             >
               <Icon className="w-3.5 h-3.5" />
@@ -542,7 +542,7 @@ export default function AdminRelatorios() {
       {/* Content */}
       {loading ? (
         <div className="flex items-center justify-center py-16">
-          <Loader2 className="w-6 h-6 animate-spin" style={{ color: "hsl(224 76% 33%)" }} />
+          <Loader2 className="w-6 h-6 animate-spin" style={{ color: "hsl(207 89% 42%)" }} />
           <span className="ml-2 text-sm" style={{ color: "hsl(220 9% 46%)" }}>Carregando dados...</span>
         </div>
       ) : (

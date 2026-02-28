@@ -83,7 +83,7 @@ export default function TransparenciaHome() {
           to="/transparencia/mapa"
           className="inline-flex items-center gap-2 px-6 py-3 rounded text-sm font-semibold transition-colors"
           style={{
-            background: "hsl(224 76% 33%)",
+            background: "hsl(207 89% 42%)",
             color: "#fff",
           }}
         >

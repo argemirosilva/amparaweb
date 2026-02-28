@@ -296,7 +296,7 @@ export default function DashboardMapCard() {
       });
       map.addLayer({
         id: "states-hover", type: "fill", source: "states",
-        paint: { "fill-color": "hsl(224, 76%, 33%)", "fill-opacity": 0.15 },
+        paint: { "fill-color": "hsl(207, 89%, 42%)", "fill-opacity": 0.15 },
         filter: ["==", "uf_code", ""],
       });
 
@@ -383,7 +383,7 @@ export default function DashboardMapCard() {
             <strong style="font-size:13px">${name}</strong>
             <span style="font-size:10px;color:hsl(220,9%,46%);margin-left:8px">${pctPais}% do país</span>
           </div>
-          <div style="background:hsl(224,76%,96%);border-radius:6px;padding:6px 8px;margin-bottom:6px">
+          <div style="background:hsl(207,89%,96%);border-radius:6px;padding:6px 8px;margin-bottom:6px">
             <div style="display:flex;justify-content:space-between;align-items:center">
               <span style="font-weight:600">🎙 Gravações</span>
               <strong style="font-size:14px">${grav}</strong>
@@ -472,7 +472,7 @@ export default function DashboardMapCard() {
         </div>
         <div className="flex items-center gap-3 flex-wrap">
           <div className="flex items-center gap-1.5 text-[10px]" style={subtitleStyle}>
-            <Mic className="w-3 h-3" style={{ color: "hsl(224 76% 48%)" }} />
+            <Mic className="w-3 h-3" style={{ color: "hsl(207 89% 48%)" }} />
             <span>{totalGravacoes} grav.</span>
           </div>
           <div className="flex items-center gap-1.5 text-[10px]" style={subtitleStyle}>
@@ -535,7 +535,7 @@ export default function DashboardMapCard() {
         >
           <div className="flex items-start justify-between mb-3">
             <div className="flex items-center gap-2">
-              {selected.type === "uf" && <MapPin className="w-4 h-4" style={{ color: "hsl(224 76% 48%)" }} />}
+              {selected.type === "uf" && <MapPin className="w-4 h-4" style={{ color: "hsl(207 89% 48%)" }} />}
               {selected.type === "device" && <Smartphone className="w-4 h-4" style={{ color: "hsl(142 71% 35%)" }} />}
               <span className="text-sm font-semibold" style={titleStyle}>
                 {selected.type === "uf" && `${UF_TO_STATE_NAME[selected.uf] || selected.uf} (${selected.uf})`}
@@ -557,7 +557,7 @@ export default function DashboardMapCard() {
             <>
               <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 mb-3">
                 {[
-                  { label: "Gravações", value: selected.stats.gravacoes, color: "hsl(224 76% 48%)", icon: "🎙" },
+                  { label: "Gravações", value: selected.stats.gravacoes, color: "hsl(207 89% 48%)", icon: "🎙" },
                   { label: "Horas áudio", value: `${selected.stats.horasGravacao}h`, color: "hsl(262 60% 50%)", icon: "⏱" },
                   { label: "Monitoradas", value: selected.stats.usuarios, color: "hsl(220 13% 18%)", icon: "" },
                   { label: "Eventos", value: selected.stats.eventos, color: "hsl(45 93% 47%)", icon: "" },

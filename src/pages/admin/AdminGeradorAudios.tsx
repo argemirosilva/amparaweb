@@ -439,7 +439,7 @@ export default function AdminGeradorAudios() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               {randomMode ? (
-                <Shuffle className="w-5 h-5" style={{ color: "hsl(224 76% 33%)" }} />
+                <Shuffle className="w-5 h-5" style={{ color: "hsl(207 89% 42%)" }} />
               ) : (
                 <User className="w-5 h-5" style={{ color: "hsl(262 83% 58%)" }} />
               )}
@@ -541,7 +541,7 @@ export default function AdminGeradorAudios() {
           size="lg"
           className="gap-2"
           style={{
-            background: "hsl(224 76% 33%)",
+            background: "hsl(207 89% 42%)",
             color: "#fff",
           }}
         >

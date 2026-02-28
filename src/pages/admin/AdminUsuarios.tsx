@@ -378,8 +378,8 @@ export default function AdminUsuarios() {
                 onClick={() => { setPageSize(size); setPage(0); }}
                 className="px-2 py-1 rounded border text-xs font-medium transition-colors"
                 style={{
-                  borderColor: pageSize === size ? "hsl(224 76% 33%)" : "hsl(220 13% 87%)",
-                  background: pageSize === size ? "hsl(224 76% 33%)" : "transparent",
+                  borderColor: pageSize === size ? "hsl(207 89% 42%)" : "hsl(220 13% 87%)",
+                  background: pageSize === size ? "hsl(207 89% 42%)" : "transparent",
                   color: pageSize === size ? "#fff" : "hsl(220 9% 46%)",
                 }}
               >
@@ -410,8 +410,8 @@ export default function AdminUsuarios() {
                   onClick={() => setPage(pageNum)}
                   className="w-8 h-8 rounded border text-xs font-medium transition-colors"
                   style={{
-                    borderColor: page === pageNum ? "hsl(224 76% 33%)" : "hsl(220 13% 87%)",
-                    background: page === pageNum ? "hsl(224 76% 33%)" : "transparent",
+                    borderColor: page === pageNum ? "hsl(207 89% 42%)" : "hsl(220 13% 87%)",
+                    background: page === pageNum ? "hsl(207 89% 42%)" : "transparent",
                     color: page === pageNum ? "#fff" : "hsl(220 9% 46%)",
                   }}
                 >
@@ -564,7 +564,7 @@ export default function AdminUsuarios() {
                     }}
                     disabled={editLoading}
                     className="flex items-center gap-2 px-4 py-2 rounded text-xs font-semibold transition-colors disabled:opacity-60"
-                    style={{ background: "hsl(224 76% 33%)", color: "#fff" }}
+                    style={{ background: "hsl(207 89% 42%)", color: "#fff" }}
                   >
                     {editLoading && <Loader2 className="w-4 h-4 animate-spin" />}
                     Salvar
@@ -606,7 +606,7 @@ export default function AdminUsuarios() {
                       setEditMode(true);
                     }}
                     className="px-4 py-2 rounded text-xs font-semibold border transition-colors hover:bg-gray-50"
-                    style={{ borderColor: "hsl(224 76% 33%)", color: "hsl(224 76% 33%)" }}
+                    style={{ borderColor: "hsl(207 89% 42%)", color: "hsl(207 89% 42%)" }}
                   >
                     Editar
                   </button>
@@ -812,7 +812,7 @@ export default function AdminUsuarios() {
                 <button
                   onClick={() => setShowCreateDialog(false)}
                   className="px-4 py-2 rounded text-sm font-semibold mt-2"
-                  style={{ background: "hsl(224 76% 33%)", color: "#fff" }}
+                  style={{ background: "hsl(207 89% 42%)", color: "#fff" }}
                 >
                   Fechar
                 </button>
@@ -896,7 +896,7 @@ export default function AdminUsuarios() {
                     type="submit"
                     disabled={createLoading}
                     className="flex items-center gap-2 px-4 py-2 rounded text-sm font-semibold transition-colors disabled:opacity-60"
-                    style={{ background: "hsl(224 76% 33%)", color: "#fff" }}
+                    style={{ background: "hsl(207 89% 42%)", color: "#fff" }}
                   >
                     {createLoading && <Loader2 className="w-4 h-4 animate-spin" />}
                     Criar e enviar convite
