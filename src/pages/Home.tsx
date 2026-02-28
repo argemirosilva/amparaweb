@@ -10,7 +10,13 @@ export default function HomePage() {
   const navigate = useNavigate();
 
   return (
-    <div className="animate-fade-in space-y-6 min-h-full">
+    <div className="animate-fade-in space-y-6 min-h-full max-w-4xl">
+      {/* Azure-style page header */}
+      <div>
+        <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-1">Dashboard</p>
+        <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">Visão geral</h1>
+      </div>
+
       <div className="space-y-4">
         <RiskEvolutionCard />
         <div className="grid grid-cols-[1fr_auto] sm:grid-cols-1 gap-3 items-stretch">
