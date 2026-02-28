@@ -453,20 +453,20 @@ export default function LandingPage() {
               </div>
               <h3 className="text-lg md:text-xl font-bold text-foreground mb-2">O que isso muda no Brasil</h3>
               <p className="text-sm text-muted-foreground leading-relaxed mb-4">
-                Pela primeira vez, o poder público vai poder agir com base em dados reais — e não em achismo.
+                Pela primeira vez, órgãos públicos e ONGs terão acesso a dados reais e atualizados — não mais com meses ou anos de atraso.
               </p>
               <ul className="space-y-3 mt-auto">
                 <li className="flex items-start gap-2 text-sm text-muted-foreground">
                   <Check className="w-4 h-4 text-sky-500 shrink-0 mt-0.5" />
-                  <span>Governos vão saber onde e como a violência acontece de verdade</span>
+                  <span>Dados disponíveis em tempo real para órgãos públicos e ONGs — não mais com atraso de meses ou anos</span>
                 </li>
                 <li className="flex items-start gap-2 text-sm text-muted-foreground">
                   <Check className="w-4 h-4 text-sky-500 shrink-0 mt-0.5" />
-                  <span>Políticas públicas deixam de ser baseadas em "achismo"</span>
+                  <span>Políticas públicas criadas com base em dados concretos e atualizados</span>
                 </li>
                 <li className="flex items-start gap-2 text-sm text-muted-foreground">
                   <Check className="w-4 h-4 text-sky-500 shrink-0 mt-0.5" />
-                  <span>Delegacias e abrigos podem ser colocados onde mais se precisa</span>
+                  <span>Delegacias, abrigos e serviços direcionados para onde mais se precisa</span>
                 </li>
               </ul>
             </div>
