@@ -1,5 +1,5 @@
-import { Link } from "react-router-dom";
-import { Users, AlertTriangle, Clock, TrendingDown, MapPin } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Users, AlertTriangle, Clock, TrendingDown, MapPin, Maximize2 } from "lucide-react";
 import GovKpiCard from "@/components/institucional/GovKpiCard";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -77,19 +77,30 @@ export default function TransparenciaHome() {
         />
       </section>
 
-      {/* CTA Mapa */}
-      <section className="text-center mb-10">
-        <Link
-          to="/transparencia/mapa"
-          className="inline-flex items-center gap-2 px-6 py-3 rounded text-sm font-semibold transition-colors"
-          style={{
-            background: "hsl(207 89% 42%)",
-            color: "#fff",
-          }}
-        >
-          <MapPin className="w-4 h-4" />
-          Abrir Mapa Interativo
-        </Link>
+      {/* Mapa Interativo Embutido */}
+      <section className="mb-10">
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "hsl(207 89% 42%)" }}>
+            Mapa Interativo
+          </p>
+          <Link
+            to="/transparencia/mapa"
+            className="inline-flex items-center gap-1.5 text-xs font-medium transition-colors hover:underline"
+            style={{ color: "hsl(207 89% 42%)" }}
+          >
+            <Maximize2 className="w-3.5 h-3.5" />
+            Tela cheia
+          </Link>
+        </div>
+        <div className="rounded-xl border overflow-hidden" style={{ borderColor: "hsl(220 13% 91%)" }}>
+          <iframe
+            src="/transparencia/mapa"
+            title="Mapa de Transparência"
+            className="w-full border-0"
+            style={{ height: "520px" }}
+            loading="lazy"
+          />
+        </div>
       </section>
 
       {/* Info box */}
