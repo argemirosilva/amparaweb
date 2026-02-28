@@ -27,9 +27,7 @@ const NAV_LINKS = [
 { label: "Sobre", id: "sobre" },
 { label: "Funcionalidades", id: "funcionalidades" },
 { label: "Como Funciona", id: "como-funciona" },
-{ label: "Depoimentos", id: "depoimentos" },
 { label: "FAQ", id: "faq" },
-{ label: "Parceiros", id: "parceiros" },
 { label: "Contato", id: "contato" }];
 
 
