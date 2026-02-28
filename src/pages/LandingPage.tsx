@@ -83,8 +83,8 @@ const FLOW_TRIGGERS = [
 
 const FLOW_PIPELINE = [
   { icon: Upload, title: "Envio ao Servidor", desc: "Áudios e dados são enviados e analisados por inteligência artificial", color: "hsl(200, 70%, 50%)" },
-  { icon: MessageCircle, title: "Alerta aos Guardiões", desc: "Seus guardiões recebem notificação via WhatsApp com sua localização", color: "hsl(145, 60%, 40%)" },
-  { icon: Phone, title: "Chamada de Emergência", desc: "O sistema liga automaticamente para 190 (Polícia) e 180 (Delegacia da Mulher)", color: "hsl(0, 70%, 50%)" },
+  { icon: MessageCircle, title: "Alerta aos Guardiões", desc: "Se configurado, seus guardiões recebem notificação via WhatsApp com sua localização", color: "hsl(145, 60%, 40%)", configurable: true },
+  { icon: Phone, title: "Chamada de Emergência", desc: "Se habilitado, o sistema liga automaticamente para 190 (Polícia) e 180 (Delegacia da Mulher)", color: "hsl(0, 70%, 50%)", configurable: true },
 ];
 /* ── Sub-nav links ── */
 const SUB_NAV = [
@@ -602,6 +602,11 @@ export default function LandingPage() {
                 </div>
                 <h3 className="text-xs font-bold text-foreground mb-1 leading-tight">{step.title}</h3>
                 <p className="text-[11px] text-muted-foreground leading-snug max-w-[140px]">{step.desc}</p>
+                {step.configurable && (
+                  <span className="mt-1.5 inline-flex items-center gap-1 text-[9px] font-semibold text-primary bg-primary/10 rounded-full px-2 py-0.5">
+                    <Settings className="w-2.5 h-2.5" /> Configurável
+                  </span>
+                )}
                 {i < FLOW_PIPELINE.length - 1 && (
                   <ChevronRight className="absolute -right-3 top-[56px] w-5 h-5 text-muted-foreground/40" />
                 )}
@@ -644,6 +649,11 @@ export default function LandingPage() {
                     <div className="ml-6">
                       <h3 className="text-sm font-bold text-foreground mb-0.5">{step.title}</h3>
                       <p className="text-xs text-muted-foreground leading-relaxed">{step.desc}</p>
+                      {step.configurable && (
+                        <span className="mt-1 inline-flex items-center gap-1 text-[9px] font-semibold text-primary bg-primary/10 rounded-full px-2 py-0.5">
+                          <Settings className="w-2.5 h-2.5" /> Configurável
+                        </span>
+                      )}
                     </div>
                   </div>
                 ))}
