@@ -4,7 +4,7 @@ import { toast } from "@/hooks/use-toast";
 import {
   Heart, Users, TrendingUp, Smartphone, Mic, FileUp,
   MapPin, Search, Headphones, Settings, Check, Star, Menu,
-  Building2, Users2, Phone, Mail,
+  Building2, Users2, Phone, Mail, Instagram,
   ChevronRight, Lock, ArrowRight, Radio, LogIn, UserPlus, Eye,
   Shield, BookOpen, Activity, Database, Clock, ShieldCheck } from
 "lucide-react";
@@ -839,9 +839,13 @@ export default function LandingPage() {
           <div className="grid sm:grid-cols-3 gap-8">
             <div>
               
-              <p className="text-white/60 text-xs leading-relaxed">
+              <p className="text-white/60 text-xs leading-relaxed mb-3">
                 Proteção, monitoramento e apoio para mulheres em situação de vulnerabilidade. Tecnologia a serviço da vida.
               </p>
+              <a href="https://instagram.com/amparamulheres" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-xs text-white/60 hover:text-white transition-colors">
+                <Instagram className="w-4 h-4" />
+                @amparamulheres
+              </a>
             </div>
             <div>
               <h4 className="font-semibold text-sm mb-3">Links Rápidos</h4>
