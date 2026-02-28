@@ -680,7 +680,7 @@ export default function LandingPage() {
           <div className="mt-6 pt-4 border-t border-white/10">
             <p className="text-[10px] text-white/40 text-center uppercase tracking-widest mb-4">Desenvolvedor</p>
             <div className="flex items-center justify-center">
-              <img src={partnerOrizon} alt="Orizon Tech" className="h-8 md:h-10 object-contain brightness-0 invert opacity-50 hover:opacity-80 transition-opacity" />
+              <img src={partnerOrizon} alt="Orizon Tech" className="h-10 md:h-14 object-contain invert mix-blend-screen opacity-50 hover:opacity-80 transition-opacity" />
             </div>
           </div>
 
