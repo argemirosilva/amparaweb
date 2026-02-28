@@ -5,7 +5,7 @@ import {
   Heart, Users, TrendingUp, Smartphone, Mic, FileUp,
    MapPin, Search, Headphones, Settings, Check, Star, Menu,
    Building2, Users2, Phone, Mail,
-   ChevronRight, Lock, ArrowRight, Radio, LogIn, UserPlus, Shield, Eye } from
+   ChevronRight, Lock, ArrowRight, Radio, LogIn, UserPlus, Eye } from
 "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
