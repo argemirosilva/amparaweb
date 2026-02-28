@@ -1,65 +1,78 @@
 
 
-## Ouvir o Panorama com Google Cloud TTS
+# Tornar o Ecossistema AMPARA Claro para Usuarias Leigas
 
-Adicionar um botao de audio no card "Como estou?" (MacroReportCard) que converte o texto do panorama narrativo em fala usando o Google Cloud Text-to-Speech.
+## Problema Identificado
+A landing page atual foca muito em termos tecnicosc como "inteligencia artificial", "monitoramento de dispositivos", "configuracoes avancadas" -- linguagem que nao conecta com o publico-alvo (mulheres com pouca instrucao). Falta uma secao que explique de forma visual e humana os **3 pilares** do ecossistema: Protecao, Monitoramento/Dados e Orientacao.
 
-### O que muda para voce
+## Solucao Proposta
 
-- Um botao com icone de alto-falante aparece ao lado do titulo "Panorama" dentro do card "Como estou?"
-- Ao tocar, o texto e enviado para o Google e retorna como audio, tocando automaticamente
-- Enquanto carrega, o botao mostra um spinner; enquanto toca, mostra icone de "parar"
-- Tocar novamente para o audio
+### 1. Nova secao "Ecossistema" -- visual e didatica (entre "Sobre" e "Funcionalidades")
 
-### Plano tecnico
+Uma secao com 3 blocos grandes e visuais representando os pilares, usando linguagem simples e analogias do dia-a-dia:
 
-**1. Nova Edge Function `tts-panorama`**
-- Arquivo: `supabase/functions/tts-panorama/index.ts`
-- Recebe `{ text, session_token }` via POST
-- Valida sessao (reutiliza logica de hash de token existente)
-- Usa as credenciais GCP ja configuradas (`GCP_PROJECT_ID`, `GCP_CLIENT_EMAIL`, `GCP_PRIVATE_KEY`) para gerar JWT e autenticar com a API do Google Cloud
-- Chama `https://texttospeech.googleapis.com/v1/text:synthesize` com voz `pt-BR-Wavenet-A` (feminina, natural)
-- Retorna o audio base64 como `application/json` com o campo `audioContent`
-- CORS configurado para chamadas web
+| Pilar | Icone | Titulo Simples | Explicacao Acessivel |
+|-------|-------|----------------|---------------------|
+| Protecao | Shield/Heart | "Te protege" | "Como ter alguem de confianca sempre por perto. O sistema avisa suas pessoas de confianca quando voce precisa de ajuda." |
+| Monitoramento e Dados | BarChart/Activity | "Te acompanha" | "Como um diario que guarda tudo pra voce. Grava audios, analisa riscos e cria relatorios que podem ser usados como prova." |
+| Orientacao | BookOpen/Compass | "Te orienta" | "Como uma amiga que sabe onde buscar ajuda. Mostra seus direitos, numeros de emergencia e caminhos para sair da situacao." |
 
-**2. Atualizar `supabase/config.toml`** (nao editavel diretamente, sera incluido automaticamente com o deploy)
-- Adicionar entrada `[functions.tts-panorama]` com `verify_jwt = false`
+Cada bloco tera:
+- Icone grande e colorido
+- Titulo curto (2-3 palavras, linguagem cotidiana)
+- Frase explicativa simples (sem jargao tecnico)
+- Lista de 2-3 exemplos praticos em bullets
 
-**3. Atualizar `MacroReportCard.tsx`**
-- Adicionar botao com icone `Volume2` (lucide) ao lado do titulo "Panorama"
-- Estados: idle, loading, playing
-- Ao clicar:
-  - Chama a edge function `tts-panorama` passando o texto do panorama e o `sessionToken`
-  - Decodifica o base64 retornado em um `AudioBuffer` ou usa `new Audio()` com data URI
-  - Reproduz o audio
-- Ao clicar novamente ou ao terminar: para a reproducao
-- Icones: `Volume2` (idle), `Loader2` (loading), `VolumeX` (playing/parar)
+### 2. Reescrever textos-chave do Hero e Sobre
 
-### Fluxo
+**Hero atual:**
+> "Protecao, monitoramento e apoio para mulheres em situacao de vulnerabilidade. Uma plataforma gratuita com tecnologia de inteligencia artificial."
 
-```text
-Usuaria toca no botao de audio
-       |
-       v
-Frontend POST -> tts-panorama edge function
-       |
-       v
-Edge function autentica sessao
-       |
-       v
-Edge function gera JWT GCP -> chama Google TTS API
-       |
-       v
-Retorna audioContent (base64 MP3)
-       |
-       v
-Frontend decodifica e reproduz
-```
+**Hero proposto:**
+> "Voce nao esta sozinha. O AMPARA te protege, acompanha sua situacao e te orienta sobre seus direitos -- tudo pelo celular, de graca e em total sigilo."
 
-### Arquivos envolvidos
+**Secao Sobre -- subtitulo atual:**
+> "Uma plataforma criada para proteger, monitorar e apoiar mulheres..."
 
-| Arquivo | Acao |
-|---|---|
-| `supabase/functions/tts-panorama/index.ts` | Criar |
-| `src/components/gravacoes/MacroReportCard.tsx` | Editar - adicionar botao TTS |
+**Proposto:**
+> "O AMPARA e como ter uma rede de apoio no seu bolso. Ele cuida da sua seguranca, guarda provas quando voce precisar e te mostra o caminho para buscar ajuda."
+
+### 3. Simplificar nomes das funcionalidades
+
+| Atual | Proposto |
+|-------|----------|
+| "Evolucao do Risco" | "Seu Nivel de Seguranca" |
+| "Monitoramento de Dispositivos" | "Saber se seu celular esta protegido" |
+| "Gravacao de Audio" | "Grava o que acontece ao redor" |
+| "Envio de Arquivos" | "Guarda provas com seguranca" |
+| "Localizacao via GPS" | "Compartilha onde voce esta" |
+| "Pesquisa de Parceiros" | "Consulta sobre agressores" |
+| "Suporte Dedicado" | "Alguem pra te ouvir" |
+| "Configuracoes Avancadas" | "Voce controla tudo" |
+
+As descricoes tambem serao reescritas em linguagem simples.
+
+### 4. Adicionar a secao "Ecossistema" na sub-nav
+
+Adicionar o link "Ecossistema" no array `SUB_NAV` para que a navegacao sticky tambem aponte para essa nova secao.
+
+---
+
+## Detalhes Tecnicos
+
+### Arquivos modificados
+- **`src/pages/LandingPage.tsx`**: Unico arquivo a ser editado
+
+### Alteracoes especificas
+1. Adicionar nova secao `id="ecossistema"` entre as secoes "Sobre" e "Funcionalidades" (apos linha ~318, antes da linha ~321)
+2. Atualizar o texto do Hero (linhas 218-219)
+3. Atualizar subtitulo da secao Sobre (linhas 289-290)
+4. Reescrever o array `FEATURES` (linhas 34-42) com titulos e descricoes simplificados
+5. Adicionar "Ecossistema" ao array `SUB_NAV` (linha ~78)
+6. Importar icones adicionais: `Shield, BookOpen, Activity` do lucide-react
+
+### Estilo visual da nova secao
+- Fundo com gradiente suave (consistente com as demais secoes)
+- Cards grandes com `rounded-2xl`, icones de 48px, tipografia clara
+- Responsivo: 1 coluna no mobile, 3 colunas no desktop
 
