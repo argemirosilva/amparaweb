@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Search, MessageSquare, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { ticketCode } from "@/lib/redactPii";
 
 const STATUS_LABELS: Record<string, string> = {
   open: "Aberto",
@@ -62,9 +63,9 @@ export default function SuporteTickets() {
 
   const filtered = sessions.filter((s) => {
     if (!search) return true;
-    const userName = s.usuarios?.nome_completo?.toLowerCase() || "";
-    const userEmail = s.usuarios?.email?.toLowerCase() || "";
-    return userName.includes(search.toLowerCase()) || userEmail.includes(search.toLowerCase());
+    const code = ticketCode(s.id).toLowerCase();
+    const cat = (CATEGORY_LABELS[s.category] || s.category).toLowerCase();
+    return code.includes(search.toLowerCase()) || cat.includes(search.toLowerCase());
   });
 
   return (
@@ -77,7 +78,7 @@ export default function SuporteTickets() {
       <div className="flex flex-wrap gap-3">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input placeholder="Buscar por nome ou email..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
+          <Input placeholder="Buscar por código ou categoria..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-[180px]"><SelectValue placeholder="Status" /></SelectTrigger>
@@ -118,8 +119,8 @@ export default function SuporteTickets() {
             >
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="font-medium text-sm" style={{ color: "hsl(220 13% 18%)" }}>
-                    {s.usuarios?.nome_completo || "Usuária"}
+                  <span className="font-medium text-sm font-mono" style={{ color: "hsl(220 13% 18%)" }}>
+                    {ticketCode(s.id)}
                   </span>
                   <Badge variant="outline" className={STATUS_COLORS[s.status] || ""}>
                     {STATUS_LABELS[s.status] || s.status}
@@ -129,7 +130,6 @@ export default function SuporteTickets() {
                   </Badge>
                 </div>
                 <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                  <span>{s.usuarios?.email}</span>
                   <span className="flex items-center gap-1">
                     <Clock className="w-3 h-3" />
                     {format(new Date(s.last_activity_at), "dd/MM HH:mm", { locale: ptBR })}
