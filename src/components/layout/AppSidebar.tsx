@@ -46,7 +46,7 @@ export default function AppSidebar() {
         <div className="w-8 h-8 rounded-md bg-white flex items-center justify-center shrink-0">
           <img src={amparaLogo} alt="AMPARA" className="w-7 h-7 object-contain" />
         </div>
-        <span className="font-display font-bold text-foreground text-lg group-data-[collapsible=icon]:hidden">
+        <span className="font-display font-bold text-sidebar-foreground text-lg group-data-[collapsible=icon]:hidden">
           AMPARA
         </span>
       </div>
@@ -61,8 +61,8 @@ export default function AppSidebar() {
                     <NavLink
                       to={item.url}
                       end
-                      className="flex items-center gap-3 px-3 py-2 rounded-md text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                      activeClassName="bg-sidebar-accent text-primary font-medium"
+                      className="flex items-center gap-3 px-3 py-2 rounded-md text-sidebar-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                      activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
                     >
                       <item.icon className="w-5 h-5 shrink-0" />
                       <span className="group-data-[collapsible=icon]:hidden">{item.title}</span>
@@ -82,7 +82,7 @@ export default function AppSidebar() {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <SidebarMenuButton onClick={() => navigate("/support")} className="w-fit">
-                    <MessageCircle className="w-5 h-5 shrink-0 text-muted-foreground" />
+                    <MessageCircle className="w-5 h-5 shrink-0 text-sidebar-foreground/70" />
                   </SidebarMenuButton>
                 </TooltipTrigger>
                 <TooltipContent side="right">
