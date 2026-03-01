@@ -20,7 +20,7 @@ export default function BottomNav() {
   const navigate = useNavigate();
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border safe-area-bottom">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-sidebar border-t border-sidebar-border safe-area-bottom">
       <div className="flex items-end justify-evenly h-14 px-2">
         {items.map((item) => {
           const active = location.pathname === item.url;
@@ -32,13 +32,13 @@ export default function BottomNav() {
                 key={item.url}
                 onClick={() => navigate(item.url)}
                 className={`flex flex-col items-center justify-center -mt-4 transition-colors ${
-                  active ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                  active ? "text-sidebar-primary" : "text-sidebar-foreground/60 hover:text-sidebar-foreground"
                 }`}
               >
                 <div className={`w-12 h-12 rounded-full flex items-center justify-center shadow-lg ${
                   active
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-card border-2 border-primary/30 text-primary"
+                    ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                    : "bg-sidebar-accent border-2 border-sidebar-primary/30 text-sidebar-primary"
                 }`}>
                   <item.icon className="w-6 h-6" />
                 </div>
@@ -53,8 +53,8 @@ export default function BottomNav() {
               onClick={() => navigate(item.url)}
               className={`flex-1 flex flex-col items-center justify-center gap-0.5 pb-1 transition-colors ${
                 active
-                  ? "text-primary"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "text-sidebar-primary"
+                  : "text-sidebar-foreground/60 hover:text-sidebar-foreground"
               }`}
             >
               <item.icon className="w-5 h-5" />
