@@ -562,7 +562,7 @@ export default function PerfilPage() {
       {/* Aggressors */}
       <div className="ampara-card space-y-4">
         <div className="flex items-center gap-2">
-          <AlertTriangle className="w-5 h-5 text-destructive" />
+          <AlertTriangle className="w-5 h-5 text-primary" />
           <h2 className="font-semibold text-foreground">Agressor(es) Vinculado(s)</h2>
         </div>
 
