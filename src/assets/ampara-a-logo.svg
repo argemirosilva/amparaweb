@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <mask id="cut">
+      <rect width="512" height="512" fill="black"/>
+      <!-- Circle background -->
+      <circle cx="256" cy="256" r="230" fill="white"/>
+      <!-- Cut the A letter shape -->
+      <path fill="black" d="
+        M256 72
+        L395 420
+        L345 420
+        L305 325
+        L207 325
+        L167 420
+        L120 420
+        Q135 385 148 355
+        L256 72
+        Z
+      "/>
+      <!-- Restore the inner triangle of A -->
+      <path fill="white" d="
+        M256 185
+        L295 295
+        L217 295
+        Z
+      "/>
+      <!-- Curved notch at bottom-left of A leg -->
+      <path fill="white" d="
+        M120 420
+        Q95 420 95 395
+        L95 370
+        L120 420
+        Z
+      "/>
+    </mask>
+  </defs>
+  <!-- White circle with A cut out (transparent A) -->
+  <circle cx="256" cy="256" r="230" fill="white" mask="url(#cut)"/>
+</svg>
