@@ -15,6 +15,7 @@ import {
   ArrowLeft, Send, ShieldCheck, ShieldOff, Clock, Eye, X,
 } from "lucide-react";
 import ResourceViewerModal from "@/components/suporte/ResourceViewerModal";
+import { ticketCode } from "@/lib/redactPii";
 
 const SENDER_STYLES: Record<string, { bg: string; text: string; align: string; label: string }> = {
   agent: { bg: "hsl(217 91% 60% / 0.12)", text: "hsl(217 91% 30%)", align: "ml-auto", label: "Agente" },
@@ -166,8 +167,8 @@ export default function SuporteChat() {
           <ArrowLeft className="w-5 h-5" />
         </Button>
         <div className="flex-1 min-w-0">
-          <h2 className="font-semibold" style={{ color: "hsl(220 13% 18%)" }}>{user?.nome_completo || "Usuária"}</h2>
-          <p className="text-xs text-muted-foreground">{user?.email} · {session.category}</p>
+          <h2 className="font-semibold font-mono" style={{ color: "hsl(220 13% 18%)" }}>{ticketCode(session.id)}</h2>
+          <p className="text-xs text-muted-foreground">{session.category}</p>
         </div>
         <div className="flex items-center gap-2">
           {!isClosed && (
@@ -224,12 +225,12 @@ export default function SuporteChat() {
         <div className="w-72 shrink-0 space-y-4 hidden lg:block">
           {/* User info */}
           <div className="rounded-lg border p-4" style={{ background: "hsl(0 0% 100%)", borderColor: "hsl(220 13% 91%)" }}>
-            <h3 className="font-semibold text-sm mb-2">Dados da Usuária</h3>
+            <h3 className="font-semibold text-sm mb-2">Informações do Chamado</h3>
             <div className="text-xs space-y-1 text-muted-foreground">
-              <p><strong>Nome:</strong> {user?.nome_completo}</p>
-              <p><strong>Email:</strong> {user?.email}</p>
-              <p><strong>Status:</strong> {user?.status}</p>
-              <p><strong>Desde:</strong> {user?.created_at ? format(new Date(user.created_at), "dd/MM/yyyy") : "-"}</p>
+              <p><strong>Código:</strong> <span className="font-mono">{ticketCode(session.id)}</span></p>
+              <p><strong>Categoria:</strong> {session.category}</p>
+              <p><strong>Status:</strong> {session.status}</p>
+              <p><strong>Desde:</strong> {session.created_at ? format(new Date(session.created_at), "dd/MM/yyyy") : "-"}</p>
             </div>
           </div>
 

@@ -7,6 +7,7 @@ import { ShieldOff, Clock, Volume2, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { callSupportApi } from "@/services/supportApiService";
+import { redactPii } from "@/lib/redactPii";
 
 interface ResourceViewerModalProps {
   open: boolean;
@@ -182,7 +183,7 @@ function MetadataView({ data }: { data: any }) {
     ["Duração", data.duracao_segundos ? `${Math.round(data.duracao_segundos)}s` : "-"],
     ["Tamanho", data.tamanho_mb ? `${data.tamanho_mb.toFixed(2)} MB` : "-"],
     ["Status", data.status || "-"],
-    ["Dispositivo", data.device_id || "-"],
+    ["Dispositivo", data.device_id ? "********" : "-"],
     ["Timezone", data.timezone || "-"],
   ];
   return (
@@ -205,7 +206,7 @@ function TranscriptionView({ data }: { data: any }) {
       className="rounded-lg border p-4 text-sm whitespace-pre-wrap leading-relaxed"
       style={{ userSelect: "none", WebkitUserSelect: "none" }}
     >
-      {data.transcricao || <span className="text-muted-foreground italic">Sem transcrição disponível.</span>}
+      {data.transcricao ? redactPii(data.transcricao) : <span className="text-muted-foreground italic">Sem transcrição disponível.</span>}
     </div>
   );
 }
@@ -230,7 +231,7 @@ function AnalysisView({ data }: { data: any }) {
       {data.resumo && (
         <div>
           <p className="text-xs font-medium text-muted-foreground mb-1">Resumo</p>
-          <p className="text-sm" style={{ userSelect: "none" }}>{data.resumo}</p>
+          <p className="text-sm" style={{ userSelect: "none" }}>{redactPii(data.resumo)}</p>
         </div>
       )}
       {data.categorias?.length > 0 && (
