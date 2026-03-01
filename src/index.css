@@ -29,26 +29,26 @@ html, body, #root {
     --popover: 0 0% 100%;
     --popover-foreground: 210 20% 14%;
 
-    /* Azure blue primary */
-    --primary: 207 89% 42%;
+    /* Purple-magenta primary */
+    --primary: 280 60% 48%;
     --primary-foreground: 0 0% 100%;
 
-    /* Light blue secondary */
-    --secondary: 207 25% 96%;
-    --secondary-foreground: 207 89% 36%;
+    /* Light purple secondary */
+    --secondary: 280 20% 96%;
+    --secondary-foreground: 280 60% 40%;
 
     --muted: 210 14% 95%;
     --muted-foreground: 210 8% 46%;
 
-    --accent: 207 30% 93%;
-    --accent-foreground: 207 55% 40%;
+    --accent: 280 25% 93%;
+    --accent-foreground: 280 50% 40%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
     --border: 210 14% 91%;
     --input: 210 12% 89%;
-    --ring: 207 89% 42%;
+    --ring: 280 60% 48%;
 
     --radius: 0.75rem;
 
@@ -59,19 +59,19 @@ html, body, #root {
     --sidebar-accent: 210 5% 96%;
     --sidebar-accent-foreground: 210 6% 10%;
     --sidebar-border: 210 13% 91%;
-    --sidebar-ring: 207 89% 42%;
+    --sidebar-ring: 280 60% 48%;
 
-    /* AMPARA brand tokens — Azure-inspired */
-    --ampara-magenta: 207 89% 42%;
-    --ampara-purple: 207 89% 36%;
-    --ampara-deep-blue: 207 100% 28%;
-    --ampara-cyan: 175 80% 45%;
+    /* AMPARA brand tokens — Purple-Magenta */
+    --ampara-magenta: 320 70% 50%;
+    --ampara-purple: 280 60% 48%;
+    --ampara-deep-blue: 270 65% 35%;
+    --ampara-cyan: 320 70% 55%;
 
-    --ampara-gradient: linear-gradient(135deg, hsl(207, 89%, 42%), hsl(195, 80%, 40%));
-    --ampara-gradient-soft: linear-gradient(135deg, hsl(207, 25%, 97%), hsl(200, 30%, 95%));
-    --ampara-gradient-icon: linear-gradient(160deg, hsl(207, 89%, 42%), hsl(195, 80%, 40%));
-    --ampara-panel-bg: linear-gradient(160deg, hsl(207, 70%, 30%), hsl(207, 100%, 28%));
-    --ampara-shadow: 0 4px 20px -4px hsl(207 89% 42% / 0.15);
+    --ampara-gradient: linear-gradient(135deg, hsl(280, 60%, 48%), hsl(320, 70%, 50%));
+    --ampara-gradient-soft: linear-gradient(135deg, hsl(280, 20%, 97%), hsl(320, 25%, 95%));
+    --ampara-gradient-icon: linear-gradient(160deg, hsl(280, 60%, 48%), hsl(320, 70%, 50%));
+    --ampara-panel-bg: linear-gradient(160deg, hsl(270, 55%, 30%), hsl(280, 65%, 25%));
+    --ampara-shadow: 0 4px 20px -4px hsl(280 60% 48% / 0.15);
 
     /* Níveis de risco — classificação contextual */
     --risco-sem-risco: 152 69% 40%;
@@ -84,7 +84,7 @@ html, body, #root {
     --risco-abuso-consistente: 25 95% 53%;
     --risco-ameaca: 10 90% 50%;
     --risco-escalada: 0 84% 50%;
-    --ampara-shadow-lg: 0 8px 36px -6px hsl(207 89% 42% / 0.25);
+    --ampara-shadow-lg: 0 8px 36px -6px hsl(280 60% 48% / 0.25);
   }
 
   .dark {
@@ -97,33 +97,33 @@ html, body, #root {
     --popover: 210 18% 10%;
     --popover-foreground: 210 10% 95%;
 
-    --primary: 207 85% 55%;
+    --primary: 280 55% 60%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 207 20% 15%;
-    --secondary-foreground: 207 60% 70%;
+    --secondary: 280 15% 15%;
+    --secondary-foreground: 280 50% 70%;
 
     --muted: 210 15% 18%;
     --muted-foreground: 210 10% 60%;
 
-    --accent: 207 20% 18%;
-    --accent-foreground: 207 60% 70%;
+    --accent: 280 15% 18%;
+    --accent-foreground: 280 50% 70%;
 
     --destructive: 0 63% 31%;
     --destructive-foreground: 0 0% 100%;
 
     --border: 210 15% 20%;
     --input: 210 15% 20%;
-    --ring: 207 85% 55%;
+    --ring: 280 55% 60%;
 
     --sidebar-background: 210 6% 10%;
     --sidebar-foreground: 210 5% 96%;
-    --sidebar-primary: 207 76% 48%;
+    --sidebar-primary: 280 55% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 210 4% 16%;
     --sidebar-accent-foreground: 210 5% 96%;
     --sidebar-border: 210 4% 16%;
-    --sidebar-ring: 207 89% 42%;
+    --sidebar-ring: 280 60% 48%;
   }
 }
 
