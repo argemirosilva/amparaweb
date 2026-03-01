@@ -658,14 +658,41 @@ async function handlePing(
         .update(deviceData)
         .eq("id", existing.id);
     } else {
-      // Device not bound — ping is read-only, never rotates devices
-      console.log(`[handlePing] Ping from unbound device ${deviceId} for user ${userId}, ignoring`);
-      return jsonResponse({
+      // Auto-rebind: session is valid, so bind this device automatically
+      console.log(`[handlePing] Auto-rebinding device ${deviceId} for user ${userId}`);
+
+      // 1. Delete all previous device_status for this user
+      await supabase
+        .from("device_status")
+        .delete()
+        .eq("user_id", userId);
+
+      // 2. Insert new device_status with current telemetry
+      const newDevice: Record<string, unknown> = {
+        user_id: userId,
+        device_id: deviceId,
+        status: "online",
+        last_ping_at: new Date().toISOString(),
+        is_monitoring: false,
+        is_recording: false,
+      };
+      if (body.bateria_percentual !== undefined) newDevice.bateria_percentual = body.bateria_percentual;
+      if (body.is_charging !== undefined) newDevice.is_charging = body.is_charging;
+      if (body.dispositivo_info !== undefined) newDevice.dispositivo_info = body.dispositivo_info;
+      else if (body.device_model !== undefined) newDevice.dispositivo_info = body.device_model;
+      if (body.versao_app !== undefined) newDevice.versao_app = body.versao_app;
+      if (body.timezone !== undefined) newDevice.timezone = body.timezone;
+      if (body.timezone_offset_minutes !== undefined) newDevice.timezone_offset_minutes = body.timezone_offset_minutes;
+
+      await supabase.from("device_status").insert(newDevice);
+
+      // 3. Audit log
+      await supabase.from("audit_logs").insert({
+        user_id: userId,
+        action_type: "device_auto_rebound",
         success: true,
-        skipped: true,
-        status: "device_not_bound",
-        message: "Dispositivo nao vinculado - faca login para vincular",
-        servidor_timestamp: new Date().toISOString(),
+        details: { device_id: deviceId, source: "ping" },
+        ip_address: null,
       });
     }
   }
