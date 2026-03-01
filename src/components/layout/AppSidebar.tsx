@@ -46,7 +46,7 @@ export default function AppSidebar() {
         <div className="w-8 h-8 rounded-full overflow-hidden shrink-0">
           <img src={amparaLogo} alt="AMPARA" className="w-full h-full object-cover invert mix-blend-screen" />
         </div>
-        <span className="font-display font-bold text-sidebar-foreground text-lg group-data-[collapsible=icon]:hidden">
+        <span className="font-display font-bold text-white text-lg group-data-[collapsible=icon]:hidden">
           AMPARA
         </span>
       </div>
