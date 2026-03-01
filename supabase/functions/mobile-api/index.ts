@@ -487,12 +487,34 @@ async function handleLogin(
   // Update last access
   await supabase.from("usuarios").update({ ultimo_acesso: new Date().toISOString() }).eq("id", user.id);
 
+  // ── Device binding: accept device_id on login and create/replace device_status row ──
+  const loginDeviceId = body.device_id as string | undefined;
+  const loginDeviceInfo = (body.dispositivo_info as string) || (body.device_model as string) || null;
+  if (loginDeviceId) {
+    // Remove ALL previous device_status rows for this user (one device per user policy)
+    await supabase.from("device_status").delete().eq("user_id", user.id);
+
+    // Create fresh row for the new device
+    await supabase.from("device_status").insert({
+      user_id: user.id,
+      device_id: loginDeviceId,
+      dispositivo_info: loginDeviceInfo,
+      status: "online",
+      last_ping_at: new Date().toISOString(),
+      bateria_percentual: body.bateria_percentual != null ? Number(body.bateria_percentual) : null,
+      is_charging: body.is_charging != null ? Boolean(body.is_charging) : null,
+    });
+
+    console.log(`[handleLogin] Bound device ${loginDeviceId} (${loginDeviceInfo}) for user ${user.id}`);
+  }
+
   // Audit
   await supabase.from("audit_logs").insert({
     user_id: user.id,
     action_type: "login_mobile_success",
     success: true,
     ip_address: ip,
+    details: { device_id: loginDeviceId || null, dispositivo_info: loginDeviceInfo },
   });
 
   return jsonResponse({
