@@ -21,7 +21,7 @@ import {
   SidebarMenuItem,
   SidebarFooter,
 } from "@/components/ui/sidebar";
-import amparaLogo from "@/assets/ampara-a-logo.svg";
+import amparaLogo from "@/assets/ampara-logo-dark.jpg";
 
 const menuItems = [
   { title: "Dashboard", url: "/home", icon: LayoutDashboard },
@@ -43,8 +43,8 @@ export default function AppSidebar() {
   return (
     <Sidebar collapsible="icon">
       <div className="p-4 flex items-center gap-3 border-b border-sidebar-border">
-        <div className="w-8 h-8 shrink-0">
-          <img src={amparaLogo} alt="AMPARA" className="w-full h-full" />
+        <div className="w-8 h-8 rounded-full overflow-hidden shrink-0">
+          <img src={amparaLogo} alt="AMPARA" className="w-full h-full object-cover invert brightness-200" />
         </div>
         <span className="font-display font-bold text-sidebar-foreground text-lg group-data-[collapsible=icon]:hidden">
           AMPARA
