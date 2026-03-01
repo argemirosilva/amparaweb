@@ -1,7 +1,7 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { User } from "lucide-react";
-import amparaIcon from "@/assets/ampara-icon.png";
+import amparaLogo from "@/assets/ampara-circle-logo.png";
 
 export default function Topbar() {
   const { usuario } = useAuth();
@@ -9,8 +9,8 @@ export default function Topbar() {
   return (
     <header className="h-14 border-b border-sidebar-border bg-sidebar md:bg-card md:border-border flex items-center justify-between px-4 shrink-0">
       {/* Icon only on mobile, no menu button */}
-      <div className="h-8 w-8 rounded-md flex items-center justify-center md:hidden">
-        <img src={amparaIcon} alt="Ampara" className="h-7 w-7 object-contain invert mix-blend-screen" />
+      <div className="h-8 w-8 rounded-full overflow-hidden shrink-0 md:hidden">
+        <img src={amparaLogo} alt="AMPARA" className="w-full h-full object-cover invert mix-blend-screen" />
       </div>
       <SidebarTrigger className="hidden" />
       <div className="hidden md:block" />
