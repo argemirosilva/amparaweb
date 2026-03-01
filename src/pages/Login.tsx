@@ -99,8 +99,8 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-lg py-2.5 px-4 text-sm font-semibold text-primary-foreground transition-opacity disabled:opacity-60"
-              style={{ background: "hsl(var(--primary))" }}
+              className="w-full rounded-lg py-2.5 px-4 text-sm font-semibold text-white transition-opacity disabled:opacity-60"
+              style={{ background: "linear-gradient(135deg, hsl(280, 60%, 48%), hsl(320, 70%, 50%))" }}
             >
               {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : "Acessar"}
             </button>
