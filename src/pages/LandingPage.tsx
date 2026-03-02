@@ -152,13 +152,6 @@ export default function LandingPage() {
           {l.label}
         </button>
     )}
-      <Link
-        to="/transparencia"
-        onClick={onNav}
-        className="text-sm font-medium text-foreground/70 hover:text-primary transition-colors"
-      >
-        Transparência
-      </Link>
     </>;
 
 
@@ -175,9 +168,6 @@ export default function LandingPage() {
             <Link to="/login" className="ampara-btn-secondary !w-auto flex items-center gap-1.5 text-xs py-[5px] px-[12px]">
               Acesso Portal
             </Link>
-            <Link to="/cadastro" className="ampara-btn-primary !w-auto flex items-center gap-1.5 text-xs py-[5px] px-[12px]">
-              Cadastre-se
-            </Link>
           </div>
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>
@@ -189,10 +179,7 @@ export default function LandingPage() {
               <NavItems onNav={() => setMobileOpen(false)} />
               <hr className="border-border" />
               <Link to="/login" className="ampara-btn-secondary flex items-center justify-center gap-2" onClick={() => setMobileOpen(false)}>
-                <LogIn className="w-4 h-4" /> Portal da Mulher
-              </Link>
-              <Link to="/cadastro" className="ampara-btn-primary flex items-center justify-center gap-2" onClick={() => setMobileOpen(false)}>
-                <UserPlus className="w-4 h-4" /> Cadastre-se
+                <LogIn className="w-4 h-4" /> Acesso Portal
               </Link>
             </SheetContent>
           </Sheet>
