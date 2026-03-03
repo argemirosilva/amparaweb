@@ -273,7 +273,7 @@ export default function AudioRecorderCard({ onUploaded }: AudioRecorderCardProps
             <input type="file" accept="audio/mpeg,audio/mp3,audio/wav,audio/x-wav,audio/ogg,.mp3,.wav,.ogg" className="hidden" onChange={handleFileUpload} />
             <div className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border text-sm text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-colors">
               <Upload className="w-4 h-4" />
-              <span className="hidden sm:inline">Enviar arquivo</span>
+              <span className="hidden sm:inline">Enviar</span>
             </div>
           </label>
         }
