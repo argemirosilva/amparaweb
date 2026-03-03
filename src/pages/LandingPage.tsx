@@ -76,17 +76,17 @@ const IMPACT_NUMBERS = [
 
 
 const FLOW_TRIGGERS = [
-  { icon: Ear, title: "Monitoramento Ativo", desc: "Escuta o ambiente nos horários definidos" },
-  { icon: Mic, title: "Gravação Manual", desc: "Grave a qualquer momento" },
-  { icon: Radio, title: "Botão de Pânico", desc: "Acione com um toque" },
-];
+{ icon: Ear, title: "Monitoramento Ativo", desc: "Escuta o ambiente nos horários definidos" },
+{ icon: Mic, title: "Gravação Manual", desc: "Grave a qualquer momento" },
+{ icon: Radio, title: "Botão de Pânico", desc: "Acione com um toque" }];
+
 
 const FLOW_PIPELINE = [
-  { icon: Upload, title: "Envio ao Servidor", desc: "Áudios e dados são enviados e analisados por inteligência artificial" },
-  { icon: Activity, title: "Orientação Personalizada", desc: "Você recebe análises sobre sua situação com dicas de segurança e reflexões sobre a relação" },
-  { icon: MessageCircle, title: "Alerta aos Guardiões", desc: "Se configurado, seus guardiões recebem notificação via WhatsApp com sua localização", configurable: true },
-  { icon: Phone, title: "Chamada de Emergência", desc: "Se habilitado, o sistema liga automaticamente para 190 (Polícia) e 180 (Delegacia da Mulher)", configurable: true },
-];
+{ icon: Upload, title: "Envio ao Servidor", desc: "Áudios e dados são enviados e analisados por inteligência artificial" },
+{ icon: Activity, title: "Orientação Personalizada", desc: "Você recebe análises sobre sua situação com dicas de segurança e reflexões sobre a relação" },
+{ icon: MessageCircle, title: "Alerta aos Guardiões", desc: "Se configurado, seus guardiões recebem notificação via WhatsApp com sua localização", configurable: true },
+{ icon: Phone, title: "Chamada de Emergência", desc: "Se habilitado, o sistema liga automaticamente para 190 (Polícia) e 180 (Delegacia da Mulher)", configurable: true }];
+
 /* ── Sub-nav links ── */
 const SUB_NAV = [
 { label: "Sobre", id: "sobre" },
@@ -153,10 +153,10 @@ export default function LandingPage() {
         </button>
     )}
       <Link
-        to="/transparencia"
-        onClick={onNav}
-        className="text-sm font-medium text-foreground/70 hover:text-primary transition-colors"
-      >
+      to="/transparencia"
+      onClick={onNav}
+      className="text-sm font-medium text-foreground/70 hover:text-primary transition-colors">
+      
         Transparência
       </Link>
     </>;
@@ -576,8 +576,8 @@ export default function LandingPage() {
               <div className="rounded-2xl border border-border bg-white p-5 w-full shadow-sm">
                 <p className="text-[10px] font-semibold text-primary uppercase tracking-widest mb-3">Gatilho</p>
                 <div className="space-y-3">
-                  {FLOW_TRIGGERS.map((t) => (
-                    <div key={t.title} className="flex items-center gap-3 text-left">
+                  {FLOW_TRIGGERS.map((t) =>
+                  <div key={t.title} className="flex items-center gap-3 text-left">
                       <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center shrink-0">
                         <t.icon className="w-4 h-4 text-white" />
                       </div>
@@ -586,32 +586,32 @@ export default function LandingPage() {
                         <p className="text-[10px] text-muted-foreground leading-snug">{t.desc}</p>
                       </div>
                     </div>
-                  ))}
+                  )}
                 </div>
               </div>
               <ChevronRight className="absolute -right-3 top-12 w-5 h-5 text-muted-foreground/40" />
             </div>
 
             {/* Pipeline steps 2-4 */}
-            {FLOW_PIPELINE.map((step, i) => (
-              <div key={step.title} className="flex-1 relative z-10 flex flex-col items-center text-center pt-3">
+            {FLOW_PIPELINE.map((step, i) =>
+            <div key={step.title} className="flex-1 relative z-10 flex flex-col items-center text-center pt-3">
                 <div
-                  className="w-14 h-14 rounded-full bg-primary flex items-center justify-center shadow-md mb-3 border-2 border-white"
-                >
+                className="w-14 h-14 rounded-full bg-primary flex items-center justify-center shadow-md mb-3 border-2 border-white">
+                
                   <step.icon className="w-6 h-6 text-white" />
                 </div>
                 <h3 className="text-xs font-bold text-foreground mb-1 leading-tight">{step.title}</h3>
                 <p className="text-[11px] text-muted-foreground leading-snug max-w-[140px]">{step.desc}</p>
-                {step.configurable && (
-                  <span className="mt-1.5 inline-flex items-center gap-1 text-[9px] font-semibold text-primary bg-primary/10 rounded-full px-2 py-0.5">
+                {step.configurable &&
+              <span className="mt-1.5 inline-flex items-center gap-1 text-[9px] font-semibold text-primary bg-primary/10 rounded-full px-2 py-0.5">
                     <Settings className="w-2.5 h-2.5" /> Configurável
                   </span>
-                )}
-                {i < FLOW_PIPELINE.length - 1 && (
-                  <ChevronRight className="absolute -right-3 top-[56px] w-5 h-5 text-muted-foreground/40" />
-                )}
+              }
+                {i < FLOW_PIPELINE.length - 1 &&
+              <ChevronRight className="absolute -right-3 top-[56px] w-5 h-5 text-muted-foreground/40" />
+              }
               </div>
-            ))}
+            )}
           </div>
 
           {/* Mobile/Tablet: vertical timeline */}
@@ -620,8 +620,8 @@ export default function LandingPage() {
             <div className="rounded-2xl border border-border bg-white p-5 shadow-sm">
               <p className="text-[10px] font-semibold text-primary uppercase tracking-widest mb-3">Gatilho — escolha uma forma de iniciar</p>
               <div className="space-y-3">
-                {FLOW_TRIGGERS.map((t) => (
-                  <div key={t.title} className="flex items-center gap-3">
+                {FLOW_TRIGGERS.map((t) =>
+                <div key={t.title} className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center shrink-0">
                       <t.icon className="w-4 h-4 text-white" />
                     </div>
@@ -630,7 +630,7 @@ export default function LandingPage() {
                       <p className="text-xs text-muted-foreground">{t.desc}</p>
                     </div>
                   </div>
-                ))}
+                )}
               </div>
             </div>
 
@@ -638,24 +638,24 @@ export default function LandingPage() {
             <div className="relative pl-8">
               <div className="absolute left-[15px] top-2 bottom-2 w-0.5 bg-primary/25 rounded-full" />
               <div className="space-y-8">
-                {FLOW_PIPELINE.map((step) => (
-                  <div key={step.title} className="flex items-start gap-4 relative">
+                {FLOW_PIPELINE.map((step) =>
+                <div key={step.title} className="flex items-start gap-4 relative">
                     <div
-                      className="w-10 h-10 rounded-full bg-primary flex items-center justify-center shadow-md shrink-0 border-2 border-white absolute -left-8"
-                    >
+                    className="w-10 h-10 rounded-full bg-primary flex items-center justify-center shadow-md shrink-0 border-2 border-white absolute -left-8">
+                    
                       <step.icon className="w-4 h-4 text-white" />
                     </div>
                     <div className="ml-6">
                       <h3 className="text-sm font-bold text-foreground mb-0.5">{step.title}</h3>
                       <p className="text-xs text-muted-foreground leading-relaxed">{step.desc}</p>
-                      {step.configurable && (
-                        <span className="mt-1 inline-flex items-center gap-1 text-[9px] font-semibold text-primary bg-primary/10 rounded-full px-2 py-0.5">
+                      {step.configurable &&
+                    <span className="mt-1 inline-flex items-center gap-1 text-[9px] font-semibold text-primary bg-primary/10 rounded-full px-2 py-0.5">
                           <Settings className="w-2.5 h-2.5" /> Configurável
                         </span>
-                      )}
+                    }
                     </div>
                   </div>
-                ))}
+                )}
               </div>
             </div>
           </div>
@@ -981,7 +981,7 @@ export default function LandingPage() {
               <h4 className="font-semibold text-sm mb-3">Institucional</h4>
               <div className="flex flex-col gap-2">
                 <Link to="/privacidade" className="text-xs text-white/60 hover:text-white transition-colors">Política de Privacidade</Link>
-                <Link to="/login" className="text-xs text-white/60 hover:text-white transition-colors">Portal da Mulher</Link>
+                
                 <Link to="/cadastro" className="text-xs text-white/60 hover:text-white transition-colors">Cadastre-se</Link>
                 <Link to="/transparencia" className="text-xs text-white/60 hover:text-white transition-colors">Portal de Transparência</Link>
                 
