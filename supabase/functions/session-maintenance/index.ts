@@ -13,6 +13,22 @@ function jsonResponse(data: Record<string, unknown>, status = 200): Response {
   });
 }
 
+// ── MP3 helpers ──
+
+/** Strip ID3v2 header from an MP3 buffer so concatenation doesn't confuse decoders */
+function stripId3Header(buf: Uint8Array): Uint8Array {
+  // ID3v2 tag starts with "ID3"
+  if (buf.length >= 10 && buf[0] === 0x49 && buf[1] === 0x44 && buf[2] === 0x33) {
+    // ID3v2 size is stored in 4 bytes (synchsafe integer) at offset 6-9
+    const size = (buf[6] << 21) | (buf[7] << 14) | (buf[8] << 7) | buf[9];
+    const headerSize = 10 + size;
+    if (headerSize < buf.length) {
+      return buf.subarray(headerSize);
+    }
+  }
+  return buf;
+}
+
 // ── R2 helpers ──
 
 function getR2Config() {
@@ -395,11 +411,20 @@ serve(async (req) => {
             continue;
           }
 
-          // Concatenate binary
-          const totalSize = buffers.reduce((sum, b) => sum + b.length, 0);
+          // Concatenate binary — strip ID3 tags from subsequent MP3 segments
+          // to avoid confusing decoders with multiple headers
+          const strippedBuffers: Uint8Array[] = [];
+          for (let i = 0; i < buffers.length; i++) {
+            let buf = buffers[i];
+            if (i > 0 && finalExt === "mp3") {
+              buf = stripId3Header(buf);
+            }
+            strippedBuffers.push(buf);
+          }
+          const totalSize = strippedBuffers.reduce((sum, b) => sum + b.length, 0);
           const concatenated = new Uint8Array(totalSize);
           let offset = 0;
-          for (const buf of buffers) {
+          for (const buf of strippedBuffers) {
             concatenated.set(buf, offset);
             offset += buf.length;
           }
