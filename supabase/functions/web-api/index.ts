@@ -252,6 +252,8 @@ serve(async (req) => {
       try {
         const contentType = storagePath.endsWith(".wav") ? "audio/wav"
           : storagePath.endsWith(".ogg") ? "audio/ogg"
+          : storagePath.endsWith(".webm") ? "audio/webm"
+          : storagePath.endsWith(".mp4") || storagePath.endsWith(".m4a") ? "audio/mp4"
           : "audio/mpeg";
 
         if (storagePath.startsWith("autogerado/")) {
@@ -1193,7 +1195,16 @@ serve(async (req) => {
           bytes[i] = binaryStr.charCodeAt(i);
         }
 
-        const ext = (file_name || "audio.webm").split(".").pop() || "webm";
+        const rawExt = ((file_name || "audio.webm").split(".").pop() || "webm").toLowerCase();
+        // Normalize unknown extensions to a valid audio format based on content_type
+        const validExts = ["mp3", "ogg", "webm", "wav", "m4a", "mp4", "opus"];
+        const ext = validExts.includes(rawExt)
+          ? rawExt
+          : (content_type || "").includes("ogg") ? "ogg"
+          : (content_type || "").includes("webm") ? "webm"
+          : (content_type || "").includes("wav") ? "wav"
+          : (content_type || "").includes("mpeg") || (content_type || "").includes("mp3") ? "mp3"
+          : "webm";
         const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
         const storagePath = `${userId}/${today}/${crypto.randomUUID()}.${ext}`;
         const mime = content_type || "audio/webm";
