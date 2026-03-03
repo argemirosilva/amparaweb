@@ -1065,6 +1065,59 @@ serve(async (req) => {
         return json({ success: true });
       }
 
+      // ========== DIAG MP3 HEADER ==========
+      case "diagMp3Header": {
+        const { storage_path } = params;
+        if (!storage_path) return json({ error: "storage_path required" }, 400);
+        const r2 = getR2Client();
+        const resp = await r2.fetch(r2Url(storage_path), { method: "GET", headers: { Range: "bytes=0-2048" } });
+        if (!resp.ok) return json({ error: "download failed", status: resp.status }, 500);
+        const bytes = new Uint8Array(await resp.arrayBuffer());
+        let dataOffset = 0;
+        // Skip ID3v2 if present
+        if (bytes[0] === 0x49 && bytes[1] === 0x44 && bytes[2] === 0x33) {
+          const id3Size = (bytes[6] << 21) | (bytes[7] << 14) | (bytes[8] << 7) | bytes[9];
+          dataOffset = 10 + id3Size;
+        }
+        // Find MP3 sync word
+        let frameOffset = -1;
+        for (let i = dataOffset; i < bytes.length - 1; i++) {
+          if (bytes[i] === 0xFF && (bytes[i + 1] & 0xE0) === 0xE0) { frameOffset = i; break; }
+        }
+        if (frameOffset < 0) return json({ error: "no mp3 frame found", dataOffset, totalBytes: bytes.length });
+        const h = bytes[frameOffset];
+        const h1 = bytes[frameOffset + 1];
+        const h2 = bytes[frameOffset + 2];
+        const h3 = bytes[frameOffset + 3];
+        const versionBits = (h1 >> 3) & 0x03;
+        const layerBits = (h1 >> 1) & 0x03;
+        const bitrateBits = (h2 >> 4) & 0x0F;
+        const sampleRateBits = (h2 >> 2) & 0x03;
+        const channelBits = (h3 >> 6) & 0x03;
+        const versionMap: Record<number,string> = { 0: "MPEG2.5", 2: "MPEG2", 3: "MPEG1" };
+        const layerMap: Record<number,string> = { 1: "Layer III", 2: "Layer II", 3: "Layer I" };
+        const srTable: Record<string,number[]> = {
+          "MPEG1": [44100,48000,32000],
+          "MPEG2": [22050,24000,16000],
+          "MPEG2.5": [11025,12000,8000],
+        };
+        const brTableMPEG1L3 = [0,32,40,48,56,64,80,96,112,128,160,192,224,256,320,0];
+        const brTableMPEG2L3 = [0,8,16,24,32,40,48,56,64,80,96,112,128,144,160,0];
+        const version = versionMap[versionBits] || `unknown(${versionBits})`;
+        const layer = layerMap[layerBits] || `unknown(${layerBits})`;
+        const sampleRate = srTable[version]?.[sampleRateBits] ?? -1;
+        const bitrate = version === "MPEG1" ? brTableMPEG1L3[bitrateBits] : brTableMPEG2L3[bitrateBits];
+        const channelMode = ["Stereo","Joint Stereo","Dual Channel","Mono"][channelBits];
+        return json({
+          success: true,
+          id3_present: dataOffset > 0,
+          id3_size: dataOffset,
+          frame_offset: frameOffset,
+          version, layer, sampleRate, bitrate, channelMode,
+          raw_header_hex: [h,h1,h2,h3].map(b => b.toString(16).padStart(2,"0")).join(" "),
+        });
+      }
+
       // ========== GRAVAÇÕES ==========
       case "getGravacoes": {
         const { page = 1, per_page = 20, status: filterStatus, nivel_risco: filterNivelRisco, search_text, date_from, date_to, device_type } = params;
