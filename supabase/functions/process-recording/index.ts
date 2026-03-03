@@ -200,8 +200,9 @@ serve(async (req) => {
     }
 
     let ext = gravacao.storage_path.split(".").pop() || "mp3";
-    // Agreggar API doesn't support webm; treat as ogg (both use Opus codec)
+    // Normalize non-standard extensions
     if (ext === "webm") ext = "ogg";
+    if (ext === "audio") ext = "m4a"; // iOS sends .audio extension
 
     // 4. Transcribe via Agreggar API
     console.log("Starting transcription via Agreggar...");
