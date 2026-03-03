@@ -250,10 +250,13 @@ serve(async (req) => {
 
       // Fetch audio — autogerado paths come from Supabase Storage, others from R2
       try {
+        // iOS records with .audio extension — typically AAC in ADTS container
+        // Serve as audio/aac so the browser auto-detects the codec
         const contentType = storagePath.endsWith(".wav") ? "audio/wav"
           : storagePath.endsWith(".ogg") ? "audio/ogg"
           : storagePath.endsWith(".webm") ? "audio/webm"
-          : storagePath.endsWith(".mp4") || storagePath.endsWith(".m4a") || storagePath.endsWith(".audio") ? "audio/mp4"
+          : storagePath.endsWith(".audio") ? "audio/aac"
+          : storagePath.endsWith(".mp4") || storagePath.endsWith(".m4a") ? "audio/mp4"
           : "audio/mpeg";
 
         if (storagePath.startsWith("autogerado/")) {
