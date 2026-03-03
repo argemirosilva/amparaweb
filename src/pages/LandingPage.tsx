@@ -157,7 +157,7 @@ export default function LandingPage() {
       onClick={onNav}
       className="text-sm font-medium text-foreground/70 hover:text-primary transition-colors">
       
-        Transparência
+        Dados Públicos
       </Link>
     </>;
 
