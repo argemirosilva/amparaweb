@@ -20,17 +20,19 @@ export default function HomePage() {
       <div className="space-y-4">
         <RiskEvolutionCard />
         <DeviceStatusCard />
-        <button
-          onClick={() => navigate("/busca-perfil")}
-          className="ampara-card flex items-center gap-3 w-full text-left transition-all hover:shadow-lg hover:-translate-y-0.5 cursor-pointer"
-        >
-          <GradientIcon icon={UserSearch} size="sm" />
-          <div>
-            <p className="text-sm font-semibold text-foreground">Pesquisar parceiro</p>
-            <p className="text-xs text-muted-foreground">Consultar perfil de agressor</p>
-          </div>
-        </button>
-        <AudioRecorderCard />
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            onClick={() => navigate("/busca-perfil")}
+            className="ampara-card flex items-center gap-3 w-full text-left transition-all hover:shadow-lg hover:-translate-y-0.5 cursor-pointer"
+          >
+            <GradientIcon icon={UserSearch} size="sm" />
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-foreground">Pesquisar parceiro</p>
+              <p className="text-xs text-muted-foreground">Consultar perfil</p>
+            </div>
+          </button>
+          <AudioRecorderCard />
+        </div>
         <MonitoringStatusCard />
       </div>
     </div>
