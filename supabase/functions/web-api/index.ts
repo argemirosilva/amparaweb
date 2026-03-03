@@ -253,7 +253,7 @@ serve(async (req) => {
         const contentType = storagePath.endsWith(".wav") ? "audio/wav"
           : storagePath.endsWith(".ogg") ? "audio/ogg"
           : storagePath.endsWith(".webm") ? "audio/webm"
-          : storagePath.endsWith(".mp4") || storagePath.endsWith(".m4a") ? "audio/mp4"
+          : storagePath.endsWith(".mp4") || storagePath.endsWith(".m4a") || storagePath.endsWith(".audio") ? "audio/mp4"
           : "audio/mpeg";
 
         if (storagePath.startsWith("autogerado/")) {
