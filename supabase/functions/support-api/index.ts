@@ -698,7 +698,6 @@ serve(async (req) => {
                 parameters: [
                   { type: "text", parameter_name: "nome", text: firstName },
                   { type: "text", parameter_name: "codigo", text: code },
-                  { type: "text", parameter_name: "minutos", text: "5" },
                 ],
               },
             ],
