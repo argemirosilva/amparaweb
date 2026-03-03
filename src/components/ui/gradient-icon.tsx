@@ -24,7 +24,7 @@ const iconSizeClasses = {
 
 const variantGradients = {
   default: "var(--ampara-gradient)",
-  admin: "linear-gradient(135deg, hsl(215, 25%, 35%), hsl(210, 30%, 25%))",
+  admin: "linear-gradient(135deg, hsl(210, 60%, 45%), hsl(220, 70%, 30%))",
 };
 
 export default function GradientIcon({ icon: Icon, size = "md", variant = "default", className }: GradientIconProps) {
