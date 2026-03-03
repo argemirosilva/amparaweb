@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 interface GradientIconProps {
   icon: LucideIcon;
   size?: "xs" | "sm" | "md" | "lg";
+  variant?: "default" | "admin";
   className?: string;
 }
 
@@ -21,7 +22,12 @@ const iconSizeClasses = {
   lg: "w-8 h-8",
 };
 
-export default function GradientIcon({ icon: Icon, size = "md", className }: GradientIconProps) {
+const variantGradients = {
+  default: "var(--ampara-gradient)",
+  admin: "linear-gradient(135deg, hsl(215, 25%, 35%), hsl(210, 30%, 25%))",
+};
+
+export default function GradientIcon({ icon: Icon, size = "md", variant = "default", className }: GradientIconProps) {
   return (
     <div
       className={cn(
@@ -29,7 +35,7 @@ export default function GradientIcon({ icon: Icon, size = "md", className }: Gra
         sizeClasses[size],
         className
       )}
-      style={{ background: "var(--ampara-gradient)" }}
+      style={{ background: variantGradients[variant] }}
     >
       <Icon className={cn("text-white", iconSizeClasses[size])} />
     </div>
