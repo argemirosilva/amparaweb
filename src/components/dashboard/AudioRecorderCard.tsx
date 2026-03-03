@@ -219,6 +219,13 @@ export default function AudioRecorderCard({ onUploaded }: AudioRecorderCardProps
     <div className="ampara-card p-4 space-y-4">
       {/* Recorder / Upload controls */}
       <div className="flex items-center gap-3 flex-wrap">
+        {!recording && !uploading && !converting &&
+        <label className="cursor-pointer">
+            <input type="file" accept="audio/mpeg,audio/mp3,audio/wav,audio/x-wav,audio/ogg,.mp3,.wav,.ogg" className="hidden" onChange={handleFileUpload} />
+            <GradientIcon icon={Upload} size="sm" />
+          </label>
+        }
+
         {recording ?
         <button
           onClick={stopRecording}
@@ -267,13 +274,6 @@ export default function AudioRecorderCard({ onUploaded }: AudioRecorderCardProps
             </div>
           }
         </div>
-
-        {!recording && !uploading && !converting &&
-        <label className="cursor-pointer">
-            <input type="file" accept="audio/mpeg,audio/mp3,audio/wav,audio/x-wav,audio/ogg,.mp3,.wav,.ogg" className="hidden" onChange={handleFileUpload} />
-            <GradientIcon icon={Upload} size="sm" />
-          </label>
-        }
       </div>
 
     </div>);
