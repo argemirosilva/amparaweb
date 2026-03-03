@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Users, Building2, ClipboardCheck, FileText, Settings,
   LogOut, Menu, X, Plug, AudioLines, Headset, BrainCircuit, FileCode2,
 } from "lucide-react";
-import amparaLogo from "@/assets/ampara-logo.png";
+import amparaLogo from "@/assets/ampara-circle-logo.png";
 import { useState } from "react";
 
 const TECNICO_PATHS = [
@@ -66,7 +66,9 @@ export default function AdminLayout() {
           >
             {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
-          <img src={amparaLogo} alt="AMPARA" className="h-10 object-contain invert mix-blend-screen" />
+          <div className="h-8 w-8 rounded-full overflow-hidden shrink-0">
+            <img src={amparaLogo} alt="AMPARA" className="w-full h-full object-cover invert mix-blend-screen" />
+          </div>
           <div className="hidden sm:flex items-center gap-2">
             <span className="text-sm font-semibold" style={{ color: "hsl(0 0% 95%)" }}>
               Painel de Administração — AMPARA
