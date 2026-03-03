@@ -317,14 +317,16 @@ export default function GravacaoExpandedContent({
         </span>
       </div>
 
-      {/* AI Analysis Card */}
-      <AnaliseCard
-        gravacaoId={gravacao.id}
-        status={gravacao.status}
-        sessionToken={sessionToken}
-        preloadedData={loadedAnalise ? analise : undefined}
-        onActiveChange={handleAnaliseActiveChange}
-      />
+      {/* AI Analysis Card — hide for sem_risco */}
+      {gravacao.nivel_risco && gravacao.nivel_risco !== "sem_risco" && (
+        <AnaliseCard
+          gravacaoId={gravacao.id}
+          status={gravacao.status}
+          sessionToken={sessionToken}
+          preloadedData={loadedAnalise ? analise : undefined}
+          onActiveChange={handleAnaliseActiveChange}
+        />
+      )}
 
     </div>
   );
