@@ -192,10 +192,11 @@ export default function SuporteChat() {
               const style = SENDER_STYLES[m.sender_type] || SENDER_STYLES.system;
               const redacted = redactPii(m.message_text);
               const wasRedacted = redacted !== m.message_text;
-              const displayLabel = m.sender_type === "system" && user?.nome_completo
-                ? user.nome_completo.split(" ")[0]
-                : m.sender_type === "agent" && session?.agent_name
-                ? session.agent_name
+              const agentName = session?.agent_name || session?.agent?.nome_completo || "Suporte";
+              const displayLabel = m.sender_type === "system"
+                ? agentName
+                : m.sender_type === "agent"
+                ? agentName
                 : style.label;
               return (
                 <div key={m.id} className={`max-w-[80%] ${style.align}`}>
