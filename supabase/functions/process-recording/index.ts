@@ -202,7 +202,7 @@ serve(async (req) => {
     let ext = gravacao.storage_path.split(".").pop() || "mp3";
     // Normalize non-standard extensions
     if (ext === "webm") ext = "ogg";
-    if (ext === "audio") ext = "m4a"; // iOS sends .audio extension
+    if (ext === "audio" || ext === "m4a" || ext === "mp4" || ext === "caf") ext = "ogg"; // iOS sends non-standard extensions; Agreggar only supports alaw/wav/ogg
 
     // 4. Transcribe via Agreggar API
     console.log("Starting transcription via Agreggar...");
