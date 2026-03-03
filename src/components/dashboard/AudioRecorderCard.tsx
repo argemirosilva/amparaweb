@@ -216,9 +216,9 @@ export default function AudioRecorderCard({ onUploaded }: AudioRecorderCardProps
   if (!sessionToken) return null;
 
   return (
-    <div className="ampara-card p-4 space-y-4">
+    <div className="ampara-card p-3 space-y-2">
       {/* Recorder / Upload controls */}
-      <div className="flex items-center gap-3 flex-wrap">
+      <div className="flex items-center gap-2 flex-wrap">
         {!recording && !uploading && !converting &&
         <label className="cursor-pointer">
             <input type="file" accept="audio/mpeg,audio/mp3,audio/wav,audio/x-wav,audio/ogg,.mp3,.wav,.ogg" className="hidden" onChange={handleFileUpload} />

@@ -23,7 +23,7 @@ export default function HomePage() {
         <div className="grid grid-cols-2 gap-3">
           <button
             onClick={() => navigate("/busca-perfil")}
-            className="ampara-card flex items-center gap-3 w-full text-left transition-all hover:shadow-lg hover:-translate-y-0.5 cursor-pointer"
+            className="ampara-card flex items-center gap-2 w-full text-left transition-all hover:shadow-lg hover:-translate-y-0.5 cursor-pointer p-3"
           >
             <GradientIcon icon={UserSearch} size="sm" />
             <div className="min-w-0">
