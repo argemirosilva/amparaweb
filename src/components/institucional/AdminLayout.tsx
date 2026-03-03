@@ -131,14 +131,14 @@ export default function AdminLayout() {
                   key={item.path}
                   to={item.path}
                   onClick={() => setSidebarOpen(false)}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded text-sm transition-colors"
+                  className="flex items-center gap-3 px-3 py-2.5 rounded text-sm transition-colors hover:bg-white/5"
                   style={{
                     fontWeight: isActive ? 600 : 400,
-                    color: isActive ? "hsl(0 0% 100%)" : "hsl(0 0% 60%)",
-                    background: isActive ? "hsl(0 0% 100% / 0.1)" : "transparent",
+                    color: isActive ? "hsl(0 0% 88%)" : "hsl(0 0% 50%)",
+                    background: isActive ? "hsl(0 0% 100% / 0.08)" : "transparent",
                   }}
                 >
-                  <Icon className="w-4 h-4 shrink-0" />
+                  <Icon className="w-4 h-4 shrink-0" style={{ color: isActive ? "hsl(0 0% 80%)" : "hsl(0 0% 42%)" }} />
                   {item.label}
                 </Link>
               );
