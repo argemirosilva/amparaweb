@@ -156,7 +156,7 @@ export default function AdminTiposAlerta() {
         <div />
         <button
           onClick={() => setCreating(true)}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium ampara-gradient-bg text-primary-foreground"
+          className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90"
         >
           <Plus className="w-3.5 h-3.5" /> Novo Tipo
         </button>
@@ -244,7 +244,7 @@ export default function AdminTiposAlerta() {
             <button
               onClick={handleCreate}
               disabled={saving}
-              className="flex items-center gap-1.5 px-4 py-2 rounded text-sm font-medium ampara-gradient-bg text-primary-foreground disabled:opacity-50"
+              className="flex items-center gap-1.5 px-4 py-2 rounded text-sm font-medium bg-primary text-primary-foreground disabled:opacity-50 hover:bg-primary/90"
             >
               <Save className="w-3.5 h-3.5" /> Salvar
             </button>

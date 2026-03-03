@@ -123,7 +123,7 @@ export default function AdminConfiguracoes() {
         </div>
         <div className="flex items-center gap-2">
           <input ref={inputRef} type="tel" className="text-sm rounded-md border border-border px-3 py-2 outline-none bg-background text-foreground w-[180px]" value={newPhone} onChange={(e) => setNewPhone(e.target.value)} placeholder="11999998888" onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addPhone(); } }} />
-          <button onClick={addPhone} className="flex items-center gap-1 px-3 py-1.5 rounded text-xs font-medium ampara-gradient-bg text-primary-foreground">
+          <button onClick={addPhone} className="flex items-center gap-1 px-3 py-1.5 rounded text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90">
             <Plus className="w-3.5 h-3.5" /> Adicionar
           </button>
         </div>

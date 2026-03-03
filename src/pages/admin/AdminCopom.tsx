@@ -323,7 +323,7 @@ export default function AdminCopom({ embedded, apiBaseUrl = "" }: { embedded?: b
             <button
               type="submit"
               disabled={sending}
-              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-md text-sm font-semibold ampara-gradient-bg text-primary-foreground disabled:opacity-60"
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-md text-sm font-semibold bg-primary text-primary-foreground disabled:opacity-60 hover:bg-primary/90"
             >
               {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Phone className="w-4 h-4" />}
               {sending ? "Enviando..." : "Disparar SpeedDial"}

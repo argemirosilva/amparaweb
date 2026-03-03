@@ -260,7 +260,7 @@ export default function AdminUsuarios() {
             </div>
             <button
               onClick={openCreateDialog}
-              className="flex items-center gap-1.5 px-4 py-2 rounded text-sm font-semibold transition-colors shrink-0 ampara-gradient-bg text-primary-foreground"
+              className="flex items-center gap-1.5 px-4 py-2 rounded text-sm font-semibold transition-colors shrink-0 bg-primary text-primary-foreground hover:bg-primary/90"
             >
               <Plus className="w-4 h-4" /> Novo
             </button>
