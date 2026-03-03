@@ -269,7 +269,7 @@ export default function AudioRecorderCard({ onUploaded }: AudioRecorderCardProps
             </div> :
 
           <div>
-              <p className="text-sm font-medium text-foreground">Gravar ou enviar áudio</p>
+              <p className="text-sm font-medium text-foreground">Enviar/Gravar áudio</p>
               
             </div>
           }
