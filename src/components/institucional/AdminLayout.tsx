@@ -56,25 +56,25 @@ export default function AdminLayout() {
       {/* Topbar */}
       <header
         className="h-16 border-b flex items-center justify-between px-4 md:px-6 shrink-0 z-30"
-        style={{ background: "hsl(0 0% 100%)", borderColor: "hsl(220 13% 91%)" }}
+        style={{ background: "hsl(220 15% 18%)", borderColor: "hsl(220 12% 24%)" }}
       >
         <div className="flex items-center gap-3">
           <button
             className="md:hidden p-1"
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            style={{ color: "hsl(220 13% 18%)" }}
+            style={{ color: "hsl(0 0% 85%)" }}
           >
             {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
-          <img src={amparaLogo} alt="AMPARA" className="h-10 object-contain" />
+          <img src={amparaLogo} alt="AMPARA" className="h-10 object-contain invert mix-blend-screen" />
           <div className="hidden sm:flex items-center gap-2">
-            <span className="text-sm font-semibold" style={{ color: "hsl(207 89% 42%)" }}>
+            <span className="text-sm font-semibold" style={{ color: "hsl(0 0% 95%)" }}>
               Painel de Administração — AMPARA
             </span>
             {tenantSigla && (
               <span
                 className="text-xs px-2 py-0.5 rounded"
-                style={{ background: "hsl(207 89% 42% / 0.08)", color: "hsl(207 89% 42%)" }}
+                style={{ background: "hsl(0 0% 100% / 0.1)", color: "hsl(0 0% 85%)" }}
               >
                 {tenantSigla}
               </span>
@@ -84,19 +84,19 @@ export default function AdminLayout() {
 
         <div className="flex items-center gap-3">
           <div className="text-right hidden sm:block">
-            <p className="text-sm font-medium" style={{ color: "hsl(220 13% 18%)" }}>
+            <p className="text-sm font-medium" style={{ color: "hsl(0 0% 93%)" }}>
               {usuario?.nome_completo || "Administrador"}
             </p>
-            <p className="text-xs uppercase" style={{ color: "hsl(220 9% 46%)" }}>
+            <p className="text-xs uppercase" style={{ color: "hsl(0 0% 60%)" }}>
               {isSuperAdmin ? "Super Admin" : isAdministrador ? "Administrador" : hasRole("admin_master") ? "Técnico" : isSupportOnly ? "Suporte" : "Operacional"}
             </p>
           </div>
           <button
             onClick={handleLogout}
-            className="p-2 rounded hover:bg-gray-100 transition-colors"
+            className="p-2 rounded hover:bg-white/10 transition-colors"
             title="Sair"
           >
-            <LogOut className="w-4 h-4" style={{ color: "hsl(0 73% 42%)" }} />
+            <LogOut className="w-4 h-4" style={{ color: "hsl(0 73% 65%)" }} />
           </button>
         </div>
       </header>
@@ -109,7 +109,7 @@ export default function AdminLayout() {
             transition-transform md:translate-x-0
             ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
           `}
-          style={{ background: "hsl(0 0% 100%)", borderColor: "hsl(220 13% 91%)" }}
+          style={{ background: "hsl(220 15% 15%)", borderColor: "hsl(220 12% 24%)" }}
         >
           <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
             {sidebarItems
@@ -132,8 +132,8 @@ export default function AdminLayout() {
                   className="flex items-center gap-3 px-3 py-2.5 rounded text-sm transition-colors"
                   style={{
                     fontWeight: isActive ? 600 : 400,
-                    color: isActive ? "hsl(207 89% 42%)" : "hsl(220 9% 46%)",
-                    background: isActive ? "hsl(207 89% 42% / 0.08)" : "transparent",
+                    color: isActive ? "hsl(0 0% 100%)" : "hsl(0 0% 60%)",
+                    background: isActive ? "hsl(0 0% 100% / 0.1)" : "transparent",
                   }}
                 >
                   <Icon className="w-4 h-4 shrink-0" />
