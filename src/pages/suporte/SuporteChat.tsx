@@ -18,7 +18,7 @@ import ResourceViewerModal from "@/components/suporte/ResourceViewerModal";
 import { ticketCode, redactPii } from "@/lib/redactPii";
 
 const SENDER_STYLES: Record<string, { bg: string; text: string; align: string; label: string }> = {
-  agent: { bg: "hsl(220 10% 88%)", text: "hsl(220 10% 20%)", align: "ml-auto", label: "Agente" },
+  agent: { bg: "hsl(220 10% 88%)", text: "hsl(220 10% 10%)", align: "ml-auto", label: "Agente" },
   user: { bg: "hsl(220 10% 95%)", text: "hsl(220 10% 40%)", align: "mr-auto", label: "Usuária" },
   system: { bg: "hsl(220 8% 92%)", text: "hsl(220 10% 35%)", align: "mx-auto", label: "Sistema" },
 };
