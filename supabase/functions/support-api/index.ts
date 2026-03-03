@@ -884,7 +884,14 @@ serve(async (req) => {
         .eq("user_id", userId)
         .order("created_at", { ascending: false });
 
-      return json({ success: true, data: { session, messages: messages || [], access_requests: grants || [] } });
+      // Check if already rated
+      const { data: existingRating } = await supabase
+        .from("support_ratings")
+        .select("id, rating, comment")
+        .eq("session_id", session_id)
+        .maybeSingle();
+
+      return json({ success: true, data: { session, messages: messages || [], access_requests: grants || [], rating: existingRating || null } });
     }
 
     if (action === "listMessages") {
@@ -1020,6 +1027,121 @@ serve(async (req) => {
       });
 
       return json({ success: true });
+    }
+
+    // ========== RATE SESSION ==========
+
+    if (action === "rateSession") {
+      const { session_id, rating, comment } = params;
+      if (!session_id) return json({ error: "session_id obrigatório" }, 400);
+      if (!rating || rating < 1 || rating > 5) return json({ error: "rating deve ser entre 1 e 5" }, 400);
+
+      const { data: sess } = await supabase
+        .from("support_sessions")
+        .select("id, status, agent_id")
+        .eq("id", session_id)
+        .eq("user_id", userId)
+        .single();
+      if (!sess) return json({ error: "Sessão não encontrada" }, 404);
+      if (sess.status !== "closed") return json({ error: "Só é possível avaliar sessões encerradas" }, 400);
+
+      const { data: existing } = await supabase
+        .from("support_ratings")
+        .select("id")
+        .eq("session_id", session_id)
+        .maybeSingle();
+      if (existing) return json({ error: "Sessão já avaliada" }, 409);
+
+      const { error } = await supabase.from("support_ratings").insert({
+        session_id,
+        user_id: userId,
+        agent_id: sess.agent_id,
+        rating,
+        comment: comment?.trim() || null,
+      });
+      if (error) return json({ error: error.message }, 500);
+
+      await addTimeline(supabase, userId, session_id, "session_closed",
+        `Atendimento avaliado com nota ${rating}/5.`);
+
+      return json({ success: true });
+    }
+
+    // ========== SUPPORT STATS (admin) ==========
+
+    if (action === "getSupportStats") {
+      const isAdmin = await requireAdmin(supabase, userId);
+      if (!isAdmin) return json({ error: "Acesso negado" }, 403);
+
+      const { since_date } = params;
+      let ratingsQuery = supabase.from("support_ratings").select("*");
+      if (since_date) ratingsQuery = ratingsQuery.gte("created_at", since_date);
+      const { data: ratings } = await ratingsQuery;
+
+      let sessionsQuery = supabase.from("support_sessions").select("id, agent_id, status");
+      if (since_date) sessionsQuery = sessionsQuery.gte("created_at", since_date);
+      const { data: sessions } = await sessionsQuery;
+
+      const allRatings = ratings || [];
+      const allSessions = sessions || [];
+      const totalSessions = allSessions.length;
+      const totalRated = allRatings.length;
+      const avgRating = totalRated > 0
+        ? (allRatings.reduce((s: number, r: any) => s + r.rating, 0) / totalRated)
+        : 0;
+
+      const distribution = [0, 0, 0, 0, 0];
+      allRatings.forEach((r: any) => { distribution[r.rating - 1]++; });
+
+      // Agent stats
+      const agentMap: Record<string, { total_sessions: number; ratings: number[]; name?: string }> = {};
+      allSessions.forEach((s: any) => {
+        if (!s.agent_id) return;
+        if (!agentMap[s.agent_id]) agentMap[s.agent_id] = { total_sessions: 0, ratings: [] };
+        agentMap[s.agent_id].total_sessions++;
+      });
+      allRatings.forEach((r: any) => {
+        if (!r.agent_id) return;
+        if (!agentMap[r.agent_id]) agentMap[r.agent_id] = { total_sessions: 0, ratings: [] };
+        agentMap[r.agent_id].ratings.push(r.rating);
+      });
+
+      const agentIds = Object.keys(agentMap);
+      if (agentIds.length > 0) {
+        const { data: agents } = await supabase
+          .from("usuarios")
+          .select("id, nome_completo")
+          .in("id", agentIds);
+        (agents || []).forEach((a: any) => {
+          if (agentMap[a.id]) agentMap[a.id].name = a.nome_completo;
+        });
+      }
+
+      const agentStats = Object.entries(agentMap)
+        .map(([id, d]) => ({
+          agent_id: id,
+          name: d.name || "Agente",
+          total_sessions: d.total_sessions,
+          total_ratings: d.ratings.length,
+          avg_rating: d.ratings.length > 0
+            ? d.ratings.reduce((a, b) => a + b, 0) / d.ratings.length
+            : 0,
+        }))
+        .filter((a) => a.total_ratings > 0)
+        .sort((a, b) => b.avg_rating - a.avg_rating || b.total_sessions - a.total_sessions)
+        .slice(0, 10);
+
+      return json({
+        success: true,
+        data: {
+          total_sessions: totalSessions,
+          total_rated: totalRated,
+          avg_rating: Math.round(avgRating * 100) / 100,
+          distribution,
+          total_agents: agentIds.length,
+          agent_stats: agentStats,
+        },
+      });
     }
 
     return json({ error: `Ação desconhecida: ${action}` }, 400);

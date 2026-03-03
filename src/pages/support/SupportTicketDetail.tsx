@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/components/ui/sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { callSupportApi } from "@/services/supportApiService";
+import RatingCard from "@/components/support/RatingCard";
 
 const SCOPE_LABELS: Record<string, string> = {
   read_metadata: "Metadados",
@@ -78,6 +79,7 @@ export default function SupportTicketDetail() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [accessRequests, setAccessRequests] = useState<AccessRequest[]>([]);
   const [auditItems, setAuditItems] = useState<AuditItem[]>([]);
+  const [existingRating, setExistingRating] = useState<{ rating: number; comment?: string } | null>(null);
   const [newMsg, setNewMsg] = useState("");
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -90,6 +92,7 @@ export default function SupportTicketDetail() {
         setSession(res.data.data.session);
         setMessages(res.data.data.messages || []);
         setAccessRequests(res.data.data.access_requests || []);
+        setExistingRating(res.data.data.rating || null);
       }
     } catch { /* ignore */ }
     setLoading(false);
@@ -211,6 +214,16 @@ export default function SupportTicketDetail() {
             </Button>
           </CardContent>
         </Card>
+      )}
+
+      {/* Rating card for closed sessions */}
+      {session?.status === "closed" && sessionToken && sessionId && (
+        <RatingCard
+          sessionId={sessionId}
+          sessionToken={sessionToken}
+          existingRating={existingRating}
+          onRated={loadSession}
+        />
       )}
 
       {/* Tabs: Chat / Audit */}
