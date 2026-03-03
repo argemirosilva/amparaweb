@@ -1702,7 +1702,15 @@ async function handleReceberAudio(
   const now = new Date();
   const dateStr = now.toISOString().split("T")[0];
   const fileId = crypto.randomUUID();
-  const ext = audioFileData?.name?.split(".").pop() || "mp4";
+  const rawExt = (audioFileData?.name?.split(".").pop() || "mp4").toLowerCase();
+  const validAudioExts = ["mp3", "mp4", "m4a", "ogg", "webm", "wav", "opus", "aac", "caf"];
+  const ext = validAudioExts.includes(rawExt)
+    ? rawExt
+    : (audioFileData?.type || "").includes("ogg") ? "ogg"
+    : (audioFileData?.type || "").includes("mp4") || (audioFileData?.type || "").includes("m4a") ? "m4a"
+    : (audioFileData?.type || "").includes("mpeg") || (audioFileData?.type || "").includes("mp3") ? "mp3"
+    : (audioFileData?.type || "").includes("wav") ? "wav"
+    : "mp4";
   const storagePath = `${user.id}/${dateStr}/${fileId}.${ext}`;
 
   // Upload binary to R2 if multipart file was provided
