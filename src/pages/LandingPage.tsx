@@ -975,6 +975,7 @@ export default function LandingPage() {
                     {l.label}
                   </button>
                 )}
+                <Link to="/admin/login" className="text-xs text-white/60 hover:text-white text-left transition-colors">Acesso Administrativo</Link>
               </div>
             </div>
             <div>
