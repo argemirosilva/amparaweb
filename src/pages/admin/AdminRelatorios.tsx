@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { FileText, Download, Loader2, Filter, BarChart3, MapPin, AlertTriangle, Mic, ChevronDown } from "lucide-react";
+import { FileText, Download, Loader2, Filter, BarChart3, MapPin, AlertTriangle, Mic, MessageCircle, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -13,11 +13,15 @@ import {
 } from "@/services/pdfReportService";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 
+import { callSupportApi } from "@/services/supportApiService";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+
 const TABS = [
   { id: "institucional", label: "Institucional", icon: BarChart3 },
   { id: "municipio", label: "Municípios", icon: MapPin },
   { id: "alertas", label: "Alertas", icon: AlertTriangle },
   { id: "monitoramento", label: "Monitoramento", icon: Mic },
+  { id: "suporte", label: "Suporte", icon: MessageCircle },
 ] as const;
 
 type TabId = typeof TABS[number]["id"];
@@ -83,6 +87,7 @@ export default function AdminRelatorios() {
   const [munData, setMunData] = useState<any>(null);
   const [alertData, setAlertData] = useState<any>(null);
   const [monData, setMonData] = useState<any>(null);
+  const [supData, setSupData] = useState<any>(null);
 
   const getPeriodDays = (p: string) => ({ "7d": 7, "30d": 30, "90d": 90, "12m": 365 }[p] || 30);
   const sinceDate = new Date(Date.now() - getPeriodDays(period) * 86400000).toISOString();
@@ -174,6 +179,17 @@ export default function AdminRelatorios() {
         ]);
         setMonData({ sessoes: sessoes || [], totalSessoes: totalSessoes || 0, gravacoes: gravacoes || [], totalGravacoes: totalGravacoes || 0, totalAnalises: totalAnalises || 0, segmentos: segmentos || [] });
       }
+
+      if (activeTab === "suporte") {
+        // Get session token from localStorage
+        const sessionToken = localStorage.getItem("session_token");
+        if (sessionToken) {
+          const res = await callSupportApi("getSupportStats", sessionToken, { since_date: sinceDate });
+          if (res.ok && res.data?.data) {
+            setSupData(res.data.data);
+          }
+        }
+      }
     } catch (err: any) {
       toast.error("Erro ao carregar dados: " + err.message);
     }
@@ -187,6 +203,7 @@ export default function AdminRelatorios() {
     municipio: generateMunicipioPDF,
     alertas: generateAlertasPDF,
     monitoramento: generateMonitoramentoPDF,
+    suporte: async () => { toast.info("Exportação de suporte em breve."); },
   };
 
   async function handleExport(fmt: "pdf" | "csv") {
@@ -457,11 +474,70 @@ export default function AdminRelatorios() {
     );
   }
 
+  function renderSuporte() {
+    if (!supData) return null;
+    const { total_sessions, total_rated, avg_rating, distribution, total_agents, agent_stats } = supData;
+    const pctRated = total_sessions > 0 ? ((total_rated / total_sessions) * 100).toFixed(1) : "0";
+
+    const chartData = [
+      { name: "1 ★", count: distribution[0] },
+      { name: "2 ★", count: distribution[1] },
+      { name: "3 ★", count: distribution[2] },
+      { name: "4 ★", count: distribution[3] },
+      { name: "5 ★", count: distribution[4] },
+    ];
+
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <KpiCard label="Total Sessões" value={total_sessions} />
+          <KpiCard label="Média Geral" value={avg_rating > 0 ? `${avg_rating.toFixed(1)} ★` : "—"} />
+          <KpiCard label="% Avaliadas" value={`${pctRated}%`} />
+          <KpiCard label="Total Agentes" value={total_agents} />
+        </div>
+
+        <Section title="Distribuição de Notas">
+          {total_rated > 0 ? (
+            <div className="p-4" style={{ height: 220 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(220 13% 91%)" />
+                  <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                  <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
+                  <Tooltip />
+                  <Bar dataKey="count" fill="hsl(207 89% 42%)" radius={[4, 4, 0, 0]} name="Avaliações" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div className="text-center py-8 text-xs" style={{ color: "hsl(220 9% 46%)" }}>
+              Nenhuma avaliação registrada no período.
+            </div>
+          )}
+        </Section>
+
+        <Section title="Top 10 Agentes de Suporte">
+          <DataTable
+            head={["#", "Nome", "Sessões", "Avaliações", "Nota Média"]}
+            rows={agent_stats.map((a: any, i: number) => [
+              i + 1,
+              a.name,
+              a.total_sessions,
+              a.total_ratings,
+              a.avg_rating > 0 ? `${a.avg_rating.toFixed(1)} ★` : "—",
+            ])}
+          />
+        </Section>
+      </div>
+    );
+  }
+
   const renderers: Record<TabId, () => React.ReactNode> = {
     institucional: renderInstitucional,
     municipio: renderMunicipio,
     alertas: renderAlertas,
     monitoramento: renderMonitoramento,
+    suporte: renderSuporte,
   };
 
   // Reset filters when changing tabs

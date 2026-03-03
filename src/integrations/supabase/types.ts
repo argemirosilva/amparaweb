@@ -1575,6 +1575,36 @@ export type Database = {
           },
         ]
       }
+      support_ratings: {
+        Row: {
+          agent_id: string | null
+          comment: string | null
+          created_at: string
+          id: string
+          rating: number
+          session_id: string
+          user_id: string
+        }
+        Insert: {
+          agent_id?: string | null
+          comment?: string | null
+          created_at?: string
+          id?: string
+          rating: number
+          session_id: string
+          user_id: string
+        }
+        Update: {
+          agent_id?: string | null
+          comment?: string | null
+          created_at?: string
+          id?: string
+          rating?: number
+          session_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       support_sessions: {
         Row: {
           agent_id: string | null
