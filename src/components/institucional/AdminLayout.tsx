@@ -52,7 +52,7 @@ export default function AdminLayout() {
 
   return (
     <ProtectedAdminRoute>
-    <div className="min-h-screen flex flex-col" style={{ background: "hsl(210 17% 96%)", ...fontStyle }}>
+    <div className="admin-theme min-h-screen flex flex-col" style={{ background: "hsl(210 17% 96%)", ...fontStyle }}>
       {/* Topbar */}
       <header
         className="h-16 border-b flex items-center justify-between px-4 md:px-6 shrink-0 z-30"

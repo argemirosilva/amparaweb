@@ -87,6 +87,15 @@ html, body, #root {
     --ampara-shadow-lg: 0 8px 36px -6px hsl(280 60% 48% / 0.25);
   }
 
+  /* Admin theme: neutral gray buttons & accents */
+  .admin-theme {
+    --primary: 220 15% 30%;
+    --primary-foreground: 0 0% 98%;
+    --ring: 220 15% 30%;
+    --accent: 220 10% 90%;
+    --accent-foreground: 220 15% 25%;
+  }
+
   .dark {
     --background: 210 20% 7%;
     --foreground: 210 10% 95%;
