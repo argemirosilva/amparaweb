@@ -615,31 +615,213 @@ serve(async (req) => {
       return json({ success: true, data: { items: sessionsWithGrants } });
     }
 
-    if (action === "createUserSession") {
-      const { category = "other", message_text, linked_resource } = params;
+    // ========== VERIFICATION FLOW ==========
+
+    if (action === "requestSupportVerification") {
+      const { category, message_text, linked_resource } = params;
       if (!message_text?.trim() || message_text.trim().length < 10) {
         return json({ error: "Mensagem deve ter pelo menos 10 caracteres" }, 400);
       }
 
+      // Rate limit: max 3 codes per user per 15 min
+      const fifteenMinAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+      const { data: recentAttempts } = await supabase
+        .from("rate_limit_attempts")
+        .select("id")
+        .eq("identifier", userId)
+        .eq("action_type", "support_verification")
+        .gte("attempted_at", fifteenMinAgo);
+
+      if (recentAttempts && recentAttempts.length >= 3) {
+        return json({ error: "Limite de verificações atingido. Aguarde 15 minutos." }, 429);
+      }
+
+      // Log rate limit attempt
+      await supabase.from("rate_limit_attempts").insert({
+        identifier: userId,
+        action_type: "support_verification",
+      });
+
+      // Fetch user phone
+      const { data: usuario } = await supabase
+        .from("usuarios")
+        .select("telefone, nome_completo")
+        .eq("id", userId)
+        .single();
+      if (!usuario?.telefone) {
+        return json({ error: "Telefone não cadastrado. Atualize seu perfil." }, 400);
+      }
+
+      // Generate 6-digit code
+      const rnd = new Uint8Array(6);
+      crypto.getRandomValues(rnd);
+      let code = "";
+      for (let i = 0; i < 6; i++) code += String(rnd[i] % 10);
+
+      // Hash code
+      const codeHash = await hashToken(code);
+
+      // Save verification code (5 min expiry fixed)
+      await supabase.from("support_verification_codes").insert({
+        user_id: userId,
+        code_hash: codeHash,
+        expires_at: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+      });
+
+      // Fetch template name from admin_settings
+      const { data: templateSetting } = await supabase
+        .from("admin_settings")
+        .select("valor")
+        .eq("chave", "whatsapp_template_suporte")
+        .maybeSingle();
+      const templateName = templateSetting?.valor || "ampara_codigo_verificacao";
+
+      // Send WhatsApp via send-whatsapp-like inline call
+      const firstName = usuario.nome_completo.split(" ")[0];
+      const token = Deno.env.get("META_WHATSAPP_TOKEN");
+      const phoneId = Deno.env.get("META_WHATSAPP_PHONE_ID");
+      const formattedPhone = usuario.telefone.replace(/\D/g, "").startsWith("55")
+        ? usuario.telefone.replace(/\D/g, "")
+        : `55${usuario.telefone.replace(/\D/g, "")}`;
+
+      if (token && phoneId) {
+        const waBody = {
+          messaging_product: "whatsapp",
+          to: formattedPhone,
+          type: "template",
+          template: {
+            name: templateName,
+            language: { code: "pt_BR" },
+            components: [
+              {
+                type: "body",
+                parameters: [
+                  { type: "text", parameter_name: "nome", text: firstName },
+                  { type: "text", parameter_name: "codigo", text: code },
+                  { type: "text", parameter_name: "minutos", text: "5" },
+                ],
+              },
+            ],
+          },
+        };
+
+        try {
+          const waRes = await fetch(`https://graph.facebook.com/v21.0/${phoneId}/messages`, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+            body: JSON.stringify(waBody),
+          });
+          const waResText = await waRes.text();
+          console.log(`WhatsApp verification code sent to ${formattedPhone}: status=${waRes.status}`);
+
+          // Log payload
+          await supabase.from("payload_integracoes").insert({
+            integracao: "whatsapp_verification",
+            user_id: userId,
+            payload: { template: templateName, phone: formattedPhone, body: waBody },
+            resposta: { status: waRes.status, body: waResText },
+            sucesso: waRes.ok,
+          });
+        } catch (e) {
+          console.error("WhatsApp verification send error:", e);
+        }
+      }
+
+      // Mask phone for frontend
+      const digits = usuario.telefone.replace(/\D/g, "");
+      const masked = `(**) *****-${digits.slice(-4)}`;
+
+      return json({ success: true, data: { masked_phone: masked } });
+    }
+
+    if (action === "verifySupportCode") {
+      const { code, category = "other", message_text, linked_resource } = params;
+      if (!code || code.length !== 6) {
+        return json({ error: "Código inválido" }, 400);
+      }
+
+      // Fetch latest unused code for this user
+      const { data: verif } = await supabase
+        .from("support_verification_codes")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("used", false)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (!verif) {
+        return json({ error: "Nenhum código pendente. Solicite um novo." }, 400);
+      }
+
+      // Increment attempts
+      const newAttempts = (verif.attempts || 0) + 1;
+      await supabase.from("support_verification_codes")
+        .update({ attempts: newAttempts })
+        .eq("id", verif.id);
+
+      // If attempts > 2, kill all web sessions
+      if (newAttempts > 2) {
+        // Mark code as used to prevent further attempts
+        await supabase.from("support_verification_codes")
+          .update({ used: true })
+          .eq("id", verif.id);
+
+        // Revoke ALL web sessions for this user
+        await supabase.from("user_sessions")
+          .update({ revoked_at: new Date().toISOString() })
+          .eq("user_id", userId)
+          .eq("origin", "web")
+          .is("revoked_at", null);
+
+        // Audit log
+        await supabase.from("audit_logs").insert({
+          user_id: userId,
+          action_type: "session_killed_verification_abuse",
+          success: true,
+          details: { reason: "Exceeded 2 failed verification attempts for support ticket", verification_id: verif.id },
+        });
+
+        console.log(`SECURITY: All web sessions killed for user ${userId} after ${newAttempts} failed verification attempts`);
+        return json({ error: "Sessão encerrada por segurança. Muitas tentativas incorretas.", session_killed: true }, 401);
+      }
+
+      // Check expiration
+      if (new Date(verif.expires_at) < new Date()) {
+        return json({ error: "Código expirado. Solicite um novo.", remaining_attempts: 2 - newAttempts }, 410);
+      }
+
+      // Verify code hash
+      const inputHash = await hashToken(code);
+      if (inputHash !== verif.code_hash) {
+        const remaining = 2 - newAttempts;
+        return json({ 
+          error: `Código incorreto. ${remaining > 0 ? `Você tem mais ${remaining} tentativa(s).` : "Próxima tentativa incorreta encerrará sua sessão."}`,
+          remaining_attempts: remaining,
+        }, 400);
+      }
+
+      // Code is valid! Mark as used
+      await supabase.from("support_verification_codes")
+        .update({ used: true })
+        .eq("id", verif.id);
+
+      // Now create the support session (same logic as old createUserSession)
       const validCategories = [
         "app_issue", "playback", "upload", "gps", "notifications", 
         "account", "recording_question", "transcription_question", 
         "analysis_question", "other"
       ];
-      if (!validCategories.includes(category)) {
-        return json({ error: "Categoria inválida" }, 400);
-      }
-
-      // Determine sensitivity
+      const finalCategory = validCategories.includes(category) ? category : "other";
       const sensitiveCategories = ["recording_question", "transcription_question", "analysis_question"];
-      const sensitivity_level = sensitiveCategories.includes(category) || linked_resource ? "sensitive" : "normal";
+      const sensitivity_level = sensitiveCategories.includes(finalCategory) || linked_resource ? "sensitive" : "normal";
 
       const { data: session, error } = await supabase
         .from("support_sessions")
         .insert({
           user_id: userId,
           status: "open",
-          category,
+          category: finalCategory,
           sensitivity_level,
         })
         .select()
@@ -647,30 +829,35 @@ serve(async (req) => {
       if (error) return json({ error: error.message }, 500);
 
       await addTimeline(supabase, userId, session.id, "session_created",
-        "Chamado de suporte técnico aberto.");
+        "Chamado de suporte técnico aberto. Identidade verificada via WhatsApp.");
 
-      // Send initial message
       await supabase.from("support_messages").insert({
         session_id: session.id,
         sender_type: "system",
-        message_text: "Chamado aberto. Um agente será atribuído em breve.",
+        message_text: "Chamado aberto. Identidade verificada via WhatsApp. Um agente será atribuído em breve.",
       });
 
-      // User's message
-      let userMsgText = message_text.trim();
+      let userMsgText = message_text?.trim() || "";
       if (linked_resource?.resource_type && linked_resource?.resource_id) {
         const label = linked_resource.resource_label || linked_resource.resource_id;
         userMsgText += `\n\n📎 Recurso vinculado: ${linked_resource.resource_type} — ${label}`;
       }
 
-      await supabase.from("support_messages").insert({
-        session_id: session.id,
-        sender_type: "user",
-        sender_id: userId,
-        message_text: userMsgText,
-      });
+      if (userMsgText) {
+        await supabase.from("support_messages").insert({
+          session_id: session.id,
+          sender_type: "user",
+          sender_id: userId,
+          message_text: userMsgText,
+        });
+      }
 
       return json({ success: true, data: { session_id: session.id } }, 201);
+    }
+
+    if (action === "createUserSession") {
+      // Legacy fallback — redirect to verification flow
+      return json({ error: "Verificação WhatsApp obrigatória. Use requestSupportVerification." }, 400);
     }
 
     if (action === "getMySession") {
