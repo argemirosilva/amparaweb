@@ -161,7 +161,7 @@ export default function AdminOrgaos() {
         title="Gestão de Entidades"
         description="Cadastro e gestão de entidades conveniadas ao sistema"
         actions={
-          <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2 rounded text-sm font-semibold ampara-gradient-bg text-primary-foreground">
+          <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2 rounded text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90">
             <Plus className="w-4 h-4" /> Nova Entidade
           </button>
         }

@@ -479,7 +479,7 @@ export default function AdminRelatorios() {
             <button
               onClick={() => handleExport("pdf")}
               disabled={generating !== null || loading}
-              className="px-4 py-2 rounded text-xs font-semibold transition-colors flex items-center gap-1.5 disabled:opacity-50 ampara-gradient-bg text-primary-foreground"
+              className="px-4 py-2 rounded text-xs font-semibold transition-colors flex items-center gap-1.5 disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90"
             >
               {generating?.endsWith("-pdf") ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
               Exportar PDF
