@@ -250,14 +250,75 @@ serve(async (req) => {
 
       // Fetch audio — autogerado paths come from Supabase Storage, others from R2
       try {
-        // iOS records with .audio extension — typically AAC in ADTS container
-        // Serve as audio/aac so the browser auto-detects the codec
-        const contentType = storagePath.endsWith(".wav") ? "audio/wav"
+        // Fallback content-type from extension (overridden by magic bytes below)
+        const extContentType = storagePath.endsWith(".wav") ? "audio/wav"
           : storagePath.endsWith(".ogg") ? "audio/ogg"
           : storagePath.endsWith(".webm") ? "audio/webm"
           : storagePath.endsWith(".audio") ? "audio/aac"
           : storagePath.endsWith(".mp4") || storagePath.endsWith(".m4a") ? "audio/mp4"
           : "audio/mpeg";
+
+        // Helper: detect real content-type from first bytes (magic bytes)
+        function detectContentType(header: Uint8Array): string | null {
+          if (header.length < 12) return null;
+          // ID3 tag (MP3 with ID3 header)
+          if (header[0] === 0x49 && header[1] === 0x44 && header[2] === 0x33) return "audio/mpeg";
+          // MP3 sync word (0xFFE0..0xFFFF)
+          if (header[0] === 0xFF && (header[1] & 0xE0) === 0xE0) return "audio/mpeg";
+          // OGG
+          if (header[0] === 0x4F && header[1] === 0x67 && header[2] === 0x67 && header[3] === 0x53) return "audio/ogg";
+          // RIFF/WAV
+          if (header[0] === 0x52 && header[1] === 0x49 && header[2] === 0x46 && header[3] === 0x46 &&
+              header[8] === 0x57 && header[9] === 0x41 && header[10] === 0x56 && header[11] === 0x45) return "audio/wav";
+          // ftyp (MP4/M4A/AAC in MP4 container)
+          if (header[4] === 0x66 && header[5] === 0x74 && header[6] === 0x79 && header[7] === 0x70) return "audio/mp4";
+          // WebM/Matroska (0x1A45DFA3)
+          if (header[0] === 0x1A && header[1] === 0x45 && header[2] === 0xDF && header[3] === 0xA3) return "audio/webm";
+          // ADTS AAC frame (0xFFF0..0xFFF9)
+          if (header[0] === 0xFF && (header[1] & 0xF0) === 0xF0 && (header[1] & 0x06) === 0x00) return "audio/aac";
+          // FLAC
+          if (header[0] === 0x66 && header[1] === 0x4C && header[2] === 0x61 && header[3] === 0x43) return "audio/flac";
+          // CAF (caff)
+          if (header[0] === 0x63 && header[1] === 0x61 && header[2] === 0x66 && header[3] === 0x66) return "audio/x-caf";
+          return null;
+        }
+
+        // Helper: fetch, sniff magic bytes, and stream response with correct content-type
+        async function streamWithMagicDetect(resp: Response): Promise<Response> {
+          const reader = resp.body!.getReader();
+          const firstChunk = await reader.read();
+          if (firstChunk.done || !firstChunk.value) {
+            return json({ error: "Arquivo de áudio vazio" }, 502);
+          }
+
+          const detected = detectContentType(firstChunk.value);
+          const finalContentType = detected || extContentType;
+          if (detected) {
+            console.log(`[PROXY_MAGIC] path=${storagePath} ext_ct=${extContentType} detected_ct=${detected}`);
+          }
+
+          // Rebuild a ReadableStream prepending the first chunk
+          const stream = new ReadableStream({
+            start(controller) {
+              controller.enqueue(firstChunk.value);
+            },
+            async pull(controller) {
+              const { done, value } = await reader.read();
+              if (done) { controller.close(); return; }
+              controller.enqueue(value);
+            },
+            cancel() { reader.cancel(); }
+          });
+
+          return new Response(stream, {
+            status: 200,
+            headers: {
+              ...corsHeaders,
+              "Content-Type": finalContentType,
+              "Cache-Control": "private, max-age=3600",
+            },
+          });
+        }
 
         if (storagePath.startsWith("autogerado/")) {
           // Serve from Supabase Storage using service-role signed URL
@@ -280,14 +341,7 @@ serve(async (req) => {
             return json({ error: "Erro ao buscar áudio do storage" }, 502);
           }
 
-          return new Response(storageResp.body, {
-            status: 200,
-            headers: {
-              ...corsHeaders,
-              "Content-Type": contentType,
-              "Cache-Control": "private, max-age=3600",
-            },
-          });
+          return await streamWithMagicDetect(storageResp);
         } else {
           // Serve from R2
           const r2 = getR2Client();
@@ -299,14 +353,7 @@ serve(async (req) => {
             return json({ error: "Erro ao buscar áudio do storage" }, 502);
           }
 
-          return new Response(r2Resp.body, {
-            status: 200,
-            headers: {
-              ...corsHeaders,
-              "Content-Type": contentType,
-              "Cache-Control": "private, max-age=3600",
-            },
-          });
+          return await streamWithMagicDetect(r2Resp);
         }
       } catch (e) {
         console.error("Audio proxy error:", e);
