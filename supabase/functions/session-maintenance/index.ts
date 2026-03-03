@@ -404,9 +404,12 @@ serve(async (req) => {
             offset += buf.length;
           }
 
-          // Generate final path
+          // Generate final path — preserve original format from first segment
           const dateStr = new Date().toISOString().split("T")[0];
-          const finalPath = `${session.user_id}/${dateStr}/${session.id}.audio`;
+          const firstSegPath = segments[0].storage_path || segments[0].file_url || "";
+          const segExt = firstSegPath.split(".").pop()?.toLowerCase() || "mp3";
+          const finalExt = (segExt === "ogg" || segExt === "mp3" || segExt === "wav") ? segExt : "mp3";
+          const finalPath = `${session.user_id}/${dateStr}/${session.id}.${finalExt}`;
 
           // Upload final file
           const uploaded = await uploadToR2(finalPath, concatenated, r2Config);
