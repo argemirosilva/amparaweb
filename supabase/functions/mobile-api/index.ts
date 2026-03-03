@@ -1703,13 +1703,23 @@ async function handleReceberAudio(
   const dateStr = now.toISOString().split("T")[0];
   const fileId = crypto.randomUUID();
   const rawExt = (audioFileData?.name?.split(".").pop() || "mp4").toLowerCase();
+  const mimeType = audioFileData?.type || "";
+  console.log(`[AUDIO_UPLOAD] file_name=${audioFileData?.name}, rawExt=${rawExt}, mimeType=${mimeType}`);
   const validAudioExts = ["mp3", "mp4", "m4a", "ogg", "webm", "wav", "opus", "aac", "caf"];
-  const ext = validAudioExts.includes(rawExt)
+  // iOS sometimes sends files with ".audio" extension — detect real format from MIME type
+  const ext = rawExt === "audio"
+    ? (mimeType.includes("mpeg") || mimeType.includes("mp3") ? "mp3"
+      : mimeType.includes("mp4") || mimeType.includes("m4a") ? "m4a"
+      : mimeType.includes("ogg") ? "ogg"
+      : mimeType.includes("wav") ? "wav"
+      : mimeType.includes("aac") ? "aac"
+      : "mp3") // default to mp3 for iOS ".audio" files since mobile team confirms MP3
+    : validAudioExts.includes(rawExt)
     ? rawExt
-    : (audioFileData?.type || "").includes("ogg") ? "ogg"
-    : (audioFileData?.type || "").includes("mp4") || (audioFileData?.type || "").includes("m4a") ? "m4a"
-    : (audioFileData?.type || "").includes("mpeg") || (audioFileData?.type || "").includes("mp3") ? "mp3"
-    : (audioFileData?.type || "").includes("wav") ? "wav"
+    : mimeType.includes("ogg") ? "ogg"
+    : mimeType.includes("mp4") || mimeType.includes("m4a") ? "m4a"
+    : mimeType.includes("mpeg") || mimeType.includes("mp3") ? "mp3"
+    : mimeType.includes("wav") ? "wav"
     : "mp4";
   const storagePath = `${user.id}/${dateStr}/${fileId}.${ext}`;
 
