@@ -14,7 +14,7 @@ export default function AdminPageHeader({ icon, breadcrumb, title, description, 
     <div className="mb-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-start gap-3">
-          <GradientIcon icon={icon} size="sm" />
+          <GradientIcon icon={icon} size="sm" variant="admin" />
           <div>
             <p className="text-xs text-muted-foreground mb-0.5">{breadcrumb}</p>
             <h1 className="text-2xl font-semibold text-foreground leading-tight">{title}</h1>
