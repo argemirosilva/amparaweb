@@ -982,7 +982,7 @@ export default function LandingPage() {
               <div className="flex flex-col gap-2">
                 <Link to="/privacidade" className="text-xs text-white/60 hover:text-white transition-colors">Política de Privacidade</Link>
                 
-                <Link to="/cadastro" className="text-xs text-white/60 hover:text-white transition-colors">Cadastre-se</Link>
+                
                 <Link to="/transparencia" className="text-xs text-white/60 hover:text-white transition-colors">Portal de Transparência</Link>
                 
               </div>
