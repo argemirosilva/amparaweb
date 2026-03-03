@@ -192,10 +192,15 @@ export default function SuporteChat() {
               const style = SENDER_STYLES[m.sender_type] || SENDER_STYLES.system;
               const redacted = redactPii(m.message_text);
               const wasRedacted = redacted !== m.message_text;
+              const displayLabel = m.sender_type === "system" && user?.nome_completo
+                ? user.nome_completo.split(" ")[0]
+                : m.sender_type === "agent" && session?.agent_name
+                ? session.agent_name
+                : style.label;
               return (
                 <div key={m.id} className={`max-w-[80%] ${style.align}`}>
                   <div className="rounded-lg px-3 py-2" style={{ background: style.bg }}>
-                    <p className="text-xs font-medium mb-1" style={{ color: style.text }}>{style.label}</p>
+                    <p className="text-xs font-medium mb-1" style={{ color: style.text }}>{displayLabel}</p>
                     <p className="text-sm whitespace-pre-wrap" style={{ color: style.text }}>{redacted}</p>
                     {wasRedacted && (
                       <p className="text-[10px] mt-1 flex items-center gap-1" style={{ color: "hsl(220 13% 46%)" }}>
