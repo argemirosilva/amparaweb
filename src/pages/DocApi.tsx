@@ -283,7 +283,7 @@ const ENDPOINTS: Endpoint[] = [
     fase: 4,
     description: "Recebe segmento de áudio. Suporta JSON com file_url OU multipart/form-data com upload binário direto para R2. Idempotente via segmento_idx. O backend possui 3 fluxos de resposta: sessão ativa (normal), segmento tardio (grace window 60s), e gravação órfã (sem sessão).",
     auth: "session_token ou email_usuario",
-    usageGuide: "Envie cada segmento de 30s assim que gravado — não espere acumular. Use segmento_idx sequencial (0, 1, 2...) para garantir idempotência: se o mesmo idx for enviado novamente na mesma sessão, o backend retorna o segmento existente sem duplicar. Se a sessão de monitoramento foi selada mas o segmento está atrasado, o backend aceita por até 60 segundos (grace window). Após isso, o segmento é salvo como gravação independente (órfã). Prefira multipart/form-data para upload binário direto — evita codificar o áudio em base64.",
+    usageGuide: "Envie cada segmento de 30s assim que gravado — não espere acumular. Use segmento_idx sequencial começando em 1 (1, 2, 3...) para garantir idempotência: se o mesmo idx for enviado novamente na mesma sessão, o backend retorna o segmento existente sem duplicar. Se a sessão de monitoramento foi selada mas o segmento está atrasado, o backend aceita por até 60 segundos (grace window). Após isso, o segmento é salvo como gravação independente (órfã). Prefira multipart/form-data para upload binário direto — evita codificar o áudio em base64.",
     params: [
       { name: "session_token", type: "string", required: false, description: "Token de sessão (alternativa a email_usuario)" },
       { name: "email_usuario", type: "string", required: false, description: "Email da usuária (alternativa a session_token)" },
@@ -291,7 +291,7 @@ const ENDPOINTS: Endpoint[] = [
       { name: "device_id", type: "string", required: false, description: "ID do dispositivo" },
       { name: "duracao_segundos", type: "number", required: false, description: "Duração em segundos" },
       { name: "tamanho_mb", type: "number", required: false, description: "Tamanho em MB" },
-      { name: "segmento_idx", type: "number", required: false, description: "Índice do segmento (para idempotência — enviar o mesmo idx na mesma sessão retorna o segmento existente)" },
+      { name: "segmento_idx", type: "number", required: false, description: "Índice do segmento, começando em 1 (para idempotência — enviar o mesmo idx na mesma sessão retorna o segmento existente)" },
       { name: "timezone", type: "string", required: false, description: "Timezone" },
       { name: "timezone_offset_minutes", type: "number", required: false, description: "Offset em minutos" },
     ],
@@ -622,7 +622,7 @@ function UsageFlows() {
                   <li><code className="text-primary">syncConfigMobile</code> retorna <code className="text-primary">dentro_horario: true</code> → app inicia gravação</li>
                   <li><code className="text-primary">reportarStatusMonitoramento</code> com status_monitoramento=<code className="text-primary">'janela_iniciada'</code></li>
                   <li><code className="text-primary">reportarStatusGravacao</code> com status_gravacao=<code className="text-primary">'iniciada'</code></li>
-                  <li>Loop: gravar 30s → enviar via <code className="text-primary">receberAudioMobile</code> com segmento_idx sequencial (0, 1, 2...)</li>
+                  <li>Loop: gravar 30s → enviar via <code className="text-primary">receberAudioMobile</code> com segmento_idx sequencial (1, 2, 3...)</li>
                   <li>Ao sair da janela: <code className="text-primary">reportarStatusGravacao</code> com status_gravacao=<code className="text-primary">'finalizada'</code> + motivo_parada</li>
                   <li><code className="text-primary">reportarStatusMonitoramento</code> com status_monitoramento=<code className="text-primary">'janela_finalizada'</code></li>
                 </ol>
@@ -632,7 +632,7 @@ function UsageFlows() {
                     action: "receberAudioMobile",
                     session_token: "<token>",
                     device_id: "device-abc-123",
-                    segmento_idx: 0,
+                    segmento_idx: 1,
                     duracao_segundos: 30,
                     tamanho_mb: 0.45,
                     timezone: "America/Sao_Paulo"
