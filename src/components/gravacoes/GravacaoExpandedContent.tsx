@@ -318,7 +318,7 @@ export default function GravacaoExpandedContent({
       </div>
 
       {/* AI Analysis Card — hide for sem_risco */}
-      {gravacao.nivel_risco && gravacao.nivel_risco !== "sem_risco" && (
+      {(
         <AnaliseCard
           gravacaoId={gravacao.id}
           status={gravacao.status}
