@@ -54,6 +54,7 @@ export default function AdminConfiguracoes() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
   const [tiposOpen, setTiposOpen] = useState(false);
+  const [triagemOpen, setTriagemOpen] = useState(false);
 
   async function loadSettings() {
     if (!sessionToken) return;
