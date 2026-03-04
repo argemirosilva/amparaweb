@@ -632,7 +632,7 @@ function UsageFlows() {
                     action: "receberAudioMobile",
                     session_token: "<token>",
                     device_id: "device-abc-123",
-                    segmento_idx: 0,
+                    segmento_idx: 1,
                     duracao_segundos: 30,
                     tamanho_mb: 0.45,
                     timezone: "America/Sao_Paulo"
