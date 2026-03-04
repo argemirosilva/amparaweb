@@ -917,6 +917,9 @@ export type Database = {
           tamanho_mb: number | null
           timezone: string | null
           timezone_offset_minutes: number | null
+          triage_at: string | null
+          triage_risco: string | null
+          triage_transcricao: string | null
           user_id: string
         }
         Insert: {
@@ -932,6 +935,9 @@ export type Database = {
           tamanho_mb?: number | null
           timezone?: string | null
           timezone_offset_minutes?: number | null
+          triage_at?: string | null
+          triage_risco?: string | null
+          triage_transcricao?: string | null
           user_id: string
         }
         Update: {
@@ -947,6 +953,9 @@ export type Database = {
           tamanho_mb?: number | null
           timezone?: string | null
           timezone_offset_minutes?: number | null
+          triage_at?: string | null
+          triage_risco?: string | null
+          triage_transcricao?: string | null
           user_id?: string
         }
         Relationships: [
