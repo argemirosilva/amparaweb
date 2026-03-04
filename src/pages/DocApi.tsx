@@ -622,7 +622,7 @@ function UsageFlows() {
                   <li><code className="text-primary">syncConfigMobile</code> retorna <code className="text-primary">dentro_horario: true</code> → app inicia gravação</li>
                   <li><code className="text-primary">reportarStatusMonitoramento</code> com status_monitoramento=<code className="text-primary">'janela_iniciada'</code></li>
                   <li><code className="text-primary">reportarStatusGravacao</code> com status_gravacao=<code className="text-primary">'iniciada'</code></li>
-                  <li>Loop: gravar 30s → enviar via <code className="text-primary">receberAudioMobile</code> com segmento_idx sequencial (0, 1, 2...)</li>
+                  <li>Loop: gravar 30s → enviar via <code className="text-primary">receberAudioMobile</code> com segmento_idx sequencial (1, 2, 3...)</li>
                   <li>Ao sair da janela: <code className="text-primary">reportarStatusGravacao</code> com status_gravacao=<code className="text-primary">'finalizada'</code> + motivo_parada</li>
                   <li><code className="text-primary">reportarStatusMonitoramento</code> com status_monitoramento=<code className="text-primary">'janela_finalizada'</code></li>
                 </ol>
