@@ -1,72 +1,63 @@
 
 
-## Plano: Avaliação de Atendimento + Relatório de Suporte
+## Plano: Tela de Configuração de Palavras de Triagem
 
-### Visão Geral
-Três entregas: (1) avaliação pós-atendimento pela usuária, (2) nova aba "Suporte" em Admin Relatórios com gráficos de avaliações, (3) ranking Top 10 agentes.
+### Problema
+As palavras-chave de risco para a triagem de segmentos estão hardcoded no código (`offenseWords.ts`). Precisam ser gerenciáveis pelo admin sem deploy.
 
----
+### Proposta
 
-### 1. Tabela `support_ratings` (migração)
+**Onde colocar:** Seção colapsável em `AdminConfiguracoes`, seguindo o mesmo padrão do "Tipos de Alerta" que já existe ali. Consistente com o design atual.
+
+### 1. Nova tabela `palavras_triagem`
 
 ```sql
-CREATE TABLE public.support_ratings (
+CREATE TABLE public.palavras_triagem (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  session_id uuid NOT NULL,
-  user_id uuid NOT NULL,
-  agent_id uuid,
-  rating integer NOT NULL CHECK (rating BETWEEN 1 AND 5),
-  comment text,
+  palavra text NOT NULL,
+  grupo text NOT NULL DEFAULT 'ameaca',  -- ameaca, xingamento, socorro, arma
+  peso integer NOT NULL DEFAULT 1,       -- 1=normal, 2=alto, 3=critico
+  ativo boolean NOT NULL DEFAULT true,
   created_at timestamptz NOT NULL DEFAULT now()
 );
-ALTER TABLE public.support_ratings ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Block direct access support_ratings" ON public.support_ratings FOR ALL USING (false) WITH CHECK (false);
-CREATE UNIQUE INDEX idx_support_ratings_session ON public.support_ratings(session_id);
+CREATE UNIQUE INDEX idx_palavras_triagem_palavra ON palavras_triagem(palavra);
 ```
 
-Uma avaliação por sessão (1-5 estrelas + comentário opcional).
+**Grupos:**
+- `ameaca` — "matar", "te mato", "vou te bater"
+- `xingamento` — importar do `offenseWords.ts` atual
+- `socorro` — "socorro", "me ajuda", "para"
+- `arma` — "arma", "faca", "revolver", "sangue"
 
----
+**Peso:** determina se keyword sozinha já escala para Camada 2 (IA) ou precisa de múltiplas ocorrências.
 
-### 2. Backend: `support-api` — duas novas actions
+### 2. Backend: 2 actions no `admin-api`
 
-**`rateSession`** (user action):
-- Recebe `session_id`, `rating` (1-5), `comment` (opcional)
-- Valida: sessão pertence ao user, status = closed, ainda não avaliada
-- Insere em `support_ratings`
-- Registra na timeline
+- **`listPalavrasTriagem`** — retorna todas, ordenadas por grupo + palavra
+- **`upsertPalavraTriagem`** — criar/editar/toggle ativo
+- **`deletePalavraTriagem`** — remover
 
-**`getSupportStats`** (admin action):
-- Retorna avaliações agregadas: média geral, distribuição por nota, média por agente com nome, total de sessões por agente
-- Filtrável por período (since_date)
+### 3. Frontend: Componente `AdminPalavrasTriagem`
 
----
+Novo componente em `src/pages/admin/AdminPalavrasTriagem.tsx`, renderizado como seção colapsável em `AdminConfiguracoes` (abaixo de "Tipos de Alerta").
 
-### 3. Frontend: Avaliação pela usuária
+**UI:**
+- Filtro por grupo (chips: Ameaça, Xingamento, Socorro, Arma)
+- Lista de palavras com toggle ativo/inativo, badge de peso, botão deletar
+- Form inline para adicionar nova palavra (input + select grupo + select peso)
+- Botão "Importar padrão" para seed inicial das ~120 palavras
 
-**`src/pages/support/SupportTicketDetail.tsx`**:
-- Quando `session.status === "closed"`, exibir card de avaliação com 5 estrelas clicáveis + textarea para comentário
-- Após envio, exibir "Obrigada pela avaliação" com a nota dada
-- Verificar se já foi avaliado ao carregar (nova flag retornada pelo `getMySession`)
+### 4. Integração com Segment Triage
 
----
+A edge function `segment-triage` consulta `palavras_triagem` (ativo=true) em vez de usar lista hardcoded. Cache de 5 minutos para não consultar DB a cada segmento.
 
-### 4. Frontend: Aba "Suporte" em Admin Relatórios
-
-**`src/pages/admin/AdminRelatorios.tsx`**:
-- Nova aba `{ id: "suporte", label: "Suporte", icon: MessageCircle }`
-- KPIs: Total Sessões, Média Geral, % Avaliadas, Total Agentes
-- Gráfico de barras (Recharts `BarChart`): distribuição de notas 1-5
-- Tabela Top 10 agentes: #, Nome, Sessões Atendidas, Nota Média, com ordenação por nota
-
----
-
-### Arquivos Alterados
+### Arquivos
 
 | Arquivo | Mudança |
 |---|---|
-| migração SQL | Cria `support_ratings` |
-| `supabase/functions/support-api/index.ts` | Actions `rateSession` + `getSupportStats` |
-| `src/pages/support/SupportTicketDetail.tsx` | Card de avaliação pós-fechamento |
-| `src/pages/admin/AdminRelatorios.tsx` | Nova aba "Suporte" com gráficos e Top 10 |
+| Migração SQL | Cria `palavras_triagem` + seed inicial |
+| `supabase/functions/admin-api/index.ts` | 3 actions CRUD |
+| `src/pages/admin/AdminPalavrasTriagem.tsx` | Novo componente |
+| `src/pages/admin/AdminConfiguracoes.tsx` | Adiciona seção colapsável |
+| `segment-triage` (futuro) | Consome da tabela em vez de hardcoded |
 
