@@ -291,7 +291,7 @@ const ENDPOINTS: Endpoint[] = [
       { name: "device_id", type: "string", required: false, description: "ID do dispositivo" },
       { name: "duracao_segundos", type: "number", required: false, description: "Duração em segundos" },
       { name: "tamanho_mb", type: "number", required: false, description: "Tamanho em MB" },
-      { name: "segmento_idx", type: "number", required: false, description: "Índice do segmento (para idempotência — enviar o mesmo idx na mesma sessão retorna o segmento existente)" },
+      { name: "segmento_idx", type: "number", required: false, description: "Índice do segmento, começando em 1 (para idempotência — enviar o mesmo idx na mesma sessão retorna o segmento existente)" },
       { name: "timezone", type: "string", required: false, description: "Timezone" },
       { name: "timezone_offset_minutes", type: "number", required: false, description: "Offset em minutos" },
     ],
