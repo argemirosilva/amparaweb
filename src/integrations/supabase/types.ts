@@ -1126,6 +1126,33 @@ export type Database = {
           },
         ]
       }
+      palavras_triagem: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          grupo: string
+          id: string
+          palavra: string
+          peso: number
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          grupo?: string
+          id?: string
+          palavra: string
+          peso?: number
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          grupo?: string
+          id?: string
+          palavra?: string
+          peso?: number
+        }
+        Relationships: []
+      }
       payload_integracoes: {
         Row: {
           created_at: string

@@ -1,9 +1,10 @@
 import { useEffect, useState, useRef } from "react";
-import { Settings, Save, RotateCcw, Plus, X, ChevronDown, ChevronRight, Tags } from "lucide-react";
+import { Settings, Save, RotateCcw, Plus, X, ChevronDown, ChevronRight, Tags, ShieldAlert } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import AdminTiposAlerta from "./AdminTiposAlerta";
+import AdminPalavrasTriagem from "./AdminPalavrasTriagem";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -53,6 +54,7 @@ export default function AdminConfiguracoes() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
   const [tiposOpen, setTiposOpen] = useState(false);
+  const [triagemOpen, setTriagemOpen] = useState(false);
 
   async function loadSettings() {
     if (!sessionToken) return;
@@ -242,6 +244,23 @@ export default function AdminConfiguracoes() {
         {tiposOpen && (
           <div className="p-4">
             <AdminTiposAlerta />
+          </div>
+        )}
+      </div>
+      {/* Palavras de Triagem — Collapsible */}
+      <div className="mt-4 rounded-lg border border-border bg-card shadow-sm overflow-hidden">
+        <button
+          onClick={() => setTriagemOpen((v) => !v)}
+          className="w-full px-4 py-3 flex items-center gap-2 bg-muted/50 hover:bg-muted/70 transition-colors text-left"
+        >
+          <ShieldAlert className="w-4 h-4 text-primary" />
+          <h2 className="text-sm font-semibold text-foreground flex-1">Palavras de Triagem</h2>
+          <span className="text-xs text-muted-foreground mr-2">Keywords de risco para triagem rápida de segmentos</span>
+          {triagemOpen ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
+        </button>
+        {triagemOpen && (
+          <div className="p-4">
+            <AdminPalavrasTriagem />
           </div>
         )}
       </div>
