@@ -283,7 +283,7 @@ const ENDPOINTS: Endpoint[] = [
     fase: 4,
     description: "Recebe segmento de áudio. Suporta JSON com file_url OU multipart/form-data com upload binário direto para R2. Idempotente via segmento_idx. O backend possui 3 fluxos de resposta: sessão ativa (normal), segmento tardio (grace window 60s), e gravação órfã (sem sessão).",
     auth: "session_token ou email_usuario",
-    usageGuide: "Envie cada segmento de 30s assim que gravado — não espere acumular. Use segmento_idx sequencial (0, 1, 2...) para garantir idempotência: se o mesmo idx for enviado novamente na mesma sessão, o backend retorna o segmento existente sem duplicar. Se a sessão de monitoramento foi selada mas o segmento está atrasado, o backend aceita por até 60 segundos (grace window). Após isso, o segmento é salvo como gravação independente (órfã). Prefira multipart/form-data para upload binário direto — evita codificar o áudio em base64.",
+    usageGuide: "Envie cada segmento de 30s assim que gravado — não espere acumular. Use segmento_idx sequencial começando em 1 (1, 2, 3...) para garantir idempotência: se o mesmo idx for enviado novamente na mesma sessão, o backend retorna o segmento existente sem duplicar. Se a sessão de monitoramento foi selada mas o segmento está atrasado, o backend aceita por até 60 segundos (grace window). Após isso, o segmento é salvo como gravação independente (órfã). Prefira multipart/form-data para upload binário direto — evita codificar o áudio em base64.",
     params: [
       { name: "session_token", type: "string", required: false, description: "Token de sessão (alternativa a email_usuario)" },
       { name: "email_usuario", type: "string", required: false, description: "Email da usuária (alternativa a session_token)" },
