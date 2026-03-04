@@ -204,7 +204,7 @@ export default function GravacaoExpandedContent({
       )}
 
       {/* Transcription with highlights */}
-      {gravacao.transcricao && gravacao.nivel_risco && gravacao.nivel_risco !== "sem_risco" && (
+      {gravacao.transcricao && (
         <details
           className="rounded-lg border border-border/50 overflow-hidden group"
           onToggle={(e) => {
