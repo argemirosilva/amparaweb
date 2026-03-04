@@ -4,7 +4,8 @@ import { callWebApi } from "@/services/webApiService";
 import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Bell } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Bell, ChevronDown, Info } from "lucide-react";
 import { toast } from "sonner";
 
 interface AcionamentosConfig {
