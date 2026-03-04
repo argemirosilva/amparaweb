@@ -837,6 +837,52 @@ serve(async (req) => {
       return json({ ok: true });
     }
 
+    // ========== PALAVRAS TRIAGEM CRUD ==========
+    if (action === "listPalavrasTriagem") {
+      const { data, error } = await supabase
+        .from("palavras_triagem")
+        .select("*")
+        .order("grupo")
+        .order("palavra");
+      if (error) return json({ error: error.message }, 500);
+      return json({ items: data });
+    }
+
+    if (action === "upsertPalavraTriagem") {
+      const { id: itemId, palavra, grupo, peso, ativo } = params;
+      if (!palavra?.trim()) return json({ error: "Palavra é obrigatória" }, 400);
+      const validGrupos = ["ameaca", "xingamento", "socorro", "arma"];
+      const finalGrupo = validGrupos.includes(grupo) ? grupo : "ameaca";
+      const finalPeso = [1, 2, 3].includes(peso) ? peso : 1;
+
+      if (itemId) {
+        const { data, error } = await supabase
+          .from("palavras_triagem")
+          .update({ palavra: palavra.trim().toLowerCase(), grupo: finalGrupo, peso: finalPeso, ativo: ativo !== false })
+          .eq("id", itemId)
+          .select()
+          .single();
+        if (error) return json({ error: error.message }, 500);
+        return json({ item: data });
+      } else {
+        const { data, error } = await supabase
+          .from("palavras_triagem")
+          .insert({ palavra: palavra.trim().toLowerCase(), grupo: finalGrupo, peso: finalPeso, ativo: ativo !== false })
+          .select()
+          .single();
+        if (error) return json({ error: error.message }, 500);
+        return json({ item: data });
+      }
+    }
+
+    if (action === "deletePalavraTriagem") {
+      const { id: itemId } = params;
+      if (!itemId) return json({ error: "ID não informado" }, 400);
+      const { error } = await supabase.from("palavras_triagem").delete().eq("id", itemId);
+      if (error) return json({ error: error.message }, 500);
+      return json({ ok: true });
+    }
+
     return json({ error: `Ação desconhecida: ${action}` }, 400);
   } catch (err) {
     return json({ error: err.message || "Erro interno" }, 500);
