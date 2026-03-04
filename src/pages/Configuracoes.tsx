@@ -3,7 +3,6 @@ import ChangePasswordCard from "@/components/configuracoes/ChangePasswordCard";
 import RetentionSettingCard from "@/components/configuracoes/RetentionSettingCard";
 import GpsSharingCard from "@/components/configuracoes/GpsSharingCard";
 import AcionamentosCard from "@/components/configuracoes/AcionamentosCard";
-import NiveisAlertaLegenda from "@/components/configuracoes/NiveisAlertaLegenda";
 
 export default function ConfiguracoesPage() {
   return (
