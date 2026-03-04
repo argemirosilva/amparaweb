@@ -1801,6 +1801,17 @@ async function handleReceberAudio(
         .select("id")
         .single();
 
+      // Fire-and-forget: segment triage
+      if (segmento?.id) {
+        const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+        const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+        fetch(`${supabaseUrl}/functions/v1/segment-triage`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${serviceKey}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ segment_id: segmento.id, user_id: user.id, storage_path: storagePath }),
+        }).catch((e) => console.error("segment-triage trigger error:", e));
+      }
+
       await supabase.from("audit_logs").insert({
         user_id: user.id,
         action_type: "late_segment_attached",
@@ -1903,6 +1914,17 @@ async function handleReceberAudio(
     })
     .select("id")
     .single();
+
+  // Fire-and-forget: segment triage
+  if (segmento?.id) {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    fetch(`${supabaseUrl}/functions/v1/segment-triage`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${serviceKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ segment_id: segmento.id, user_id: user.id, storage_path: storagePath }),
+    }).catch((e) => console.error("segment-triage trigger error:", e));
+  }
 
   // Audit
   await supabase.from("audit_logs").insert({
