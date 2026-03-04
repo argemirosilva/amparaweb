@@ -3,7 +3,6 @@ import ChangePasswordCard from "@/components/configuracoes/ChangePasswordCard";
 import RetentionSettingCard from "@/components/configuracoes/RetentionSettingCard";
 import GpsSharingCard from "@/components/configuracoes/GpsSharingCard";
 import AcionamentosCard from "@/components/configuracoes/AcionamentosCard";
-import NiveisAlertaLegenda from "@/components/configuracoes/NiveisAlertaLegenda";
 
 export default function ConfiguracoesPage() {
   return (
@@ -16,7 +15,6 @@ export default function ConfiguracoesPage() {
       <div className="max-w-lg space-y-6">
         <ChangePasswordCard />
         <MonitoringScheduleEditor />
-        <NiveisAlertaLegenda />
         <AcionamentosCard />
         <GpsSharingCard />
         <RetentionSettingCard />
