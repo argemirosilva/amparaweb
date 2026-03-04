@@ -29,7 +29,6 @@ const GRUPOS = [
   { value: "ameaca", label: "Ameaça", color: "bg-red-500/15 text-red-400" },
   { value: "arma", label: "Arma", color: "bg-orange-500/15 text-orange-400" },
   { value: "socorro", label: "Socorro", color: "bg-blue-500/15 text-blue-400" },
-  { value: "xingamento", label: "Xingamento", color: "bg-purple-500/15 text-purple-400" },
 ];
 
 const PESO_LABELS: Record<number, { label: string; color: string }> = {
