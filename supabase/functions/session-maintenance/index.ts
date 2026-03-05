@@ -352,6 +352,22 @@ serve(async (req) => {
     if (pendingSessions && pendingSessions.length > 0) {
       for (const session of pendingSessions) {
         try {
+          // Idempotency: check if a gravacao already exists for this session
+          const { data: existingGravacao } = await supabase
+            .from("gravacoes")
+            .select("id")
+            .eq("monitor_session_id", session.id)
+            .maybeSingle();
+
+          if (existingGravacao) {
+            // Already processed — just mark session as finalizada
+            await supabase.from("monitoramento_sessoes").update({
+              status: "finalizada",
+              final_gravacao_id: existingGravacao.id,
+            }).eq("id", session.id);
+            results.push({ action: "already_processed", session_id: session.id });
+            continue;
+          }
           // Fetch segments ordered by index
           const { data: segments } = await supabase
             .from("gravacoes_segmentos")
