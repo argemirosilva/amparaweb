@@ -426,6 +426,7 @@ serve(async (req) => {
             }
             strippedBuffers.push(buf);
           }
+          const dateStr = new Date().toISOString().split("T")[0];
           const finalPath = `${session.user_id}/${dateStr}/${session.id}.${finalExt}`;
 
           // Upload final file
