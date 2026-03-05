@@ -426,6 +426,13 @@ serve(async (req) => {
             }
             strippedBuffers.push(buf);
           }
+          const totalSize = strippedBuffers.reduce((sum, b) => sum + b.length, 0);
+          const concatenated = new Uint8Array(totalSize);
+          let offset = 0;
+          for (const buf of strippedBuffers) {
+            concatenated.set(buf, offset);
+            offset += buf.length;
+          }
           const dateStr = new Date().toISOString().split("T")[0];
           const finalPath = `${session.user_id}/${dateStr}/${session.id}.${finalExt}`;
 
