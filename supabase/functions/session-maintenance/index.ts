@@ -411,6 +411,11 @@ serve(async (req) => {
             continue;
           }
 
+          // Determine final extension from first segment
+          const firstSegPath = segments[0].storage_path || segments[0].file_url || "";
+          const segExt = firstSegPath.split(".").pop()?.toLowerCase() || "mp3";
+          const finalExt = (segExt === "ogg" || segExt === "mp3" || segExt === "wav") ? segExt : "mp3";
+
           // Concatenate binary — strip ID3 tags from subsequent MP3 segments
           // to avoid confusing decoders with multiple headers
           const strippedBuffers: Uint8Array[] = [];
@@ -428,12 +433,7 @@ serve(async (req) => {
             concatenated.set(buf, offset);
             offset += buf.length;
           }
-
-          // Generate final path — preserve original format from first segment
           const dateStr = new Date().toISOString().split("T")[0];
-          const firstSegPath = segments[0].storage_path || segments[0].file_url || "";
-          const segExt = firstSegPath.split(".").pop()?.toLowerCase() || "mp3";
-          const finalExt = (segExt === "ogg" || segExt === "mp3" || segExt === "wav") ? segExt : "mp3";
           const finalPath = `${session.user_id}/${dateStr}/${session.id}.${finalExt}`;
 
           // Upload final file
