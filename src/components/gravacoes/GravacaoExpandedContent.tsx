@@ -3,6 +3,8 @@ import { toast } from "@/hooks/use-toast";
 import { callWebApi } from "@/services/webApiService";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 import { FileText, Trash2, MessageCircle, RotateCcw, Download } from "lucide-react";
 import {
   AlertDialog,
