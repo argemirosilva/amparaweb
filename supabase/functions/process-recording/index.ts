@@ -149,25 +149,6 @@ function hasMeaningfulSpeech(text: string): { meaningful: boolean; wordCount: nu
 
   return { meaningful, wordCount: totalWords, meaningfulWords };
 }
-  if (bytes.length < 12) return "mp3";
-  // ID3 tag → MP3
-  if (bytes[0] === 0x49 && bytes[1] === 0x44 && bytes[2] === 0x33) return "mp3";
-  // MP3 sync word (0xFFEx or 0xFFFx)
-  if (bytes[0] === 0xFF && (bytes[1] & 0xE0) === 0xE0) return "mp3";
-  // OGG
-  if (bytes[0] === 0x4F && bytes[1] === 0x67 && bytes[2] === 0x67 && bytes[3] === 0x53) return "ogg";
-  // RIFF → WAV
-  if (bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46) return "wav";
-  // ftyp → MP4/M4A → send as ogg (Agreggar compat)
-  if (bytes[4] === 0x66 && bytes[5] === 0x74 && bytes[6] === 0x79 && bytes[7] === 0x70) return "ogg";
-  // FLAC
-  if (bytes[0] === 0x66 && bytes[1] === 0x4C && bytes[2] === 0x61 && bytes[3] === 0x43) return "ogg";
-  // AAC ADTS (0xFFF0-0xFFF9)
-  if (bytes[0] === 0xFF && (bytes[1] & 0xF0) === 0xF0 && (bytes[1] & 0x06) === 0x00) return "ogg";
-  // CAF
-  if (bytes[0] === 0x63 && bytes[1] === 0x61 && bytes[2] === 0x66 && bytes[3] === 0x66) return "ogg";
-  return "mp3"; // default fallback
-}
 
 
 async function callAI(messages: any[], model = "google/gemini-3-flash-preview"): Promise<string> {
