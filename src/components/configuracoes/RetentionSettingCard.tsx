@@ -6,6 +6,7 @@ import GradientIcon from "@/components/ui/gradient-icon";
 import { toast } from "sonner";
 
 const OPTIONS = [
+  { value: 1, label: "24 horas" },
   { value: 7, label: "7 dias" },
   { value: 14, label: "14 dias" },
   { value: 30, label: "30 dias" },
@@ -13,7 +14,7 @@ const OPTIONS = [
 
 export default function RetentionSettingCard() {
   const { sessionToken } = useAuth();
-  const [current, setCurrent] = useState<number>(7);
+  const [current, setCurrent] = useState<number>(1);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -22,7 +23,7 @@ export default function RetentionSettingCard() {
     (async () => {
       const res = await callWebApi("getMe", sessionToken);
       if (res.ok && res.data?.usuario) {
-        setCurrent(res.data.usuario.retencao_dias_sem_risco ?? 7);
+        setCurrent(res.data.usuario.retencao_dias_sem_risco ?? 1);
       }
       setLoading(false);
     })();
