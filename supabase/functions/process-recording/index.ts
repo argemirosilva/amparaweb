@@ -339,6 +339,28 @@ serve(async (req) => {
     if (ext === "webm") ext = "ogg";
     if (ext === "m4a" || ext === "mp4") ext = "ogg";
 
+    // 3b. PRE-TRANSCRIPTION VAD: Check WAV files for speech energy
+    if (ext === "wav") {
+      const wavSpeech = wavHasSpeech(audioBytes);
+      if (wavSpeech === false) {
+        console.log(`[VAD] WAV file has no speech energy — skipping transcription & analysis`);
+        await supabase
+          .from("gravacoes")
+          .update({ status: "sem_dialogo", transcricao: "", processado_em: new Date().toISOString() })
+          .eq("id", gravacao_id);
+        await supabase.from("audit_logs").insert({
+          user_id: gravacao.user_id,
+          action_type: "gravacao_processed",
+          success: true,
+          details: { gravacao_id, skipped: true, reason: "vad_no_speech_wav" },
+        });
+        return json({ success: true, gravacao_id, skipped: true, reason: "sem_dialogo_vad" });
+      }
+      if (wavSpeech !== null) {
+        console.log(`[VAD] WAV speech detected — proceeding to transcription`);
+      }
+    }
+
     // 4. Transcribe via Agreggar API
     console.log(`Starting transcription via Agreggar (format=${ext})...`);
     let transcricao: string;
@@ -351,6 +373,35 @@ serve(async (req) => {
         .update({ status: "erro", erro_processamento: `Erro na transcrição: ${e.message}` })
         .eq("id", gravacao_id);
       return json({ error: "Erro na transcrição" }, 500);
+    }
+
+    // 4b. POST-TRANSCRIPTION VAD: Check if transcription has meaningful speech
+    const speechCheck = hasMeaningfulSpeech(transcricao);
+    console.log(`[VAD_TEXT] words=${speechCheck.wordCount}, meaningful=${speechCheck.meaningfulWords}, pass=${speechCheck.meaningful}`);
+
+    if (!speechCheck.meaningful) {
+      console.log(`[VAD] Transcription has no meaningful speech — skipping AI analysis`);
+      await supabase
+        .from("gravacoes")
+        .update({
+          transcricao,
+          status: "sem_dialogo",
+          processado_em: new Date().toISOString(),
+        })
+        .eq("id", gravacao_id);
+      await supabase.from("audit_logs").insert({
+        user_id: gravacao.user_id,
+        action_type: "gravacao_processed",
+        success: true,
+        details: {
+          gravacao_id,
+          skipped: true,
+          reason: "vad_no_meaningful_speech",
+          word_count: speechCheck.wordCount,
+          meaningful_words: speechCheck.meaningfulWords,
+        },
+      });
+      return json({ success: true, gravacao_id, skipped: true, reason: "sem_dialogo_text", transcricao });
     }
 
     // 5. Save transcription
