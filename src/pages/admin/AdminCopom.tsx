@@ -146,21 +146,27 @@ export default function AdminCopom({ embedded, apiBaseUrl = "" }: { embedded?: b
     setSending(true);
     setLastResponse(null);
 
-    const { ok, data } = await callApi("speedDial", sessionToken, {
+    try {
+      const { ok, data } = await callApi("speedDial", sessionToken, {
+        campaignId,
+        contactName,
+        ddd,
+        phone,
+        context: Object.keys(context).length > 0 ? context : undefined,
+        extraFields: extraFields.filter((f) => f.fieldName && f.value),
+      });
 
-      campaignId,
-      contactName,
-      ddd,
-      phone,
-      context: Object.keys(context).length > 0 ? context : undefined,
-      extraFields: extraFields.filter((f) => f.fieldName && f.value),
-    });
+      setLastResponse(data);
 
-    setSending(false);
-    setLastResponse(data);
-
-    if (ok) toast.success("SpeedDial disparado com sucesso");
-    else toast.error(data.error || "Erro ao disparar speedDial");
+      if (ok) toast.success("SpeedDial disparado com sucesso");
+      else toast.error(data.error || "Erro ao disparar speedDial");
+    } catch (err) {
+      console.error("SpeedDial fetch error:", err);
+      toast.error("Erro de conexão ao disparar SpeedDial");
+      setLastResponse({ error: String(err) });
+    } finally {
+      setSending(false);
+    }
   }
 
   async function loadHistory() {
