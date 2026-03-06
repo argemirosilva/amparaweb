@@ -77,6 +77,7 @@ export default function GravacaoExpandedContent({
   const [analise, setAnalise] = useState<AnaliseData | null>(null);
   const [loadedAnalise, setLoadedAnalise] = useState(false);
   const [reprocessing, setReprocessing] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const isPlayingRef = useRef(false);
   const isInteractingRef = useRef(false);
   const isAnaliseActiveRef = useRef(false);
