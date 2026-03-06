@@ -6,6 +6,7 @@ import GradientIcon from "@/components/ui/gradient-icon";
 import { toast } from "sonner";
 
 const OPTIONS = [
+  { value: 1, label: "24 horas" },
   { value: 7, label: "7 dias" },
   { value: 14, label: "14 dias" },
   { value: 30, label: "30 dias" },
