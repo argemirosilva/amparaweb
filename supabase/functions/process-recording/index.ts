@@ -64,92 +64,6 @@ function detectAudioFormat(bytes: Uint8Array): string {
   return "mp3"; // default fallback
 }
 
-// ── Speech Detection (VAD) ──
-
-/** Pre-transcription: Analyze WAV PCM energy to detect speech presence */
-function wavHasSpeech(bytes: Uint8Array): boolean | null {
-  // Only works for WAV (RIFF header)
-  if (bytes.length < 44) return null;
-  if (bytes[0] !== 0x52 || bytes[1] !== 0x49 || bytes[2] !== 0x46 || bytes[3] !== 0x46) return null;
-
-  // Parse WAV header
-  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-  const numChannels = view.getUint16(22, true);
-  const bitsPerSample = view.getUint16(34, true);
-
-  // Only handle 16-bit PCM
-  if (bitsPerSample !== 16) return null;
-
-  // Find data chunk
-  let dataOffset = 12;
-  while (dataOffset < bytes.length - 8) {
-    const chunkId = String.fromCharCode(bytes[dataOffset], bytes[dataOffset + 1], bytes[dataOffset + 2], bytes[dataOffset + 3]);
-    const chunkSize = view.getUint32(dataOffset + 4, true);
-    if (chunkId === "data") {
-      dataOffset += 8;
-      break;
-    }
-    dataOffset += 8 + chunkSize;
-  }
-
-  if (dataOffset >= bytes.length) return null;
-
-  // Analyze PCM samples in 50ms windows
-  const bytesPerSample = 2 * numChannels;
-  const sampleRate = view.getUint32(24, true);
-  const windowSamples = Math.floor(sampleRate * 0.05); // 50ms windows
-  const windowBytes = windowSamples * bytesPerSample;
-  const totalWindows = Math.floor((bytes.length - dataOffset) / windowBytes);
-
-  if (totalWindows < 2) return null;
-
-  // RMS threshold for speech (~-40dBFS for 16-bit audio ≈ amplitude 328)
-  const SPEECH_RMS_THRESHOLD = 300;
-  const MIN_SPEECH_RATIO = 0.05; // At least 5% of windows must have speech
-
-  let speechWindows = 0;
-
-  for (let w = 0; w < totalWindows; w++) {
-    let sumSquares = 0;
-    const wStart = dataOffset + w * windowBytes;
-    for (let s = 0; s < windowSamples && wStart + s * bytesPerSample + 1 < bytes.length; s++) {
-      const sampleOffset = wStart + s * bytesPerSample;
-      const sample = view.getInt16(sampleOffset, true);
-      sumSquares += sample * sample;
-    }
-    const rms = Math.sqrt(sumSquares / windowSamples);
-    if (rms > SPEECH_RMS_THRESHOLD) speechWindows++;
-  }
-
-  const speechRatio = speechWindows / totalWindows;
-  console.log(`[VAD_WAV] windows=${totalWindows}, speech=${speechWindows}, ratio=${speechRatio.toFixed(3)}`);
-  return speechRatio >= MIN_SPEECH_RATIO;
-}
-
-/** Post-transcription: Check if text contains meaningful speech */
-const FILLER_WORDS = new Set([
-  "", "hm", "hum", "hmm", "ah", "uh", "uhm", "eh", "oh", "ai",
-  "é", "e", "o", "a", "os", "as", "um", "uma", "de", "do", "da",
-  "no", "na", "em", "que", "se", "mas", "ou", "por", "pra", "pro",
-  "com", "sem", "não", "sim", "né", "tá", "aí", "lá", "aqui",
-]);
-
-function hasMeaningfulSpeech(text: string): { meaningful: boolean; wordCount: number; meaningfulWords: number } {
-  const words = text
-    .toLowerCase()
-    .replace(/[.,!?;:()[\]{}""''…—–\-]/g, " ")
-    .split(/\s+/)
-    .filter(w => w.length > 0);
-
-  const meaningfulWords = words.filter(w => !FILLER_WORDS.has(w)).length;
-  const totalWords = words.length;
-
-  // Threshold: at least 3 meaningful words OR 5+ total words
-  const meaningful = meaningfulWords >= 3 || totalWords >= 5;
-
-  return { meaningful, wordCount: totalWords, meaningfulWords };
-}
-
 
 async function callAI(messages: any[], model = "google/gemini-3-flash-preview"): Promise<string> {
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
@@ -320,28 +234,6 @@ serve(async (req) => {
     if (ext === "webm") ext = "ogg";
     if (ext === "m4a" || ext === "mp4") ext = "ogg";
 
-    // 3b. PRE-TRANSCRIPTION VAD: Check WAV files for speech energy
-    if (ext === "wav") {
-      const wavSpeech = wavHasSpeech(audioBytes);
-      if (wavSpeech === false) {
-        console.log(`[VAD] WAV file has no speech energy — skipping transcription & analysis`);
-        await supabase
-          .from("gravacoes")
-          .update({ status: "sem_dialogo", transcricao: "", processado_em: new Date().toISOString() })
-          .eq("id", gravacao_id);
-        await supabase.from("audit_logs").insert({
-          user_id: gravacao.user_id,
-          action_type: "gravacao_processed",
-          success: true,
-          details: { gravacao_id, skipped: true, reason: "vad_no_speech_wav" },
-        });
-        return json({ success: true, gravacao_id, skipped: true, reason: "sem_dialogo_vad" });
-      }
-      if (wavSpeech !== null) {
-        console.log(`[VAD] WAV speech detected — proceeding to transcription`);
-      }
-    }
-
     // 4. Transcribe via Agreggar API
     console.log(`Starting transcription via Agreggar (format=${ext})...`);
     let transcricao: string;
@@ -354,35 +246,6 @@ serve(async (req) => {
         .update({ status: "erro", erro_processamento: `Erro na transcrição: ${e.message}` })
         .eq("id", gravacao_id);
       return json({ error: "Erro na transcrição" }, 500);
-    }
-
-    // 4b. POST-TRANSCRIPTION VAD: Check if transcription has meaningful speech
-    const speechCheck = hasMeaningfulSpeech(transcricao);
-    console.log(`[VAD_TEXT] words=${speechCheck.wordCount}, meaningful=${speechCheck.meaningfulWords}, pass=${speechCheck.meaningful}`);
-
-    if (!speechCheck.meaningful) {
-      console.log(`[VAD] Transcription has no meaningful speech — skipping AI analysis`);
-      await supabase
-        .from("gravacoes")
-        .update({
-          transcricao,
-          status: "sem_dialogo",
-          processado_em: new Date().toISOString(),
-        })
-        .eq("id", gravacao_id);
-      await supabase.from("audit_logs").insert({
-        user_id: gravacao.user_id,
-        action_type: "gravacao_processed",
-        success: true,
-        details: {
-          gravacao_id,
-          skipped: true,
-          reason: "vad_no_meaningful_speech",
-          word_count: speechCheck.wordCount,
-          meaningful_words: speechCheck.meaningfulWords,
-        },
-      });
-      return json({ success: true, gravacao_id, skipped: true, reason: "sem_dialogo_text", transcricao });
     }
 
     // 5. Save transcription
