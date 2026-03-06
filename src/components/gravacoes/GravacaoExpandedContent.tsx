@@ -3,7 +3,9 @@ import { toast } from "@/hooks/use-toast";
 import { callWebApi } from "@/services/webApiService";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { FileText, Trash2, MessageCircle, RotateCcw } from "lucide-react";
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+import { FileText, Trash2, MessageCircle, RotateCcw, Download } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -75,6 +77,7 @@ export default function GravacaoExpandedContent({
   const [analise, setAnalise] = useState<AnaliseData | null>(null);
   const [loadedAnalise, setLoadedAnalise] = useState(false);
   const [reprocessing, setReprocessing] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const isPlayingRef = useRef(false);
   const isInteractingRef = useRef(false);
   const isAnaliseActiveRef = useRef(false);
@@ -284,7 +287,39 @@ export default function GravacaoExpandedContent({
             </AlertDialogContent>
           </AlertDialog>
         )}
-        <SupportShortcut gravacao={gravacao} />
+        {gravacao.storage_path && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-xs gap-1 text-muted-foreground hover:text-primary"
+            disabled={downloading}
+            onClick={async (e) => {
+              e.stopPropagation();
+              setDownloading(true);
+              try {
+                const proxyUrl = `${SUPABASE_URL}/functions/v1/web-api?action=proxyAudio&session_token=${encodeURIComponent(sessionToken)}&storage_path=${encodeURIComponent(gravacao.storage_path!)}`;
+                const res = await fetch(proxyUrl);
+                if (!res.ok) throw new Error("Erro ao baixar");
+                const blob = await res.blob();
+                const ext = gravacao.storage_path!.split('.').pop() || 'mp3';
+                const dateStr = new Date(gravacao.created_at).toISOString().slice(0, 10);
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `gravacao-${dateStr}-${gravacao.id.slice(0, 8)}.${ext}`;
+                a.click();
+                URL.revokeObjectURL(url);
+              } catch {
+                toast({ title: "Erro ao baixar", description: "Não foi possível baixar o áudio.", variant: "destructive" });
+              } finally {
+                setDownloading(false);
+              }
+            }}
+          >
+            <Download className={`w-3.5 h-3.5 ${downloading ? "animate-pulse" : ""}`} />
+            {downloading ? "Baixando…" : "Baixar"}
+          </Button>
+        )}
         {gravacao.status === "processado" && (
           <Button
             variant="ghost"
