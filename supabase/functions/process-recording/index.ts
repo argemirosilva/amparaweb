@@ -64,6 +64,111 @@ function detectAudioFormat(bytes: Uint8Array): string {
   return "mp3"; // default fallback
 }
 
+// ── Speech Detection (VAD) ──
+
+/** Pre-transcription: Analyze WAV PCM energy to detect speech presence */
+function wavHasSpeech(bytes: Uint8Array): boolean | null {
+  // Only works for WAV (RIFF header)
+  if (bytes.length < 44) return null;
+  if (bytes[0] !== 0x52 || bytes[1] !== 0x49 || bytes[2] !== 0x46 || bytes[3] !== 0x46) return null;
+
+  // Parse WAV header
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const numChannels = view.getUint16(22, true);
+  const bitsPerSample = view.getUint16(34, true);
+
+  // Only handle 16-bit PCM
+  if (bitsPerSample !== 16) return null;
+
+  // Find data chunk
+  let dataOffset = 12;
+  while (dataOffset < bytes.length - 8) {
+    const chunkId = String.fromCharCode(bytes[dataOffset], bytes[dataOffset + 1], bytes[dataOffset + 2], bytes[dataOffset + 3]);
+    const chunkSize = view.getUint32(dataOffset + 4, true);
+    if (chunkId === "data") {
+      dataOffset += 8;
+      break;
+    }
+    dataOffset += 8 + chunkSize;
+  }
+
+  if (dataOffset >= bytes.length) return null;
+
+  // Analyze PCM samples in 50ms windows
+  const bytesPerSample = 2 * numChannels;
+  const sampleRate = view.getUint32(24, true);
+  const windowSamples = Math.floor(sampleRate * 0.05); // 50ms windows
+  const windowBytes = windowSamples * bytesPerSample;
+  const totalWindows = Math.floor((bytes.length - dataOffset) / windowBytes);
+
+  if (totalWindows < 2) return null;
+
+  // RMS threshold for speech (~-40dBFS for 16-bit audio ≈ amplitude 328)
+  const SPEECH_RMS_THRESHOLD = 300;
+  const MIN_SPEECH_RATIO = 0.05; // At least 5% of windows must have speech
+
+  let speechWindows = 0;
+
+  for (let w = 0; w < totalWindows; w++) {
+    let sumSquares = 0;
+    const wStart = dataOffset + w * windowBytes;
+    for (let s = 0; s < windowSamples && wStart + s * bytesPerSample + 1 < bytes.length; s++) {
+      const sampleOffset = wStart + s * bytesPerSample;
+      const sample = view.getInt16(sampleOffset, true);
+      sumSquares += sample * sample;
+    }
+    const rms = Math.sqrt(sumSquares / windowSamples);
+    if (rms > SPEECH_RMS_THRESHOLD) speechWindows++;
+  }
+
+  const speechRatio = speechWindows / totalWindows;
+  console.log(`[VAD_WAV] windows=${totalWindows}, speech=${speechWindows}, ratio=${speechRatio.toFixed(3)}`);
+  return speechRatio >= MIN_SPEECH_RATIO;
+}
+
+/** Post-transcription: Check if text contains meaningful speech */
+const FILLER_WORDS = new Set([
+  "", "hm", "hum", "hmm", "ah", "uh", "uhm", "eh", "oh", "ai",
+  "é", "e", "o", "a", "os", "as", "um", "uma", "de", "do", "da",
+  "no", "na", "em", "que", "se", "mas", "ou", "por", "pra", "pro",
+  "com", "sem", "não", "sim", "né", "tá", "aí", "lá", "aqui",
+]);
+
+function hasMeaningfulSpeech(text: string): { meaningful: boolean; wordCount: number; meaningfulWords: number } {
+  const words = text
+    .toLowerCase()
+    .replace(/[.,!?;:()[\]{}""''…—–\-]/g, " ")
+    .split(/\s+/)
+    .filter(w => w.length > 0);
+
+  const meaningfulWords = words.filter(w => !FILLER_WORDS.has(w)).length;
+  const totalWords = words.length;
+
+  // Threshold: at least 3 meaningful words OR 5+ total words
+  const meaningful = meaningfulWords >= 3 || totalWords >= 5;
+
+  return { meaningful, wordCount: totalWords, meaningfulWords };
+}
+  if (bytes.length < 12) return "mp3";
+  // ID3 tag → MP3
+  if (bytes[0] === 0x49 && bytes[1] === 0x44 && bytes[2] === 0x33) return "mp3";
+  // MP3 sync word (0xFFEx or 0xFFFx)
+  if (bytes[0] === 0xFF && (bytes[1] & 0xE0) === 0xE0) return "mp3";
+  // OGG
+  if (bytes[0] === 0x4F && bytes[1] === 0x67 && bytes[2] === 0x67 && bytes[3] === 0x53) return "ogg";
+  // RIFF → WAV
+  if (bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46) return "wav";
+  // ftyp → MP4/M4A → send as ogg (Agreggar compat)
+  if (bytes[4] === 0x66 && bytes[5] === 0x74 && bytes[6] === 0x79 && bytes[7] === 0x70) return "ogg";
+  // FLAC
+  if (bytes[0] === 0x66 && bytes[1] === 0x4C && bytes[2] === 0x61 && bytes[3] === 0x43) return "ogg";
+  // AAC ADTS (0xFFF0-0xFFF9)
+  if (bytes[0] === 0xFF && (bytes[1] & 0xF0) === 0xF0 && (bytes[1] & 0x06) === 0x00) return "ogg";
+  // CAF
+  if (bytes[0] === 0x63 && bytes[1] === 0x61 && bytes[2] === 0x66 && bytes[3] === 0x66) return "ogg";
+  return "mp3"; // default fallback
+}
+
 
 async function callAI(messages: any[], model = "google/gemini-3-flash-preview"): Promise<string> {
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
