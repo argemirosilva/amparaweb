@@ -14,7 +14,7 @@ const OPTIONS = [
 
 export default function RetentionSettingCard() {
   const { sessionToken } = useAuth();
-  const [current, setCurrent] = useState<number>(7);
+  const [current, setCurrent] = useState<number>(1);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
