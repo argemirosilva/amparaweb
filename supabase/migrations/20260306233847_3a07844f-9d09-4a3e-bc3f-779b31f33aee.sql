@@ -1,0 +1,1 @@
+ALTER TABLE public.usuarios ALTER COLUMN retencao_dias_sem_risco SET DEFAULT 1;

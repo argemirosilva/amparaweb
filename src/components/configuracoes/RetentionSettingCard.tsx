@@ -23,7 +23,7 @@ export default function RetentionSettingCard() {
     (async () => {
       const res = await callWebApi("getMe", sessionToken);
       if (res.ok && res.data?.usuario) {
-        setCurrent(res.data.usuario.retencao_dias_sem_risco ?? 7);
+        setCurrent(res.data.usuario.retencao_dias_sem_risco ?? 1);
       }
       setLoading(false);
     })();
