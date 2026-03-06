@@ -299,6 +299,55 @@ serve(async (req) => {
       }
     }
 
+    // ── Step 0c: Detect sessions orphaned by device rotation ──
+    // If a session is "ativa" but the user's current device_id differs, seal it
+    const { data: activeSessions } = await supabase
+      .from("monitoramento_sessoes")
+      .select("id, user_id, device_id")
+      .eq("status", "ativa")
+      .not("device_id", "is", null);
+
+    if (activeSessions && activeSessions.length > 0) {
+      for (const session of activeSessions) {
+        // Get current device for this user
+        const { data: currentDevice } = await supabase
+          .from("device_status")
+          .select("device_id")
+          .eq("user_id", session.user_id)
+          .order("updated_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (currentDevice && currentDevice.device_id !== session.device_id) {
+          const now = new Date().toISOString();
+          await supabase
+            .from("monitoramento_sessoes")
+            .update({
+              status: "aguardando_finalizacao",
+              closed_at: now,
+              sealed_reason: "device_rotation_orphan",
+              finalizado_em: now,
+            })
+            .eq("id", session.id);
+
+          await supabase.from("audit_logs").insert({
+            user_id: session.user_id,
+            action_type: "session_sealed",
+            success: true,
+            details: {
+              session_id: session.id,
+              sealed_reason: "device_rotation_orphan",
+              old_device: session.device_id,
+              current_device: currentDevice.device_id,
+            },
+          });
+
+          results.push({ action: "device_rotation_orphan", session_id: session.id });
+          console.log(`Sealed device-rotation orphan session ${session.id} (old: ${session.device_id}, current: ${currentDevice.device_id})`);
+        }
+      }
+    }
+
     // ── Step 1: Expire active/aguardando sessions whose window_end_at has passed ──
     const { data: expiredSessions } = await supabase
       .from("monitoramento_sessoes")

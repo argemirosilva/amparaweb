@@ -1,39 +1,72 @@
 
 
-# Diagnóstico: Sessão Ativa Presa com Segmentos Não Processados
+## Plano: Avaliação de Atendimento + Relatório de Suporte
 
-## Problema Encontrado
+### Visão Geral
+Três entregas: (1) avaliação pós-atendimento pela usuária, (2) nova aba "Suporte" em Admin Relatórios com gráficos de avaliações, (3) ranking Top 10 agentes.
 
-A sessão `ad835fb8` está com status `ativa` e possui **10 segmentos** (~271 segundos de áudio) no R2, mas nunca foi selada/finalizada. O motivo:
+---
 
-```text
-Sessão ad835fb8 → device_id: 3dcb0b26
-Device atual    → device_id: e5cefd10 (online, is_recording=false)
+### 1. Tabela `support_ratings` (migração)
+
+```sql
+CREATE TABLE public.support_ratings (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  session_id uuid NOT NULL,
+  user_id uuid NOT NULL,
+  agent_id uuid,
+  rating integer NOT NULL CHECK (rating BETWEEN 1 AND 5),
+  comment text,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+ALTER TABLE public.support_ratings ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Block direct access support_ratings" ON public.support_ratings FOR ALL USING (false) WITH CHECK (false);
+CREATE UNIQUE INDEX idx_support_ratings_session ON public.support_ratings(session_id);
 ```
 
-Houve uma **rotação de dispositivo** que não selou a sessão anterior. O `session-maintenance` não a captura porque:
+Uma avaliação por sessão (1-5 estrelas + comentário opcional).
 
-1. **Orphan check (Step 0)**: Sessão tem segmentos → ignorada (corretamente)
-2. **Interruption check (Step 0b)**: Procura por `device_status` com `device_id = 3dcb0b26`, mas esse device já não existe na tabela → nunca encontra
-3. **Window expiry (Step 1)**: `window_end_at` é NULL → ignorada
+---
 
-## Plano de Correção
+### 2. Backend: `support-api` — duas novas actions
 
-### 1. Correção imediata: Selar a sessão presa
-- Atualizar o status da sessão `ad835fb8` para `aguardando_finalizacao` com `sealed_reason: 'device_rotation_orphan'`
-- Disparar `session-maintenance` com `skip_tolerance: true` para processar imediatamente
+**`rateSession`** (user action):
+- Recebe `session_id`, `rating` (1-5), `comment` (opcional)
+- Valida: sessão pertence ao user, status = closed, ainda não avaliada
+- Insere em `support_ratings`
+- Registra na timeline
 
-### 2. Correção estrutural no `session-maintenance/index.ts`
-Adicionar um **Step 0c** que detecta sessões `ativa` cujo `device_id` não corresponde ao dispositivo atualmente vinculado ao usuário:
+**`getSupportStats`** (admin action):
+- Retorna avaliações agregadas: média geral, distribuição por nota, média por agente com nome, total de sessões por agente
+- Filtrável por período (since_date)
 
-```text
-Para cada sessão ativa:
-  1. Buscar device_status do user
-  2. Se device_id da sessão ≠ device_id atual → selar como "device_rotation_orphan"
-```
+---
 
-Isso garante que futuras rotações de dispositivo que não selarem corretamente a sessão anterior serão capturadas pelo cron automático.
+### 3. Frontend: Avaliação pela usuária
+
+**`src/pages/support/SupportTicketDetail.tsx`**:
+- Quando `session.status === "closed"`, exibir card de avaliação com 5 estrelas clicáveis + textarea para comentário
+- Após envio, exibir "Obrigada pela avaliação" com a nota dada
+- Verificar se já foi avaliado ao carregar (nova flag retornada pelo `getMySession`)
+
+---
+
+### 4. Frontend: Aba "Suporte" em Admin Relatórios
+
+**`src/pages/admin/AdminRelatorios.tsx`**:
+- Nova aba `{ id: "suporte", label: "Suporte", icon: MessageCircle }`
+- KPIs: Total Sessões, Média Geral, % Avaliadas, Total Agentes
+- Gráfico de barras (Recharts `BarChart`): distribuição de notas 1-5
+- Tabela Top 10 agentes: #, Nome, Sessões Atendidas, Nota Média, com ordenação por nota
+
+---
 
 ### Arquivos Alterados
-- `supabase/functions/session-maintenance/index.ts` — adicionar Step 0c para detectar sessões órfãs por rotação de dispositivo
+
+| Arquivo | Mudança |
+|---|---|
+| migração SQL | Cria `support_ratings` |
+| `supabase/functions/support-api/index.ts` | Actions `rateSession` + `getSupportStats` |
+| `src/pages/support/SupportTicketDetail.tsx` | Card de avaliação pós-fechamento |
+| `src/pages/admin/AdminRelatorios.tsx` | Nova aba "Suporte" com gráficos e Top 10 |
 
