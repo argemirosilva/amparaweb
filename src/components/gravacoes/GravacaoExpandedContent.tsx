@@ -3,7 +3,7 @@ import { toast } from "@/hooks/use-toast";
 import { callWebApi } from "@/services/webApiService";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { FileText, Trash2, MessageCircle, RotateCcw } from "lucide-react";
+import { FileText, Trash2, MessageCircle, RotateCcw, Download } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
