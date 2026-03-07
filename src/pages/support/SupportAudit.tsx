@@ -6,10 +6,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
 import { callSupportApi } from "@/services/supportApiService";
 
-const AUDIT_ICONS: Record<string, typeof ShieldCheck> = {
-  session_created: ShieldCheck,
+const AUDIT_ICONS: Record<string, typeof BadgeCheck> = {
+  session_created: BadgeCheck,
   agent_assigned: Eye,
-  access_requested: ShieldAlert,
+  access_requested: CircleAlert,
   code_shown: Eye,
   access_granted: CheckCircle,
   data_accessed: Eye,
