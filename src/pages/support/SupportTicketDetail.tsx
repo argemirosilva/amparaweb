@@ -185,7 +185,7 @@ export default function SupportTicketDetail() {
       {/* Security card */}
       <Card className="border-primary/20 bg-primary/5">
         <CardContent className="p-3 flex items-start gap-2.5">
-          <ShieldCheck className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+          <BadgeCheck className="w-5 h-5 text-primary shrink-0 mt-0.5" />
           <div className="text-xs text-foreground space-y-0.5">
             <p className="font-medium">Sua segurança</p>
             <p className="text-muted-foreground">Nenhum dado sensível é acessado sem solicitação formal. Toda atividade é registrada na auditoria. Você pode revogar qualquer acesso a qualquer momento.</p>
