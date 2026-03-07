@@ -121,7 +121,7 @@ export default function BuscaPerfilPage() {
       {/* Info box */}
       <div className="rounded-xl border border-border bg-card p-4 space-y-2.5">
         <div className="flex items-start gap-3">
-          <ShieldAlert className="w-5 h-5 text-primary mt-0.5 shrink-0" />
+          <CircleAlert className="w-5 h-5 text-primary mt-0.5 shrink-0" />
           <div className="space-y-1.5">
             <p className="text-sm text-foreground leading-relaxed">
               Cruza dados parciais com relatos anônimos de outras mulheres para indicar possíveis riscos. Quanto mais campos preencher, melhor o resultado.

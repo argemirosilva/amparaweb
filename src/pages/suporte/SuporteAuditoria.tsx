@@ -44,7 +44,7 @@ export default function SuporteAuditoria() {
         Esta funcionalidade será expandida na próxima fase.
       </p>
       <div className="rounded-lg border p-8 text-center" style={{ background: "hsl(0 0% 100%)", borderColor: "hsl(220 13% 91%)" }}>
-        <Shield className="w-12 h-12 mx-auto mb-3 opacity-20" />
+        <FileSearch className="w-12 h-12 mx-auto mb-3 opacity-20" />
         <p className="text-muted-foreground">Relatórios detalhados de auditoria serão exibidos aqui.</p>
       </div>
     </div>

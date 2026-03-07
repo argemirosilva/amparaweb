@@ -121,7 +121,7 @@ function ResultCard({ result, searchInput, index }: { result: SearchResult; sear
           <div className="flex flex-wrap gap-1.5">
             {showSecurityBadge && (
               <span className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold bg-orange-50 dark:bg-orange-950/30 text-orange-700 dark:text-orange-400 border border-orange-200 dark:border-orange-800">
-                <Shield className="w-3 h-3" /> Força de segurança
+                <Siren className="w-3 h-3" /> Força de segurança
               </span>
             )}
             {showWeaponBadge && (
