@@ -67,7 +67,7 @@ export default function SupportAudit() {
       ) : items.length === 0 ? (
         <Card>
           <CardContent className="p-8 text-center">
-            <ShieldCheck className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+            <BadgeCheck className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
             <p className="text-sm text-muted-foreground">Nenhum evento de auditoria encontrado.</p>
           </CardContent>
         </Card>
