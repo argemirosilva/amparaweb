@@ -25,12 +25,12 @@ interface Assessment {
 const CHART_STROKE = "hsl(207, 89%, 42%)";
 const CHART_ACCENT = "hsl(195, 80%, 40%)";
 
-const levelConfig: Record<string, { icon: typeof Shield; className: string }> = {
-  "Sem Risco": { icon: ShieldCheck, className: "bg-green-100 text-green-700 border-green-200" },
-  "Baixo": { icon: ShieldCheck, className: "bg-green-100 text-green-700 border-green-200" },
-  "Moderado": { icon: Shield, className: "bg-yellow-100 text-yellow-700 border-yellow-200" },
+const levelConfig: Record<string, { icon: typeof Activity; className: string }> = {
+  "Sem Risco": { icon: CircleCheck, className: "bg-green-100 text-green-700 border-green-200" },
+  "Baixo": { icon: CircleCheck, className: "bg-green-100 text-green-700 border-green-200" },
+  "Moderado": { icon: Activity, className: "bg-yellow-100 text-yellow-700 border-yellow-200" },
   "Alto": { icon: AlertTriangle, className: "bg-orange-100 text-orange-700 border-orange-200" },
-  "Crítico": { icon: ShieldAlert, className: "bg-red-100 text-red-700 border-red-200" },
+  "Crítico": { icon: CircleAlert, className: "bg-red-100 text-red-700 border-red-200" },
 };
 
 const trendIcons = {
