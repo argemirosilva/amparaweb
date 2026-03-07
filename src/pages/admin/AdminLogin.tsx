@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Eye, EyeOff, Loader2, ShieldCheck } from "lucide-react";
+import { Eye, EyeOff, Loader2, Lock } from "lucide-react";
 import amparaLogo from "@/assets/ampara-logo.png";
 import amparaIcon from "@/assets/ampara-icon-transparent.png";
 import orizonLogo from "@/assets/orizon-tech-logo.png";
