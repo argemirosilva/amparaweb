@@ -2,9 +2,9 @@ import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  ShieldAlert,
-  ShieldCheck,
-  ShieldQuestion,
+  CircleAlert,
+  CircleCheck,
+  HelpCircle,
   AlertTriangle,
   Brain,
   TrendingUp,
