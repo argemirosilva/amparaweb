@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Send, Loader2, ShieldCheck, ShieldAlert, Lock, Eye, Clock, XCircle, CheckCircle, History } from "lucide-react";
+import { ArrowLeft, Send, Loader2, BadgeCheck, CircleAlert, Lock, Eye, Clock, XCircle, CheckCircle, History } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -27,10 +27,10 @@ const RESOURCE_LABELS: Record<string, string> = {
   logs: "Logs",
 };
 
-const AUDIT_ICONS: Record<string, typeof ShieldCheck> = {
-  session_created: ShieldCheck,
+const AUDIT_ICONS: Record<string, typeof BadgeCheck> = {
+  session_created: BadgeCheck,
   agent_assigned: Eye,
-  access_requested: ShieldAlert,
+  access_requested: CircleAlert,
   access_granted: CheckCircle,
   data_accessed: Eye,
   access_revoked: Lock,
@@ -185,7 +185,7 @@ export default function SupportTicketDetail() {
       {/* Security card */}
       <Card className="border-primary/20 bg-primary/5">
         <CardContent className="p-3 flex items-start gap-2.5">
-          <ShieldCheck className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+          <BadgeCheck className="w-5 h-5 text-primary shrink-0 mt-0.5" />
           <div className="text-xs text-foreground space-y-0.5">
             <p className="font-medium">Sua segurança</p>
             <p className="text-muted-foreground">Nenhum dado sensível é acessado sem solicitação formal. Toda atividade é registrada na auditoria. Você pode revogar qualquer acesso a qualquer momento.</p>
@@ -285,7 +285,7 @@ export default function SupportTicketDetail() {
               <p className="text-sm text-muted-foreground text-center py-6">Nenhum evento registrado.</p>
             ) : (
               auditItems.map((item) => {
-                const Icon = AUDIT_ICONS[item.event_type] || ShieldCheck;
+                const Icon = AUDIT_ICONS[item.event_type] || BadgeCheck;
                 return (
                   <div key={item.id} className="flex items-start gap-2.5 py-2 border-b border-border last:border-0">
                     <Icon className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />

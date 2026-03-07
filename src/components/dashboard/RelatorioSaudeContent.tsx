@@ -4,7 +4,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Heart,
-  ShieldAlert,
+  CircleAlert,
   Lightbulb,
   Phone,
   BookOpen,
@@ -103,7 +103,7 @@ export default function RelatorioSaudeContent({ relatorio, loading, error }: Pro
         {/* Seção 3: Padrões Identificados */}
         {(relatorio.tipos_violencia.length > 0 || relatorio.padroes_recorrentes.length > 0) &&
         <section>
-            <SectionHeader icon={ShieldAlert} title="Padrões Identificados" />
+            <SectionHeader icon={CircleAlert} title="Padrões Identificados" />
 
             {(() => {
               const filtered = relatorio.tipos_violencia.filter((tv) =>

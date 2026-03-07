@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { MessageCircle, Plus, AlertTriangle, Loader2, ShieldCheck, Clock, ChevronRight } from "lucide-react";
+import { MessageCircle, Plus, AlertTriangle, Loader2, BadgeCheck, Clock, ChevronRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -108,7 +108,7 @@ export default function SupportHome() {
         ) : sessions.length === 0 ? (
           <Card>
             <CardContent className="p-8 text-center space-y-2">
-              <ShieldCheck className="w-8 h-8 text-muted-foreground mx-auto" />
+              <BadgeCheck className="w-8 h-8 text-muted-foreground mx-auto" />
               <p className="text-sm text-muted-foreground">Você ainda não abriu nenhum chamado.</p>
             </CardContent>
           </Card>

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { AuthLayout } from "@/components/auth/AuthLayout";
-import { Loader2, ChevronRight, ChevronLeft, Plus, Trash2, Search, Shield, AlertTriangle } from "lucide-react";
+import { Loader2, ChevronRight, ChevronLeft, Plus, Trash2, Search, Siren, AlertTriangle } from "lucide-react";
 import { callWebApi } from "@/services/webApiService";
 import { useNavigate } from "react-router-dom";
 import { EnderecoForm, emptyEndereco, EnderecoFields } from "@/components/EnderecoForm";
@@ -496,7 +496,7 @@ export default function OnboardingPage() {
                         <span className="ampara-tag !py-0.5 !px-2">Vínculos: {r.total_vinculos}</span>
                         {r.forca_seguranca && (
                           <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-destructive/10 text-destructive">
-                            <Shield className="w-3 h-3" /> Força de segurança
+                            <Siren className="w-3 h-3" /> Força de segurança
                           </span>
                         )}
                         {r.tem_arma_em_casa && (

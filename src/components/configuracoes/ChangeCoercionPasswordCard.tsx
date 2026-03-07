@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { ShieldAlert, Loader2, ChevronDown, ShieldCheck, ShieldX } from "lucide-react";
+import { KeyRound, Loader2, ChevronDown, CircleCheck, CircleX } from "lucide-react";
 import { toast } from "sonner";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
@@ -74,16 +74,16 @@ export default function ChangeCoercionPasswordCard() {
     <Collapsible open={open} onOpenChange={setOpen}>
       <CollapsibleTrigger className="flex items-center justify-between w-full py-1.5 group">
         <div className="flex items-center gap-1.5">
-          <ShieldAlert className="w-4 h-4 text-primary" />
+          <KeyRound className="w-4 h-4 text-primary" />
           <h2 className="text-sm font-semibold text-foreground">Senha de segurança</h2>
           {hasCoercion ? (
             <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 border-green-500/40 text-green-600 bg-green-50 dark:bg-green-950/30 dark:text-green-400 gap-0.5">
-              <ShieldCheck className="w-2.5 h-2.5" />
+              <CircleCheck className="w-2.5 h-2.5" />
               Ativa
             </Badge>
           ) : (
             <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 border-amber-500/40 text-amber-600 bg-amber-50 dark:bg-amber-950/30 dark:text-amber-400 gap-0.5">
-              <ShieldX className="w-2.5 h-2.5" />
+              <CircleX className="w-2.5 h-2.5" />
               Não configurada
             </Badge>
           )}

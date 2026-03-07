@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Lock, Loader2, ChevronDown, ShieldAlert, ShieldCheck, ShieldX } from "lucide-react";
+import { Lock, Loader2, ChevronDown, KeyRound, CircleCheck, CircleX } from "lucide-react";
 import { toast } from "sonner";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -98,14 +98,14 @@ export default function ChangePasswordCard() {
                 <Lock className="w-3 h-3" /> Principal
               </TabsTrigger>
               <TabsTrigger value="seguranca" className="text-xs gap-1">
-                <ShieldAlert className="w-3 h-3" /> Segurança
+                <KeyRound className="w-3 h-3" /> Segurança
                 {hasCoercion ? (
                   <Badge variant="outline" className="text-[9px] px-1 py-0 h-3.5 border-green-500/40 text-green-600 bg-green-50 dark:bg-green-950/30 dark:text-green-400 ml-0.5">
-                    <ShieldCheck className="w-2 h-2" />
+                    <CircleCheck className="w-2 h-2" />
                   </Badge>
                 ) : (
                   <Badge variant="outline" className="text-[9px] px-1 py-0 h-3.5 border-amber-500/40 text-amber-600 bg-amber-50 dark:bg-amber-950/30 dark:text-amber-400 ml-0.5">
-                    <ShieldX className="w-2 h-2" />
+                    <CircleX className="w-2 h-2" />
                   </Badge>
                 )}
               </TabsTrigger>

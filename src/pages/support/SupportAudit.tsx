@@ -1,15 +1,15 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, ShieldCheck, Loader2, Eye, Lock, Clock, XCircle, CheckCircle, ShieldAlert } from "lucide-react";
+import { ArrowLeft, BadgeCheck, Loader2, Eye, Lock, Clock, XCircle, CheckCircle, CircleAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
 import { callSupportApi } from "@/services/supportApiService";
 
-const AUDIT_ICONS: Record<string, typeof ShieldCheck> = {
-  session_created: ShieldCheck,
+const AUDIT_ICONS: Record<string, typeof BadgeCheck> = {
+  session_created: BadgeCheck,
   agent_assigned: Eye,
-  access_requested: ShieldAlert,
+  access_requested: CircleAlert,
   code_shown: Eye,
   access_granted: CheckCircle,
   data_accessed: Eye,
@@ -67,14 +67,14 @@ export default function SupportAudit() {
       ) : items.length === 0 ? (
         <Card>
           <CardContent className="p-8 text-center">
-            <ShieldCheck className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+            <BadgeCheck className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
             <p className="text-sm text-muted-foreground">Nenhum evento de auditoria encontrado.</p>
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-1">
           {items.map((item) => {
-            const Icon = AUDIT_ICONS[item.event_type] || ShieldCheck;
+            const Icon = AUDIT_ICONS[item.event_type] || BadgeCheck;
             return (
               <button
                 key={item.id}

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Eye, EyeOff, Loader2, ShieldCheck } from "lucide-react";
+import { Eye, EyeOff, Loader2, Lock } from "lucide-react";
 import amparaLogo from "@/assets/ampara-logo.png";
 import amparaIcon from "@/assets/ampara-icon-transparent.png";
 import orizonLogo from "@/assets/orizon-tech-logo.png";
@@ -107,7 +107,7 @@ export default function AdminLogin() {
           style={{ background: "hsl(210 17% 96%)", borderColor: "hsl(220 13% 91%)" }}
         >
           <div className="flex items-center gap-2 mb-5 pb-4" style={{ borderBottom: "1px solid hsl(220 13% 91%)" }}>
-            <ShieldCheck className="w-4 h-4" style={{ color: "hsl(207 89% 42%)" }} />
+            <Lock className="w-4 h-4" style={{ color: "hsl(207 89% 42%)" }} />
             <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "hsl(220 9% 46%)" }}>
               Autenticação Segura
             </span>

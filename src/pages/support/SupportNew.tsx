@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Send, Loader2, Link2, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Send, Loader2, Link2, BadgeCheck } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -290,7 +290,7 @@ export default function SupportNew() {
             </div>
 
             <Button onClick={handleRequestVerification} disabled={sending} className="w-full gap-2">
-              {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
+              {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <BadgeCheck className="w-4 h-4" />}
               {sending ? "Enviando código..." : "Verificar identidade e abrir chamado"}
             </Button>
 
@@ -305,7 +305,7 @@ export default function SupportNew() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
-              <ShieldCheck className="w-5 h-5 text-primary" />
+              <BadgeCheck className="w-5 h-5 text-primary" />
               Código de Verificação
             </CardTitle>
           </CardHeader>

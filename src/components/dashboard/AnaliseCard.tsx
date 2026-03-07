@@ -2,9 +2,9 @@ import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  ShieldAlert,
-  ShieldCheck,
-  ShieldQuestion,
+  CircleAlert,
+  CircleCheck,
+  HelpCircle,
   AlertTriangle,
   Brain,
   TrendingUp,
@@ -52,10 +52,10 @@ interface AnaliseData {
   } | null;
 }
 
-const RISCO_CONFIG: Record<string, { icon: typeof ShieldCheck; color: string; bg: string; label: string }> = {
-  sem_risco: { icon: ShieldCheck, color: "text-emerald-600", bg: "bg-emerald-500/10", label: "Sem Risco" },
-  moderado: { icon: ShieldQuestion, color: "text-amber-600", bg: "bg-amber-500/10", label: "Moderado" },
-  alto: { icon: ShieldAlert, color: "text-orange-600", bg: "bg-orange-500/10", label: "Alto" },
+const RISCO_CONFIG: Record<string, { icon: typeof CircleCheck; color: string; bg: string; label: string }> = {
+  sem_risco: { icon: CircleCheck, color: "text-emerald-600", bg: "bg-emerald-500/10", label: "Sem Risco" },
+  moderado: { icon: HelpCircle, color: "text-amber-600", bg: "bg-amber-500/10", label: "Moderado" },
+  alto: { icon: CircleAlert, color: "text-orange-600", bg: "bg-orange-500/10", label: "Alto" },
   critico: { icon: AlertTriangle, color: "text-red-600", bg: "bg-red-500/10", label: "Crítico" },
 };
 
@@ -309,7 +309,7 @@ export default function AnaliseCard({
 
           {/* Justificativa do risco */}
           {completa?.justificativa_risco && (
-            <Section icon={ShieldQuestion} title="Justificativa do Risco">
+            <Section icon={HelpCircle} title="Justificativa do Risco">
               <p className="text-xs text-foreground leading-relaxed">{completa.justificativa_risco}</p>
             </Section>
           )}
