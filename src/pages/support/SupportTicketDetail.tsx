@@ -27,10 +27,10 @@ const RESOURCE_LABELS: Record<string, string> = {
   logs: "Logs",
 };
 
-const AUDIT_ICONS: Record<string, typeof ShieldCheck> = {
-  session_created: ShieldCheck,
+const AUDIT_ICONS: Record<string, typeof BadgeCheck> = {
+  session_created: BadgeCheck,
   agent_assigned: Eye,
-  access_requested: ShieldAlert,
+  access_requested: CircleAlert,
   access_granted: CheckCircle,
   data_accessed: Eye,
   access_revoked: Lock,
