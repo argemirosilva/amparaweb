@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { AuthLayout } from "@/components/auth/AuthLayout";
-import { Loader2, ChevronRight, ChevronLeft, Plus, Trash2, Search, Shield, AlertTriangle } from "lucide-react";
+import { Loader2, ChevronRight, ChevronLeft, Plus, Trash2, Search, Siren, AlertTriangle } from "lucide-react";
 import { callWebApi } from "@/services/webApiService";
 import { useNavigate } from "react-router-dom";
 import { EnderecoForm, emptyEndereco, EnderecoFields } from "@/components/EnderecoForm";
