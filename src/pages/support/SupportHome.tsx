@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { MessageCircle, Plus, AlertTriangle, Loader2, ShieldCheck, Clock, ChevronRight } from "lucide-react";
+import { MessageCircle, Plus, AlertTriangle, Loader2, BadgeCheck, Clock, ChevronRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
