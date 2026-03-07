@@ -52,13 +52,13 @@ html, body, #root {
 
     --radius: 0.75rem;
 
-    --sidebar-background: 270 40% 12%;
-    --sidebar-foreground: 270 15% 85%;
+    --sidebar-background: 232 30% 8%;
+    --sidebar-foreground: 230 15% 80%;
     --sidebar-primary: 280 55% 60%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 270 30% 18%;
-    --sidebar-accent-foreground: 270 15% 90%;
-    --sidebar-border: 270 25% 18%;
+    --sidebar-accent: 232 25% 13%;
+    --sidebar-accent-foreground: 230 15% 90%;
+    --sidebar-border: 232 20% 14%;
     --sidebar-ring: 280 60% 48%;
 
     /* AMPARA brand tokens — Purple-Magenta */
