@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { Settings, Save, RotateCcw, Plus, X, ChevronDown, ChevronRight, Tags, ShieldAlert } from "lucide-react";
+import { Settings, Save, RotateCcw, Plus, X, ChevronDown, ChevronRight, Tags, AlertTriangle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
