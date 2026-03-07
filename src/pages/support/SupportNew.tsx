@@ -305,7 +305,7 @@ export default function SupportNew() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
-              <ShieldCheck className="w-5 h-5 text-primary" />
+              <BadgeCheck className="w-5 h-5 text-primary" />
               Código de Verificação
             </CardTitle>
           </CardHeader>
