@@ -4,7 +4,7 @@ import DeviceStatusCard from "@/components/dashboard/DeviceStatusCard";
 import AudioRecorderCard from "@/components/dashboard/AudioRecorderCard";
 import RiskEvolutionCard from "@/components/dashboard/RiskEvolutionCard";
 import GradientIcon from "@/components/ui/gradient-icon";
-import { UserSearch, Shield, ArrowRight } from "lucide-react";
+import { UserSearch, Sparkles, ArrowRight } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function HomePage() {
