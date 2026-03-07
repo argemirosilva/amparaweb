@@ -290,7 +290,7 @@ export default function SupportNew() {
             </div>
 
             <Button onClick={handleRequestVerification} disabled={sending} className="w-full gap-2">
-              {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
+              {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <BadgeCheck className="w-4 h-4" />}
               {sending ? "Enviando código..." : "Verificar identidade e abrir chamado"}
             </Button>
 
