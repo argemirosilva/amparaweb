@@ -309,7 +309,7 @@ export default function AnaliseCard({
 
           {/* Justificativa do risco */}
           {completa?.justificativa_risco && (
-            <Section icon={ShieldQuestion} title="Justificativa do Risco">
+            <Section icon={HelpCircle} title="Justificativa do Risco">
               <p className="text-xs text-foreground leading-relaxed">{completa.justificativa_risco}</p>
             </Section>
           )}
