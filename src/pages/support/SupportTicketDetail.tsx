@@ -285,7 +285,7 @@ export default function SupportTicketDetail() {
               <p className="text-sm text-muted-foreground text-center py-6">Nenhum evento registrado.</p>
             ) : (
               auditItems.map((item) => {
-                const Icon = AUDIT_ICONS[item.event_type] || ShieldCheck;
+                const Icon = AUDIT_ICONS[item.event_type] || BadgeCheck;
                 return (
                   <div key={item.id} className="flex items-start gap-2.5 py-2 border-b border-border last:border-0">
                     <Icon className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />

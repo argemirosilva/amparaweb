@@ -74,7 +74,7 @@ export default function SupportAudit() {
       ) : (
         <div className="space-y-1">
           {items.map((item) => {
-            const Icon = AUDIT_ICONS[item.event_type] || ShieldCheck;
+            const Icon = AUDIT_ICONS[item.event_type] || BadgeCheck;
             return (
               <button
                 key={item.id}
