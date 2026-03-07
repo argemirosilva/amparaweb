@@ -71,7 +71,11 @@ html, body, #root {
     --ampara-gradient-soft: linear-gradient(135deg, hsl(280, 20%, 97%), hsl(320, 25%, 95%));
     --ampara-gradient-icon: linear-gradient(160deg, hsl(280, 60%, 48%), hsl(320, 70%, 50%));
     --ampara-panel-bg: linear-gradient(160deg, hsl(270, 55%, 30%), hsl(280, 65%, 25%));
-    --ampara-shadow: 0 4px 20px -4px hsl(280 60% 48% / 0.15);
+    --ampara-shadow: 0 4px 20px -4px hsl(280 60% 48% / 0.12);
+
+    /* Hero / premium banner */
+    --ampara-hero-bg: linear-gradient(135deg, hsl(270, 45%, 14%), hsl(280, 55%, 20%), hsl(320, 40%, 22%));
+    --ampara-hero-glow: radial-gradient(ellipse at 80% 20%, hsl(280 60% 48% / 0.25), transparent 60%);
 
     /* Níveis de risco — classificação contextual */
     --risco-sem-risco: 152 69% 40%;
@@ -167,8 +171,36 @@ html, body, #root {
 @layer components {
   /* ---- Card ---- */
   .ampara-card {
-    @apply bg-card rounded-2xl p-3 md:p-8 border border-border;
-    box-shadow: var(--ampara-shadow);
+    @apply bg-card rounded-2xl p-3 md:p-8 border border-border/60;
+    box-shadow: 0 1px 3px 0 hsl(280 40% 20% / 0.04), 0 4px 16px -4px hsl(280 40% 20% / 0.06);
+    transition: box-shadow 0.25s ease, transform 0.25s ease;
+  }
+
+  /* ---- Premium card with gradient top accent ---- */
+  .ampara-card-accent {
+    @apply bg-card rounded-2xl border border-border/60 overflow-hidden;
+    box-shadow: 0 1px 3px 0 hsl(280 40% 20% / 0.04), 0 4px 16px -4px hsl(280 40% 20% / 0.06);
+  }
+  .ampara-card-accent::before {
+    content: "";
+    display: block;
+    height: 3px;
+    background: var(--ampara-gradient);
+  }
+
+  /* ---- Hero banner (dark gradient) ---- */
+  .ampara-hero-banner {
+    background: var(--ampara-hero-bg);
+    position: relative;
+    overflow: hidden;
+    @apply rounded-2xl p-5 md:p-8;
+  }
+  .ampara-hero-banner::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: var(--ampara-hero-glow);
+    pointer-events: none;
   }
 
   /* ---- Gradient utilities ---- */

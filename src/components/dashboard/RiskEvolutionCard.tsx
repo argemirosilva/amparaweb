@@ -104,7 +104,7 @@ export default function RiskEvolutionCard() {
     : "";
 
   return (
-    <div className="ampara-card overflow-hidden !p-0">
+    <div className="ampara-card-accent">
       <div className="p-4 space-y-3">
           {/* Header */}
           <div className="flex items-center justify-between">

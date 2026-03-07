@@ -4,37 +4,60 @@ import DeviceStatusCard from "@/components/dashboard/DeviceStatusCard";
 import AudioRecorderCard from "@/components/dashboard/AudioRecorderCard";
 import RiskEvolutionCard from "@/components/dashboard/RiskEvolutionCard";
 import GradientIcon from "@/components/ui/gradient-icon";
-import { UserSearch } from "lucide-react";
+import { UserSearch, Shield, ArrowRight } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function HomePage() {
   const navigate = useNavigate();
+  const { usuario } = useAuth();
+  const firstName = (usuario?.nome_completo || "").split(" ")[0];
 
   return (
-    <div className="animate-fade-in space-y-6 min-h-full max-w-4xl">
-      {/* Azure-style page header */}
-      <div>
-        <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-1">Dashboard</p>
-        <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">Visão geral</h1>
+    <div className="animate-fade-in space-y-5 min-h-full max-w-4xl">
+      {/* Hero welcome banner — dark gradient inspired by reference */}
+      <div className="ampara-hero-banner">
+        <div className="relative z-10 flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0"
+            style={{ background: "linear-gradient(135deg, hsl(280 55% 55% / 0.3), hsl(320 60% 50% / 0.3))", border: "1px solid hsl(280 50% 60% / 0.25)" }}>
+            <Shield className="w-6 h-6 text-white/90" />
+          </div>
+          <div className="min-w-0">
+            <h1 className="text-lg md:text-xl font-bold text-white tracking-tight">
+              {firstName ? `Olá, ${firstName}` : "Visão geral"}
+            </h1>
+            <p className="text-xs md:text-sm text-white/60 mt-0.5">
+              Sua proteção está ativa. Confira o resumo abaixo.
+            </p>
+          </div>
+        </div>
       </div>
 
-      <div className="space-y-4">
-        <RiskEvolutionCard />
-        <DeviceStatusCard />
-        <div className="grid grid-cols-2 gap-3">
-          <button
-            onClick={() => navigate("/busca-perfil")}
-            className="ampara-card flex items-center gap-2 w-full text-left transition-all hover:shadow-lg hover:-translate-y-0.5 cursor-pointer p-3"
-          >
+      {/* Risk evolution — accent card */}
+      <RiskEvolutionCard />
+
+      {/* Device status */}
+      <DeviceStatusCard />
+
+      {/* Action cards row */}
+      <div className="grid grid-cols-2 gap-3">
+        <button
+          onClick={() => navigate("/busca-perfil")}
+          className="ampara-card-accent flex items-center gap-3 w-full text-left cursor-pointer group"
+        >
+          <div className="p-3 md:p-4 flex items-center gap-3 w-full">
             <GradientIcon icon={UserSearch} size="sm" />
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="text-sm font-semibold text-foreground">Pesquisar parceiro</p>
-              <p className="text-xs text-muted-foreground">Consultar perfil</p>
+              <p className="text-[11px] text-muted-foreground">Consultar perfil</p>
             </div>
-          </button>
-          <AudioRecorderCard />
-        </div>
-        <MonitoringStatusCard />
+            <ArrowRight className="w-4 h-4 text-muted-foreground/50 group-hover:text-primary transition-colors shrink-0" />
+          </div>
+        </button>
+        <AudioRecorderCard />
       </div>
+
+      {/* Monitoring */}
+      <MonitoringStatusCard />
     </div>
   );
 }
