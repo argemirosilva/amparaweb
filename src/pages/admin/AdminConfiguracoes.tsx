@@ -253,7 +253,7 @@ export default function AdminConfiguracoes() {
           onClick={() => setTriagemOpen((v) => !v)}
           className="w-full px-4 py-3 flex items-center gap-2 bg-muted/50 hover:bg-muted/70 transition-colors text-left"
         >
-          <ShieldAlert className="w-4 h-4 text-primary" />
+          <AlertTriangle className="w-4 h-4 text-primary" />
           <h2 className="text-sm font-semibold text-foreground flex-1">Palavras de Triagem</h2>
           <span className="text-xs text-muted-foreground mr-2">Keywords de risco para triagem rápida de segmentos</span>
           {triagemOpen ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}

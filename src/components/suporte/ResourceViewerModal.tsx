@@ -169,7 +169,7 @@ export default function ResourceViewerModal({ open, onClose, grant, sessionToken
             className="gap-1"
             onClick={() => { onRevoke(grant.id); onClose(); }}
           >
-            <ShieldOff className="w-4 h-4" /> Revogar Acesso
+            <Ban className="w-4 h-4" /> Revogar Acesso
           </Button>
         </DialogFooter>
       </DialogContent>
