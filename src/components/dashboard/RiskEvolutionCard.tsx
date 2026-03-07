@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TrendingUp, TrendingDown, Minus, ShieldAlert, AlertTriangle, Shield, ShieldCheck, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, CircleAlert, AlertTriangle, Activity, CircleCheck, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
 import GradientIcon from "@/components/ui/gradient-icon";
 import { callWebApi } from "@/services/webApiService";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, YAxis, XAxis } from "recharts";
