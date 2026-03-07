@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { type SearchResult, type SearchFormData } from "@/pages/BuscaPerfil";
-import { ChevronDown, ChevronUp, Shield, MapPin, CheckCircle2, MinusCircle, XCircle, Ban, Crosshair, Flag, TrendingUp, AlertTriangle, Info } from "lucide-react";
+import { ChevronDown, ChevronUp, Siren, MapPin, CheckCircle2, MinusCircle, XCircle, Ban, Crosshair, Flag, TrendingUp, AlertTriangle, Info } from "lucide-react";
 
 const STATUS_ICON: Record<string, React.ReactNode> = {
   completo: <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />,
