@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { callWebApi } from "@/services/webApiService";
 import { BuscaPerfilForm } from "@/components/busca-perfil/BuscaPerfilForm";
 import { BuscaPerfilResults } from "@/components/busca-perfil/BuscaPerfilResults";
-import { Loader2, UserSearch, ArrowLeft, ShieldAlert } from "lucide-react";
+import { Loader2, UserSearch, ArrowLeft, CircleAlert } from "lucide-react";
 
 export interface SearchResult {
   profile_id: string;
