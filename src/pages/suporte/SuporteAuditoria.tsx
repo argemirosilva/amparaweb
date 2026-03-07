@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { callSupportApi } from "@/services/supportApiService";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Shield, Clock } from "lucide-react";
+import { FileSearch, Clock } from "lucide-react";
 
 const EVENT_ICONS: Record<string, string> = {
   session_created: "📋",
