@@ -4,7 +4,7 @@ import DeviceStatusCard from "@/components/dashboard/DeviceStatusCard";
 import AudioRecorderCard from "@/components/dashboard/AudioRecorderCard";
 import RiskEvolutionCard from "@/components/dashboard/RiskEvolutionCard";
 import GradientIcon from "@/components/ui/gradient-icon";
-import { UserSearch, Sparkles, ArrowRight } from "lucide-react";
+import { UserSearch, ArrowRight } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function HomePage() {
@@ -16,11 +16,7 @@ export default function HomePage() {
     <div className="animate-fade-in space-y-5 min-h-full max-w-4xl">
       {/* Hero welcome banner — dark gradient inspired by reference */}
       <div className="ampara-hero-banner">
-        <div className="relative z-10 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0"
-            style={{ background: "linear-gradient(135deg, hsl(280 55% 55% / 0.3), hsl(320 60% 50% / 0.3))", border: "1px solid hsl(280 50% 60% / 0.25)" }}>
-            <Sparkles className="w-6 h-6 text-white/90" />
-          </div>
+        <div className="relative z-10">
           <div className="min-w-0">
             <h1 className="text-lg md:text-xl font-bold text-white tracking-tight">
               {firstName ? `Olá, ${firstName}` : "Visão geral"}
