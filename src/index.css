@@ -217,6 +217,11 @@ html, body, #root {
     background: var(--ampara-panel-bg);
   }
 
+  /* Sidebar gradient override */
+  [data-sidebar="sidebar"] {
+    background: var(--sidebar-bg-gradient) !important;
+  }
+
   /* ---- Icon circle (gradient background with white icon) ---- */
   .ampara-icon-circle {
     @apply inline-flex items-center justify-center w-16 h-16 rounded-full text-primary-foreground;
