@@ -4,7 +4,7 @@ import DeviceStatusCard from "@/components/dashboard/DeviceStatusCard";
 import AudioRecorderCard from "@/components/dashboard/AudioRecorderCard";
 import RiskEvolutionCard from "@/components/dashboard/RiskEvolutionCard";
 import GradientIcon from "@/components/ui/gradient-icon";
-import { UserSearch, ArrowRight } from "lucide-react";
+import { UserSearch, ArrowRight, User } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function HomePage() {
@@ -14,15 +14,22 @@ export default function HomePage() {
 
   return (
     <div className="animate-fade-in space-y-5 min-h-full max-w-4xl">
-      {/* Hero welcome banner — dark gradient inspired by reference */}
+      {/* Hero welcome banner with avatar + email */}
       <div className="ampara-hero-banner">
-        <div className="relative z-10">
+        <div className="relative z-10 flex items-center gap-4">
+          {usuario?.avatar_url ? (
+            <img src={usuario.avatar_url} alt="Avatar" className="w-12 h-12 rounded-full object-cover shrink-0 ring-2 ring-white/20" />
+          ) : (
+            <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center shrink-0 ring-2 ring-white/20">
+              <User className="w-6 h-6 text-white/70" />
+            </div>
+          )}
           <div className="min-w-0">
             <h1 className="text-lg md:text-xl font-bold text-white tracking-tight">
               {firstName ? `Olá, ${firstName}` : "Visão geral"}
             </h1>
             <p className="text-xs md:text-sm text-white/60 mt-0.5">
-              Sua proteção está ativa. Confira o resumo abaixo.
+              {usuario?.email || "Sua proteção está ativa. Confira o resumo abaixo."}
             </p>
           </div>
         </div>
