@@ -103,7 +103,7 @@ export default function AppSidebar() {
         {/* Desenvolvido por */}
         <div className="group-data-[collapsible=icon]:hidden border-t border-sidebar-border pt-3 pb-2 px-3 flex items-center justify-center gap-2">
           <span className="text-[10px] text-sidebar-foreground/40 tracking-wide whitespace-nowrap">Desenvolvido por</span>
-          <img src={orizonLogo} alt="Orizon Tech" className="h-4 object-contain invert mix-blend-screen" />
+          <img src={orizonLogo} alt="Orizon Tech" className="h-4 object-contain mix-blend-screen" style={{ filter: "invert(1) hue-rotate(180deg)" }} />
         </div>
       </SidebarFooter>
     </Sidebar>
