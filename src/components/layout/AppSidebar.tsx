@@ -9,7 +9,7 @@ import {
   Settings,
   LogOut,
   Search,
-  MessageCircle,
+  Headset,
 } from "lucide-react";
 import {
   Sidebar,
@@ -83,7 +83,7 @@ export default function AppSidebar() {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <SidebarMenuButton onClick={() => navigate("/support")} className="w-fit">
-                    <MessageCircle className="w-5 h-5 shrink-0 text-sidebar-foreground/70" />
+                    <Headset className="w-5 h-5 shrink-0 text-sidebar-foreground/70" />
                   </SidebarMenuButton>
                 </TooltipTrigger>
                 <TooltipContent side="right">
