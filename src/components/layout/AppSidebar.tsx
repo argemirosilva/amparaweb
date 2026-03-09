@@ -94,8 +94,8 @@ export default function AppSidebar() {
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton onClick={handleLogout}>
-              <LogOut className="w-5 h-5 shrink-0 text-destructive" />
-              <span className="group-data-[collapsible=icon]:hidden text-destructive">Sair</span>
+              <LogOut className="w-5 h-5 shrink-0 text-sidebar-foreground/70" />
+              <span className="group-data-[collapsible=icon]:hidden text-sidebar-foreground/70">Sair</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
