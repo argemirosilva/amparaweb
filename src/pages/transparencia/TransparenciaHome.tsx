@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Users, AlertTriangle, Clock, TrendingDown, MapPin, Maximize2 } from "lucide-react";
-import GovKpiCard from "@/components/institucional/GovKpiCard";
+import AmparaKpiCard from "@/components/ui/ampara-kpi-card";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -52,24 +52,24 @@ export default function TransparenciaHome() {
 
       {/* KPIs */}
       <section className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
-        <GovKpiCard
+        <AmparaKpiCard
           title="Monitoradas Ativas"
           value={kpis.monitoradas}
           icon={Users}
           subtitle="Últimos 90 dias"
         />
-        <GovKpiCard
+        <AmparaKpiCard
           title="Alertas Registrados"
           value={kpis.alertas}
           icon={AlertTriangle}
           subtitle="Últimos 90 dias"
         />
-        <GovKpiCard
+        <AmparaKpiCard
           title="Tempo Médio Resposta"
           value={kpis.tempoMedioResposta}
           icon={Clock}
         />
-        <GovKpiCard
+        <AmparaKpiCard
           title="Tendência"
           value={kpis.reducao}
           icon={TrendingDown}

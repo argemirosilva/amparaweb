@@ -305,6 +305,24 @@ html, body, #root {
     @apply relative bg-card rounded-2xl p-6 border-l-4 border-primary italic text-foreground/80;
   }
 
+  /* ---- KPI card with decorative circle ---- */
+  .ampara-card-kpi {
+    @apply bg-card rounded-2xl p-5 border border-border/40 relative overflow-hidden;
+    box-shadow: 0 2px 8px -2px hsl(220 20% 20% / 0.06);
+    transition: box-shadow 0.25s ease, transform 0.25s ease;
+  }
+  .ampara-card-kpi:hover {
+    box-shadow: var(--ampara-shadow);
+    transform: translateY(-1px);
+  }
+  .ampara-card-kpi .kpi-circle {
+    @apply absolute -top-3 -right-3 w-20 h-20 rounded-full flex items-center justify-center;
+    background: hsl(var(--ampara-purple) / 0.08);
+  }
+  .ampara-card-kpi .kpi-circle svg {
+    @apply translate-x-[-4px] translate-y-[4px];
+  }
+
   /* ---- Tag / chip ---- */
   .ampara-tag {
     @apply inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium;
