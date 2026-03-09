@@ -9,7 +9,7 @@ import {
   Settings,
   LogOut,
   Search,
-  MessageCircle,
+  Headset,
 } from "lucide-react";
 import {
   Sidebar,
