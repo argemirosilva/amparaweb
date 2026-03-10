@@ -59,10 +59,10 @@ function SlideCapa() {
 
 function SlideProblema() {
   const problems = [
-    { icon: AlertTriangle, title: "1 mulher agredida a cada 2 minutos", desc: "O Brasil registra mais de 250 mil casos de violência doméstica por ano, com alta subnotificação." },
-    { icon: TrendingDown, title: "Falta de provas dificulta denúncias", desc: "70% das vítimas não têm evidências concretas para sustentar processos judiciais." },
-    { icon: Users, title: "Rede de apoio é insuficiente", desc: "Familiares e amigos frequentemente não sabem da situação ou não conseguem intervir a tempo." },
-    { icon: Clock, title: "Resposta de emergência é lenta", desc: "O tempo médio de resposta a chamados de violência doméstica ultrapassa 30 minutos." },
+    { icon: AlertTriangle, title: "1 mulher agredida a cada 2 minutos", desc: "O Brasil registra mais de 250 mil casos de violência doméstica por ano, com alta subnotificação. (Fonte: Anuário Brasileiro de Segurança Pública 2024)" },
+    { icon: TrendingDown, title: "Falta de provas dificulta denúncias", desc: "70% das vítimas não têm evidências concretas para sustentar processos judiciais. (Fonte: CNJ — Pesquisa Violência Doméstica, 2023)" },
+    { icon: Users, title: "Rede de apoio é insuficiente", desc: "Familiares e amigos frequentemente não sabem da situação ou não conseguem intervir a tempo. (Fonte: DataSenado, 2023)" },
+    { icon: Clock, title: "Resposta de emergência é lenta", desc: "O tempo médio de resposta a chamados de violência doméstica ultrapassa 30 minutos. (Fonte: FBSP / Fórum Brasileiro de Segurança Pública, 2024)" },
   ];
   return (
     <motion.div className="flex flex-col items-center justify-center h-full gap-8 px-6" variants={stagger} initial="hidden" animate="visible">
