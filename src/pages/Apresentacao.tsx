@@ -378,7 +378,7 @@ export default function Apresentacao() {
 
       {/* Header */}
       <div className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-5 py-4">
-        <img src={amparaLogo} alt="AMPARA" className="h-6 object-contain brightness-0 invert opacity-60" />
+        <img src={amparaLogo} alt="AMPARA" className="h-6 object-contain drop-shadow-lg opacity-60" />
         <span className="text-sm font-mono text-slate-500">
           {String(current + 1).padStart(2, "0")}/{String(TOTAL_SLIDES).padStart(2, "0")}
         </span>
