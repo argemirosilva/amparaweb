@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ChevronLeft, ChevronRight, AlertTriangle, TrendingDown, Users, Clock,
-  Shield, Mic, MapPin, Brain, Headphones, Eye, Lock, Smartphone,
+  Shield, Mic, MapPin, Brain, Headphones, Eye, Lock, Smartphone, Bell,
   Rocket, Target, Zap, Star, Check, ArrowRight, Mail, Globe,
   BarChart3, Layers, Settings, FileText
 } from "lucide-react";
