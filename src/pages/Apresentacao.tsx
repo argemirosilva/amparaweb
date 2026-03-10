@@ -110,35 +110,59 @@ function SlideSolucao() {
 }
 
 function SlidePlataforma() {
-  const badges = [
-    { emoji: "🎙️", label: "Gravação Inteligente", pos: "top-8 left-4 md:top-16 md:left-8" },
-    { emoji: "🛡️", label: "Botão de Pânico", pos: "top-8 right-4 md:top-12 md:right-8" },
-    { emoji: "📊", label: "Dashboard de Risco", pos: "bottom-20 left-4 md:bottom-24 md:left-12" },
-    { emoji: "📍", label: "GPS em Tempo Real", pos: "bottom-20 right-4 md:bottom-20 md:right-8" },
-    { emoji: "🤖", label: "IA Preditiva", pos: "top-1/2 left-0 md:left-4" },
+  const features = [
+    { icon: Mic, label: "Gravação Inteligente", color: "from-rose-500 to-pink-600" },
+    { icon: Bell, label: "Botão de Pânico", color: "from-amber-500 to-orange-600" },
+    { icon: BarChart3, label: "Dashboard de Risco", color: "from-cyan-500 to-blue-600" },
+    { icon: MapPin, label: "GPS em Tempo Real", color: "from-emerald-500 to-green-600" },
+    { icon: Brain, label: "IA Preditiva", color: "from-violet-500 to-purple-600" },
   ];
   return (
-    <motion.div className="flex flex-col items-center justify-center h-full gap-6 px-6 relative" variants={stagger} initial="hidden" animate="visible">
+    <motion.div className="flex flex-col items-center justify-center h-full gap-10 px-6 relative" variants={stagger} initial="hidden" animate="visible">
       <motion.h2 variants={fadeUp} className="text-3xl md:text-5xl font-bold text-white font-display">A Plataforma</motion.h2>
-      <motion.div variants={fadeUp} className="relative w-full max-w-3xl aspect-video rounded-2xl overflow-hidden border border-white/10 bg-slate-800/50">
-        {/* Glow */}
-        <div className="absolute -inset-4 bg-indigo-500/10 blur-3xl rounded-3xl pointer-events-none" />
-        {/* Mock content */}
-        <div className="relative z-10 flex items-center justify-center h-full">
-          <div className="text-center space-y-3">
-            <div className="flex items-center justify-center gap-2">
-              <Smartphone className="w-12 h-12 text-indigo-400" />
-              <span className="text-2xl md:text-3xl font-bold text-white font-display">App + Web</span>
-            </div>
-            <p className="text-slate-400">Aplicativo móvel nativo + Painel web para gestores governamentais</p>
+
+      {/* Central hero card */}
+      <motion.div variants={fadeUp} className="relative w-full max-w-4xl">
+        {/* Outer glow */}
+        <div className="absolute -inset-6 bg-indigo-500/10 blur-3xl rounded-full pointer-events-none" />
+
+        <div className="relative z-10 bg-gradient-to-br from-white/[0.08] to-white/[0.02] border border-white/15 rounded-3xl p-8 md:p-12 backdrop-blur-xl">
+          {/* Header */}
+          <div className="text-center mb-10">
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: "spring", stiffness: 200, delay: 0.2 }}
+              className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-lg shadow-indigo-500/30 mb-4"
+            >
+              <Smartphone className="w-10 h-10 text-white" />
+            </motion.div>
+            <h3 className="text-2xl md:text-3xl font-bold text-white font-display">App Móvel + Painel Web</h3>
+            <p className="text-slate-400 mt-2 max-w-lg mx-auto">Aplicativo nativo para mulheres atendidas e painel administrativo para gestores governamentais</p>
+          </div>
+
+          {/* Feature pills */}
+          <div className="flex flex-wrap items-center justify-center gap-4">
+            {features.map((f, i) => {
+              const Icon = f.icon;
+              return (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 20, scale: 0.9 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{ delay: 0.5 + i * 0.1, type: "spring", stiffness: 300 }}
+                  whileHover={{ scale: 1.08, y: -4 }}
+                  className="flex items-center gap-3 bg-white/[0.06] border border-white/10 rounded-2xl px-5 py-3 backdrop-blur-sm cursor-default"
+                >
+                  <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${f.color} flex items-center justify-center shadow-lg`}>
+                    <Icon className="w-5 h-5 text-white" />
+                  </div>
+                  <span className="text-sm md:text-base font-medium text-white">{f.label}</span>
+                </motion.div>
+              );
+            })}
           </div>
         </div>
-        {/* Floating badges */}
-        {badges.map((b, i) => (
-          <motion.div key={i} initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.3 + i * 0.12 }} className={`absolute ${b.pos} bg-white/10 backdrop-blur-md border border-white/20 rounded-xl px-3 py-1.5 text-xs text-white flex items-center gap-1.5 z-20`}>
-            <span>{b.emoji}</span> {b.label}
-          </motion.div>
-        ))}
       </motion.div>
     </motion.div>
   );
