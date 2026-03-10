@@ -220,37 +220,30 @@ function SlideMercado() {
 
 function SlideRoadmap() {
   const milestones = [
-    { period: "2024 Q3–Q4", title: "MVP & Piloto", items: ["App móvel com gravação e IA", "Painel governamental básico", "Piloto em 2 municípios"], status: "done" },
-    { period: "2025 Q1–Q2", title: "Expansão Regional", items: ["Integração com COPOM/190", "Portal de transparência", "5 municípios ativos"], status: "done" },
-    { period: "2025 Q3–Q4", title: "Escala Estadual", items: ["Suporte humanizado integrado", "API para parceiros", "20 municípios ativos"], status: "current" },
-    { period: "2026 Q1–Q2", title: "Plataforma Nacional", items: ["SDK para apps parceiros", "Modelo SaaS para estados", "IA multilíngue (Libras)"], status: "future" },
-    { period: "2026 Q3+", title: "Internacionalização", items: ["Expansão LATAM", "Parcerias ONU/ONG", "Modelo open-source parcial"], status: "future" },
+    { period: "2024 Q3–Q4", title: "MVP & Piloto", desc: "App com gravação e IA · Piloto em 2 municípios", status: "done" },
+    { period: "2025 Q1–Q2", title: "Expansão Regional", desc: "Integração COPOM/190 · Portal de transparência", status: "done" },
+    { period: "2025 Q3–Q4", title: "Escala Estadual", desc: "Suporte humanizado · API parceiros · 20 municípios", status: "current" },
+    { period: "2026 Q1–Q2", title: "Plataforma Nacional", desc: "SDK parceiros · SaaS para estados · IA multilíngue", status: "future" },
+    { period: "2026 Q3+", title: "Internacionalização", desc: "Expansão LATAM · Parcerias ONU/ONG", status: "future" },
   ];
   const dotColor = { done: "bg-emerald-400", current: "bg-indigo-400 animate-pulse", future: "bg-slate-600" };
   return (
-    <motion.div className="flex flex-col items-center justify-center h-full gap-6 px-6" variants={stagger} initial="hidden" animate="visible">
+    <motion.div className="flex flex-col items-center justify-center h-full gap-5 px-6" variants={stagger} initial="hidden" animate="visible">
       <motion.h2 variants={fadeUp} className="text-3xl md:text-5xl font-bold text-white font-display">Roadmap</motion.h2>
       <div className="relative w-full max-w-3xl">
-        {/* Vertical line */}
         <div className="absolute left-4 md:left-6 top-0 bottom-0 w-px bg-white/10" />
-        <div className="space-y-5">
+        <div className="space-y-3">
           {milestones.map((m, i) => (
             <motion.div key={i} variants={fadeUp} className="relative flex gap-4 md:gap-6 items-start pl-10 md:pl-14">
-              <div className={`absolute left-2.5 md:left-4.5 top-1.5 w-3 h-3 rounded-full ${dotColor[m.status as keyof typeof dotColor]} ring-2 ring-slate-900`} />
-              <div className="bg-white/5 border border-white/10 rounded-xl p-4 w-full backdrop-blur-sm">
-                <div className="flex items-center gap-3 mb-2">
+              <div className={`absolute left-2.5 md:left-4.5 top-2 w-3 h-3 rounded-full ${dotColor[m.status as keyof typeof dotColor]} ring-2 ring-slate-900`} />
+              <div className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 w-full backdrop-blur-sm flex items-center gap-4 flex-wrap">
+                <div className="flex items-center gap-3 shrink-0">
                   <span className="text-xs font-mono text-slate-500">{m.period}</span>
                   {m.status === "done" && <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">Concluído</span>}
                   {m.status === "current" && <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300">Em andamento</span>}
                 </div>
-                <h3 className="text-white font-semibold">{m.title}</h3>
-                <ul className="mt-1.5 space-y-0.5">
-                  {m.items.map((item, j) => (
-                    <li key={j} className="text-slate-400 text-sm flex items-center gap-1.5">
-                      <Check className="w-3 h-3 text-slate-500 shrink-0" /> {item}
-                    </li>
-                  ))}
-                </ul>
+                <h3 className="text-white font-semibold text-sm md:text-base">{m.title}</h3>
+                <p className="text-slate-400 text-xs md:text-sm">{m.desc}</p>
               </div>
             </motion.div>
           ))}
