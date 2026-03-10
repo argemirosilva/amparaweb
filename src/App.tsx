@@ -64,6 +64,7 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/" element={<LandingPage />} />
+            <Route path="/apresentacao" element={<Apresentacao />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/cadastro" element={<Cadastro />} />
             <Route path="/validar-email" element={<ValidarEmail />} />
