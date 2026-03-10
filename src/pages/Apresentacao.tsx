@@ -7,7 +7,7 @@ import {
   BarChart3, Layers, Settings, FileText
 } from "lucide-react";
 import amparaLogo from "@/assets/ampara-logo.png";
-import orizonLogo from "@/assets/orizon-tech-logo-transparent.png";
+import orizonLogo from "@/assets/orizon-tech-logo-dark-bg.png";
 import partnerFacimus from "@/assets/partner-facimus.png";
 import partnerHpe from "@/assets/partner-hpe.svg";
 import partnerAggregar from "@/assets/partner-aggregar-v3.png";
@@ -305,7 +305,7 @@ function SlideParceiros() {
       <div className="flex flex-wrap items-center justify-center gap-8 md:gap-12 w-full max-w-4xl">
         {partners.map((p, i) => (
           <motion.div key={i} variants={fadeUp} className="bg-white/5 border border-white/10 rounded-2xl p-6 flex items-center justify-center h-24 w-40 md:w-48 backdrop-blur-sm">
-            <img src={p.img} alt={p.name} className="max-h-12 max-w-full object-contain drop-shadow-lg opacity-90" />
+            <img src={p.img} alt={p.name} className="max-h-12 max-w-full object-contain opacity-90 mix-blend-screen" />
           </motion.div>
         ))}
       </div>
