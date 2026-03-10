@@ -51,7 +51,7 @@ function SlideCapa() {
         Pitch Deck 2026
       </motion.div>
       <motion.div variants={fadeUp} className="absolute bottom-10 opacity-40">
-        <img src={orizonLogo} alt="Orizon Tech" className="h-6 object-contain brightness-0 invert" />
+        <img src={orizonLogo} alt="Orizon Tech" className="h-6 object-contain drop-shadow-lg" />
       </motion.div>
     </motion.div>
   );
