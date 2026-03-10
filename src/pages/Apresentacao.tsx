@@ -39,7 +39,7 @@ function SlideCapa() {
       {/* Glow */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-indigo-500/10 blur-[120px] pointer-events-none" />
       <motion.div variants={fadeUp} className="relative">
-        <img src={amparaLogo} alt="AMPARA Mulher" className="h-20 md:h-28 object-contain brightness-0 invert" />
+        <img src={amparaLogo} alt="AMPARA Mulher" className="h-20 md:h-28 object-contain drop-shadow-lg" />
       </motion.div>
       <motion.h1 variants={fadeUp} className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight text-white font-display">
         AMPARA Mulher
