@@ -361,7 +361,7 @@ function SlideCTA() {
    MAIN PAGE
    ══════════════════════════════════════════ */
 
-const SLIDES = [SlideCapa, SlideProblema, SlideSolucao, SlidePlataforma, SlideDiferenciais, SlideMercado, SlideRoadmap, SlideModelo, SlideParceiros, SlideCTA];
+const SLIDES = [SlideCapa, SlideProblema, SlideSolucao, SlidePlataforma, SlideDiferenciais, SlideMercado, SlideRoadmap, SlideModelo, SlideCTA];
 
 export default function Apresentacao() {
   const [current, setCurrent] = useState(0);
