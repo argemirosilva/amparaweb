@@ -59,10 +59,10 @@ function SlideCapa() {
 
 function SlideProblema() {
   const problems = [
-    { icon: AlertTriangle, title: "1 mulher agredida a cada 2 minutos", desc: "O Brasil registra mais de 250 mil casos de violência doméstica por ano, com alta subnotificação." },
-    { icon: TrendingDown, title: "Falta de provas dificulta denúncias", desc: "70% das vítimas não têm evidências concretas para sustentar processos judiciais." },
-    { icon: Users, title: "Rede de apoio é insuficiente", desc: "Familiares e amigos frequentemente não sabem da situação ou não conseguem intervir a tempo." },
-    { icon: Clock, title: "Resposta de emergência é lenta", desc: "O tempo médio de resposta a chamados de violência doméstica ultrapassa 30 minutos." },
+    { icon: AlertTriangle, title: "1 mulher agredida a cada 2 minutos", desc: "O Brasil registra mais de 250 mil casos de violência doméstica por ano, com alta subnotificação. (Fonte: Anuário Brasileiro de Segurança Pública 2024)" },
+    { icon: TrendingDown, title: "Falta de provas dificulta denúncias", desc: "70% das vítimas não têm evidências concretas para sustentar processos judiciais. (Fonte: CNJ — Pesquisa Violência Doméstica, 2023)" },
+    { icon: Users, title: "Rede de apoio é insuficiente", desc: "Familiares e amigos frequentemente não sabem da situação ou não conseguem intervir a tempo. (Fonte: DataSenado, 2023)" },
+    { icon: Clock, title: "Resposta de emergência é lenta", desc: "O tempo médio de resposta a chamados de violência doméstica ultrapassa 30 minutos. (Fonte: FBSP / Fórum Brasileiro de Segurança Pública, 2024)" },
   ];
   return (
     <motion.div className="flex flex-col items-center justify-center h-full gap-8 px-6" variants={stagger} initial="hidden" animate="visible">
@@ -174,9 +174,9 @@ function SlideDiferenciais() {
 
 function SlideMercado() {
   const segments = [
-    { label: "TAM", title: "Mercado Total Endereçável", value: "R$ 12 bi", desc: "Mulheres em situação de vulnerabilidade no Brasil (~17 milhões)", color: "from-violet-500 to-violet-700", size: "w-64 h-64 md:w-72 md:h-72" },
-    { label: "SAM", title: "Mercado Alcançável", value: "R$ 2,4 bi", desc: "Municípios com secretarias de proteção à mulher (~2.500)", color: "from-cyan-500 to-cyan-700", size: "w-48 h-48 md:w-56 md:h-56" },
-    { label: "SOM", title: "Mercado Obtível", value: "R$ 480 mi", desc: "Convênios estaduais e municipais ativos (meta 3 anos)", color: "from-emerald-500 to-emerald-700", size: "w-36 h-36 md:w-44 md:h-44" },
+    { label: "TAM", title: "Mercado Total Endereçável", value: "R$ 12 bi", desc: "Mulheres em situação de vulnerabilidade no Brasil (~17 milhões) (Fonte: IBGE/PNAD 2023)", color: "from-violet-500 to-violet-700", size: "w-64 h-64 md:w-72 md:h-72" },
+    { label: "SAM", title: "Mercado Alcançável", value: "R$ 2,4 bi", desc: "Municípios com secretarias de proteção à mulher (~2.500) (Fonte: MUNIC/IBGE 2023)", color: "from-cyan-500 to-cyan-700", size: "w-48 h-48 md:w-56 md:h-56" },
+    { label: "SOM", title: "Mercado Obtível", value: "R$ 480 mi", desc: "Convênios estaduais e municipais ativos — meta 3 anos (Estimativa interna Orizon Tech)", color: "from-emerald-500 to-emerald-700", size: "w-36 h-36 md:w-44 md:h-44" },
   ];
   return (
     <motion.div className="flex flex-col items-center justify-center h-full gap-8 px-6" variants={stagger} initial="hidden" animate="visible">
