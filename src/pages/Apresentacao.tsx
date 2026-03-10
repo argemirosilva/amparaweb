@@ -319,7 +319,7 @@ function SlideCTA() {
       {/* Animated glow */}
       <motion.div animate={{ scale: [1, 1.15, 1], opacity: [0.15, 0.3, 0.15] }} transition={{ duration: 3, repeat: Infinity }} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full bg-indigo-500/20 blur-[100px] pointer-events-none" />
       <motion.div variants={fadeUp}>
-        <img src={amparaLogo} alt="AMPARA Mulher" className="h-24 md:h-32 object-contain brightness-0 invert relative z-10" />
+        <img src={amparaLogo} alt="AMPARA Mulher" className="h-24 md:h-32 object-contain drop-shadow-lg relative z-10" />
       </motion.div>
       <motion.h2 variants={fadeUp} className="text-3xl md:text-5xl font-bold text-white font-display max-w-3xl relative z-10">
         Tecnologia que <span className="bg-gradient-to-r from-indigo-400 via-violet-400 to-cyan-400 bg-clip-text text-transparent">salva vidas</span>
