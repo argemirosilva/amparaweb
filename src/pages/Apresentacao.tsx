@@ -307,28 +307,7 @@ function SlideModelo() {
   );
 }
 
-function SlideParceiros() {
-  const partners = [
-    { img: partnerFacimus, name: "Facimus" },
-    { img: partnerHpe, name: "HPE" },
-    { img: partnerAggregar, name: "Aggregar" },
-    { img: partnerSinergytech, name: "Sinergytech" },
-    { img: orizonLogo, name: "Orizon Tech" },
-  ];
-  return (
-    <motion.div className="flex flex-col items-center justify-center h-full gap-8 px-6" variants={stagger} initial="hidden" animate="visible">
-      <motion.h2 variants={fadeUp} className="text-3xl md:text-5xl font-bold text-white font-display">Parceiros & Apoiadores</motion.h2>
-      <motion.p variants={fadeUp} className="text-slate-400 text-center max-w-2xl">Ecossistema de parceiros estratégicos que sustentam a operação e o desenvolvimento da plataforma.</motion.p>
-      <div className="flex flex-wrap items-center justify-center gap-8 md:gap-12 w-full max-w-4xl">
-        {partners.map((p, i) => (
-          <motion.div key={i} variants={fadeUp} className="bg-white/5 border border-white/10 rounded-2xl p-6 flex items-center justify-center h-24 w-40 md:w-48 backdrop-blur-sm">
-            <img src={p.img} alt={p.name} className="max-h-12 max-w-full object-contain opacity-90 rounded-xl" />
-          </motion.div>
-        ))}
-      </div>
-    </motion.div>
-  );
-}
+
 
 function SlideCTA() {
   return (
@@ -361,7 +340,7 @@ function SlideCTA() {
    MAIN PAGE
    ══════════════════════════════════════════ */
 
-const SLIDES = [SlideCapa, SlideProblema, SlideSolucao, SlidePlataforma, SlideDiferenciais, SlideMercado, SlideRoadmap, SlideModelo, SlideParceiros, SlideCTA];
+const SLIDES = [SlideCapa, SlideProblema, SlideSolucao, SlidePlataforma, SlideDiferenciais, SlideMercado, SlideRoadmap, SlideModelo, SlideCTA];
 
 export default function Apresentacao() {
   const [current, setCurrent] = useState(0);
