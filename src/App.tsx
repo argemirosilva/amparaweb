@@ -21,6 +21,7 @@ import Rastreamento from "./pages/Rastreamento";
 import Suporte from "./pages/Suporte";
 import Privacidade from "./pages/Privacidade";
 import LandingPage from "./pages/LandingPage";
+import Apresentacao from "./pages/Apresentacao";
 
 import PortalLayout from "./components/institucional/PortalLayout";
 import TransparenciaHome from "./pages/transparencia/TransparenciaHome";
@@ -63,6 +64,7 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/" element={<LandingPage />} />
+            <Route path="/apresentacao" element={<Apresentacao />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/cadastro" element={<Cadastro />} />
             <Route path="/validar-email" element={<ValidarEmail />} />
