@@ -39,7 +39,7 @@ function SlideCapa() {
       {/* Glow */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-indigo-500/10 blur-[120px] pointer-events-none" />
       <motion.div variants={fadeUp} className="relative">
-        <img src={amparaLogo} alt="AMPARA Mulher" className="h-20 md:h-28 object-contain brightness-0 invert" />
+        <img src={amparaLogo} alt="AMPARA Mulher" className="h-20 md:h-28 object-contain drop-shadow-lg" />
       </motion.div>
       <motion.h1 variants={fadeUp} className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight text-white font-display">
         AMPARA Mulher
@@ -51,7 +51,7 @@ function SlideCapa() {
         Pitch Deck 2026
       </motion.div>
       <motion.div variants={fadeUp} className="absolute bottom-10 opacity-40">
-        <img src={orizonLogo} alt="Orizon Tech" className="h-6 object-contain brightness-0 invert" />
+        <img src={orizonLogo} alt="Orizon Tech" className="h-6 object-contain drop-shadow-lg" />
       </motion.div>
     </motion.div>
   );
@@ -305,7 +305,7 @@ function SlideParceiros() {
       <div className="flex flex-wrap items-center justify-center gap-8 md:gap-12 w-full max-w-4xl">
         {partners.map((p, i) => (
           <motion.div key={i} variants={fadeUp} className="bg-white/5 border border-white/10 rounded-2xl p-6 flex items-center justify-center h-24 w-40 md:w-48 backdrop-blur-sm">
-            <img src={p.img} alt={p.name} className="max-h-12 max-w-full object-contain brightness-0 invert opacity-70" />
+            <img src={p.img} alt={p.name} className="max-h-12 max-w-full object-contain drop-shadow-lg opacity-90" />
           </motion.div>
         ))}
       </div>
@@ -319,7 +319,7 @@ function SlideCTA() {
       {/* Animated glow */}
       <motion.div animate={{ scale: [1, 1.15, 1], opacity: [0.15, 0.3, 0.15] }} transition={{ duration: 3, repeat: Infinity }} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full bg-indigo-500/20 blur-[100px] pointer-events-none" />
       <motion.div variants={fadeUp}>
-        <img src={amparaLogo} alt="AMPARA Mulher" className="h-24 md:h-32 object-contain brightness-0 invert relative z-10" />
+        <img src={amparaLogo} alt="AMPARA Mulher" className="h-24 md:h-32 object-contain drop-shadow-lg relative z-10" />
       </motion.div>
       <motion.h2 variants={fadeUp} className="text-3xl md:text-5xl font-bold text-white font-display max-w-3xl relative z-10">
         Tecnologia que <span className="bg-gradient-to-r from-indigo-400 via-violet-400 to-cyan-400 bg-clip-text text-transparent">salva vidas</span>
@@ -334,7 +334,7 @@ function SlideCTA() {
         </a>
       </motion.div>
       <motion.div variants={fadeUp} className="absolute bottom-10 opacity-40">
-        <img src={orizonLogo} alt="Orizon Tech" className="h-6 object-contain brightness-0 invert" />
+        <img src={orizonLogo} alt="Orizon Tech" className="h-6 object-contain drop-shadow-lg" />
       </motion.div>
     </motion.div>
   );
@@ -378,7 +378,7 @@ export default function Apresentacao() {
 
       {/* Header */}
       <div className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-5 py-4">
-        <img src={amparaLogo} alt="AMPARA" className="h-6 object-contain brightness-0 invert opacity-60" />
+        <img src={amparaLogo} alt="AMPARA" className="h-6 object-contain drop-shadow-lg opacity-60" />
         <span className="text-sm font-mono text-slate-500">
           {String(current + 1).padStart(2, "0")}/{String(TOTAL_SLIDES).padStart(2, "0")}
         </span>
