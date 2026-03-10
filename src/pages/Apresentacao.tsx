@@ -114,7 +114,7 @@ function SlidePlataforma() {
     { icon: Mic, label: "Gravação Inteligente", color: "from-rose-500 to-pink-600" },
     { icon: Bell, label: "Botão de Pânico", color: "from-amber-500 to-orange-600" },
     { icon: BarChart3, label: "Dashboard de Risco", color: "from-cyan-500 to-blue-600" },
-    { icon: MapPin, label: "GPS em Tempo Real", color: "from-emerald-500 to-green-600" },
+    
     { icon: Brain, label: "IA Preditiva", color: "from-violet-500 to-purple-600" },
   ];
   return (
