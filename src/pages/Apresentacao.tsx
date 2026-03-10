@@ -7,7 +7,7 @@ import {
   BarChart3, Layers, Settings, FileText
 } from "lucide-react";
 import amparaLogo from "@/assets/ampara-logo.png";
-import orizonLogo from "@/assets/orizon-tech-logo-transparent.png";
+import orizonLogo from "@/assets/orizon-tech-logo-dark-bg.png";
 import partnerFacimus from "@/assets/partner-facimus.png";
 import partnerHpe from "@/assets/partner-hpe.svg";
 import partnerAggregar from "@/assets/partner-aggregar-v3.png";
