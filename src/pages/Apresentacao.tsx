@@ -220,11 +220,11 @@ function SlideMercado() {
 
 function SlideRoadmap() {
   const milestones = [
-    { period: "2024 Q3–Q4", title: "MVP & Piloto", desc: "App com gravação e IA · Piloto em 2 municípios", status: "done" },
-    { period: "2025 Q1–Q2", title: "Expansão Regional", desc: "Integração COPOM/190 · Portal de transparência", status: "done" },
-    { period: "2025 Q3–Q4", title: "Escala Estadual", desc: "Suporte humanizado · API parceiros · 20 municípios", status: "current" },
-    { period: "2026 Q1–Q2", title: "Plataforma Nacional", desc: "SDK parceiros · SaaS para estados · IA multilíngue", status: "future" },
-    { period: "2026 Q3+", title: "Internacionalização", desc: "Expansão LATAM · Parcerias ONU/ONG", status: "future" },
+    { period: "2024 Q3–Q4", title: "Desenvolvimento", desc: "Arquitetura · App móvel · Painel web · IA de análise", status: "done" },
+    { period: "2025 Q1–Q2", title: "MVP & Piloto", desc: "Piloto em 2 municípios · Validação com usuárias reais", status: "current" },
+    { period: "2025 Q3–Q4", title: "Expansão Regional", desc: "Integração COPOM/190 · Portal de transparência · 5 municípios", status: "future" },
+    { period: "2026 Q1–Q2", title: "Escala Estadual", desc: "Suporte humanizado · API parceiros · 20 municípios", status: "future" },
+    { period: "2026 Q3+", title: "Plataforma Nacional", desc: "SaaS para estados · Expansão LATAM · Parcerias ONU/ONG", status: "future" },
   ];
   const dotColor = { done: "bg-emerald-400", current: "bg-indigo-400 animate-pulse", future: "bg-slate-600" };
   return (
