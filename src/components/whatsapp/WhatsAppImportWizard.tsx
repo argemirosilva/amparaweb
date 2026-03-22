@@ -88,7 +88,10 @@ export default function WhatsAppImportWizard({ open, onOpenChange, onImportCompl
   const [analyzedChunks, setAnalyzedChunks] = useState(0);
   const [result, setResult] = useState<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [ocrLoading, setOcrLoading] = useState(false);
+  const [ocrPreviews, setOcrPreviews] = useState<string[]>([]);
 
   const reset = () => {
     setStep(1);
@@ -102,6 +105,8 @@ export default function WhatsAppImportWizard({ open, onOpenChange, onImportCompl
     setTotalChunks(0);
     setAnalyzedChunks(0);
     setResult(null);
+    setOcrLoading(false);
+    setOcrPreviews([]);
     if (pollRef.current) clearInterval(pollRef.current);
   };
 
