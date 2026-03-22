@@ -147,6 +147,58 @@ export default function WhatsAppImportWizard({ open, onOpenChange, onImportCompl
     reader.readAsText(file);
   };
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setOcrLoading(true);
+    try {
+      // Convert images to base64
+      const base64Images: string[] = [];
+      const previews: string[] = [];
+      for (let i = 0; i < Math.min(files.length, 10); i++) {
+        const file = files[i];
+        const base64 = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.readAsDataURL(file);
+        });
+        base64Images.push(base64);
+        previews.push(base64);
+      }
+      setOcrPreviews(previews);
+
+      // Call OCR edge function
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/whatsapp-ocr`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: SUPABASE_KEY,
+        },
+        body: JSON.stringify({ images: base64Images }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        toast({ title: "Erro no OCR", description: data.error || "Não foi possível extrair o texto.", variant: "destructive" });
+        setOcrPreviews([]);
+        return;
+      }
+
+      if (data.text) {
+        setChatText((prev) => prev ? prev + "\n" + data.text : data.text);
+        toast({ title: "Texto extraído!", description: `Screenshots processados com sucesso.` });
+      }
+    } catch (err) {
+      toast({ title: "Erro", description: "Falha ao processar imagens.", variant: "destructive" });
+      setOcrPreviews([]);
+    } finally {
+      setOcrLoading(false);
+      if (imageInputRef.current) imageInputRef.current.value = "";
+    }
+  };
+
   const handlePartnerSelect = (name: string) => {
     setSelectedPartner(name);
     setStep(3);
