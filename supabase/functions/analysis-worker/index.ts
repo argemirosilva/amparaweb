@@ -88,11 +88,11 @@ import { buildAnalysisPrompt, normalizeAnalysisOutput } from "../_shared/buildAn
 // WORKER: MICRO
 // ============================================================
 async function runMicro(supabase: any, jobId: string, payload: any): Promise<any> {
-  const { transcription_id, recording_id, user_id } = payload;
+  const { transcription_id, recording_id, user_id, import_id, chat_text } = payload;
 
-  // Get transcription text
-  let transcricao: string | null = null;
-  if (recording_id) {
+  // Get transcription text — from chat_text (WhatsApp import) or recording
+  let transcricao: string | null = chat_text || null;
+  if (!transcricao && recording_id) {
     const { data } = await supabase.from("gravacoes").select("transcricao").eq("id", recording_id).maybeSingle();
     transcricao = data?.transcricao;
   }
@@ -100,26 +100,30 @@ async function runMicro(supabase: any, jobId: string, payload: any): Promise<any
 
   const inputHash = await hashText(transcricao);
 
-  // Idempotency check: same input_hash + same prompt_version for this recording
-  const { data: existing } = await supabase
-    .from("analysis_micro_results")
-    .select("id")
-    .eq("recording_id", recording_id)
-    .eq("latest", true)
-    .eq("input_hash", inputHash)
-    .eq("prompt_version", MICRO_PROMPT_VERSION)
-    .maybeSingle();
-
-  if (existing) {
-    console.log(`Idempotent skip: micro result ${existing.id} already exists for recording ${recording_id}`);
-    return { skipped: true, result_id: existing.id };
+  // Idempotency check
+  if (recording_id) {
+    const { data: existing } = await supabase
+      .from("analysis_micro_results")
+      .select("id")
+      .eq("recording_id", recording_id)
+      .eq("latest", true)
+      .eq("input_hash", inputHash)
+      .eq("prompt_version", MICRO_PROMPT_VERSION)
+      .maybeSingle();
+    if (existing) {
+      console.log(`Idempotent skip: micro result ${existing.id} already exists for recording ${recording_id}`);
+      return { skipped: true, result_id: existing.id };
+    }
   }
 
   // Run AI
   const systemPrompt = await buildAnalysisPrompt(supabase);
+  const userPromptPrefix = import_id
+    ? `Analise esta conversa do WhatsApp (contato: ${payload.contact_label || "parceiro"}):\n\n`
+    : `Analise esta transcrição:\n\n`;
   const raw = await callAI([
     { role: "system", content: systemPrompt },
-    { role: "user", content: `Analise esta transcrição:\n\n${transcricao}` },
+    { role: "user", content: `${userPromptPrefix}${transcricao}` },
   ], MICRO_MODEL);
 
   let parsed: any;
@@ -127,9 +131,9 @@ async function runMicro(supabase: any, jobId: string, payload: any): Promise<any
     parsed = parseAIJson(raw);
     parsed = normalizeAnalysisOutput(parsed);
   } catch {
-    // Store error result
     await supabase.from("analysis_micro_results").insert({
-      user_id, recording_id, transcription_id,
+      user_id, recording_id: recording_id || null, transcription_id: transcription_id || null,
+      import_id: import_id || null,
       prompt_version: MICRO_PROMPT_VERSION, model: MICRO_MODEL,
       input_hash: inputHash, output_json: { raw_response: raw.substring(0, 1000) },
       risk_level: "sem_risco", context_classification: "saudavel",
@@ -158,7 +162,8 @@ async function runMicro(supabase: any, jobId: string, payload: any): Promise<any
   }
 
   const { data: inserted, error: insErr } = await supabase.from("analysis_micro_results").insert({
-    user_id, recording_id, transcription_id,
+    user_id, recording_id: recording_id || null, transcription_id: transcription_id || null,
+    import_id: import_id || null,
     prompt_version: MICRO_PROMPT_VERSION, model: MICRO_MODEL,
     input_hash: inputHash, output_json: parsed,
     risk_level: riskLevel, context_classification: contextClass,
@@ -167,26 +172,46 @@ async function runMicro(supabase: any, jobId: string, payload: any): Promise<any
 
   if (insErr) throw new Error(`Insert error: ${insErr.message}`);
 
-  // Also write to legacy gravacoes_analises for backward compat
-  const { data: existingLegacy } = await supabase
-    .from("gravacoes_analises").select("id").eq("gravacao_id", recording_id).maybeSingle();
-  
-  const legacyData = {
-    gravacao_id: recording_id, user_id,
-    resumo: parsed.resumo_contexto || "",
-    sentimento: parsed.sentimento || "neutro",
-    nivel_risco: riskLevel,
-    categorias: parsed.categorias || [],
-    palavras_chave: parsed.palavras_chave || [],
-    xingamentos: parsed.xingamentos || [],
-    analise_completa: parsed,
-    modelo_usado: MICRO_MODEL,
-  };
+  // Write to legacy gravacoes_analises ONLY for recording-based analyses (not WhatsApp imports)
+  if (recording_id) {
+    const { data: existingLegacy } = await supabase
+      .from("gravacoes_analises").select("id").eq("gravacao_id", recording_id).maybeSingle();
+    
+    const legacyData = {
+      gravacao_id: recording_id, user_id,
+      resumo: parsed.resumo_contexto || "",
+      sentimento: parsed.sentimento || "neutro",
+      nivel_risco: riskLevel,
+      categorias: parsed.categorias || [],
+      palavras_chave: parsed.palavras_chave || [],
+      xingamentos: parsed.xingamentos || [],
+      analise_completa: parsed,
+      modelo_usado: MICRO_MODEL,
+    };
 
-  if (existingLegacy) {
-    await supabase.from("gravacoes_analises").update(legacyData).eq("id", existingLegacy.id);
-  } else {
-    await supabase.from("gravacoes_analises").insert(legacyData);
+    if (existingLegacy) {
+      await supabase.from("gravacoes_analises").update(legacyData).eq("id", existingLegacy.id);
+    } else {
+      await supabase.from("gravacoes_analises").insert(legacyData);
+    }
+  }
+
+  // Update WhatsApp import progress if applicable
+  if (import_id) {
+    const { data: analyzedCount } = await supabase
+      .from("analysis_micro_results")
+      .select("id")
+      .eq("import_id", import_id)
+      .eq("status", "success");
+
+    const count = (analyzedCount || []).length;
+    const { data: imp } = await supabase.from("whatsapp_imports")
+      .select("total_chunks").eq("id", import_id).maybeSingle();
+
+    await supabase.from("whatsapp_imports").update({
+      analyzed_chunks: count,
+      status: count >= (imp?.total_chunks || 0) ? "done" : "processing",
+    }).eq("id", import_id);
   }
 
   return { result_id: inserted.id, risk_level: riskLevel, cycle_phase: cyclePhase };

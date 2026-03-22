@@ -2046,6 +2046,205 @@ RETORNE APENAS JSON válido:
         return json(workerData, workerRes.status);
       }
 
+      // ========== WHATSAPP IMPORT ==========
+      case "importWhatsApp": {
+        const { chat_text, contact_label } = params;
+        if (!chat_text || !contact_label) return json({ error: "chat_text e contact_label obrigatórios" }, 400);
+        if (chat_text.length > 2_000_000) return json({ error: "Texto muito grande (máx 2MB)" }, 400);
+
+        // Parse WhatsApp BR format: DD/MM/YYYY HH:MM - Name: message
+        const msgRegex = /^(\d{2}\/\d{2}\/\d{4}\s+\d{2}:\d{2})\s*-\s*([^:]+):\s*(.*)$/;
+        const lines = chat_text.split("\n");
+        const messages: { ts: string; sender: string; text: string }[] = [];
+
+        for (const line of lines) {
+          const match = line.match(msgRegex);
+          if (match) {
+            messages.push({ ts: match[1], sender: match[2].trim(), text: match[3].trim() });
+          } else if (messages.length > 0) {
+            // Continuation of previous message
+            messages[messages.length - 1].text += "\n" + line;
+          }
+        }
+
+        if (messages.length < 3) return json({ error: "Poucas mensagens detectadas. Verifique o formato." }, 400);
+
+        // Chunk into ~50 message groups
+        const CHUNK_SIZE = 50;
+        const chunks: string[] = [];
+        for (let i = 0; i < messages.length; i += CHUNK_SIZE) {
+          const slice = messages.slice(i, i + CHUNK_SIZE);
+          chunks.push(slice.map(m => `[${m.ts}] ${m.sender}: ${m.text}`).join("\n"));
+        }
+
+        // Create import record
+        const { data: imp, error: impErr } = await supabase.from("whatsapp_imports").insert({
+          user_id: userId,
+          contact_label,
+          total_messages: messages.length,
+          total_chunks: chunks.length,
+          analyzed_chunks: 0,
+          status: "processing",
+        }).select("id").single();
+
+        if (impErr) return json({ error: "Erro ao criar import" }, 500);
+
+        // Enqueue analysis jobs for each chunk
+        const jobs = chunks.map((chunk, idx) => ({
+          user_id: userId,
+          job_type: "micro",
+          payload_json: {
+            user_id: userId,
+            import_id: imp.id,
+            chat_text: chunk,
+            chunk_index: idx,
+            total_chunks: chunks.length,
+            contact_label,
+          },
+          status: "queued",
+        }));
+
+        await supabase.from("analysis_jobs").insert(jobs);
+
+        // Detect participants for frontend
+        const participants = [...new Set(messages.map(m => m.sender))];
+
+        return json({
+          success: true,
+          import_id: imp.id,
+          total_messages: messages.length,
+          total_chunks: chunks.length,
+          participants,
+        });
+      }
+
+      case "getWhatsAppImports": {
+        const { data } = await supabase
+          .from("whatsapp_imports")
+          .select("id, contact_label, total_messages, total_chunks, analyzed_chunks, status, summary_json, created_at, error_message")
+          .eq("user_id", userId)
+          .order("created_at", { ascending: false })
+          .limit(params.limit || 20);
+        return json({ success: true, imports: data || [] });
+      }
+
+      case "getWhatsAppImportDetail": {
+        const { import_id } = params;
+        if (!import_id) return json({ error: "import_id obrigatório" }, 400);
+
+        const { data: imp } = await supabase
+          .from("whatsapp_imports")
+          .select("*")
+          .eq("id", import_id)
+          .eq("user_id", userId)
+          .maybeSingle();
+        if (!imp) return json({ error: "Import não encontrado" }, 404);
+
+        const { data: results } = await supabase
+          .from("analysis_micro_results")
+          .select("id, risk_level, context_classification, cycle_phase, output_json, created_at")
+          .eq("import_id", import_id)
+          .eq("latest", true)
+          .eq("status", "success")
+          .order("created_at", { ascending: true });
+
+        // Consolidate
+        const riskCounts: Record<string, number> = {};
+        const violenceTypes: Record<string, number> = {};
+        const allTaticas: string[] = [];
+        const allOrientacoes: string[] = [];
+        for (const r of (results || [])) {
+          const oj = r.output_json as any;
+          riskCounts[r.risk_level] = (riskCounts[r.risk_level] || 0) + 1;
+          for (const t of (oj?.tipos_violencia || [])) {
+            if (t !== "nenhuma") violenceTypes[t] = (violenceTypes[t] || 0) + 1;
+          }
+          for (const tac of (oj?.taticas_manipulativas || [])) {
+            if (tac?.tatica) allTaticas.push(tac.tatica);
+          }
+          for (const o of (oj?.orientacoes_vitima || [])) {
+            if (!allOrientacoes.includes(o)) allOrientacoes.push(o);
+          }
+        }
+
+        // Predominant risk
+        const predominantRisk = Object.entries(riskCounts)
+          .sort((a, b) => b[1] - a[1])[0]?.[0] || "sem_risco";
+
+        return json({
+          success: true,
+          import: imp,
+          results: results || [],
+          consolidated: {
+            predominant_risk: predominantRisk,
+            risk_distribution: riskCounts,
+            violence_types: violenceTypes,
+            top_taticas: [...new Set(allTaticas)].slice(0, 10),
+            orientacoes: allOrientacoes.slice(0, 8),
+            total_analyzed: (results || []).length,
+          },
+        });
+      }
+
+      case "processWhatsAppChunks": {
+        // Triggered internally to process pending chunks for an import
+        const { import_id } = params;
+        if (!import_id) return json({ error: "import_id obrigatório" }, 400);
+
+        const { data: imp } = await supabase
+          .from("whatsapp_imports")
+          .select("id, user_id, total_chunks")
+          .eq("id", import_id)
+          .eq("user_id", userId)
+          .maybeSingle();
+        if (!imp) return json({ error: "Import não encontrado" }, 404);
+
+        // Get pending jobs for this import
+        const { data: pendingJobs } = await supabase
+          .from("analysis_jobs")
+          .select("id, payload_json")
+          .eq("user_id", userId)
+          .eq("status", "queued")
+          .eq("job_type", "micro")
+          .limit(5);
+
+        const importJobs = (pendingJobs || []).filter(
+          (j: any) => j.payload_json?.import_id === import_id
+        );
+
+        const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+        const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+        let processed = 0;
+
+        for (const job of importJobs) {
+          try {
+            await fetch(`${supabaseUrl}/functions/v1/analysis-worker`, {
+              method: "POST",
+              headers: { Authorization: `Bearer ${serviceKey}`, "Content-Type": "application/json" },
+              body: JSON.stringify({ action: "processJob", job_id: job.id }),
+            });
+            processed++;
+          } catch (e) {
+            console.error(`Failed to process chunk job ${job.id}:`, e);
+          }
+        }
+
+        // Check completion
+        const { data: analyzed } = await supabase
+          .from("analysis_micro_results")
+          .select("id")
+          .eq("import_id", import_id)
+          .eq("status", "success");
+
+        const analyzedCount = (analyzed || []).length;
+        await supabase.from("whatsapp_imports").update({
+          analyzed_chunks: analyzedCount,
+          status: analyzedCount >= imp.total_chunks ? "done" : "processing",
+        }).eq("id", import_id);
+
+        return json({ success: true, processed, analyzed_chunks: analyzedCount, total_chunks: imp.total_chunks });
+      }
+
       default:
         return json({ error: `Action desconhecida: ${action}` }, 400);
     }
