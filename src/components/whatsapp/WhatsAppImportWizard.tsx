@@ -32,7 +32,12 @@ import {
   Heart,
   Shield,
   X,
+  Camera,
+  Image as ImageIcon,
 } from "lucide-react";
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 const EMPATHY_PHRASES = [
   "Estamos lendo com cuidado…",
@@ -83,7 +88,10 @@ export default function WhatsAppImportWizard({ open, onOpenChange, onImportCompl
   const [analyzedChunks, setAnalyzedChunks] = useState(0);
   const [result, setResult] = useState<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [ocrLoading, setOcrLoading] = useState(false);
+  const [ocrPreviews, setOcrPreviews] = useState<string[]>([]);
 
   const reset = () => {
     setStep(1);
@@ -97,6 +105,8 @@ export default function WhatsAppImportWizard({ open, onOpenChange, onImportCompl
     setTotalChunks(0);
     setAnalyzedChunks(0);
     setResult(null);
+    setOcrLoading(false);
+    setOcrPreviews([]);
     if (pollRef.current) clearInterval(pollRef.current);
   };
 
@@ -135,6 +145,58 @@ export default function WhatsAppImportWizard({ open, onOpenChange, onImportCompl
       setChatText(text);
     };
     reader.readAsText(file);
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setOcrLoading(true);
+    try {
+      // Convert images to base64
+      const base64Images: string[] = [];
+      const previews: string[] = [];
+      for (let i = 0; i < Math.min(files.length, 10); i++) {
+        const file = files[i];
+        const base64 = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.readAsDataURL(file);
+        });
+        base64Images.push(base64);
+        previews.push(base64);
+      }
+      setOcrPreviews(previews);
+
+      // Call OCR edge function
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/whatsapp-ocr`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: SUPABASE_KEY,
+        },
+        body: JSON.stringify({ images: base64Images }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        toast({ title: "Erro no OCR", description: data.error || "Não foi possível extrair o texto.", variant: "destructive" });
+        setOcrPreviews([]);
+        return;
+      }
+
+      if (data.text) {
+        setChatText((prev) => prev ? prev + "\n" + data.text : data.text);
+        toast({ title: "Texto extraído!", description: `Screenshots processados com sucesso.` });
+      }
+    } catch (err) {
+      toast({ title: "Erro", description: "Falha ao processar imagens.", variant: "destructive" });
+      setOcrPreviews([]);
+    } finally {
+      setOcrLoading(false);
+      if (imageInputRef.current) imageInputRef.current.value = "";
+    }
   };
 
   const handlePartnerSelect = (name: string) => {
@@ -240,8 +302,8 @@ export default function WhatsAppImportWizard({ open, onOpenChange, onImportCompl
                 <MessageCircle className="w-7 h-7 text-[#25D366]" />
               </div>
               <h3 className="text-lg font-bold text-foreground">Analisar conversa do WhatsApp</h3>
-              <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-                Cole o texto da conversa abaixo ou envie o arquivo <code className="text-xs bg-muted px-1 rounded">.txt</code> exportado do WhatsApp.
+            <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+                Cole o texto, envie o <code className="text-xs bg-muted px-1 rounded">.txt</code> ou tire prints da conversa.
               </p>
             </div>
 
@@ -252,13 +314,21 @@ export default function WhatsAppImportWizard({ open, onOpenChange, onImportCompl
               className="min-h-[200px] text-sm font-mono bg-muted/30 border-dashed"
             />
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <input
                 ref={fileInputRef}
                 type="file"
                 accept=".txt"
                 className="hidden"
                 onChange={handleFileUpload}
+              />
+              <input
+                ref={imageInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                onChange={handleImageUpload}
               />
               <Button
                 variant="outline"
@@ -269,6 +339,16 @@ export default function WhatsAppImportWizard({ open, onOpenChange, onImportCompl
                 <Upload className="w-3.5 h-3.5" />
                 Enviar .txt
               </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5 text-xs rounded-lg"
+                onClick={() => imageInputRef.current?.click()}
+                disabled={ocrLoading}
+              >
+                {ocrLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
+                {ocrLoading ? "Extraindo texto…" : "Enviar prints"}
+              </Button>
               {msgCount > 0 && (
                 <span className="text-xs text-muted-foreground">
                   {msgCount} mensagens detectadas
@@ -276,18 +356,50 @@ export default function WhatsAppImportWizard({ open, onOpenChange, onImportCompl
               )}
             </div>
 
+            {/* OCR image previews */}
+            {ocrPreviews.length > 0 && (
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                {ocrPreviews.map((src, i) => (
+                  <img
+                    key={i}
+                    src={src}
+                    alt={`Print ${i + 1}`}
+                    className="h-16 w-auto rounded-lg border border-border object-cover shrink-0"
+                  />
+                ))}
+                {ocrLoading && (
+                  <div className="h-16 w-16 rounded-lg border border-dashed border-border flex items-center justify-center shrink-0">
+                    <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Mini tutorial */}
             <div className="bg-muted/30 rounded-xl p-3 space-y-2">
               <p className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                 <FileText className="w-3.5 h-3.5 text-primary" />
-                Como exportar do WhatsApp
+                Como usar
               </p>
-              <ol className="text-xs text-muted-foreground space-y-1 pl-4 list-decimal">
-                <li>Abra a conversa no WhatsApp</li>
-                <li>Toque nos 3 pontinhos → <strong>Mais</strong> → <strong>Exportar conversa</strong></li>
-                <li>Escolha <strong>"Sem mídia"</strong></li>
-                <li>Cole o texto aqui ou envie o arquivo .txt</li>
-              </ol>
+              <div className="text-xs text-muted-foreground space-y-2">
+                <div>
+                  <p className="font-medium text-foreground mb-1">📄 Opção 1: Exportar conversa</p>
+                  <ol className="space-y-0.5 pl-4 list-decimal">
+                    <li>Abra a conversa no WhatsApp</li>
+                    <li>3 pontinhos → <strong>Mais</strong> → <strong>Exportar conversa</strong></li>
+                    <li>Escolha <strong>"Sem mídia"</strong></li>
+                    <li>Cole o texto ou envie o .txt</li>
+                  </ol>
+                </div>
+                <div>
+                  <p className="font-medium text-foreground mb-1">📸 Opção 2: Screenshots</p>
+                  <ol className="space-y-0.5 pl-4 list-decimal">
+                    <li>Tire prints da conversa no WhatsApp</li>
+                    <li>Toque em <strong>"Enviar prints"</strong> acima</li>
+                    <li>Extraímos o texto automaticamente com IA</li>
+                  </ol>
+                </div>
+              </div>
             </div>
 
             <Button
