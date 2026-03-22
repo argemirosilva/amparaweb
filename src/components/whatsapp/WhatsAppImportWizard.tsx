@@ -302,8 +302,8 @@ export default function WhatsAppImportWizard({ open, onOpenChange, onImportCompl
                 <MessageCircle className="w-7 h-7 text-[#25D366]" />
               </div>
               <h3 className="text-lg font-bold text-foreground">Analisar conversa do WhatsApp</h3>
-              <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-                Cole o texto da conversa abaixo ou envie o arquivo <code className="text-xs bg-muted px-1 rounded">.txt</code> exportado do WhatsApp.
+            <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+                Cole o texto, envie o <code className="text-xs bg-muted px-1 rounded">.txt</code> ou tire prints da conversa.
               </p>
             </div>
 
