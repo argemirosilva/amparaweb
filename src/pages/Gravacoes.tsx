@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import WhatsAppImportWizard from "@/components/whatsapp/WhatsAppImportWizard";
 import { useIsMobile } from "@/hooks/use-mobile";
 import PullToRefresh from "@/components/ui/pull-to-refresh";
 import { useAuth } from "@/contexts/AuthContext";
@@ -25,6 +26,7 @@ import {
   Trash2,
   CheckSquare,
   X,
+  MessageCircle,
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -204,6 +206,7 @@ export default function GravacoesPage() {
   const [batchDeleting, setBatchDeleting] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [whatsAppOpen, setWhatsAppOpen] = useState(false);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   
@@ -353,6 +356,22 @@ export default function GravacoesPage() {
           </div>
         </div>
       </div>
+
+      {/* ── WhatsApp Import Card ── */}
+      <button
+        onClick={() => setWhatsAppOpen(true)}
+        className="w-full rounded-2xl border border-[#25D366]/30 bg-[#25D366]/5 hover:bg-[#25D366]/10 p-4 flex items-center gap-4 transition-all text-left group"
+      >
+        <div className="w-12 h-12 rounded-xl bg-[#25D366]/15 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+          <MessageCircle className="w-6 h-6 text-[#25D366]" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-foreground">Analisar conversa do WhatsApp</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Cole ou importe uma conversa para análise de risco</p>
+        </div>
+      </button>
+
+      <WhatsAppImportWizard open={whatsAppOpen} onOpenChange={setWhatsAppOpen} onImportComplete={loadData} />
 
       {/* ── Recorder card ── */}
       <AudioRecorderCard onUploaded={() => { setPage(1); loadData(); }} />
