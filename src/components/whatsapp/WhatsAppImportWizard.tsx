@@ -314,13 +314,21 @@ export default function WhatsAppImportWizard({ open, onOpenChange, onImportCompl
               className="min-h-[200px] text-sm font-mono bg-muted/30 border-dashed"
             />
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <input
                 ref={fileInputRef}
                 type="file"
                 accept=".txt"
                 className="hidden"
                 onChange={handleFileUpload}
+              />
+              <input
+                ref={imageInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                onChange={handleImageUpload}
               />
               <Button
                 variant="outline"
@@ -331,12 +339,41 @@ export default function WhatsAppImportWizard({ open, onOpenChange, onImportCompl
                 <Upload className="w-3.5 h-3.5" />
                 Enviar .txt
               </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5 text-xs rounded-lg"
+                onClick={() => imageInputRef.current?.click()}
+                disabled={ocrLoading}
+              >
+                {ocrLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
+                {ocrLoading ? "Extraindo texto…" : "Enviar prints"}
+              </Button>
               {msgCount > 0 && (
                 <span className="text-xs text-muted-foreground">
                   {msgCount} mensagens detectadas
                 </span>
               )}
             </div>
+
+            {/* OCR image previews */}
+            {ocrPreviews.length > 0 && (
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                {ocrPreviews.map((src, i) => (
+                  <img
+                    key={i}
+                    src={src}
+                    alt={`Print ${i + 1}`}
+                    className="h-16 w-auto rounded-lg border border-border object-cover shrink-0"
+                  />
+                ))}
+                {ocrLoading && (
+                  <div className="h-16 w-16 rounded-lg border border-dashed border-border flex items-center justify-center shrink-0">
+                    <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Mini tutorial */}
             <div className="bg-muted/30 rounded-xl p-3 space-y-2">
