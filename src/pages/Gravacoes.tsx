@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import WhatsAppImportWizard from "@/components/whatsapp/WhatsAppImportWizard";
 import { useIsMobile } from "@/hooks/use-mobile";
 import PullToRefresh from "@/components/ui/pull-to-refresh";
 import { useAuth } from "@/contexts/AuthContext";
