@@ -26,6 +26,7 @@ import {
   Trash2,
   CheckSquare,
   X,
+  MessageCircle,
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
