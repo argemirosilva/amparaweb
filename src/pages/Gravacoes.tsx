@@ -206,6 +206,7 @@ export default function GravacoesPage() {
   const [batchDeleting, setBatchDeleting] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [whatsAppOpen, setWhatsAppOpen] = useState(false);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   
