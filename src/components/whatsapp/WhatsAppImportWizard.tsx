@@ -379,14 +379,27 @@ export default function WhatsAppImportWizard({ open, onOpenChange, onImportCompl
             <div className="bg-muted/30 rounded-xl p-3 space-y-2">
               <p className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                 <FileText className="w-3.5 h-3.5 text-primary" />
-                Como exportar do WhatsApp
+                Como usar
               </p>
-              <ol className="text-xs text-muted-foreground space-y-1 pl-4 list-decimal">
-                <li>Abra a conversa no WhatsApp</li>
-                <li>Toque nos 3 pontinhos → <strong>Mais</strong> → <strong>Exportar conversa</strong></li>
-                <li>Escolha <strong>"Sem mídia"</strong></li>
-                <li>Cole o texto aqui ou envie o arquivo .txt</li>
-              </ol>
+              <div className="text-xs text-muted-foreground space-y-2">
+                <div>
+                  <p className="font-medium text-foreground mb-1">📄 Opção 1: Exportar conversa</p>
+                  <ol className="space-y-0.5 pl-4 list-decimal">
+                    <li>Abra a conversa no WhatsApp</li>
+                    <li>3 pontinhos → <strong>Mais</strong> → <strong>Exportar conversa</strong></li>
+                    <li>Escolha <strong>"Sem mídia"</strong></li>
+                    <li>Cole o texto ou envie o .txt</li>
+                  </ol>
+                </div>
+                <div>
+                  <p className="font-medium text-foreground mb-1">📸 Opção 2: Screenshots</p>
+                  <ol className="space-y-0.5 pl-4 list-decimal">
+                    <li>Tire prints da conversa no WhatsApp</li>
+                    <li>Toque em <strong>"Enviar prints"</strong> acima</li>
+                    <li>Extraímos o texto automaticamente com IA</li>
+                  </ol>
+                </div>
+              </div>
             </div>
 
             <Button
