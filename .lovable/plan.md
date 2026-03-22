@@ -1,72 +1,82 @@
 
 
-## Plano: Avaliação de Atendimento + Relatório de Suporte
+## Plano: Importação de Conversas WhatsApp — Foco na Experiência
 
-### Visão Geral
-Três entregas: (1) avaliação pós-atendimento pela usuária, (2) nova aba "Suporte" em Admin Relatórios com gráficos de avaliações, (3) ranking Top 10 agentes.
+### Conceito de UX
 
----
+Em vez de uma página separada com formulários tradicionais, a experiência será um **fluxo guiado tipo wizard** integrado na tela de Gravações, acessível por um botão atrativo. O processo todo acontece em **3 passos visuais** dentro de um drawer/modal fullscreen no mobile:
 
-### 1. Tabela `support_ratings` (migração)
-
-```sql
-CREATE TABLE public.support_ratings (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  session_id uuid NOT NULL,
-  user_id uuid NOT NULL,
-  agent_id uuid,
-  rating integer NOT NULL CHECK (rating BETWEEN 1 AND 5),
-  comment text,
-  created_at timestamptz NOT NULL DEFAULT now()
-);
-ALTER TABLE public.support_ratings ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Block direct access support_ratings" ON public.support_ratings FOR ALL USING (false) WITH CHECK (false);
-CREATE UNIQUE INDEX idx_support_ratings_session ON public.support_ratings(session_id);
+```text
+┌─────────────────────────────────────────┐
+│  Passo 1: "Cola aqui"                  │
+│  ┌─────────────────────────────────┐    │
+│  │  Área grande de drag & drop     │    │
+│  │  ou colar texto (ctrl+v)        │    │
+│  │  com ícone animado do WhatsApp  │    │
+│  └─────────────────────────────────┘    │
+│  + Mini tutorial visual (3 prints)     │
+├─────────────────────────────────────────┤
+│  Passo 2: "Quem é ele?"                │
+│  Auto-detecta nomes da conversa        │
+│  Usuária só toca no nome do parceiro   │
+├─────────────────────────────────────────┤
+│  Passo 3: "Analisando..."              │
+│  Animação de progresso com frases      │
+│  motivacionais enquanto processa       │
+│  → Resultado aparece como timeline     │
+└─────────────────────────────────────────┘
 ```
 
-Uma avaliação por sessão (1-5 estrelas + comentário opcional).
+### Diferenciais de UX
 
----
+1. **Colar direto** — A usuária pode simplesmente copiar a conversa no WhatsApp e colar (Ctrl+V / long press) numa área grande. Sem precisar exportar arquivo `.txt`. Também aceita upload de `.txt` como alternativa.
 
-### 2. Backend: `support-api` — duas novas actions
+2. **Detecção automática de participantes** — O parser identifica os nomes e apresenta chips clicáveis: "Quem é o parceiro nesta conversa?" — ela só toca no nome.
 
-**`rateSession`** (user action):
-- Recebe `session_id`, `rating` (1-5), `comment` (opcional)
-- Valida: sessão pertence ao user, status = closed, ainda não avaliada
-- Insere em `support_ratings`
-- Registra na timeline
+3. **Progresso com empatia** — Enquanto analisa, frases como "Estamos lendo com cuidado...", "Identificando padrões...", "Quase lá..." com animação suave.
 
-**`getSupportStats`** (admin action):
-- Retorna avaliações agregadas: média geral, distribuição por nota, média por agente com nome, total de sessões por agente
-- Filtrável por período (since_date)
+4. **Resultado como timeline visual** — Não mostra dados crus. Mostra uma linha do tempo da conversa com trechos destacados por cor de risco, e um resumo humanizado no topo.
 
----
+### Implementação Técnica
 
-### 3. Frontend: Avaliação pela usuária
+#### 1. Database (migração)
+- Tabela `whatsapp_imports` (id, user_id, contact_label, total_messages, total_chunks, analyzed_chunks, status, summary_json, created_at)
+- RLS: acesso bloqueado direto (via edge function apenas)
+- Coluna `import_id` nullable em `analysis_micro_results`
 
-**`src/pages/support/SupportTicketDetail.tsx`**:
-- Quando `session.status === "closed"`, exibir card de avaliação com 5 estrelas clicáveis + textarea para comentário
-- Após envio, exibir "Obrigada pela avaliação" com a nota dada
-- Verificar se já foi avaliado ao carregar (nova flag retornada pelo `getMySession`)
+#### 2. Backend — `web-api` (3 novas actions)
+- **`importWhatsApp`**: Recebe texto bruto + contact_label. Parser regex server-side para formato WhatsApp BR (`DD/MM/YYYY HH:MM - Nome: msg`). Divide em chunks de ~50 msgs. Cria registro + enfileira jobs MICRO.
+- **`getWhatsAppImports`**: Lista imports com progresso.
+- **`getWhatsAppImportDetail`**: Retorna import + análises vinculadas consolidadas.
 
----
+#### 3. `analysis-worker` — adaptação mínima
+- Quando payload tem `import_id` + `chat_text`: usa texto direto como transcrição, armazena com `import_id`, pula legacy `gravacoes_analises`.
 
-### 4. Frontend: Aba "Suporte" em Admin Relatórios
+#### 4. Frontend
+- **Botão na tela de Gravações**: Card atrativo "Analisar conversa do WhatsApp" com ícone verde do MessageCircle.
+- **Drawer fullscreen** (mobile) ou **Dialog** (desktop) com wizard de 3 passos:
+  - Passo 1: Textarea grande + drag/drop `.txt` + mini tutorial visual (como exportar do WhatsApp)
+  - Passo 2: Chips com nomes detectados para selecionar o parceiro
+  - Passo 3: Progresso animado com frases empáticas
+- **Tela de resultado**: Card na lista de gravações ou seção dedicada mostrando timeline de risco + resumo humanizado
+- Reutiliza `AnaliseCard` para detalhes de cada chunk
 
-**`src/pages/admin/AdminRelatorios.tsx`**:
-- Nova aba `{ id: "suporte", label: "Suporte", icon: MessageCircle }`
-- KPIs: Total Sessões, Média Geral, % Avaliadas, Total Agentes
-- Gráfico de barras (Recharts `BarChart`): distribuição de notas 1-5
-- Tabela Top 10 agentes: #, Nome, Sessões Atendidas, Nota Média, com ordenação por nota
+#### 5. Arquivos criados/alterados
 
----
-
-### Arquivos Alterados
-
-| Arquivo | Mudança |
+| Arquivo | Ação |
 |---|---|
-| migração SQL | Cria `support_ratings` |
-| `supabase/functions/support-api/index.ts` | Actions `rateSession` + `getSupportStats` |
-| `src/pages/support/SupportTicketDetail.tsx` | Card de avaliação pós-fechamento |
-| `src/pages/admin/AdminRelatorios.tsx` | Nova aba "Suporte" com gráficos e Top 10 |
+| migração SQL | Nova tabela + coluna |
+| `web-api/index.ts` | 3 actions novas |
+| `analysis-worker/index.ts` | Suporte a `import_id` |
+| `src/components/whatsapp/WhatsAppImportWizard.tsx` | Wizard de 3 passos |
+| `src/components/whatsapp/WhatsAppResultCard.tsx` | Card de resultado |
+| `src/pages/Gravacoes.tsx` | Botão de acesso ao wizard |
+
+### Fluxo da Usuária (resumo)
+
+1. Abre Gravações → vê card "Importar conversa do WhatsApp"
+2. Toca → abre wizard → cola ou arrasta o `.txt`
+3. Sistema detecta nomes → ela toca no parceiro
+4. Animação de análise com frases acolhedoras
+5. Resultado: timeline visual com risco por trecho + resumo + orientações
 
