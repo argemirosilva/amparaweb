@@ -430,6 +430,7 @@ export type Database = {
           cycle_phase: string
           error_message: string | null
           id: string
+          import_id: string | null
           input_hash: string
           latest: boolean
           model: string
@@ -447,6 +448,7 @@ export type Database = {
           cycle_phase?: string
           error_message?: string | null
           id?: string
+          import_id?: string | null
           input_hash: string
           latest?: boolean
           model: string
@@ -464,6 +466,7 @@ export type Database = {
           cycle_phase?: string
           error_message?: string | null
           id?: string
+          import_id?: string | null
           input_hash?: string
           latest?: boolean
           model?: string
@@ -475,7 +478,15 @@ export type Database = {
           transcription_id?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "analysis_micro_results_import_id_fkey"
+            columns: ["import_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_imports"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       audio_generation_items: {
         Row: {
@@ -2069,6 +2080,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      whatsapp_imports: {
+        Row: {
+          analyzed_chunks: number
+          contact_label: string
+          created_at: string
+          error_message: string | null
+          id: string
+          status: string
+          summary_json: Json | null
+          total_chunks: number
+          total_messages: number
+          user_id: string
+        }
+        Insert: {
+          analyzed_chunks?: number
+          contact_label: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          status?: string
+          summary_json?: Json | null
+          total_chunks?: number
+          total_messages?: number
+          user_id: string
+        }
+        Update: {
+          analyzed_chunks?: number
+          contact_label?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          status?: string
+          summary_json?: Json | null
+          total_chunks?: number
+          total_messages?: number
+          user_id?: string
+        }
+        Relationships: []
       }
     }
     Views: {
