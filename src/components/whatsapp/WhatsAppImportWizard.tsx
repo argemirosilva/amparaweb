@@ -308,7 +308,7 @@ export default function WhatsAppImportWizard({ open, onOpenChange, onImportCompl
             </div>
 
             <Textarea
-              placeholder="Cole aqui o texto da conversa exportada do WhatsApp…"
+              placeholder={`Exemplo:\n22/03/2026 14:30 - João: você não sabe fazer nada\n22/03/2026 14:31 - Maria: para de falar assim`}
               value={chatText}
               onChange={(e) => setChatText(e.target.value)}
               className="min-h-[200px] text-sm font-mono bg-muted/30 border-dashed"
