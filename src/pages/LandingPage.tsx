@@ -68,11 +68,6 @@ const FAQ_ITEMS = [
 { q: "Como acionar ajuda em caso de emergência?", a: "Em situações de emergência, você pode acionar o botão de pânico dentro do aplicativo. Ao ativar, o sistema notifica automaticamente todos os seus guardiões via WhatsApp, compartilhando sua localização em tempo real. Também é possível configurar o acionamento de autoridades competentes. Além disso, você pode ligar diretamente para o Ligue 180 (Central de Atendimento à Mulher) ou o 190 (Polícia Militar) a partir do próprio aplicativo. O AMPARA também possui uma senha de coação — se alguém forçar você a abrir o app, essa senha simula uma tela normal enquanto envia um alerta silencioso." }];
 
 
-const IMPACT_NUMBERS = [
-{ value: "+2.500", label: "Mulheres protegidas" },
-{ value: "+15.000", label: "Análises realizadas" },
-{ value: "+98%", label: "Satisfação das usuárias" },
-{ value: "100%", label: "Gratuito para todas" }];
 
 
 const FLOW_TRIGGERS = [
