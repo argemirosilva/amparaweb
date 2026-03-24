@@ -321,15 +321,6 @@ export default function LandingPage() {
             )}
           </div>
 
-          {/* Impact numbers */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-14">
-            {IMPACT_NUMBERS.map((n) =>
-            <div key={n.label} className="text-center py-6">
-                <p className="text-3xl md:text-4xl font-bold text-primary">{n.value}</p>
-                <p className="text-sm text-muted-foreground mt-1">{n.label}</p>
-              </div>
-            )}
-          </div>
         </div>
        </section>
 
