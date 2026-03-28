@@ -103,6 +103,13 @@ export default function LandingPage() {
   const [contact, setContact] = useState({ nome: "", email: "", mensagem: "" });
   const [activeSection, setActiveSection] = useState("sobre");
   const subNavRef = useRef<HTMLDivElement>(null);
+  const [userCount, setUserCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    supabase.from("usuarios").select("*", { count: "exact", head: true }).then(({ count }) => {
+      if (count !== null) setUserCount(count);
+    });
+  }, []);
 
   const handleTrack = (e: React.FormEvent) => {
     e.preventDefault();
