@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, Link } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import {
@@ -102,6 +103,13 @@ export default function LandingPage() {
   const [contact, setContact] = useState({ nome: "", email: "", mensagem: "" });
   const [activeSection, setActiveSection] = useState("sobre");
   const subNavRef = useRef<HTMLDivElement>(null);
+  const [userCount, setUserCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    supabase.from("usuarios").select("*", { count: "exact", head: true }).then(({ count }) => {
+      if (count !== null) setUserCount(count);
+    });
+  }, []);
 
   const handleTrack = (e: React.FormEvent) => {
     e.preventDefault();
@@ -242,7 +250,17 @@ export default function LandingPage() {
               </a>
             </div>
 
-            {/* Tracking code */}
+            {/* User count badge */}
+            {userCount !== null && userCount > 0 && (
+              <div className="flex items-center gap-2 mt-3">
+                <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/80 backdrop-blur-sm border border-primary/20 shadow-sm">
+                  <Users className="w-4 h-4 text-primary" />
+                  <span className="text-sm font-semibold text-foreground">{userCount.toLocaleString("pt-BR")}</span>
+                  <span className="text-xs text-muted-foreground">mulheres cadastradas</span>
+                </div>
+              </div>
+            )}
+
             <div className="mt-4 p-3 rounded-xl border border-border bg-white/70 backdrop-blur-sm max-w-md">
               <p className="text-xs font-medium text-foreground mb-1.5 flex items-center gap-1.5">
                 <Radio className="w-3.5 h-3.5 text-primary" /> Recebeu um código de monitoramento?
