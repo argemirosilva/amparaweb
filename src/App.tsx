@@ -73,6 +73,7 @@ const App = () => (
             <Route path="/configurar-conta" element={<ConfigurarConta />} />
             <Route path="/redefinir-senha" element={<ConfigurarConta />} />
             <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/doc-api" element={<DocApi />} />
             <Route element={<AppLayout />}>
               <Route path="/home" element={<Home />} />
               <Route path="/mapa" element={<Mapa />} />
