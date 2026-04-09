@@ -21,16 +21,25 @@ interface Assessment {
   period_end: string;
 }
 
-// Brand colors for chart
-const CHART_STROKE = "hsl(207, 89%, 42%)";
-const CHART_ACCENT = "hsl(195, 80%, 40%)";
+// Risk level colors (matching gravacoes)
+const RISCO_COLORS: Record<string, string> = {
+  "Sem Risco": "#22c55e",
+  "Baixo": "#22c55e",
+  "Moderado": "#eab308",
+  "Alto": "#f97316",
+  "Crítico": "#ef4444",
+};
 
-const levelConfig: Record<string, { icon: typeof Activity; className: string }> = {
-  "Sem Risco": { icon: CircleCheck, className: "bg-green-100 text-green-700 border-green-200" },
-  "Baixo": { icon: CircleCheck, className: "bg-green-100 text-green-700 border-green-200" },
-  "Moderado": { icon: Activity, className: "bg-yellow-100 text-yellow-700 border-yellow-200" },
-  "Alto": { icon: AlertTriangle, className: "bg-orange-100 text-orange-700 border-orange-200" },
-  "Crítico": { icon: CircleAlert, className: "bg-red-100 text-red-700 border-red-200" },
+// Brand colors for chart
+const CHART_STROKE = "hsl(280, 60%, 48%)";
+const CHART_ACCENT = "hsl(320, 70%, 50%)";
+
+const levelConfig: Record<string, { icon: typeof Activity }> = {
+  "Sem Risco": { icon: CircleCheck },
+  "Baixo": { icon: CircleCheck },
+  "Moderado": { icon: Activity },
+  "Alto": { icon: AlertTriangle },
+  "Crítico": { icon: CircleAlert },
 };
 
 const trendIcons = {
@@ -127,9 +136,17 @@ export default function RiskEvolutionCard() {
             <>
               {/* Score + Badge + Trend */}
               <div className="flex items-center gap-2 flex-wrap">
-                <Badge className={level.className}>
-                  {assessment.risk_level}
-                </Badge>
+                <span className="relative overflow-hidden flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium text-muted-foreground">
+                  <div
+                    className="absolute inset-0 rounded-lg pointer-events-none"
+                    style={{ background: `radial-gradient(circle at 30% 50%, ${RISCO_COLORS[assessment.risk_level] || "#22c55e"}20 0%, ${RISCO_COLORS[assessment.risk_level] || "#22c55e"}08 50%, transparent 80%)` }}
+                  />
+                  <span
+                    className="relative w-2.5 h-2.5 rounded-full shrink-0"
+                    style={{ backgroundColor: RISCO_COLORS[assessment.risk_level] || "#22c55e", boxShadow: `0 0 6px ${RISCO_COLORS[assessment.risk_level] || "#22c55e"}40` }}
+                  />
+                  <span className="relative">{assessment.risk_level}</span>
+                </span>
                 <div className={`flex items-center ml-auto ${trendColor} ${trendPulse}`}>
                   <TrendIcon className="w-4 h-4" />
                 </div>
