@@ -424,37 +424,6 @@ export default function LandingPage() {
             </OrgCard>
           </div>
 
-          {/* Privacy banner - organic */}
-          <div className="mt-10 p-6 md:p-10 rounded-3xl relative overflow-hidden" style={{ background: "var(--ampara-gradient)" }}>
-            <OrgBlob className="top-[-40px] right-[-40px] w-48 h-48 opacity-[0.12]" color="hsl(0,0%,100%)" />
-            <OrgBlob className="bottom-[-30px] left-[-30px] w-32 h-32 opacity-[0.08]" color="hsl(0,0%,100%)" style={{ borderRadius: "45% 55% 50% 50% / 55% 45% 55% 45%" }} />
-            <div className="relative z-10 text-primary-foreground">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 rounded-2xl bg-white/15 flex items-center justify-center">
-                  <Lock className="w-6 h-6" />
-                </div>
-                <h3 className="text-xl md:text-2xl font-bold">Sua segurança é nossa prioridade absoluta</h3>
-              </div>
-              <p className="text-sm md:text-base opacity-90 max-w-2xl mb-6 leading-relaxed">
-                Ninguém - nem o governo, nem a polícia, nem nós - consegue saber quem você é pelos dados do painel público.
-              </p>
-              <div className="grid sm:grid-cols-3 gap-4">
-                {[
-                  { icon: ShieldCheck, title: "K-anonimato", desc: "Só mostramos dados quando existem pelo menos 5 casos parecidos na mesma região" },
-                  { icon: Clock, title: "Atraso de 48h", desc: "Nenhum dado aparece em tempo real - tudo tem um atraso de segurança de 48 horas" },
-                  { icon: Lock, title: "LGPD", desc: "Conformidade total com a Lei Geral de Proteção de Dados do Brasil" },
-                ].map((item) => (
-                  <div key={item.title} className="flex items-start gap-3 bg-white/10 rounded-xl p-4">
-                    <item.icon className="w-5 h-5 shrink-0 mt-0.5 opacity-80" />
-                    <div>
-                      <p className="text-sm font-semibold">{item.title}</p>
-                      <p className="text-xs opacity-80 mt-1">{item.desc}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
         </div>
       </OrganicSection>
 
