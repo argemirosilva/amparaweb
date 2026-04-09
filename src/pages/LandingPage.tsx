@@ -206,6 +206,9 @@ export default function LandingPage() {
           <nav className="hidden lg:flex items-center gap-6">
             <NavItems />
           </nav>
+          <Link to="/login" className="hidden lg:flex ampara-btn-primary !w-auto items-center gap-1.5 text-xs py-[5px] px-[12px]">
+            Portal da Mulher
+          </Link>
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>
               <button className="lg:hidden p-2 text-foreground" aria-label="Menu">
