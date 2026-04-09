@@ -64,7 +64,7 @@ export default function AppSidebar() {
           <div className="relative">
             <div className="absolute -inset-3 rounded-full" style={{ background: "linear-gradient(135deg, hsla(280,55%,50%,0.22), hsla(320,65%,55%,0.14))" }} />
             <div className="absolute -inset-5 rounded-full" style={{ background: "linear-gradient(135deg, hsla(280,55%,50%,0.08), hsla(320,65%,55%,0.05))" }} />
-            <div className="relative w-10 h-10 rounded-full overflow-hidden ring-[2.5px] ring-primary/25 shadow-md">
+            <div className="relative w-20 h-20 rounded-full overflow-hidden ring-[2.5px] ring-primary/25 shadow-md">
               <img src={amparaLogo} alt="AMPARA" className="w-full h-full object-cover" />
             </div>
           </div>
