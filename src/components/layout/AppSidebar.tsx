@@ -22,7 +22,7 @@ import {
   SidebarFooter,
 } from "@/components/ui/sidebar";
 import amparaLogo from "@/assets/ampara-circle-logo-color.png";
-import orizonLogo from "@/assets/orizon-tech-logo-2.png";
+import orizonLogo from "@/assets/orizon-tech-logo-transparent.png";
 
 const menuItems = [
   { title: "Dashboard", url: "/home", icon: LayoutDashboard },
