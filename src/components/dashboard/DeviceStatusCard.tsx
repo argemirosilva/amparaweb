@@ -213,7 +213,7 @@ export default function DeviceStatusCard() {
         </div>
 
         {/* Title + device name */}
-        <p className="text-sm font-semibold text-primary mb-0.5 truncate">
+        <p className="text-sm font-semibold text-foreground mb-0.5 truncate">
           {noDevice
             ? (error || "Nenhum dispositivo")
             : ((device.dispositivo_info || "App móvel Ampara").split(" ")[0])}

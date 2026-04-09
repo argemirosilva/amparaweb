@@ -121,7 +121,7 @@ export default function MonitoringStatusCard() {
           <Ear className="w-[18px] h-[18px]" style={{ color: "hsl(var(--ampara-magenta))" }} />
         </div>
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-primary">
+          <p className="text-sm font-semibold text-foreground">
             {state?.type === "monitoring" || state?.type === "monitoring_no_window" ? "Monitorando" : "Monitoramento"}
           </p>
           {state?.type === "monitoring" && (
