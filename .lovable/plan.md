@@ -1,82 +1,48 @@
 
 
-## Plano: Importação de Conversas WhatsApp — Foco na Experiência
+# Plano: Descarte de Segmentos Irrelevantes na Concatenacao
 
-### Conceito de UX
+## Resumo
 
-Em vez de uma página separada com formulários tradicionais, a experiência será um **fluxo guiado tipo wizard** integrado na tela de Gravações, acessível por um botão atrativo. O processo todo acontece em **3 passos visuais** dentro de um drawer/modal fullscreen no mobile:
+Segmentos `sem_risco` sao excluidos da concatenacao. Gravacoes resultantes que nao tem nenhum segmento relevante sao marcadas como `sem_risco` sem transcricao nem analise visivel. Na interface, gravacoes `sem_risco` mostram apenas o status — sem transcricao, sem card de analise.
 
-```text
-┌─────────────────────────────────────────┐
-│  Passo 1: "Cola aqui"                  │
-│  ┌─────────────────────────────────┐    │
-│  │  Área grande de drag & drop     │    │
-│  │  ou colar texto (ctrl+v)        │    │
-│  │  com ícone animado do WhatsApp  │    │
-│  └─────────────────────────────────┘    │
-│  + Mini tutorial visual (3 prints)     │
-├─────────────────────────────────────────┤
-│  Passo 2: "Quem é ele?"                │
-│  Auto-detecta nomes da conversa        │
-│  Usuária só toca no nome do parceiro   │
-├─────────────────────────────────────────┤
-│  Passo 3: "Analisando..."              │
-│  Animação de progresso com frases      │
-│  motivacionais enquanto processa       │
-│  → Resultado aparece como timeline     │
-└─────────────────────────────────────────┘
+## Alteracoes
+
+### 1. Migration — nova coluna `segmentos_descartados`
+
+```sql
+ALTER TABLE gravacoes ADD COLUMN segmentos_descartados integer NOT NULL DEFAULT 0;
 ```
 
-### Diferenciais de UX
+### 2. `session-maintenance/index.ts`
 
-1. **Colar direto** — A usuária pode simplesmente copiar a conversa no WhatsApp e colar (Ctrl+V / long press) numa área grande. Sem precisar exportar arquivo `.txt`. Também aceita upload de `.txt` como alternativa.
+Na etapa de concatenacao (~linha 421):
+- Separar segmentos em relevantes (`triage_risco != 'sem_risco'` ou `NULL`) e descartados (`triage_risco = 'sem_risco'`)
+- Concatenar apenas relevantes
+- Se TODOS forem `sem_risco`: ainda concatenar o audio (para arquivo), mas marcar gravacao com `status = 'sem_risco'`, salvar `segmentos_descartados`, e NAO disparar `process-recording`
+- Se ha relevantes: concatenar normalmente, salvar `segmentos_descartados`, disparar `process-recording`
 
-2. **Detecção automática de participantes** — O parser identifica os nomes e apresenta chips clicáveis: "Quem é o parceiro nesta conversa?" — ela só toca no nome.
+### 3. `process-recording/index.ts`
 
-3. **Progresso com empatia** — Enquanto analisa, frases como "Estamos lendo com cuidado...", "Identificando padrões...", "Quase lá..." com animação suave.
+Adicionar early return no inicio: se gravacao ja tem `status = 'sem_risco'`, retornar sem processar.
 
-4. **Resultado como timeline visual** — Não mostra dados crus. Mostra uma linha do tempo da conversa com trechos destacados por cor de risco, e um resumo humanizado no topo.
+### 4. Frontend — `GravacaoExpandedContent.tsx`
 
-### Implementação Técnica
+- Se `status === 'sem_risco'`: nao mostrar transcricao, nao mostrar AnaliseCard
+- Mostrar badge "Sem risco — X segmentos descartados" quando `segmentos_descartados > 0`
 
-#### 1. Database (migração)
-- Tabela `whatsapp_imports` (id, user_id, contact_label, total_messages, total_chunks, analyzed_chunks, status, summary_json, created_at)
-- RLS: acesso bloqueado direto (via edge function apenas)
-- Coluna `import_id` nullable em `analysis_micro_results`
+### 5. Frontend — `Gravacoes.tsx`
 
-#### 2. Backend — `web-api` (3 novas actions)
-- **`importWhatsApp`**: Recebe texto bruto + contact_label. Parser regex server-side para formato WhatsApp BR (`DD/MM/YYYY HH:MM - Nome: msg`). Divide em chunks de ~50 msgs. Cria registro + enfileira jobs MICRO.
-- **`getWhatsAppImports`**: Lista imports com progresso.
-- **`getWhatsAppImportDetail`**: Retorna import + análises vinculadas consolidadas.
+- Badge inline discreto mostrando segmentos descartados quando aplicavel
+- Gravacoes `sem_risco` exibem apenas status, sem preview de transcricao
 
-#### 3. `analysis-worker` — adaptação mínima
-- Quando payload tem `import_id` + `chat_text`: usa texto direto como transcrição, armazena com `import_id`, pula legacy `gravacoes_analises`.
+## Arquivos modificados
 
-#### 4. Frontend
-- **Botão na tela de Gravações**: Card atrativo "Analisar conversa do WhatsApp" com ícone verde do MessageCircle.
-- **Drawer fullscreen** (mobile) ou **Dialog** (desktop) com wizard de 3 passos:
-  - Passo 1: Textarea grande + drag/drop `.txt` + mini tutorial visual (como exportar do WhatsApp)
-  - Passo 2: Chips com nomes detectados para selecionar o parceiro
-  - Passo 3: Progresso animado com frases empáticas
-- **Tela de resultado**: Card na lista de gravações ou seção dedicada mostrando timeline de risco + resumo humanizado
-- Reutiliza `AnaliseCard` para detalhes de cada chunk
-
-#### 5. Arquivos criados/alterados
-
-| Arquivo | Ação |
-|---|---|
-| migração SQL | Nova tabela + coluna |
-| `web-api/index.ts` | 3 actions novas |
-| `analysis-worker/index.ts` | Suporte a `import_id` |
-| `src/components/whatsapp/WhatsAppImportWizard.tsx` | Wizard de 3 passos |
-| `src/components/whatsapp/WhatsAppResultCard.tsx` | Card de resultado |
-| `src/pages/Gravacoes.tsx` | Botão de acesso ao wizard |
-
-### Fluxo da Usuária (resumo)
-
-1. Abre Gravações → vê card "Importar conversa do WhatsApp"
-2. Toca → abre wizard → cola ou arrasta o `.txt`
-3. Sistema detecta nomes → ela toca no parceiro
-4. Animação de análise com frases acolhedoras
-5. Resultado: timeline visual com risco por trecho + resumo + orientações
+| Arquivo | Alteracao |
+|---------|----------|
+| Migration SQL | ADD COLUMN `segmentos_descartados` |
+| `session-maintenance/index.ts` | Filtrar segmentos antes de concatenar |
+| `process-recording/index.ts` | Early return se sem_risco |
+| `GravacaoExpandedContent.tsx` | Ocultar transcricao/analise para sem_risco |
+| `Gravacoes.tsx` | Badge de segmentos descartados |
 
