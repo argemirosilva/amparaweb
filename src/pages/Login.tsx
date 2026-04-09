@@ -93,29 +93,23 @@ export default function LoginPage() {
             Portal da Mulher
           </p>
 
-          <div className="space-y-5 mt-4">
+          <div className="space-y-4 mt-4">
             <div className="flex items-start gap-3 text-left">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: "var(--ampara-gradient-soft, linear-gradient(135deg, hsl(280,40%,94%), hsl(320,30%,92%)))" }}>
-                <Shield className="w-5 h-5 text-primary" />
-              </div>
+              <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-primary/50 shrink-0" />
               <p className="text-sm leading-relaxed text-muted-foreground">
-                Monitoramento inteligente e alertas em tempo real para sua proteção
+                Guardiões de confiança conectados a você, prontos para agir quando você precisar
               </p>
             </div>
             <div className="flex items-start gap-3 text-left">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: "var(--ampara-gradient-soft, linear-gradient(135deg, hsl(280,40%,94%), hsl(320,30%,92%)))" }}>
-                <Heart className="w-5 h-5 text-primary" />
-              </div>
+              <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-primary/50 shrink-0" />
               <p className="text-sm leading-relaxed text-muted-foreground">
-                Rede de apoio com guardiões conectados a você
+                Monitoramento inteligente com orientação e apoio em cada etapa
               </p>
             </div>
             <div className="flex items-start gap-3 text-left">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: "var(--ampara-gradient-soft, linear-gradient(135deg, hsl(280,40%,94%), hsl(320,30%,92%)))" }}>
-                <MapPin className="w-5 h-5 text-primary" />
-              </div>
+              <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-primary/50 shrink-0" />
               <p className="text-sm leading-relaxed text-muted-foreground">
-                Rastreamento seguro e compartilhamento de localização
+                Você não está sozinha — aqui, sua voz importa e sua segurança vem primeiro
               </p>
             </div>
           </div>
