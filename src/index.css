@@ -173,15 +173,15 @@ html, body, #root {
 @layer components {
   /* ---- Card ---- */
   .ampara-card {
-    @apply bg-card rounded-2xl p-3 md:p-8 border border-border/60;
-    box-shadow: 0 1px 3px 0 hsl(280 40% 20% / 0.04), 0 4px 16px -4px hsl(280 40% 20% / 0.06);
+    @apply bg-card rounded-2xl p-3 md:p-8 border border-border/60 relative overflow-hidden;
+    box-shadow: 0 1px 3px 0 hsl(320 40% 30% / 0.04), 0 4px 16px -4px hsl(280 40% 30% / 0.06);
     transition: box-shadow 0.25s ease, transform 0.25s ease;
   }
 
   /* ---- Premium card with gradient top accent ---- */
   .ampara-card-accent {
     @apply bg-card rounded-2xl border border-border/60 overflow-hidden;
-    box-shadow: 0 1px 3px 0 hsl(280 40% 20% / 0.04), 0 4px 16px -4px hsl(280 40% 20% / 0.06);
+    box-shadow: 0 1px 3px 0 hsl(320 40% 30% / 0.04), 0 4px 16px -4px hsl(280 40% 30% / 0.06);
   }
   .ampara-card-accent::before {
     content: "";
@@ -293,7 +293,7 @@ html, body, #root {
   /* ---- Feature card (icon-based) ---- */
   .ampara-feature-card {
     @apply bg-card rounded-2xl p-6 border border-border text-center transition-all duration-200;
-    box-shadow: 0 2px 12px -2px hsl(260 15% 50% / 0.06);
+    box-shadow: 0 2px 12px -2px hsl(320 15% 50% / 0.06);
   }
 
   .ampara-feature-card:hover {
@@ -309,7 +309,7 @@ html, body, #root {
   /* ---- KPI card with decorative circle ---- */
   .ampara-card-kpi {
     @apply bg-card rounded-2xl p-5 border border-border/40 relative overflow-hidden;
-    box-shadow: 0 2px 8px -2px hsl(220 20% 20% / 0.06);
+    box-shadow: 0 2px 8px -2px hsl(320 20% 30% / 0.06);
     transition: box-shadow 0.25s ease, transform 0.25s ease;
   }
   .ampara-card-kpi:hover {
@@ -328,6 +328,30 @@ html, body, #root {
   .ampara-tag {
     @apply inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium;
     @apply bg-primary/10 text-primary;
+  }
+
+  /* ---- Decorative blob for cards ---- */
+  .ampara-blob-decor::before {
+    content: "";
+    position: absolute;
+    top: -20px;
+    right: -20px;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: hsl(var(--ampara-magenta) / 0.06);
+    pointer-events: none;
+  }
+  .ampara-blob-decor::after {
+    content: "";
+    position: absolute;
+    bottom: -12px;
+    left: -12px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: hsl(var(--ampara-purple) / 0.04);
+    pointer-events: none;
   }
 }
 

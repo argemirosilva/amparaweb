@@ -3,6 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { callWebApi } from "@/services/webApiService";
 import { BuscaPerfilForm } from "@/components/busca-perfil/BuscaPerfilForm";
 import { BuscaPerfilResults } from "@/components/busca-perfil/BuscaPerfilResults";
+import PageHeader from "@/components/ui/page-header";
 import { Loader2, UserSearch, ArrowLeft, CircleAlert } from "lucide-react";
 
 export interface SearchResult {
@@ -111,12 +112,7 @@ export default function BuscaPerfilPage() {
 
   return (
     <div className="p-4 pb-24 max-w-2xl mx-auto space-y-5">
-      {/* Azure-style page header */}
-      <div>
-        <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-1">Pesquisa</p>
-        <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">Pesquisar parceiro</h1>
-        <p className="text-sm text-muted-foreground mt-1">Pesquise por dados parciais - nunca expomos dados sensíveis</p>
-      </div>
+      <PageHeader tag="Pesquisa" title="Pesquisar parceiro" subtitle="Pesquise por dados parciais - nunca expomos dados sensíveis" />
 
       {/* Info box */}
       <div className="rounded-xl border border-border bg-card p-4 space-y-2.5">
