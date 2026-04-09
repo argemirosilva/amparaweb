@@ -122,10 +122,16 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-xl py-2.5 px-4 text-sm font-semibold text-white transition-all disabled:opacity-60 hover:shadow-md hover:brightness-105"
-              style={{ background: "linear-gradient(135deg, hsl(280, 60%, 48%), hsl(320, 70%, 50%))" }}
+              className="relative w-full rounded-xl py-2.5 px-4 text-sm font-semibold overflow-hidden transition-all duration-300 disabled:opacity-60 hover:shadow-lg group"
+              style={{ background: "transparent" }}
             >
-              {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : "Acessar"}
+              {/* Gradient border */}
+              <div className="absolute inset-0 rounded-xl p-[2px]" style={{ background: "linear-gradient(135deg, hsl(280, 60%, 48%), hsl(320, 70%, 50%))" }}>
+                <div className="w-full h-full rounded-[10px] bg-card/80 backdrop-blur-sm group-hover:bg-transparent transition-all duration-300" />
+              </div>
+              <span className="relative z-10 text-primary group-hover:text-white transition-colors duration-300">
+                {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : "Acessar"}
+              </span>
             </button>
 
             <div className="flex items-center justify-between pt-2">
