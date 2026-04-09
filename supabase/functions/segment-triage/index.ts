@@ -144,15 +144,29 @@ async function getTriagePrompt(supabase: ReturnType<typeof createClient>): Promi
   return prompt;
 }
 
+interface TriageResult {
+  nivel_risco: string;
+  motivo?: string;
+  contexto_emergencia?: {
+    ameaca_morte?: boolean;
+    agressao_fisica?: boolean;
+    agressao_em_curso?: boolean;
+    ameaca_agressao_fisica?: boolean;
+    pedido_socorro?: boolean;
+    mencao_arma?: boolean;
+    descricao_curta?: string;
+  };
+}
+
 async function classifyRisk(
   transcricao: string,
   matches: KeywordMatch[],
   supabase: ReturnType<typeof createClient>
-): Promise<string> {
+): Promise<TriageResult> {
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
   if (!LOVABLE_API_KEY) {
     console.error("LOVABLE_API_KEY not configured");
-    return "moderado"; // fallback
+    return { nivel_risco: "moderado" };
   }
 
   const matchList = matches.map((m) => `${m.palavra} (${m.grupo})`).join(", ");
@@ -176,7 +190,7 @@ async function classifyRisk(
 
     if (!res.ok) {
       console.error(`AI classification error: ${res.status}`);
-      return "moderado";
+      return { nivel_risco: "moderado" };
     }
 
     const data = await res.json();
@@ -190,24 +204,31 @@ async function classifyRisk(
       const parsed = JSON.parse(jsonMatch[0]);
       const valid = ["sem_risco", "moderado", "alto", "critico"];
       const nivel = parsed.nivel_risco || parsed.resultado;
-      if (valid.includes(nivel)) return nivel;
+      if (valid.includes(nivel)) {
+        return {
+          nivel_risco: nivel,
+          motivo: parsed.motivo,
+          contexto_emergencia: parsed.contexto_emergencia || undefined,
+        };
+      }
     }
-    return "moderado";
+    return { nivel_risco: "moderado" };
   } catch (e) {
     console.error("AI classification error:", e);
-    return "moderado";
+    return { nivel_risco: "moderado" };
   }
 }
 
 // ── Fire-and-forget helpers ──
 
-function fireWhatsApp(userId: string, tipo: string, lat?: number | null, lon?: number | null, alertaId?: string | null) {
+function fireWhatsApp(userId: string, tipo: string, lat?: number | null, lon?: number | null, alertaId?: string | null, contexto?: TriageResult["contexto_emergencia"]) {
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const body: Record<string, unknown> = { action: "notify_alert", user_id: userId, tipo };
   if (lat != null) body.lat = lat;
   if (lon != null) body.lon = lon;
   if (alertaId) body.alerta_id = alertaId;
+  if (contexto) body.contexto = contexto;
 
   fetch(`${supabaseUrl}/functions/v1/send-whatsapp`, {
     method: "POST",
@@ -216,14 +237,17 @@ function fireWhatsApp(userId: string, tipo: string, lat?: number | null, lon?: n
   }).catch((e) => console.error("fireWhatsApp error:", e));
 }
 
-function fireCopomCall(userId: string, alertaId: string) {
+function fireCopomCall(userId: string, alertaId: string, contexto?: TriageResult["contexto_emergencia"]) {
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+  const body: Record<string, unknown> = { user_id: userId, skip_cooldown: false };
+  if (contexto) body.contexto = contexto;
 
   fetch(`${supabaseUrl}/functions/v1/copom-outbound-call`, {
     method: "POST",
     headers: { Authorization: `Bearer ${serviceKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ user_id: userId, skip_cooldown: false }),
+    body: JSON.stringify(body),
   }).catch((e) => console.error("fireCopomCall error:", e));
 }
 
@@ -272,13 +296,19 @@ Deno.serve(async (req) => {
     console.log(`[TRIAGE] ${matches.length} keyword matches: ${matches.map(m => m.palavra).join(", ")}`);
 
     // 3. AI classification
-    const nivelRisco = await classifyRisk(transcricao, matches, supabase);
+    const triageResult = await classifyRisk(transcricao, matches, supabase);
+    const nivelRisco = triageResult.nivel_risco;
 
     // 4. Save triage result
     const now = new Date().toISOString();
     await supabase
       .from("gravacoes_segmentos")
-      .update({ triage_risco: nivelRisco, triage_transcricao: transcricao, triage_at: now })
+      .update({
+        triage_risco: nivelRisco,
+        triage_transcricao: transcricao,
+        triage_at: now,
+        triage_contexto: triageResult.contexto_emergencia || null,
+      })
       .eq("id", segment_id);
 
     // 5. Audit log
@@ -289,6 +319,8 @@ Deno.serve(async (req) => {
       details: {
         segment_id,
         nivel_risco: nivelRisco,
+        motivo: triageResult.motivo || null,
+        contexto_emergencia: triageResult.contexto_emergencia || null,
         keywords_matched: matches.map((m) => m.palavra),
         keywords_count: matches.length,
       },
@@ -322,12 +354,12 @@ Deno.serve(async (req) => {
 
       const alertaId = alerta?.id || null;
 
-      // WhatsApp notification
-      fireWhatsApp(user_id, nivelRisco, loc?.latitude, loc?.longitude, alertaId);
+      // WhatsApp notification with context
+      fireWhatsApp(user_id, nivelRisco, loc?.latitude, loc?.longitude, alertaId, triageResult.contexto_emergencia);
 
-      // COPOM call for critico
+      // COPOM call for critico with context
       if (nivelRisco === "critico" && alertaId) {
-        fireCopomCall(user_id, alertaId);
+        fireCopomCall(user_id, alertaId, triageResult.contexto_emergencia);
       }
 
       console.log(`[TRIAGE] Alert triggered: ${nivelRisco} for user ${user_id}, alerta_id=${alertaId}`);

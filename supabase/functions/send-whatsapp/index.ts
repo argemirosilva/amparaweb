@@ -154,11 +154,12 @@ function isAlertEnabled(acionamentos: AcionamentosConfig, tipo: string): boolean
 async function notifyGuardiansAlert(
   supabase: ReturnType<typeof createClient>,
   userId: string,
-  tipo: string, // "panico" | "alto" | "critico" | "coacao"
+  tipo: string,
   lat?: number | null,
   lon?: number | null,
   alertaId?: string | null,
-  skipCooldown?: boolean
+  skipCooldown?: boolean,
+  contexto?: any
 ): Promise<{ sent: number; skipped: boolean; cooldown?: boolean; minutes_remaining?: number }> {
   // 0. Cooldown de 60 minutos
   if (userId && !skipCooldown) {
@@ -339,6 +340,7 @@ async function notifyGuardiansAlert(
           guardian_id: g.id,
           guardian_name: g.nome,
           template: "ampara2",
+          contexto_emergencia: contexto || null,
           error: result.error || null,
         },
       });
@@ -436,14 +438,14 @@ serve(async (req) => {
   );
 
   try {
-    const { action, user_id, tipo, lat, lon, alerta_id, skip_cooldown } = await req.json();
+    const { action, user_id, tipo, lat, lon, alerta_id, skip_cooldown, contexto } = await req.json();
 
     if (!action) return json({ error: "action obrigatória" }, 400);
     if (!user_id) return json({ error: "user_id obrigatório" }, 400);
 
     if (action === "notify_alert") {
       if (!tipo) return json({ error: "tipo obrigatório" }, 400);
-      const result = await notifyGuardiansAlert(supabase, user_id, tipo, lat, lon, alerta_id, skip_cooldown === true);
+      const result = await notifyGuardiansAlert(supabase, user_id, tipo, lat, lon, alerta_id, skip_cooldown === true, contexto);
       if (result.cooldown) {
         return json({ error: "cooldown_active", message: `Notificação WhatsApp bloqueada. Aguarde ${result.minutes_remaining} minuto(s).`, ...result }, 429);
       }

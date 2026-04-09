@@ -21,13 +21,37 @@ export async function buildTriagePrompt(supabase: any): Promise<string> {
   } catch { /* use default */ }
 
   return `Analise a transcrição abaixo e classifique o nível de risco de violência doméstica.
-Retorne APENAS JSON: {"resultado":"seguro|moderado|alto|critico","motivo":"justificativa curta"}
+Retorne APENAS JSON com a seguinte estrutura:
+{
+  "resultado": "seguro|moderado|alto|critico",
+  "motivo": "justificativa curta",
+  "contexto_emergencia": {
+    "ameaca_morte": false,
+    "agressao_fisica": false,
+    "agressao_em_curso": false,
+    "ameaca_agressao_fisica": false,
+    "pedido_socorro": false,
+    "mencao_arma": false,
+    "descricao_curta": "Frase curta descrevendo o que foi identificado ou vazio se seguro"
+  }
+}
 
-Regras:
+Regras para "resultado":
 - "seguro": silêncio, assunto cotidiano, conversa amigável, sem indicadores de risco
 - "moderado": tensão verbal, tom ríspido, mas sem ameaça direta
 - "alto": ameaças diretas, gritos intensos, agressão verbal grave, humilhação
 - "critico": violência física iminente ou em curso, pedidos de socorro, menção a armas
+
+Regras para "contexto_emergencia":
+- "ameaca_morte": ameaça explícita de matar ou deixar implícito risco de morte
+- "agressao_fisica": sinais de que houve agressão física (bateu, empurrou, chutou)
+- "agressao_em_curso": agressão acontecendo no momento (gritos de dor, barulhos de impacto)
+- "ameaca_agressao_fisica": ameaça de bater, agredir, machucar
+- "pedido_socorro": vítima pedindo ajuda, socorro, dizendo que precisa de ajuda
+- "mencao_arma": menção a faca, arma de fogo, ou qualquer objeto usado como arma
+- "descricao_curta": resumo de 1 frase do que está acontecendo (para uso em notificações de emergência)
+
+Se resultado for "seguro", todos os campos de contexto_emergencia devem ser false e descricao_curta vazio.
 
 Seja conservador: na dúvida entre dois níveis, escolha o mais alto para proteger a mulher.`;
 }
