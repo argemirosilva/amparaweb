@@ -133,7 +133,6 @@ export default function LoginPage() {
                 {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : "Acessar"}
               </span>
             </button>
-            </button>
 
             <div className="flex items-center justify-between pt-2">
               <Link to="/esqueci-senha" className="text-sm text-muted-foreground hover:text-primary transition-colors">
