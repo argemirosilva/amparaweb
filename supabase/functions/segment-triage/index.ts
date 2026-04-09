@@ -138,8 +138,13 @@ async function transcribeViaLovableAI(
   };
   const mimeType = mimeMap[ext] || "audio/ogg";
 
-  // Convert to base64
-  const base64Audio = btoa(String.fromCharCode(...audioBytes));
+  // Convert to base64 (chunk to avoid stack overflow)
+  let binary = "";
+  const CHUNK = 8192;
+  for (let i = 0; i < audioBytes.length; i += CHUNK) {
+    binary += String.fromCharCode(...audioBytes.subarray(i, i + CHUNK));
+  }
+  const base64Audio = btoa(binary);
 
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
