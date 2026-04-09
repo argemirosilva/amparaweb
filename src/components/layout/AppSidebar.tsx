@@ -27,9 +27,9 @@ import orizonLogo from "@/assets/orizon-tech-logo-clean-trimmed.png";
 const menuItems = [
   { title: "Dashboard", url: "/home", icon: LayoutDashboard },
   { title: "Gravações", url: "/gravacoes", icon: Mic },
-  { title: "Pesquisar Parceiro", url: "/busca-perfil", icon: Search },
+  { title: "Pesquisar", url: "/busca-perfil", icon: Search },
   { title: "Perfil", url: "/perfil", icon: UserCircle },
-  { title: "Configurações", url: "/configuracoes", icon: Settings },
+  { title: "Config.", url: "/configuracoes", icon: Settings },
 ];
 
 export default function AppSidebar() {
