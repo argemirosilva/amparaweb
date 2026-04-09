@@ -1,0 +1,1 @@
+ALTER TABLE public.gravacoes ADD COLUMN segmentos_descartados integer NOT NULL DEFAULT 0;
