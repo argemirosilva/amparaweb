@@ -62,7 +62,6 @@ export default function LoginPage() {
             <img src={amparaLogo} alt="AMPARA" className="w-36 h-auto object-contain mx-auto" />
           </div>
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest mt-1">Portal da Mulher</p>
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest mt-1">Portal da Mulher</p>
         </div>
 
         {/* Card */}
