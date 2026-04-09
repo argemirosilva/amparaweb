@@ -39,42 +39,82 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-[100dvh] flex flex-col md:flex-row">
-      {/* Left panel — branding */}
+      {/* Left panel — branding (landing page style) */}
       <div
         className="hidden md:flex md:w-[45%] lg:w-[50%] relative flex-col items-center justify-center p-12 overflow-hidden"
-        style={{ background: "linear-gradient(160deg, hsl(280, 30%, 22%), hsl(300, 25%, 18%), hsl(320, 20%, 15%))" }}
+        style={{ background: "linear-gradient(135deg, hsl(280,30%,96%), hsl(320,25%,94%), hsl(280,20%,93%))" }}
       >
-        {/* Decorative rings */}
-        <div className="absolute -top-24 -left-24 w-80 h-80 rounded-full border opacity-[0.08]" style={{ borderColor: "hsl(280, 60%, 60%)" }} />
-        <div className="absolute -bottom-20 -right-20 w-72 h-72 rounded-full border opacity-[0.06]" style={{ borderColor: "hsl(320, 70%, 55%)" }} />
-        <div className="absolute top-1/3 right-8 w-40 h-40 rounded-full border opacity-[0.05]" style={{ borderColor: "hsl(300, 50%, 55%)" }} />
+        {/* Organic blobs */}
+        <div
+          className="absolute -top-20 right-[10%] w-[500px] h-[500px] pointer-events-none opacity-[0.06]"
+          style={{
+            background: "radial-gradient(ellipse, hsl(320,70%,50%), transparent 70%)",
+            borderRadius: "60% 40% 50% 50% / 50% 60% 40% 50%",
+          }}
+        />
+        <div
+          className="absolute bottom-[-100px] left-[-100px] w-[400px] h-[400px] pointer-events-none opacity-[0.05]"
+          style={{
+            background: "radial-gradient(ellipse, hsl(280,60%,48%), transparent 70%)",
+            borderRadius: "40% 60% 55% 45% / 55% 40% 60% 45%",
+          }}
+        />
+        <div
+          className="absolute top-[20%] right-[-50px] w-[200px] h-[200px] pointer-events-none opacity-[0.04]"
+          style={{
+            background: "radial-gradient(ellipse, hsl(320,60%,55%), transparent 70%)",
+            borderRadius: "55% 45% 50% 50% / 45% 55% 45% 55%",
+          }}
+        />
 
-        {/* Accent dots */}
-        <div className="absolute top-20 right-16 w-2 h-2 rounded-full opacity-30 animate-pulse" style={{ background: "hsl(320, 70%, 60%)" }} />
-        <div className="absolute bottom-32 left-20 w-1.5 h-1.5 rounded-full opacity-25 animate-pulse" style={{ background: "hsl(280, 60%, 65%)" }} />
+        {/* Halftone pattern */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            backgroundImage: "radial-gradient(circle, hsl(280,60%,48%) 1px, transparent 1px)",
+            backgroundSize: "20px 20px",
+            opacity: 0.025,
+          }}
+        />
+
+        {/* Floating ring circles */}
+        <div className="absolute top-16 right-[20%] w-32 h-32 rounded-full border opacity-[0.06]" style={{ borderColor: "hsl(320,70%,50%)" }} />
+        <div className="absolute bottom-20 left-[15%] w-20 h-20 rounded-full border opacity-[0.08]" style={{ borderColor: "hsl(280,60%,48%)" }} />
+        <div className="absolute top-[60%] right-[5%] w-24 h-24 rounded-full border opacity-[0.05]" style={{ borderColor: "hsl(300,50%,55%)" }} />
+
+        {/* Sparkles */}
+        <div className="absolute top-12 right-[30%] w-1.5 h-1.5 rounded-full opacity-25 animate-pulse" style={{ background: "hsl(320,70%,60%)" }} />
+        <div className="absolute bottom-16 right-[45%] w-1 h-1 rounded-full opacity-20 animate-pulse" style={{ background: "hsl(280,60%,55%)", animationDelay: "0.7s" }} />
+        <div className="absolute top-[40%] left-[10%] w-1.5 h-1.5 rounded-full opacity-30 animate-pulse" style={{ background: "hsl(320,70%,60%)", animationDelay: "1.2s" }} />
 
         <div className="relative z-10 flex flex-col items-center text-center max-w-sm">
           <img src={amparaLogo} alt="AMPARA" className="w-44 h-auto object-contain mb-6" />
-          <p className="text-xs font-semibold uppercase tracking-[0.25em] mb-8" style={{ color: "hsl(280, 30%, 75%)" }}>
+          <p className="text-xs font-semibold uppercase tracking-[0.25em] mb-8 text-primary/60">
             Portal da Mulher
           </p>
 
           <div className="space-y-5 mt-4">
             <div className="flex items-start gap-3 text-left">
-              <Shield className="w-5 h-5 mt-0.5 shrink-0" style={{ color: "hsl(280, 60%, 70%)" }} />
-              <p className="text-sm leading-relaxed" style={{ color: "hsl(280, 20%, 75%)" }}>
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: "var(--ampara-gradient-soft, linear-gradient(135deg, hsl(280,40%,94%), hsl(320,30%,92%)))" }}>
+                <Shield className="w-5 h-5 text-primary" />
+              </div>
+              <p className="text-sm leading-relaxed text-muted-foreground">
                 Monitoramento inteligente e alertas em tempo real para sua proteção
               </p>
             </div>
             <div className="flex items-start gap-3 text-left">
-              <Heart className="w-5 h-5 mt-0.5 shrink-0" style={{ color: "hsl(320, 60%, 65%)" }} />
-              <p className="text-sm leading-relaxed" style={{ color: "hsl(280, 20%, 75%)" }}>
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: "var(--ampara-gradient-soft, linear-gradient(135deg, hsl(280,40%,94%), hsl(320,30%,92%)))" }}>
+                <Heart className="w-5 h-5 text-primary" />
+              </div>
+              <p className="text-sm leading-relaxed text-muted-foreground">
                 Rede de apoio com guardiões conectados a você
               </p>
             </div>
             <div className="flex items-start gap-3 text-left">
-              <MapPin className="w-5 h-5 mt-0.5 shrink-0" style={{ color: "hsl(300, 50%, 65%)" }} />
-              <p className="text-sm leading-relaxed" style={{ color: "hsl(280, 20%, 75%)" }}>
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: "var(--ampara-gradient-soft, linear-gradient(135deg, hsl(280,40%,94%), hsl(320,30%,92%)))" }}>
+                <MapPin className="w-5 h-5 text-primary" />
+              </div>
+              <p className="text-sm leading-relaxed text-muted-foreground">
                 Rastreamento seguro e compartilhamento de localização
               </p>
             </div>
