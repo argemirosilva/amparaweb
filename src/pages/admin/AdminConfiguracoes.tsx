@@ -1,10 +1,11 @@
 import { useEffect, useState, useRef } from "react";
-import { Settings, Save, RotateCcw, Plus, X, ChevronDown, ChevronRight, Tags, AlertTriangle } from "lucide-react";
+import { Settings, Save, RotateCcw, Plus, X, ChevronDown, ChevronRight, Tags, AlertTriangle, BrainCircuit } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import AdminTiposAlerta from "./AdminTiposAlerta";
 import AdminPalavrasTriagem from "./AdminPalavrasTriagem";
+import AdminPromptsIA from "@/components/admin/AdminPromptsIA";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -44,7 +45,7 @@ const FRIENDLY_LABELS: Record<string, string> = {
 
 const FIELD_HINTS: Record<string, string> = {};
 const PHONE_CHIP_KEYS = new Set(["elevenlabs_copom_telefone", "copom_telefone_destino"]);
-const HIDDEN_KEYS = new Set(["ia_prompt_analise"]);
+const HIDDEN_KEYS = new Set(["ia_prompt_analise", "ia_prompt_triagem", "ia_prompt_macro"]);
 const CATEGORY_ORDER = ["sistema", "panico", "gps", "notificacoes", "dados", "limites"];
 
 export default function AdminConfiguracoes() {
@@ -55,6 +56,7 @@ export default function AdminConfiguracoes() {
   const [saving, setSaving] = useState<string | null>(null);
   const [tiposOpen, setTiposOpen] = useState(false);
   const [triagemOpen, setTriagemOpen] = useState(false);
+  const [promptsOpen, setPromptsOpen] = useState(false);
 
   async function loadSettings() {
     if (!sessionToken) return;
