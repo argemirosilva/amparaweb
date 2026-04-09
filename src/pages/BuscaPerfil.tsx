@@ -123,7 +123,7 @@ export default function BuscaPerfilPage() {
               Cruza dados parciais com relatos anônimos de outras mulheres para indicar possíveis riscos. Quanto mais campos preencher, melhor o resultado.
             </p>
             <p className="text-xs text-amber-600 dark:text-amber-400 leading-relaxed font-medium">
-              ⚠ Resultados indicativos - baseados em relatos voluntários, não auditados. Não substituem denúncias formais.
+              ⚠ ATENÇÃO: Resultados indicativos, baseados em relatos voluntários e não auditados. Não há garantia de veracidade ou de que se referem à mesma pessoa. Devem ser utilizados apenas como sinal de atenção, não substituindo denúncias formais.
             </p>
           </div>
         </div>

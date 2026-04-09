@@ -47,11 +47,11 @@ export default function AppSidebar() {
       <div className="relative pt-3 pb-6 px-4 overflow-hidden">
         {/* Subtle ring circles */}
         <div
-          className="absolute -left-10 -top-10 w-36 h-36 rounded-full border"
+          className="absolute -left-6 -top-6 w-24 h-24 rounded-full border"
           style={{ borderColor: "hsla(280,55%,52%,0.12)" }}
         />
         <div
-          className="absolute -left-6 -top-4 w-28 h-28 rounded-full border"
+          className="absolute -left-3 -top-2 w-18 h-18 rounded-full border"
           style={{ borderColor: "hsla(280,60%,48%,0.08)" }}
         />
 
