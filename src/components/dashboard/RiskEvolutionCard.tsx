@@ -136,9 +136,17 @@ export default function RiskEvolutionCard() {
             <>
               {/* Score + Badge + Trend */}
               <div className="flex items-center gap-2 flex-wrap">
-                <Badge className={level.className}>
-                  {assessment.risk_level}
-                </Badge>
+                <span className="relative overflow-hidden flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium text-muted-foreground">
+                  <div
+                    className="absolute inset-0 rounded-lg pointer-events-none"
+                    style={{ background: `radial-gradient(circle at 30% 50%, ${RISCO_COLORS[assessment.risk_level] || "#22c55e"}20 0%, ${RISCO_COLORS[assessment.risk_level] || "#22c55e"}08 50%, transparent 80%)` }}
+                  />
+                  <span
+                    className="relative w-2.5 h-2.5 rounded-full shrink-0"
+                    style={{ backgroundColor: RISCO_COLORS[assessment.risk_level] || "#22c55e", boxShadow: `0 0 6px ${RISCO_COLORS[assessment.risk_level] || "#22c55e"}40` }}
+                  />
+                  <span className="relative">{assessment.risk_level}</span>
+                </span>
                 <div className={`flex items-center ml-auto ${trendColor} ${trendPulse}`}>
                   <TrendIcon className="w-4 h-4" />
                 </div>
