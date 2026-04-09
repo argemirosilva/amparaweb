@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User } from "lucide-react";
-import amparaLogo from "@/assets/ampara-circle-logo.png";
+import amparaLogo from "@/assets/ampara-circle-logo-color.png";
 
 export default function Topbar() {
   const { usuario } = useAuth();
