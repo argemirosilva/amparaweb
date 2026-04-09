@@ -392,17 +392,26 @@ export default function GravacoesPage() {
               <button
                 key={r}
                 onClick={() => { setFilterRisco(r); setPage(1); }}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 flex items-center gap-1.5 ${
-                  isActive ? "bg-muted shadow-sm text-foreground" : "text-muted-foreground hover:bg-muted/50"
+                className={`relative overflow-hidden px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 flex items-center gap-1.5 ${
+                  isActive ? "text-foreground" : "text-muted-foreground hover:bg-muted/50"
                 }`}
               >
-                {r !== "" && (
-                  <span
-                    className="w-2 h-2 rounded-full shrink-0"
-                    style={{ backgroundColor: color }}
+                {isActive && r !== "" && color && (
+                  <div
+                    className="absolute inset-0 rounded-lg pointer-events-none"
+                    style={{ background: `radial-gradient(circle at 70% 50%, ${color}20 0%, ${color}08 50%, transparent 80%)` }}
                   />
                 )}
-                {r === "" ? "Todas" : RISCO_LABELS[r] || r}
+                {isActive && r === "" && (
+                  <div className="absolute inset-0 rounded-lg pointer-events-none bg-muted" />
+                )}
+                {r !== "" && (
+                  <span
+                    className="relative w-2 h-2 rounded-full shrink-0"
+                    style={{ backgroundColor: color, boxShadow: isActive ? `0 0 5px ${color}40` : undefined }}
+                  />
+                )}
+                <span className="relative">{r === "" ? "Todas" : RISCO_LABELS[r] || r}</span>
               </button>
             );
           })}
