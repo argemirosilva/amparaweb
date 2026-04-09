@@ -170,7 +170,7 @@ export default function ChangePasswordCard() {
         body: JSON.stringify({
           action: "change_coercion_password",
           session_token: sessionToken,
-          senha_atual: "gate_verified",
+          senha_atual: verifiedPassword,
           nova_senha_coacao: cNovaSenha,
         }),
       });
