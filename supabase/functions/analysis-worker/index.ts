@@ -82,7 +82,7 @@ function parseAIJson(raw: string): any {
   return JSON.parse(m ? m[0] : clean);
 }
 
-import { buildAnalysisPrompt, normalizeAnalysisOutput } from "../_shared/buildAnalysisPrompt.ts";
+import { buildAnalysisPrompt, normalizeAnalysisOutput, buildTriagePrompt, buildMacroPrompt } from "../_shared/buildAnalysisPrompt.ts";
 
 // ============================================================
 // WORKER: MICRO
@@ -116,7 +116,78 @@ async function runMicro(supabase: any, jobId: string, payload: any): Promise<any
     }
   }
 
-  // Run AI
+  // ── FAST TRIAGE PRE-FILTER ──
+  // Skip full analysis for safe/silent recordings
+  if (recording_id && !import_id) {
+    try {
+      const triagePrompt = await buildTriagePrompt(supabase);
+      const triageRaw = await callAI([
+        { role: "system", content: triagePrompt },
+        { role: "user", content: transcricao },
+      ], "google/gemini-2.5-flash-lite");
+
+      let triageParsed: any = null;
+      try { triageParsed = parseAIJson(triageRaw); } catch { /* ignore */ }
+      const resultado = triageParsed?.resultado || triageParsed?.nivel_risco;
+
+      if (resultado === "seguro") {
+        console.log(`[MICRO] Triage classified as "seguro" for recording ${recording_id} — skipping full analysis`);
+
+        // Save minimal result
+        if (recording_id) {
+          await supabase.from("analysis_micro_results")
+            .update({ latest: false })
+            .eq("recording_id", recording_id).eq("latest", true);
+        }
+
+        const safeOutput = {
+          resumo_contexto: triageParsed?.motivo || "Conversa sem indicadores de risco identificados.",
+          tipos_violencia: ["nenhuma"],
+          nivel_risco: "sem_risco",
+          classificacao_contexto: "saudavel",
+          sentimento: "neutro",
+          palavras_chave: [],
+          xingamentos: [],
+          categorias: ["nenhuma"],
+          taticas_manipulativas: [],
+          orientacoes_vitima: [],
+          sinais_alerta: [],
+          ciclo_violencia: { fase_atual: "nao_identificado", transicao_detectada: false, encurtamento_ciclo: false, justificativa: "Sem indicadores de risco." },
+          analise_linguagem: [],
+          padroes_detectados: [],
+          _triage_skip: true,
+        };
+
+        const { data: inserted } = await supabase.from("analysis_micro_results").insert({
+          user_id, recording_id, transcription_id: transcription_id || null,
+          prompt_version: MICRO_PROMPT_VERSION, model: "triage-skip/gemini-2.5-flash-lite",
+          input_hash: inputHash, output_json: safeOutput,
+          risk_level: "sem_risco", context_classification: "saudavel",
+          cycle_phase: "nao_identificado", status: "success", latest: true,
+        }).select("id").single();
+
+        // Legacy table
+        const { data: existingLegacy } = await supabase
+          .from("gravacoes_analises").select("id").eq("gravacao_id", recording_id).maybeSingle();
+        const legacyData = {
+          gravacao_id: recording_id, user_id,
+          resumo: safeOutput.resumo_contexto, sentimento: "neutro",
+          nivel_risco: "sem_risco", categorias: ["nenhuma"],
+          palavras_chave: [], xingamentos: [],
+          analise_completa: safeOutput, modelo_usado: "triage-skip/gemini-2.5-flash-lite",
+        };
+        if (existingLegacy) await supabase.from("gravacoes_analises").update(legacyData).eq("id", existingLegacy.id);
+        else await supabase.from("gravacoes_analises").insert(legacyData);
+
+        return { result_id: inserted?.id, risk_level: "sem_risco", triage_skipped: true };
+      }
+      console.log(`[MICRO] Triage classified as "${resultado}" — proceeding with full analysis`);
+    } catch (e) {
+      console.warn("[MICRO] Triage pre-filter failed, proceeding with full analysis:", e);
+    }
+  }
+
+  // Run full AI analysis
   const systemPrompt = await buildAnalysisPrompt(supabase);
   const userPromptPrefix = import_id
     ? `Analise esta conversa do WhatsApp (contato: ${payload.contact_label || "parceiro"}):\n\n`
@@ -445,42 +516,7 @@ async function runMacro(supabase: any, jobId: string, payload: any): Promise<any
     return { skipped: true, reason: "No micro results in window" };
   }
 
-  const macroPrompt = `Você é uma especialista em proteção à mulher e relações conjugais, com profunda sensibilidade emocional. Analise os dados agregados abaixo e gere um relatório detalhado, acolhedor, elegante e organizado.
-
-PRINCÍPIO: Foco na PROTEÇÃO DA MULHER. Na dúvida, proteja-a. Seja empática e gentil na comunicação.
-
-ABORDAGEM DE COMUNICAÇÃO (OBRIGATÓRIO):
-- Fale como uma amiga sábia, experiente e acolhedora. NUNCA use termos como "terapia cognitiva", "reenquadramento", "psicoeducação", "técnica psicológica", "validação emocional" ou qualquer jargão clínico.
-- SEMPRE comece validando o que a mulher pode estar sentindo antes de orientar. Reconheça que os sentimentos dela são legítimos.
-- Normalize as experiências: use frases como "é completamente normal sentir isso...", "muitas mulheres passam por isso...", "é natural questionar...".
-- Destaque forças e ações positivas que ela JÁ demonstrou (ex: "o fato de você estar acompanhando isso já mostra muita coragem e autocuidado").
-- Ajude a ver a situação de outros ângulos sem invalidar o que ela sente. Explique dinâmicas de poder e ciclos de forma natural, como quem compartilha uma experiência de vida.
-- Reflita de volta o que ela demonstrou sentir, como um espelho gentil.
-- Lembre-a de suas próprias forças e capacidades.
-- Ajude a alinhar percepção com realidade sem confrontar diretamente.
-
-DADOS (últimos ${window_days} dias):
-${JSON.stringify(aggregates, null, 2)}
-
-INSTRUÇÕES:
-- No "panorama_narrativo": escreva 5-8 frases. COMECE validando sentimentos ("os registros mostram uma situação que pode gerar muita confusão emocional — é completamente normal sentir-se assim"). Descreva padrões observados explicando dinâmicas de forma educativa mas natural. Destaque algo positivo que ela fez ou demonstrou. Termine com uma perspectiva que fortaleça a confiança dela em si mesma.
-- No "resumo": escreva 2-3 frases como um resumo curto do panorama, mantendo o tom acolhedor.
-- Nas "orientacoes": forneça 4-6 sugestões GENTIS e ACOLHEDORAS. Use linguagem que promova auto-reflexão ("você já percebeu que...", "vale se perguntar...", "pode ser revelador pensar..."). Fortaleça a sensação de capacidade dela ("você já demonstrou que consegue..."). Sugira ações como se fossem insights naturais, não prescrições. Reduza culpa quando possível.
-- Na "reflexao_pessoal": inclua 1-2 perguntas reflexivas sutis e acolhedoras que a mulher pode ponderar consigo mesma. Devem ser perguntas que promovam autoconhecimento sem parecer exercício terapêutico. Ex: "O que você faria de diferente se uma amiga querida estivesse vivendo isso?" ou "Quando foi a última vez que você se sentiu verdadeiramente em paz?".
-- Nas "principais_ofensas": liste os xingamentos e termos depreciativos mais frequentes identificados. Se não houver, retorne array vazio.
-- NÃO inclua score numérico em nenhum campo.
-- Só inclua canais de apoio se o nível for alto ou crítico.
-
-RETORNE APENAS JSON:
-{
-  "panorama_narrativo": "5-8 frases detalhadas, começando com validação emocional.",
-  "resumo": "2-3 frases resumindo com tom acolhedor.",
-  "orientacoes": ["sugestão gentil 1", "sugestão gentil 2", "sugestão gentil 3", "sugestão gentil 4"],
-  "reflexao_pessoal": ["pergunta reflexiva sutil 1", "pergunta reflexiva sutil 2"],
-  "principais_ofensas": ["ofensa 1", "ofensa 2"],
-  "canais_apoio": [],
-  "nivel_alerta": "baixo|moderado|alto|critico"
-}`;
+  const macroPrompt = await buildMacroPrompt(supabase, window_days, JSON.stringify(aggregates, null, 2));
 
   const raw = await callAI([{ role: "user", content: macroPrompt }], MACRO_MODEL);
   const parsed = parseAIJson(raw);

@@ -1,10 +1,11 @@
 import { useEffect, useState, useRef } from "react";
-import { Settings, Save, RotateCcw, Plus, X, ChevronDown, ChevronRight, Tags, AlertTriangle } from "lucide-react";
+import { Settings, Save, RotateCcw, Plus, X, ChevronDown, ChevronRight, Tags, AlertTriangle, BrainCircuit } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import AdminTiposAlerta from "./AdminTiposAlerta";
 import AdminPalavrasTriagem from "./AdminPalavrasTriagem";
+import AdminPromptsIA from "@/components/admin/AdminPromptsIA";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -44,7 +45,7 @@ const FRIENDLY_LABELS: Record<string, string> = {
 
 const FIELD_HINTS: Record<string, string> = {};
 const PHONE_CHIP_KEYS = new Set(["elevenlabs_copom_telefone", "copom_telefone_destino"]);
-const HIDDEN_KEYS = new Set(["ia_prompt_analise"]);
+const HIDDEN_KEYS = new Set(["ia_prompt_analise", "ia_prompt_triagem", "ia_prompt_macro"]);
 const CATEGORY_ORDER = ["sistema", "panico", "gps", "notificacoes", "dados", "limites"];
 
 export default function AdminConfiguracoes() {
@@ -55,6 +56,7 @@ export default function AdminConfiguracoes() {
   const [saving, setSaving] = useState<string | null>(null);
   const [tiposOpen, setTiposOpen] = useState(false);
   const [triagemOpen, setTriagemOpen] = useState(false);
+  const [promptsOpen, setPromptsOpen] = useState(false);
 
   async function loadSettings() {
     if (!sessionToken) return;
@@ -261,6 +263,23 @@ export default function AdminConfiguracoes() {
         {triagemOpen && (
           <div className="p-4">
             <AdminPalavrasTriagem />
+          </div>
+        )}
+      </div>
+      {/* Prompts de IA - Collapsible */}
+      <div className="mt-4 rounded-lg border border-border bg-card shadow-sm overflow-hidden">
+        <button
+          onClick={() => setPromptsOpen((v) => !v)}
+          className="w-full px-4 py-3 flex items-center gap-2 bg-muted/50 hover:bg-muted/70 transition-colors text-left"
+        >
+          <BrainCircuit className="w-4 h-4 text-primary" />
+          <h2 className="text-sm font-semibold text-foreground flex-1">Prompts de IA</h2>
+          <span className="text-xs text-muted-foreground mr-2">Configurar os 3 prompts de análise (Triagem, MICRO, MACRO)</span>
+          {promptsOpen ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
+        </button>
+        {promptsOpen && (
+          <div className="p-4">
+            <AdminPromptsIA />
           </div>
         )}
       </div>
