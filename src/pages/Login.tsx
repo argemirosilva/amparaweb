@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { Eye, EyeOff, Loader2, Shield, Heart, MapPin } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 import amparaLogo from "@/assets/ampara-logo-login.png";
 
 export default function LoginPage() {
