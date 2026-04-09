@@ -58,14 +58,10 @@ export default function LoginPage() {
       <div className="w-full max-w-md animate-fade-in relative z-10">
         {/* Logo with organic backdrop */}
         <div className="text-center mb-8">
-          <div className="relative inline-block">
-            <div className="absolute -inset-4 rounded-full border opacity-[0.12]" style={{ borderColor: "hsl(280, 60%, 48%)" }} />
-            <div className="absolute -inset-8 rounded-full border opacity-[0.06]" style={{ borderColor: "hsl(320, 70%, 55%)" }} />
-            <div className="relative w-28 h-28 rounded-full overflow-hidden ring-[3px] ring-primary/20 shadow-lg mx-auto">
-              <img src={amparaLogo} alt="AMPARA" className="w-full h-full object-cover" />
-            </div>
+          <div className="relative inline-block mb-2">
+            <img src={amparaLogo} alt="AMPARA" className="w-36 h-auto object-contain mx-auto" />
           </div>
-          <h1 className="mt-4 text-xl font-display font-bold text-foreground tracking-tight">AMPARA</h1>
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest mt-1">Portal da Mulher</p>
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest mt-1">Portal da Mulher</p>
         </div>
 
