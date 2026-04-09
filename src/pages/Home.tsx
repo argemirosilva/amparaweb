@@ -17,11 +17,11 @@ export default function HomePage() {
 
       {/* Main content */}
       <div className="space-y-3 px-1">
-        {/* Device status */}
-        <DeviceStatusCard />
-
         {/* Risk evolution */}
         <RiskEvolutionCard />
+
+        {/* Device status */}
+        <DeviceStatusCard />
 
         {/* Quick actions - organic card */}
         <div className="rounded-2xl bg-card border border-border/60 overflow-hidden"
