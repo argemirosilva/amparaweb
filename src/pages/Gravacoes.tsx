@@ -447,11 +447,33 @@ export default function GravacoesPage() {
                       <div
                         key={g.id}
                         ref={isExpanded ? (el) => { if (el) setTimeout(() => el.scrollIntoView({ behavior: "smooth", block: "start" }), 100); } : undefined}
-                        className={`rounded-xl border bg-card overflow-hidden transition-all duration-200 ${
+                        className={`rounded-xl border bg-card overflow-hidden transition-all duration-200 relative ${
                           isExpanded ? "shadow-md border-primary/20" : "shadow-sm hover:shadow-md border-border"
                         }`}
-                        style={g.nivel_risco ? { borderLeftWidth: "3px", borderLeftStyle: "solid", borderLeftColor: `${RISCO_COLORS[g.nivel_risco] || "transparent"}90` } : undefined}
                       >
+                        {/* Organic risk indicator on right side */}
+                        {g.nivel_risco && g.nivel_risco !== "sem_risco" && (
+                          <div className="absolute right-0 top-0 bottom-0 pointer-events-none overflow-hidden rounded-r-xl" style={{ width: "48px" }}>
+                            <div
+                              className="absolute -right-3 top-1/2 -translate-y-1/2 w-16 h-16 rounded-full opacity-[0.12]"
+                              style={{ backgroundColor: RISCO_COLORS[g.nivel_risco] }}
+                            />
+                            <div
+                              className="absolute -right-1 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full opacity-[0.08]"
+                              style={{ backgroundColor: RISCO_COLORS[g.nivel_risco] }}
+                            />
+                            <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex flex-col items-center gap-0.5">
+                              <span
+                                className="w-2.5 h-2.5 rounded-full shadow-sm"
+                                style={{ backgroundColor: RISCO_COLORS[g.nivel_risco] }}
+                              />
+                              <span className="text-[8px] font-medium text-muted-foreground leading-none">
+                                {(RISCO_LABELS[g.nivel_risco] || g.nivel_risco).slice(0, 4)}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+
                         {selectMode && (!g.nivel_risco || g.nivel_risco === "sem_risco") && (
                           <div className="flex items-center px-3 py-2" onClick={(e) => e.stopPropagation()}>
                             <Checkbox
@@ -473,6 +495,7 @@ export default function GravacoesPage() {
                             setExpanded(isExpanded ? null : g.id);
                           }}
                           className="w-full px-3 py-2.5 text-left hover:bg-muted/30 transition-colors"
+                          style={g.nivel_risco && g.nivel_risco !== "sem_risco" ? { paddingRight: "52px" } : undefined}
                         >
                           <div className="flex items-center gap-2">
                             {!selectMode && (
@@ -484,7 +507,7 @@ export default function GravacoesPage() {
                             )}
 
                             <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2 flex-wrap">
                                 <span className="text-sm font-medium text-foreground">
                                   {formatTime(getDisplayTime(g), g.timezone)}
                                 </span>
@@ -525,15 +548,6 @@ export default function GravacoesPage() {
                                 )}
                               </div>
                               <div className="flex items-center gap-1.5 shrink-0">
-                                {g.nivel_risco && (
-                                  <span className="text-[10px] font-medium px-2.5 py-0.5 rounded-lg leading-4 border border-border bg-muted/40 text-muted-foreground flex items-center gap-1.5">
-                                    <span
-                                      className="w-2 h-2 rounded-full shrink-0"
-                                      style={{ backgroundColor: RISCO_COLORS[g.nivel_risco] }}
-                                    />
-                                    {RISCO_LABELS[g.nivel_risco] || g.nivel_risco}
-                                  </span>
-                                )}
                                 {statusInfo.variant === "destructive" && (
                                   <Badge variant={statusInfo.variant} className="text-[8px] px-1.5 py-0 leading-4">
                                     {statusInfo.label}
