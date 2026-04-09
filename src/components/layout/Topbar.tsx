@@ -33,11 +33,14 @@ export default function Topbar() {
       <SidebarTrigger className="hidden" />
       <div className="flex-1" />
 
-      {/* User avatar */}
+      {/* User greeting + avatar */}
       <button
         onClick={() => navigate("/perfil")}
-        className="relative group"
+        className="relative group flex items-center gap-2"
       >
+        <span className="text-sm font-medium text-foreground hidden sm:inline">
+          Olá, {usuario?.nome_completo?.split(" ")[0] || "usuária"}
+        </span>
         <div className="absolute -inset-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" style={{ background: "radial-gradient(circle, hsla(280,60%,48%,0.12), transparent 70%)" }} />
         <Avatar className="w-8 h-8 ring-2 ring-[hsla(280,60%,48%,0.15)] group-hover:ring-[hsla(280,60%,48%,0.3)] transition-all">
           <AvatarImage src={usuario?.avatar_url || undefined} alt={usuario?.nome_completo} />
