@@ -128,15 +128,13 @@ export default function ChangePasswordCard() {
       const res = await fetch(`${SUPABASE_URL}/functions/v1/mobile-api`, {
         method: "POST",
         headers: { "Content-Type": "application/json", apikey: SUPABASE_KEY },
-        body: JSON.stringify({
+         body: JSON.stringify({
           action: "change_password",
           session_token: sessionToken,
-          senha_atual: "gate_verified",
+          senha_atual: verifiedPassword,
           nova_senha: novaSenha,
         }),
       });
-      // The API still needs senha_atual - we need to pass the real password
-      // Since we already verified, let's use a different approach
       if (res.ok) {
         toast.success("Senha alterada com sucesso");
         setNovaSenha("");
