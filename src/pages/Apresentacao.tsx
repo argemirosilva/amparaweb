@@ -325,7 +325,7 @@ function SlideCTA() {
         <a href="mailto:contato@orizontech.com.br" className="flex items-center gap-2 bg-white/10 border border-white/20 rounded-xl px-5 py-3 text-white text-sm hover:bg-white/20 transition-colors">
           <Mail className="w-4 h-4" /> contato@orizontech.com.br
         </a>
-        <a href="https://ampamamulher.lovable.app" target="_blank" rel="noopener" className="flex items-center gap-2 bg-indigo-500 rounded-xl px-5 py-3 text-white text-sm font-semibold hover:bg-indigo-600 transition-colors">
+        <a href="https://amparamulher.com.br" target="_blank" rel="noopener" className="flex items-center gap-2 bg-indigo-500 rounded-xl px-5 py-3 text-white text-sm font-semibold hover:bg-indigo-600 transition-colors">
           <Globe className="w-4 h-4" /> Acessar Plataforma
         </a>
       </motion.div>
