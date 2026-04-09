@@ -203,7 +203,7 @@ export default function WaveformPlayer({ storagePath, sessionToken, markers = []
           {fmt(currentTime)}
         </span>
         <span className="text-[11px] text-white/50 tabular-nums font-mono">
-          {duration ? fmt(duration) : "—"}
+          {duration ? fmt(duration) : "-"}
         </span>
       </div>
     </div>

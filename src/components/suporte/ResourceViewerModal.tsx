@@ -299,7 +299,7 @@ function AudioView({ audioUrl, audioRef }: { audioUrl: string | null; audioRef: 
     <div className="flex flex-col items-center gap-4 py-6">
       <Volume2 className="w-10 h-10 text-primary" />
       <audio ref={audioRef} controls src={audioUrl} className="w-full max-w-md" />
-      <p className="text-xs text-muted-foreground">Reprodução temporária — acesso auditado.</p>
+      <p className="text-xs text-muted-foreground">Reprodução temporária - acesso auditado.</p>
     </div>
   );
 }

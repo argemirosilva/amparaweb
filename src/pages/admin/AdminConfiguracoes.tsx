@@ -230,7 +230,7 @@ export default function AdminConfiguracoes() {
         </div>
       )}
 
-      {/* Tipos de Alerta — Collapsible */}
+      {/* Tipos de Alerta - Collapsible */}
       <div className="mt-8 rounded-lg border border-border bg-card shadow-sm overflow-hidden">
         <button
           onClick={() => setTiposOpen((v) => !v)}
@@ -247,7 +247,7 @@ export default function AdminConfiguracoes() {
           </div>
         )}
       </div>
-      {/* Palavras de Triagem — Collapsible */}
+      {/* Palavras de Triagem - Collapsible */}
       <div className="mt-4 rounded-lg border border-border bg-card shadow-sm overflow-hidden">
         <button
           onClick={() => setTriagemOpen((v) => !v)}

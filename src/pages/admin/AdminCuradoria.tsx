@@ -142,7 +142,7 @@ export default function AdminCuradoria() {
   };
 
   const fmtDuration = (s: number | null) => {
-    if (!s) return "—";
+    if (!s) return "-";
     const m = Math.floor(s / 60);
     const sec = Math.floor(s % 60);
     return `${m}m${sec.toString().padStart(2, "0")}s`;
@@ -221,12 +221,12 @@ export default function AdminCuradoria() {
                       <Badge className={`${RISK_COLORS[item.nivel_risco] || "bg-muted text-foreground"} text-xs capitalize`}>
                         {item.nivel_risco}
                       </Badge>
-                    ) : <span className="text-muted-foreground">—</span>}
+                    ) : <span className="text-muted-foreground">-</span>}
                   </TableCell>
                   <TableCell className="text-sm">
                     {item.context_classification
                       ? CONTEXT_LABELS[item.context_classification] || item.context_classification
-                      : <span className="text-muted-foreground">—</span>}
+                      : <span className="text-muted-foreground">-</span>}
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2 min-w-[100px]">

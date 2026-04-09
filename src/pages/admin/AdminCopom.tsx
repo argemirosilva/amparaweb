@@ -50,9 +50,9 @@ const CONTEXT_FIELDS: Array<{ section: string; fields: ContextFieldDef[] }> = [
     { key: "aggressor.tem_arma", label: "Possui arma?", type: "toggle" },
     { key: "aggressor.forca_seguranca", label: "Força de segurança?", type: "toggle" },
     { key: "aggressor.forca_seguranca_tipo", label: "Tipo força segurança", placeholder: "PM" },
-    { key: "aggressor.vehicle.model", label: "Veículo — modelo", placeholder: "Gol Branco" },
-    { key: "aggressor.vehicle.color", label: "Veículo — cor", placeholder: "Branco" },
-    { key: "aggressor.vehicle.plate_partial", label: "Veículo — placa parcial", placeholder: "ABC-1*34" },
+    { key: "aggressor.vehicle.model", label: "Veículo - modelo", placeholder: "Gol Branco" },
+    { key: "aggressor.vehicle.color", label: "Veículo - cor", placeholder: "Branco" },
+    { key: "aggressor.vehicle.plate_partial", label: "Veículo - placa parcial", placeholder: "ABC-1*34" },
   ]},
   { section: "Localização", fields: [
     { key: "location.address", label: "Endereço (última localização)", placeholder: "Rua XV de Novembro, 123, Bauru-SP" },
@@ -192,7 +192,7 @@ export default function AdminCopom({ embedded, apiBaseUrl = "" }: { embedded?: b
         <AdminPageHeader
           icon={Phone}
           breadcrumb="Admin › COPOM Agreggar"
-          title="COPOM — Agreggar SpeedDial"
+          title="COPOM - Agreggar SpeedDial"
           description="Dispare chamadas automatizadas via plataforma OCS Agreggar"
         />
       )}
@@ -253,7 +253,7 @@ export default function AdminCopom({ embedded, apiBaseUrl = "" }: { embedded?: b
               </div>
             </div>
 
-            {/* Context fields — auto-mapped to SinergyTech lstExtraFieldValue */}
+            {/* Context fields - auto-mapped to SinergyTech lstExtraFieldValue */}
             <div>
               <h3 className="text-sm font-semibold text-foreground mb-1">Contexto da Ocorrência</h3>
               <p className="text-xs text-muted-foreground mb-3">
@@ -412,7 +412,7 @@ ${Object.entries(lastResponse.request_debug.headers || {}).map(([k, v]) => `${k}
                         <td className="px-4 py-3 text-foreground whitespace-nowrap">
                           {new Date(h.created_at).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
                         </td>
-                        <td className="px-4 py-3 text-foreground">{p.contactName || "—"}</td>
+                        <td className="px-4 py-3 text-foreground">{p.contactName || "-"}</td>
                         <td className="px-4 py-3 text-foreground font-mono">({p.ddd}) {p.phone}</td>
                         <td className="px-4 py-3 text-foreground">{p.campaignId}</td>
                         <td className="px-4 py-3">

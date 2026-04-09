@@ -438,7 +438,7 @@ export default function Rastreamento() {
       {/* Full-screen map */}
       <div ref={containerRef} className="absolute inset-0 z-0" />
 
-      {/* Top bar — compact GPS style */}
+      {/* Top bar - compact GPS style */}
       <div className="absolute top-0 left-0 right-0 z-10 p-3">
         <div className={`flex items-center justify-between rounded-2xl px-4 py-2.5 backdrop-blur-xl shadow-2xl ${isPanic ? "bg-red-950/90 border border-red-800/40" : "bg-black/80 border border-white/10"}`}>
           <div className="flex items-center gap-3 min-w-0">
@@ -501,7 +501,7 @@ export default function Rastreamento() {
         </button>
       )}
 
-      {/* Bottom HUD — GPS navigator style */}
+      {/* Bottom HUD - GPS navigator style */}
       {location && (
         <div className="absolute bottom-0 left-0 right-0 z-10 p-3 pb-safe">
           <div className={`rounded-2xl backdrop-blur-xl shadow-2xl border overflow-hidden ${isPanic ? "bg-red-950/90 border-red-800/40" : "bg-black/80 border-white/10"}`}>

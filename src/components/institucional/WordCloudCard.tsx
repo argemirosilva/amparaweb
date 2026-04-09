@@ -25,7 +25,7 @@ type WordFreq = { word: string; count: number };
 type AnalysisRow = { palavras_chave: string[] | null; created_at: string };
 
 interface WordCloudCardProps {
-  /** ISO date string — only analyses after this date are included */
+  /** ISO date string - only analyses after this date are included */
   since?: string;
 }
 
@@ -158,7 +158,7 @@ export default function WordCloudCard({ since }: WordCloudCardProps) {
                   </button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <span className="font-medium">{w.word}</span> — {w.count} ocorrência{w.count !== 1 ? "s" : ""}
+                  <span className="font-medium">{w.word}</span> - {w.count} ocorrência{w.count !== 1 ? "s" : ""}
                   <br />
                   <span className="text-xs opacity-70">Clique para ver associadas</span>
                 </TooltipContent>

@@ -115,7 +115,7 @@ export default function BuscaPerfilPage() {
       <div>
         <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-1">Pesquisa</p>
         <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">Pesquisar parceiro</h1>
-        <p className="text-sm text-muted-foreground mt-1">Pesquise por dados parciais — nunca expomos dados sensíveis</p>
+        <p className="text-sm text-muted-foreground mt-1">Pesquise por dados parciais - nunca expomos dados sensíveis</p>
       </div>
 
       {/* Info box */}
@@ -127,7 +127,7 @@ export default function BuscaPerfilPage() {
               Cruza dados parciais com relatos anônimos de outras mulheres para indicar possíveis riscos. Quanto mais campos preencher, melhor o resultado.
             </p>
             <p className="text-xs text-amber-600 dark:text-amber-400 leading-relaxed font-medium">
-              ⚠ Resultados indicativos — baseados em relatos voluntários, não auditados. Não substituem denúncias formais.
+              ⚠ Resultados indicativos - baseados em relatos voluntários, não auditados. Não substituem denúncias formais.
             </p>
           </div>
         </div>

@@ -418,7 +418,7 @@ export async function generateAlertasPDF(period: string) {
   const tempos = (alertas || [])
     .filter((a) => a.tempo_ate_cancelamento_segundos != null)
     .map((a) => a.tempo_ate_cancelamento_segundos!);
-  const tempoMedio = tempos.length ? (tempos.reduce((a, b) => a + b, 0) / tempos.length).toFixed(0) : "—";
+  const tempoMedio = tempos.length ? (tempos.reduce((a, b) => a + b, 0) / tempos.length).toFixed(0) : "-";
   const tempoMin = tempos.length ? Math.min(...tempos) : 0;
   const tempoMax = tempos.length ? Math.max(...tempos) : 0;
 

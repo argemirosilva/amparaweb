@@ -100,7 +100,7 @@ export default function AdminAuditoria() {
         }
       }
 
-      setLogs(rows.map((r) => ({ ...r, user_name: r.user_id ? userMap[r.user_id] || "—" : "—" })));
+      setLogs(rows.map((r) => ({ ...r, user_name: r.user_id ? userMap[r.user_id] || "-" : "-" })));
       setLoading(false);
     }
     load();
@@ -197,13 +197,13 @@ export default function AdminAuditoria() {
                     {new Date(l.created_at).toLocaleString("pt-BR")}
                   </td>
                   <td className="px-4 py-3 text-sm text-foreground">
-                    {l.user_name || "—"}
+                    {l.user_name || "-"}
                   </td>
                   <td className="px-4 py-3 font-medium text-foreground">
                     {ACTION_LABELS[l.action_type] || l.action_type}
                   </td>
                   <td className="px-4 py-3 text-xs font-mono text-muted-foreground">
-                    {l.ip_address || "—"}
+                    {l.ip_address || "-"}
                   </td>
                   <td className="px-4 py-3">
                     <span
@@ -254,7 +254,7 @@ export default function AdminAuditoria() {
               <div>
                 <p className="text-xs font-medium text-muted-foreground">Metadata</p>
                 <pre className="text-xs p-3 rounded overflow-auto max-h-40 bg-muted text-foreground">
-                  {JSON.stringify(selected.details, null, 2) || "—"}
+                  {JSON.stringify(selected.details, null, 2) || "-"}
                 </pre>
               </div>
             </div>

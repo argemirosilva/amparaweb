@@ -70,7 +70,7 @@ export default function SupportNew() {
         setRecordings(
           res.data.gravacoes.map((g: any) => ({
             id: g.id,
-            label: `Gravação ${new Date(g.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })} ${new Date(g.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} (${g.duracao_segundos ? Math.floor(g.duracao_segundos / 60) + ":" + String(Math.floor(g.duracao_segundos % 60)).padStart(2, "0") : "—"})`,
+            label: `Gravação ${new Date(g.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })} ${new Date(g.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} (${g.duracao_segundos ? Math.floor(g.duracao_segundos / 60) + ":" + String(Math.floor(g.duracao_segundos % 60)).padStart(2, "0") : "-"})`,
           }))
         );
       }
@@ -140,7 +140,7 @@ export default function SupportNew() {
       });
 
       if (res.status === 401 && res.data?.session_killed) {
-        // Session killed — the AuthContext listener will handle logout
+        // Session killed - the AuthContext listener will handle logout
         toast.error("Sessão encerrada por segurança. Faça login novamente.");
         window.dispatchEvent(new Event("ampara:session_expired"));
         return;

@@ -201,7 +201,7 @@ export default function AdminMapa() {
   const [munPanicoStats, setMunPanicoStats] = useState<Record<string, Record<string, number>>>({});
 
   // Dashboard analytics state
-  // analyticsPeriod removed — reuses `period` from map selector
+  // analyticsPeriod removed - reuses `period` from map selector
   const [kpis, setKpis] = useState({ monitoradas: 0, eventos: 0, emergencias: 0, dispositivosOnline: 0, totalGravacoes: 0, totalHorasGravacao: 0 });
   const [timelineData, setTimelineData] = useState<{ date: string; eventos: number; emergencias: number }[]>([]);
   const [riskDistribution, setRiskDistribution] = useState<{ name: string; value: number }[]>([]);
@@ -328,7 +328,7 @@ export default function AdminMapa() {
       if (!lat || !lng) return null;
       return {
         id: a.id, lat, lng, status: a.status,
-        protocolo: a.protocolo, criado_em: a.criado_em, userName: user?.nome || "—",
+        protocolo: a.protocolo, criado_em: a.criado_em, userName: user?.nome || "-",
       };
     }).filter(Boolean) as AlertMarker[];
     setAlerts(alertMarkers);
@@ -427,7 +427,7 @@ export default function AdminMapa() {
           id: device?.id || u.id,
           lat, lng,
           status: device?.status || "offline",
-          userName: u.nome_completo || "—",
+          userName: u.nome_completo || "-",
           bateria: device?.bateria_percentual ?? null,
           lastPing: device?.last_ping_at ?? null,
           isMonitoring: device?.is_monitoring ?? false,
@@ -665,7 +665,7 @@ export default function AdminMapa() {
           const grav = Number(p.gravacoes) || 0;
           const horas = Number(p.horasGravacao) || 0;
           const rt = recTrends[uf];
-          const trendIcon = rt?.trend === "up" ? "▲" : rt?.trend === "down" ? "▼" : "—";
+          const trendIcon = rt?.trend === "up" ? "▲" : rt?.trend === "down" ? "▼" : "-";
           const trendColor = rt?.trend === "up" ? "#dc2626" : rt?.trend === "down" ? "#16a34a" : "hsl(220,9%,46%)";
           const trendPct = rt?.pct || 0;
           popup.setLngLat(e.lngLat).setHTML(`<div style="font-family:Inter,Roboto,sans-serif;font-size:11px;line-height:1.6;color:hsl(220,13%,18%)">
@@ -889,7 +889,7 @@ export default function AdminMapa() {
           {selectedUf ? (
             <>
               <h3 className="text-sm font-bold mb-1" style={titleStyle}>
-                {UF_TO_STATE_NAME[selectedUf] || selectedUf} — {selectedUf}
+                {UF_TO_STATE_NAME[selectedUf] || selectedUf} - {selectedUf}
                 {recTrends[selectedUf] && recTrends[selectedUf].trend !== "stable" && (
                   <span className="ml-2 text-xs font-bold" style={{ color: recTrends[selectedUf].trend === "up" ? "#dc2626" : "#16a34a" }}>
                     {recTrends[selectedUf].trend === "up" ? "▲" : "▼"} {recTrends[selectedUf].pct}%
@@ -918,7 +918,7 @@ export default function AdminMapa() {
               {/* Ranking por município */}
               {selectedUf && municipioStats[selectedUf] && Object.keys(municipioStats[selectedUf]).length > 0 && (
                 <>
-                  <h4 className="text-[10px] font-semibold uppercase tracking-wider mt-4 mb-2" style={subtitleStyle}>Ranking por Município — {rankingModeLabel}</h4>
+                  <h4 className="text-[10px] font-semibold uppercase tracking-wider mt-4 mb-2" style={subtitleStyle}>Ranking por Município - {rankingModeLabel}</h4>
                   <RankingModeSelector />
                   <div className="space-y-1">
                     {Object.entries(municipioStats[selectedUf])
@@ -958,7 +958,7 @@ export default function AdminMapa() {
             </>
           ) : (
             <>
-              <h3 className="text-xs font-semibold uppercase tracking-wider mb-3" style={subtitleStyle}>Ranking por UF — {rankingModeLabel}</h3>
+              <h3 className="text-xs font-semibold uppercase tracking-wider mb-3" style={subtitleStyle}>Ranking por UF - {rankingModeLabel}</h3>
               <RankingModeSelector />
               {topUfs.length === 0 ? (
                 <p className="text-xs py-3 text-center rounded-lg" style={{ ...subtitleStyle, background: "hsl(210 17% 96%)" }}>Nenhum dado disponível</p>
@@ -1050,7 +1050,7 @@ export default function AdminMapa() {
         {/* Row 2: Timeline + Alert Type */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
           <div className="rounded-md border p-4" style={cardStyle}>
-            <h2 className="text-sm font-semibold mb-4" style={titleStyle}>Evolução Temporal — Eventos e Emergências</h2>
+            <h2 className="text-sm font-semibold mb-4" style={titleStyle}>Evolução Temporal - Eventos e Emergências</h2>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={timelineData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
@@ -1106,7 +1106,7 @@ export default function AdminMapa() {
           </div>
         </div>
 
-        {/* Top 5 Cities — Tabbed */}
+        {/* Top 5 Cities - Tabbed */}
         <div className="rounded-md border overflow-hidden mb-6" style={cardStyle}>
           <Tabs defaultValue="eventos" className="w-full">
             <div className="px-4 py-3 border-b flex items-center justify-between gap-4" style={{ borderColor: "hsl(220 13% 91%)" }}>

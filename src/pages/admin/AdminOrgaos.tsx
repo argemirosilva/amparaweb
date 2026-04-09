@@ -200,8 +200,8 @@ export default function AdminOrgaos() {
                   <td className="px-4 py-3">
                     <span className="px-2 py-0.5 rounded text-xs font-semibold bg-primary/10 text-primary">{t.sigla}</span>
                   </td>
-                  <td className="px-4 py-3 text-xs text-foreground">{t.responsavel_nome || "—"}</td>
-                  <td className="px-4 py-3 text-xs text-foreground">{t.cidade && t.uf ? `${t.cidade}/${t.uf}` : "—"}</td>
+                  <td className="px-4 py-3 text-xs text-foreground">{t.responsavel_nome || "-"}</td>
+                  <td className="px-4 py-3 text-xs text-foreground">{t.cidade && t.uf ? `${t.cidade}/${t.uf}` : "-"}</td>
                   <td className="px-4 py-3 text-xs">
                     <span className={(t.usuarios_ativos ?? 0) >= t.max_usuarios ? "text-destructive font-semibold" : "text-foreground"}>
                       {t.usuarios_ativos ?? 0}/{t.max_usuarios}

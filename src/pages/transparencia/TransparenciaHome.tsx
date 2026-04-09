@@ -10,8 +10,8 @@ export default function TransparenciaHome() {
   const [kpis, setKpis] = useState({
     monitoradas: 0,
     alertas: 0,
-    tempoMedioResposta: "—",
-    reducao: "—",
+    tempoMedioResposta: "-",
+    reducao: "-",
   });
 
   useEffect(() => {

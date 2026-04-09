@@ -28,7 +28,7 @@ const ENDPOINTS: Endpoint[] = [
     fase: 1,
     description: "Autentica a usuária e retorna access_token + refresh_token. Detecta senha de coação silenciosamente. Rate limit: 5 tentativas / 15 min por email+IP.",
     auth: "nenhuma",
-    usageGuide: "Primeira chamada do app ao iniciar. Armazene o session_token de forma segura (SharedPreferences criptografadas no Android / Keychain no iOS). O refresh_token deve ser guardado separadamente para renovação automática. Se loginTipo retornar 'coacao', o app DEVE se comportar de forma idêntica ao login normal — nenhuma mudança visual, nenhuma mensagem diferente. O backend já registra o evento no audit log. Após login bem-sucedido, a próxima chamada obrigatória é syncConfigMobile.",
+    usageGuide: "Primeira chamada do app ao iniciar. Armazene o session_token de forma segura (SharedPreferences criptografadas no Android / Keychain no iOS). O refresh_token deve ser guardado separadamente para renovação automática. Se loginTipo retornar 'coacao', o app DEVE se comportar de forma idêntica ao login normal - nenhuma mudança visual, nenhuma mensagem diferente. O backend já registra o evento no audit log. Após login bem-sucedido, a próxima chamada obrigatória é syncConfigMobile.",
     params: [
       { name: "email", type: "string", required: true, description: "Email da usuária" },
       { name: "senha", type: "string", required: true, description: "Senha da usuária" },
@@ -47,7 +47,7 @@ const ENDPOINTS: Endpoint[] = [
     fase: 1,
     description: "Renova o access_token usando um refresh_token válido. O refresh_token anterior é revogado (rotação).",
     auth: "refresh_token",
-    usageGuide: "Chame esta action ANTES que o session_token expire (verifique o campo expires_at retornado no login). Recomendação: renovar quando faltar 5 minutos para expirar. Após a chamada, AMBOS os tokens (access e refresh) são substituídos — descarte os antigos imediatamente. Se o refresh_token já tiver sido usado (rotação), a chamada falha e o usuário precisa refazer login.",
+    usageGuide: "Chame esta action ANTES que o session_token expire (verifique o campo expires_at retornado no login). Recomendação: renovar quando faltar 5 minutos para expirar. Após a chamada, AMBOS os tokens (access e refresh) são substituídos - descarte os antigos imediatamente. Se o refresh_token já tiver sido usado (rotação), a chamada falha e o usuário precisa refazer login.",
     params: [
       { name: "refresh_token", type: "string", required: true, description: "Refresh token de 128 caracteres" },
     ],
@@ -61,9 +61,9 @@ const ENDPOINTS: Endpoint[] = [
   {
     action: "pingMobile",
     fase: 1,
-    description: "Heartbeat do dispositivo (1s normal / 1s pânico). Atualiza status de bateria, gravação, monitoramento. Se latitude/longitude estiverem presentes, registra localização automaticamente (vincula a alerta de pânico ativo se existir). Device único por usuária — novo device_id substitui o anterior. O frontend aplica snap-to-road (Mapbox Map Matching API) para exibir o marcador na via mais próxima. ⚠️ Deduplicação GPS: se timestamp_gps já existir para a usuária, o registro é ignorado silenciosamente.",
+    description: "Heartbeat do dispositivo (1s normal / 1s pânico). Atualiza status de bateria, gravação, monitoramento. Se latitude/longitude estiverem presentes, registra localização automaticamente (vincula a alerta de pânico ativo se existir). Device único por usuária - novo device_id substitui o anterior. O frontend aplica snap-to-road (Mapbox Map Matching API) para exibir o marcador na via mais próxima. ⚠️ Deduplicação GPS: se timestamp_gps já existir para a usuária, o registro é ignorado silenciosamente.",
     auth: "session_token",
-    usageGuide: "Deve ser chamado CONTINUAMENTE em background via serviço nativo (AlarmManager/WorkManager no Android, BGTaskScheduler no iOS). Envie TODOS os campos disponíveis — bateria, GPS, status de gravação, status de monitoramento. O backend usa esses dados para determinar se o dispositivo está online (timeout de 30s sem ping = offline). Mesmo que o GPS não esteja disponível, envie o ping sem coordenadas — o status do dispositivo ainda será atualizado. Nunca pause o ping durante gravação ou monitoramento.",
+    usageGuide: "Deve ser chamado CONTINUAMENTE em background via serviço nativo (AlarmManager/WorkManager no Android, BGTaskScheduler no iOS). Envie TODOS os campos disponíveis - bateria, GPS, status de gravação, status de monitoramento. O backend usa esses dados para determinar se o dispositivo está online (timeout de 30s sem ping = offline). Mesmo que o GPS não esteja disponível, envie o ping sem coordenadas - o status do dispositivo ainda será atualizado. Nunca pause o ping durante gravação ou monitoramento.",
     params: [
       { name: "session_token", type: "string", required: true, description: "Token de sessão" },
       { name: "device_id", type: "string", required: false, description: "Identificador único do dispositivo" },
@@ -85,7 +85,7 @@ const ENDPOINTS: Endpoint[] = [
     ],
     response: { success: true, status: "online", servidor_timestamp: "ISO8601" },
     notes: [
-      "device_model é aceito como fallback de dispositivo_info — se ambos forem enviados, dispositivo_info tem prioridade.",
+      "device_model é aceito como fallback de dispositivo_info - se ambos forem enviados, dispositivo_info tem prioridade.",
       "GPS com timestamp_gps duplicado é ignorado silenciosamente (deduplicação).",
     ],
   },
@@ -124,7 +124,7 @@ const ENDPOINTS: Endpoint[] = [
     fase: 2,
     description: "Encerra a sessão do dispositivo. Bloqueia logout se houver pânico ativo (retorna 403 PANIC_ACTIVE_CANNOT_LOGOUT).",
     auth: "session_token",
-    usageGuide: "Chame ao usuário tocar em 'Sair' no app. IMPORTANTE: se houver pânico ativo, o backend retorna erro 403 com código PANIC_ACTIVE_CANNOT_LOGOUT — o app deve exibir mensagem informando que é necessário cancelar o pânico antes de sair. Após logout bem-sucedido, descarte TODOS os tokens locais (session_token e refresh_token). Também limpe qualquer cache de configuração.",
+    usageGuide: "Chame ao usuário tocar em 'Sair' no app. IMPORTANTE: se houver pânico ativo, o backend retorna erro 403 com código PANIC_ACTIVE_CANNOT_LOGOUT - o app deve exibir mensagem informando que é necessário cancelar o pânico antes de sair. Após logout bem-sucedido, descarte TODOS os tokens locais (session_token e refresh_token). Também limpe qualquer cache de configuração.",
     params: [
       { name: "session_token", type: "string", required: true, description: "Token de sessão" },
       { name: "device_id", type: "string", required: true, description: "ID do dispositivo" },
@@ -136,7 +136,7 @@ const ENDPOINTS: Endpoint[] = [
     fase: 2,
     description: "Valida a senha da usuária e retorna se é normal ou de coação. Rate limit: 5 tentativas / 15 min.",
     auth: "session_token",
-    usageGuide: "Use antes de operações sensíveis (alterar senha, excluir conta, etc.) como confirmação de identidade. O retorno 'loginTipo' indica se a senha fornecida é a normal ou a de coação. Se for coação, o app deve se comportar normalmente — a validação retorna success mas o backend registra o evento.",
+    usageGuide: "Use antes de operações sensíveis (alterar senha, excluir conta, etc.) como confirmação de identidade. O retorno 'loginTipo' indica se a senha fornecida é a normal ou a de coação. Se for coação, o app deve se comportar normalmente - a validação retorna success mas o backend registra o evento.",
     params: [
       { name: "session_token", type: "string", required: true, description: "Token de sessão" },
       { name: "email_usuario", type: "string", required: true, description: "Email da usuária" },
@@ -149,7 +149,7 @@ const ENDPOINTS: Endpoint[] = [
     fase: 2,
     description: "Altera a senha principal. Se a senha atual for a de coação, retorna success: true mas NÃO altera nada (anti-coerção). Rate limit: 5/15min.",
     auth: "session_token",
-    usageGuide: "Solicite a senha atual e a nova senha ao usuário. Se a usuária estiver logada com senha de coação, o backend retorna success: true mas NÃO altera a senha real — isso é o mecanismo anti-coerção. O app NUNCA deve diferenciar visualmente essa situação. A nova senha deve ter mínimo 6 caracteres.",
+    usageGuide: "Solicite a senha atual e a nova senha ao usuário. Se a usuária estiver logada com senha de coação, o backend retorna success: true mas NÃO altera a senha real - isso é o mecanismo anti-coerção. O app NUNCA deve diferenciar visualmente essa situação. A nova senha deve ter mínimo 6 caracteres.",
     params: [
       { name: "session_token", type: "string", required: true, description: "Token de sessão" },
       { name: "senha_atual", type: "string", required: true, description: "Senha atual" },
@@ -162,7 +162,7 @@ const ENDPOINTS: Endpoint[] = [
     fase: 2,
     description: "Altera a senha de coação (segurança). Requer autenticação com senha NORMAL. Se autenticada com senha de coação, retorna success: true sem alterar (anti-coerção). A senha de coação deve ser diferente da senha principal. Rate limit: 5/15min.",
     auth: "session_token",
-    usageGuide: "A senha de coação é uma senha alternativa que, quando usada no login, sinaliza silenciosamente uma situação de coerção. Para definir/alterar, a usuária DEVE estar autenticada com a senha NORMAL (não a de coação). Se autenticada com senha de coação, o backend retorna success mas não altera nada. A nova senha de coação deve ser diferente da senha principal — o backend valida isso.",
+    usageGuide: "A senha de coação é uma senha alternativa que, quando usada no login, sinaliza silenciosamente uma situação de coerção. Para definir/alterar, a usuária DEVE estar autenticada com a senha NORMAL (não a de coação). Se autenticada com senha de coação, o backend retorna success mas não altera nada. A nova senha de coação deve ser diferente da senha principal - o backend valida isso.",
     params: [
       { name: "session_token", type: "string", required: true, description: "Token de sessão" },
       { name: "senha_atual", type: "string", required: true, description: "Senha atual (deve ser a normal)" },
@@ -175,7 +175,7 @@ const ENDPOINTS: Endpoint[] = [
     fase: 2,
     description: "Atualiza os períodos de monitoramento semanal. Máx 8h/dia. Valida formato HH:MM e que inicio < fim. Dias: seg, ter, qua, qui, sex, sab, dom.",
     auth: "session_token",
-    usageGuide: "Envie o objeto completo de periodos_semana — o backend substitui toda a configuração (não é merge). Cada dia aceita múltiplos períodos desde que não excedam 8h totais. Formato obrigatório: HH:MM (24h). O campo inicio deve ser menor que fim (não suporta períodos que cruzam meia-noite). Após atualizar, chame syncConfigMobile para confirmar que o app está sincronizado.",
+    usageGuide: "Envie o objeto completo de periodos_semana - o backend substitui toda a configuração (não é merge). Cada dia aceita múltiplos períodos desde que não excedam 8h totais. Formato obrigatório: HH:MM (24h). O campo inicio deve ser menor que fim (não suporta períodos que cruzam meia-noite). Após atualizar, chame syncConfigMobile para confirmar que o app está sincronizado.",
     params: [
       { name: "session_token", type: "string", required: true, description: "Token de sessão" },
       { name: "periodos_semana", type: "object", required: true, description: "Objeto com dias da semana e períodos { seg: [{inicio: 'HH:MM', fim: 'HH:MM'}], ... }" },
@@ -187,9 +187,9 @@ const ENDPOINTS: Endpoint[] = [
   {
     action: "enviarLocalizacaoGPS",
     fase: 3,
-    description: "Registra localização GPS. Vincula automaticamente ao alerta de pânico ativo se existir. Validação de device_id quando há pânico/monitoramento ativo. O frontend aplica snap-to-road para encaixar a posição na via mais próxima e auto-follow para centralizar o mapa automaticamente. ⚠️ Deduplicação GPS: se timestamp_gps já existir para a usuária, o registro é ignorado silenciosamente — o app deve garantir timestamps únicos.",
+    description: "Registra localização GPS. Vincula automaticamente ao alerta de pânico ativo se existir. Validação de device_id quando há pânico/monitoramento ativo. O frontend aplica snap-to-road para encaixar a posição na via mais próxima e auto-follow para centralizar o mapa automaticamente. ⚠️ Deduplicação GPS: se timestamp_gps já existir para a usuária, o registro é ignorado silenciosamente - o app deve garantir timestamps únicos.",
     auth: "email_usuario",
-    usageGuide: "Use para envios dedicados de GPS fora do ciclo de ping (ex: rastreamento contínuo em pânico). O pingMobile já registra GPS automaticamente quando latitude/longitude estão presentes, então esta action é complementar. IMPORTANTE: se há pânico ou monitoramento ativo, o device_id é OBRIGATÓRIO — sem ele, o backend retorna erro DEVICE_ID_REQUIRED. Se o device_id não corresponder ao registrado no pânico ativo, retorna DEVICE_MISMATCH. Sempre envie timestamp_gps único para evitar deduplicação.",
+    usageGuide: "Use para envios dedicados de GPS fora do ciclo de ping (ex: rastreamento contínuo em pânico). O pingMobile já registra GPS automaticamente quando latitude/longitude estão presentes, então esta action é complementar. IMPORTANTE: se há pânico ou monitoramento ativo, o device_id é OBRIGATÓRIO - sem ele, o backend retorna erro DEVICE_ID_REQUIRED. Se o device_id não corresponder ao registrado no pânico ativo, retorna DEVICE_MISMATCH. Sempre envie timestamp_gps único para evitar deduplicação.",
     params: [
       { name: "email_usuario", type: "string", required: true, description: "Email da usuária" },
       { name: "latitude", type: "number", required: true, description: "Latitude" },
@@ -200,7 +200,7 @@ const ENDPOINTS: Endpoint[] = [
       { name: "bateria_percentual", type: "number", required: false, description: "Nível da bateria" },
       { name: "speed", type: "number", required: false, description: "Velocidade m/s" },
       { name: "heading", type: "number", required: false, description: "Direção em graus" },
-      { name: "timestamp_gps", type: "string", required: false, description: "Timestamp ISO do GPS. Usado para deduplicação — timestamps repetidos são ignorados." },
+      { name: "timestamp_gps", type: "string", required: false, description: "Timestamp ISO do GPS. Usado para deduplicação - timestamps repetidos são ignorados." },
     ],
     response: { success: true, message: "Localização registrada", alerta_id: "uuid | null", servidor_timestamp: "ISO8601" },
     notes: [
@@ -214,7 +214,7 @@ const ENDPOINTS: Endpoint[] = [
     fase: 3,
     description: "Aciona o botão de pânico. Gera protocolo único (AMP-YYYYMMDD-XXXXXX). Registra localização se fornecida. Notifica rede de apoio via WhatsApp (fire-and-forget).",
     auth: "email_usuario",
-    usageGuide: "Chamada crítica — deve ser enviada IMEDIATAMENTE quando o botão de pânico é pressionado. Envie a localização GPS atual junto (campo latitude/longitude na raiz OU dentro do objeto 'localizacao'). Se o GPS não estiver disponível, envie sem coordenadas — o pânico será ativado mesmo assim. O retorno inclui alerta_id e protocolo — armazene ambos localmente. A partir deste momento, o pingMobile vincula automaticamente cada posição GPS ao alerta ativo. O logout fica BLOQUEADO até o pânico ser cancelado.",
+    usageGuide: "Chamada crítica - deve ser enviada IMEDIATAMENTE quando o botão de pânico é pressionado. Envie a localização GPS atual junto (campo latitude/longitude na raiz OU dentro do objeto 'localizacao'). Se o GPS não estiver disponível, envie sem coordenadas - o pânico será ativado mesmo assim. O retorno inclui alerta_id e protocolo - armazene ambos localmente. A partir deste momento, o pingMobile vincula automaticamente cada posição GPS ao alerta ativo. O logout fica BLOQUEADO até o pânico ser cancelado.",
     params: [
       { name: "email_usuario", type: "string", required: true, description: "Email da usuária" },
       { name: "device_id", type: "string", required: false, description: "ID do dispositivo" },
@@ -233,7 +233,7 @@ const ENDPOINTS: Endpoint[] = [
     fase: 3,
     description: "Cancela alerta de pânico ativo. Se cancelado em <60s = dentro da janela (autoridades NÃO acionadas). Sela sessão de monitoramento ativa. Desativa compartilhamento GPS vinculado. Notifica rede de apoio que pânico foi resolvido.",
     auth: "email_usuario",
-    usageGuide: "Se cancelado nos primeiros 60 segundos, o campo 'cancelado_dentro_janela' retorna true e 'autoridades_acionadas' retorna false — útil para acionamentos acidentais. Após 60s, as autoridades já foram notificadas e o cancelamento apenas encerra o rastreamento. O campo 'tempo_ate_cancelamento_segundos' indica quantos segundos se passaram desde o acionamento. Após cancelar, o logout volta a funcionar normalmente.",
+    usageGuide: "Se cancelado nos primeiros 60 segundos, o campo 'cancelado_dentro_janela' retorna true e 'autoridades_acionadas' retorna false - útil para acionamentos acidentais. Após 60s, as autoridades já foram notificadas e o cancelamento apenas encerra o rastreamento. O campo 'tempo_ate_cancelamento_segundos' indica quantos segundos se passaram desde o acionamento. Após cancelar, o logout volta a funcionar normalmente.",
     params: [
       { name: "email_usuario", type: "string", required: true, description: "Email da usuária" },
       { name: "tipo_cancelamento", type: "string", required: false, description: "manual | automatico. Default: 'manual'" },
@@ -273,9 +273,9 @@ const ENDPOINTS: Endpoint[] = [
     response: { success: true, message: "Status da gravação atualizado", sessao_id: "uuid", status: "aguardando_finalizacao | ativa | descartada", servidor_timestamp: "ISO8601" },
     notes: [
       "Os aliases iniciarGravacao, pararGravacao e finalizarGravacao são roteados para o mesmo handler no backend. O app pode usar qualquer um deles com os mesmos parâmetros.",
-      "Status 'aguardando_finalizacao': retornado quando motivo_parada é 'botao_manual', 'manual' ou 'parada_panico' — a sessão é selada imediatamente.",
-      "Status 'ativa': retornado para outros motivos de parada — a sessão permanece aberta e será selada pelo cron de manutenção.",
-      "Status 'descartada': retornado quando total_segmentos === 0 — a sessão é removida do banco.",
+      "Status 'aguardando_finalizacao': retornado quando motivo_parada é 'botao_manual', 'manual' ou 'parada_panico' - a sessão é selada imediatamente.",
+      "Status 'ativa': retornado para outros motivos de parada - a sessão permanece aberta e será selada pelo cron de manutenção.",
+      "Status 'descartada': retornado quando total_segmentos === 0 - a sessão é removida do banco.",
     ],
   },
   {
@@ -283,7 +283,7 @@ const ENDPOINTS: Endpoint[] = [
     fase: 4,
     description: "Recebe segmento de áudio. Suporta JSON com file_url OU multipart/form-data com upload binário direto para R2. Idempotente via segmento_idx. O backend possui 3 fluxos de resposta: sessão ativa (normal), segmento tardio (grace window 60s), e gravação órfã (sem sessão).",
     auth: "session_token ou email_usuario",
-    usageGuide: "Envie cada segmento de 30s assim que gravado — não espere acumular. Use segmento_idx sequencial começando em 1 (1, 2, 3...) para garantir idempotência: se o mesmo idx for enviado novamente na mesma sessão, o backend retorna o segmento existente sem duplicar. Se a sessão de monitoramento foi selada mas o segmento está atrasado, o backend aceita por até 60 segundos (grace window). Após isso, o segmento é salvo como gravação independente (órfã). Prefira multipart/form-data para upload binário direto — evita codificar o áudio em base64.",
+    usageGuide: "Envie cada segmento de 30s assim que gravado - não espere acumular. Use segmento_idx sequencial começando em 1 (1, 2, 3...) para garantir idempotência: se o mesmo idx for enviado novamente na mesma sessão, o backend retorna o segmento existente sem duplicar. Se a sessão de monitoramento foi selada mas o segmento está atrasado, o backend aceita por até 60 segundos (grace window). Após isso, o segmento é salvo como gravação independente (órfã). Prefira multipart/form-data para upload binário direto - evita codificar o áudio em base64.",
     params: [
       { name: "session_token", type: "string", required: false, description: "Token de sessão (alternativa a email_usuario)" },
       { name: "email_usuario", type: "string", required: false, description: "Email da usuária (alternativa a session_token)" },
@@ -291,15 +291,15 @@ const ENDPOINTS: Endpoint[] = [
       { name: "device_id", type: "string", required: false, description: "ID do dispositivo" },
       { name: "duracao_segundos", type: "number", required: false, description: "Duração em segundos" },
       { name: "tamanho_mb", type: "number", required: false, description: "Tamanho em MB" },
-      { name: "segmento_idx", type: "number", required: false, description: "Índice do segmento, começando em 1 (para idempotência — enviar o mesmo idx na mesma sessão retorna o segmento existente)" },
+      { name: "segmento_idx", type: "number", required: false, description: "Índice do segmento, começando em 1 (para idempotência - enviar o mesmo idx na mesma sessão retorna o segmento existente)" },
       { name: "timezone", type: "string", required: false, description: "Timezone" },
       { name: "timezone_offset_minutes", type: "number", required: false, description: "Offset em minutos" },
     ],
     response: { success: true, segmento_id: "uuid", monitor_session_id: "uuid", storage_path: "user_id/date/file.mp4", message: "Segmento de monitoramento salvo." },
     notes: [
-      "Fluxo 1 — Sessão ativa: segmento é anexado à sessão de monitoramento ativa. Resposta: { message: 'Segmento de monitoramento salvo.' }",
-      "Fluxo 2 — Segmento tardio (Grace Window 60s): se a sessão foi selada há menos de 60 segundos, o segmento é anexado a ela. Resposta: { message: 'Segmento tardio anexado à sessão recém-finalizada.' }",
-      "Fluxo 3 — Gravação órfã: sem sessão ativa ou recente, o segmento é salvo como gravação independente e enviado para processamento automático. Resposta: { gravacao_id: 'uuid', message: 'Segmento salvo como gravação independente (sem sessão ativa).' }",
+      "Fluxo 1 - Sessão ativa: segmento é anexado à sessão de monitoramento ativa. Resposta: { message: 'Segmento de monitoramento salvo.' }",
+      "Fluxo 2 - Segmento tardio (Grace Window 60s): se a sessão foi selada há menos de 60 segundos, o segmento é anexado a ela. Resposta: { message: 'Segmento tardio anexado à sessão recém-finalizada.' }",
+      "Fluxo 3 - Gravação órfã: sem sessão ativa ou recente, o segmento é salvo como gravação independente e enviado para processamento automático. Resposta: { gravacao_id: 'uuid', message: 'Segmento salvo como gravação independente (sem sessão ativa).' }",
       "Idempotência: se segmento_idx já existe na mesma sessão, retorna o segmento existente sem duplicar.",
     ],
   },
@@ -308,7 +308,7 @@ const ENDPOINTS: Endpoint[] = [
     fase: 4,
     description: "Gera URL assinada para download de áudio. Verifica propriedade via gravacoes ou gravacoes_segmentos. Expira em 15 minutos (900s).",
     auth: "session_token ou email_usuario",
-    usageGuide: "Use quando precisar reproduzir ou baixar um áudio. Prefira enviar file_path (caminho no storage) ao invés de gravacao_id — é mais direto e rápido. A URL gerada expira em 15 minutos (900s). Se expirar, basta chamar novamente para gerar uma nova. O backend verifica que o áudio pertence à usuária autenticada — não é possível acessar áudios de terceiros.",
+    usageGuide: "Use quando precisar reproduzir ou baixar um áudio. Prefira enviar file_path (caminho no storage) ao invés de gravacao_id - é mais direto e rápido. A URL gerada expira em 15 minutos (900s). Se expirar, basta chamar novamente para gerar uma nova. O backend verifica que o áudio pertence à usuária autenticada - não é possível acessar áudios de terceiros.",
     params: [
       { name: "session_token", type: "string", required: false, description: "Token de sessão (alternativa a email_usuario)" },
       { name: "email_usuario", type: "string", required: false, description: "Email da usuária (alternativa a session_token)" },
@@ -322,7 +322,7 @@ const ENDPOINTS: Endpoint[] = [
     fase: 4,
     description: "Reenvia gravação para pipeline de processamento (transcrição + análise). Sem autenticação. Reseta status para 'pendente'.",
     auth: "nenhuma",
-    usageGuide: "Use para reprocessar gravações que falharam na transcrição ou análise. O status da gravação é resetado para 'pendente' e entra novamente na fila de processamento. Não requer autenticação — útil para ferramentas administrativas. Para uso autenticado (que verifica propriedade), use reprocess_recording.",
+    usageGuide: "Use para reprocessar gravações que falharam na transcrição ou análise. O status da gravação é resetado para 'pendente' e entra novamente na fila de processamento. Não requer autenticação - útil para ferramentas administrativas. Para uso autenticado (que verifica propriedade), use reprocess_recording.",
     params: [
       { name: "gravacao_id", type: "string", required: true, description: "ID da gravação" },
     ],
@@ -333,7 +333,7 @@ const ENDPOINTS: Endpoint[] = [
     fase: 4,
     description: "Versão autenticada do reprocessamento. Verifica que a gravação pertence ao usuário da sessão.",
     auth: "session_token",
-    usageGuide: "Versão segura do reprocessarGravacao — verifica que a gravação pertence à usuária da sessão antes de reprocessar. Use esta versão no app mobile; reserve reprocessarGravacao para painéis administrativos.",
+    usageGuide: "Versão segura do reprocessarGravacao - verifica que a gravação pertence à usuária da sessão antes de reprocessar. Use esta versão no app mobile; reserve reprocessarGravacao para painéis administrativos.",
     params: [
       { name: "session_token", type: "string", required: true, description: "Token de sessão" },
       { name: "gravacao_id", type: "string", required: true, description: "ID da gravação" },
@@ -473,7 +473,7 @@ function EndpointCard({ endpoint }: { endpoint: Endpoint }) {
                     <tr key={p.name} className="border-t border-border">
                       <td className="px-3 py-1.5 font-mono text-primary">{p.name}</td>
                       <td className="px-3 py-1.5 text-muted-foreground">{p.type}</td>
-                      <td className="px-3 py-1.5">{p.required ? "✅" : "—"}</td>
+                      <td className="px-3 py-1.5">{p.required ? "✅" : "-"}</td>
                       <td className="px-3 py-1.5 text-muted-foreground">{p.description}</td>
                     </tr>
                   ))}
@@ -564,7 +564,7 @@ function UsageFlows() {
           {/* Fluxo A */}
           <AccordionItem value="flow-a">
             <AccordionTrigger className="text-xs font-semibold hover:no-underline">
-              Fluxo A — Ciclo de Vida da Sessão (Login até Logout)
+              Fluxo A - Ciclo de Vida da Sessão (Login até Logout)
             </AccordionTrigger>
             <AccordionContent>
               <div className="space-y-3">
@@ -614,7 +614,7 @@ function UsageFlows() {
           {/* Fluxo B */}
           <AccordionItem value="flow-b">
             <AccordionTrigger className="text-xs font-semibold hover:no-underline">
-              Fluxo B — Monitoramento Automático (Gravação Agendada)
+              Fluxo B - Monitoramento Automático (Gravação Agendada)
             </AccordionTrigger>
             <AccordionContent>
               <div className="space-y-3">
@@ -654,13 +654,13 @@ function UsageFlows() {
           {/* Fluxo C */}
           <AccordionItem value="flow-c">
             <AccordionTrigger className="text-xs font-semibold hover:no-underline">
-              Fluxo C — Pânico (Acionamento até Resolução)
+              Fluxo C - Pânico (Acionamento até Resolução)
             </AccordionTrigger>
             <AccordionContent>
               <div className="space-y-3">
                 <ol className="text-xs text-muted-foreground space-y-1.5 list-decimal list-inside">
                   <li><code className="text-primary">acionarPanicoMobile</code> com localização GPS → receber alerta_id + protocolo</li>
-                  <li>O <code className="text-primary">pingMobile</code> continua normalmente — cada ping com GPS é automaticamente vinculado ao alerta ativo</li>
+                  <li>O <code className="text-primary">pingMobile</code> continua normalmente - cada ping com GPS é automaticamente vinculado ao alerta ativo</li>
                   <li>Opcionalmente: <code className="text-primary">enviarLocalizacaoGPS</code> com alerta_id para rastreamento dedicado adicional</li>
                   <li>Para cancelar: <code className="text-primary">cancelarPanicoMobile</code></li>
                 </ol>
@@ -687,14 +687,14 @@ function UsageFlows() {
           {/* Fluxo D */}
           <AccordionItem value="flow-d">
             <AccordionTrigger className="text-xs font-semibold hover:no-underline">
-              Fluxo D — Gerenciamento de Senhas (Normal + Coação)
+              Fluxo D - Gerenciamento de Senhas (Normal + Coação)
             </AccordionTrigger>
             <AccordionContent>
               <div className="space-y-3">
                 <div className="text-xs text-muted-foreground space-y-1.5">
-                  <p><strong>Senha principal:</strong> <code className="text-primary">change_password</code> — altera a senha de acesso normal.</p>
-                  <p><strong>Senha de coação:</strong> <code className="text-primary">change_coercion_password</code> — define/altera a senha que sinaliza coerção silenciosamente.</p>
-                  <p><strong>Validação:</strong> <code className="text-primary">validate_password</code> — confirma identidade antes de operações sensíveis.</p>
+                  <p><strong>Senha principal:</strong> <code className="text-primary">change_password</code> - altera a senha de acesso normal.</p>
+                  <p><strong>Senha de coação:</strong> <code className="text-primary">change_coercion_password</code> - define/altera a senha que sinaliza coerção silenciosamente.</p>
+                  <p><strong>Validação:</strong> <code className="text-primary">validate_password</code> - confirma identidade antes de operações sensíveis.</p>
                 </div>
 
                 <div className="rounded-md bg-destructive/10 border border-destructive/20 p-3">
@@ -716,12 +716,12 @@ function UsageFlows() {
           {/* Fluxo E */}
           <AccordionItem value="flow-e">
             <AccordionTrigger className="text-xs font-semibold hover:no-underline">
-              Fluxo E — Heartbeat e Telemetria GPS
+              Fluxo E - Heartbeat e Telemetria GPS
             </AccordionTrigger>
             <AccordionContent>
               <div className="space-y-3">
                 <div className="text-xs text-muted-foreground space-y-1.5">
-                  <p><code className="text-primary">pingMobile</code> é o heartbeat principal — envia status completo do dispositivo + GPS a cada 1 segundo.</p>
+                  <p><code className="text-primary">pingMobile</code> é o heartbeat principal - envia status completo do dispositivo + GPS a cada 1 segundo.</p>
                   <p><strong>Campos obrigatórios:</strong> session_token</p>
                   <p><strong>Campos recomendados:</strong> device_id, bateria_percentual, is_charging, is_recording, is_monitoring, dispositivo_info, versao_app, timezone, latitude, longitude, location_accuracy, location_timestamp, speed, heading</p>
                 </div>
@@ -812,7 +812,7 @@ export default function DocApiPage() {
       <div className="max-w-3xl mx-auto px-4 py-8 space-y-8">
         <div>
           <h1 className="text-2xl font-display font-bold text-foreground">AMPARA Mobile API</h1>
-          <p className="text-sm text-muted-foreground mt-1">Documentação técnica para integração com os apps mobile — <Badge variant="outline" className="text-[10px] ml-1">v2.2</Badge></p>
+          <p className="text-sm text-muted-foreground mt-1">Documentação técnica para integração com os apps mobile - <Badge variant="outline" className="text-[10px] ml-1">v2.2</Badge></p>
         </div>
 
         {/* Connection Info */}
@@ -912,7 +912,7 @@ export default function DocApiPage() {
           <CardContent className="px-4 py-4 space-y-2">
             <p className="text-sm font-semibold text-foreground">🔀 Aliases de Actions</p>
             <p className="text-xs text-muted-foreground">
-              Algumas actions possuem aliases — nomes alternativos que executam exatamente o mesmo handler no backend.
+              Algumas actions possuem aliases - nomes alternativos que executam exatamente o mesmo handler no backend.
               O app pode usar qualquer um dos nomes listados abaixo:
             </p>
             <div className="rounded-md border border-border overflow-hidden">
@@ -1017,7 +1017,7 @@ export default function DocApiPage() {
         {/* Análise de IA */}
         <Card>
           <CardContent className="px-4 py-4 space-y-3">
-            <p className="text-sm font-semibold text-foreground">🧠 Análise de IA — Campos de Retorno</p>
+            <p className="text-sm font-semibold text-foreground">🧠 Análise de IA - Campos de Retorno</p>
             <p className="text-xs text-muted-foreground">
               A análise de cada gravação retorna um JSON com os seguintes campos dentro de <code className="text-primary">analise_completa</code>:
             </p>
@@ -1026,34 +1026,34 @@ export default function DocApiPage() {
               <div>
                 <p className="text-xs font-semibold text-foreground">Campos Padrão</p>
                 <ul className="text-xs text-muted-foreground list-disc list-inside ml-2 mt-1">
-                  <li><code className="text-primary">resumo</code> — Resumo da conversa</li>
-                  <li><code className="text-primary">sentimento</code> — negativo, neutro, positivo, misto</li>
-                  <li><code className="text-primary">nivel_risco</code> — critico, alto, moderado, baixo, informativo</li>
-                  <li><code className="text-primary">categorias</code> — Array de categorias detectadas</li>
-                  <li><code className="text-primary">palavras_chave</code> — Termos mais relevantes</li>
-                  <li><code className="text-primary">xingamentos</code> — Xingamentos detectados</li>
+                  <li><code className="text-primary">resumo</code> - Resumo da conversa</li>
+                  <li><code className="text-primary">sentimento</code> - negativo, neutro, positivo, misto</li>
+                  <li><code className="text-primary">nivel_risco</code> - critico, alto, moderado, baixo, informativo</li>
+                  <li><code className="text-primary">categorias</code> - Array de categorias detectadas</li>
+                  <li><code className="text-primary">palavras_chave</code> - Termos mais relevantes</li>
+                  <li><code className="text-primary">xingamentos</code> - Xingamentos detectados</li>
                 </ul>
               </div>
 
               <div>
-                <p className="text-xs font-semibold text-foreground">Novos Campos — Táticas Manipulativas</p>
+                <p className="text-xs font-semibold text-foreground">Novos Campos - Táticas Manipulativas</p>
                 <ul className="text-xs text-muted-foreground list-disc list-inside ml-2 mt-1">
-                  <li><code className="text-primary">taticas_manipulativas</code> — Array de objetos com: <code className="text-primary">tatica</code>, <code className="text-primary">descricao</code>, <code className="text-primary">evidencia</code>, <code className="text-primary">gravidade</code></li>
-                  <li><code className="text-primary">orientacoes_vitima</code> — Array de strings com orientações práticas para a mulher</li>
-                  <li><code className="text-primary">sinais_alerta</code> — Array de strings com sinais de alerta identificados</li>
+                  <li><code className="text-primary">taticas_manipulativas</code> - Array de objetos com: <code className="text-primary">tatica</code>, <code className="text-primary">descricao</code>, <code className="text-primary">evidencia</code>, <code className="text-primary">gravidade</code></li>
+                  <li><code className="text-primary">orientacoes_vitima</code> - Array de strings com orientações práticas para a mulher</li>
+                  <li><code className="text-primary">sinais_alerta</code> - Array de strings com sinais de alerta identificados</li>
                 </ul>
               </div>
 
               <div>
                 <p className="text-xs font-semibold text-foreground">Tipos de Táticas Detectadas</p>
                 <ul className="text-xs text-muted-foreground list-disc list-inside ml-2 mt-1">
-                  <li><strong>instrumentalizacao_filhos</strong> — Usar guarda/bem-estar dos filhos como ameaça ou pressão</li>
-                  <li><strong>falsa_demonstracao_afeto</strong> — Declarar amor/preocupação para manter controle</li>
-                  <li><strong>ameaca_juridica_velada</strong> — Mencionar advogado/justiça como intimidação</li>
-                  <li><strong>acusacoes_sem_evidencia</strong> — Boatos, "ouvi dizer", difamação indireta</li>
-                  <li><strong>gaslighting</strong> — Negar intenções claras, "você está exagerando"</li>
-                  <li><strong>vitimizacao_reversa</strong> — Se colocar como parte prejudicada</li>
-                  <li><strong>controle_disfarçado</strong> — Controle sob pretexto de preocupação/conselho</li>
+                  <li><strong>instrumentalizacao_filhos</strong> - Usar guarda/bem-estar dos filhos como ameaça ou pressão</li>
+                  <li><strong>falsa_demonstracao_afeto</strong> - Declarar amor/preocupação para manter controle</li>
+                  <li><strong>ameaca_juridica_velada</strong> - Mencionar advogado/justiça como intimidação</li>
+                  <li><strong>acusacoes_sem_evidencia</strong> - Boatos, "ouvi dizer", difamação indireta</li>
+                  <li><strong>gaslighting</strong> - Negar intenções claras, "você está exagerando"</li>
+                  <li><strong>vitimizacao_reversa</strong> - Se colocar como parte prejudicada</li>
+                  <li><strong>controle_disfarçado</strong> - Controle sob pretexto de preocupação/conselho</li>
                 </ul>
               </div>
             </div>
@@ -1085,7 +1085,7 @@ export default function DocApiPage() {
               Quando a <strong>senha de coação</strong> é usada no login, change_password, change_coercion_password ou validate_password,
               o sistema retorna <code className="text-primary">success: true</code> mas registra silenciosamente
               o evento nos logs de auditoria. Nenhuma alteração real é feita no banco. O campo <code className="text-primary">loginTipo</code> retorna
-              <code className="text-primary">"coacao"</code> — o app deve tratar isso de forma discreta.
+              <code className="text-primary">"coacao"</code> - o app deve tratar isso de forma discreta.
             </p>
           </CardContent>
         </Card>
@@ -1096,7 +1096,7 @@ export default function DocApiPage() {
           return (
             <div key={fase.num} className="space-y-3">
               <h2 className="text-lg font-semibold text-foreground">
-                Fase {fase.num} — {fase.label}
+                Fase {fase.num} - {fase.label}
               </h2>
               <div className="space-y-2">
                 {faseEndpoints.map((ep) => (
@@ -1110,7 +1110,7 @@ export default function DocApiPage() {
         {/* Footer */}
         <div className="border-t border-border pt-4">
           <p className="text-xs text-muted-foreground text-center">
-            AMPARA Mobile API v2.2 — Última atualização: {new Date().toLocaleDateString("pt-BR")}
+            AMPARA Mobile API v2.2 - Última atualização: {new Date().toLocaleDateString("pt-BR")}
           </p>
         </div>
       </div>

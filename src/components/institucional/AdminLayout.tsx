@@ -71,7 +71,7 @@ export default function AdminLayout() {
           </div>
           <div className="hidden sm:flex items-center gap-2">
             <span className="text-sm font-semibold" style={{ color: "hsl(0 0% 95%)" }}>
-              Painel de Administração — AMPARA
+              Painel de Administração - AMPARA
             </span>
             {tenantSigla && (
               <span

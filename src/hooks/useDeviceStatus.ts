@@ -188,7 +188,7 @@ export function useDeviceStatus(): DeviceStatusResult {
     return () => document.removeEventListener("visibilitychange", onVisibility);
   }, [fetchData]);
 
-  // Realtime subscriptions — re-fetch on any relevant change
+  // Realtime subscriptions - re-fetch on any relevant change
   useEffect(() => {
     if (!usuario) return;
 

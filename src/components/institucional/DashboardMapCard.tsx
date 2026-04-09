@@ -221,7 +221,7 @@ export default function DashboardMapCard() {
         if (!loc && !user?.lat) return null;
         return {
           id: d.id, lat: loc?.lat || user?.lat || 0, lng: loc?.lng || user?.lng || 0,
-          status: d.status, userName: user?.nome || "—", bateria: d.bateria_percentual,
+          status: d.status, userName: user?.nome || "-", bateria: d.bateria_percentual,
           lastPing: d.last_ping_at, isMonitoring: d.is_monitoring, deviceInfo: d.dispositivo_info,
         };
       }).filter(Boolean) as DeviceItem[]
@@ -371,7 +371,7 @@ export default function DashboardMapCard() {
         const horas = Number(p.horasGravacao) || 0;
         const pctPais = Number(p.pct_pais) || 0;
         const rt = recTrends[uf];
-        const trendIcon = rt?.trend === "up" ? "▲" : rt?.trend === "down" ? "▼" : "—";
+        const trendIcon = rt?.trend === "up" ? "▲" : rt?.trend === "down" ? "▼" : "-";
         const trendColor = rt?.trend === "up" ? "#16a34a" : rt?.trend === "down" ? "#dc2626" : "hsl(220,9%,46%)";
         const trendPct = rt?.pct || 0;
         const pct = (v: number) => total > 0 ? Math.round((v / total) * 100) : 0;
@@ -468,7 +468,7 @@ export default function DashboardMapCard() {
       <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: "hsl(220 13% 91%)" }}>
         <div>
           <h2 className="text-sm font-semibold" style={titleStyle}>Mapa Operacional</h2>
-          <p className="text-xs" style={subtitleStyle}>Últimos 30 dias — clique para detalhes</p>
+          <p className="text-xs" style={subtitleStyle}>Últimos 30 dias - clique para detalhes</p>
         </div>
         <div className="flex items-center gap-3 flex-wrap">
           <div className="flex items-center gap-1.5 text-[10px]" style={subtitleStyle}>
@@ -595,9 +595,9 @@ export default function DashboardMapCard() {
                 { label: "Usuária", value: selected.data.userName },
                 { label: "Status", value: selected.data.status === "online" ? "🟢 Online" : "⚫ Offline" },
                 { label: "Monitorando", value: selected.data.isMonitoring ? "Sim" : "Não" },
-                { label: "Bateria", value: selected.data.bateria != null ? `${selected.data.bateria}%` : "—" },
-                { label: "Último ping", value: selected.data.lastPing ? new Date(selected.data.lastPing).toLocaleString("pt-BR") : "—" },
-                { label: "Dispositivo", value: selected.data.deviceInfo || "—" },
+                { label: "Bateria", value: selected.data.bateria != null ? `${selected.data.bateria}%` : "-" },
+                { label: "Último ping", value: selected.data.lastPing ? new Date(selected.data.lastPing).toLocaleString("pt-BR") : "-" },
+                { label: "Dispositivo", value: selected.data.deviceInfo || "-" },
               ].map((f) => (
                 <div key={f.label}>
                   <p className="text-[10px] font-medium" style={subtitleStyle}>{f.label}</p>

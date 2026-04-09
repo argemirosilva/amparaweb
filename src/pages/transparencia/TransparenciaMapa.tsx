@@ -92,7 +92,7 @@ export default function TransparenciaMapa() {
           // silently ignore
         }
       },
-      () => {}, // permission denied — keep national view
+      () => {}, // permission denied - keep national view
       { timeout: 5000, maximumAge: 300000 }
     );
   }, []);
@@ -373,11 +373,11 @@ export default function TransparenciaMapa() {
           "fill-color": [
             "step",
             ["get", "eventos"],
-            "#e5e7eb",  // 0 events — light gray
-            1, "#4ade80",   // 1+ — green
-            3, "#facc15",   // 3+ — yellow
-            6, "#f97316",   // 6+ — orange
-            15, "#dc2626",  // 15+ — red
+            "#e5e7eb",  // 0 events - light gray
+            1, "#4ade80",   // 1+ - green
+            3, "#facc15",   // 3+ - yellow
+            6, "#f97316",   // 6+ - orange
+            15, "#dc2626",  // 15+ - red
           ],
           "fill-opacity": 0.75,
         },
@@ -404,7 +404,7 @@ export default function TransparenciaMapa() {
         filter: ["==", "uf_code", ""],
       });
 
-      // UF labels — compute centroids from polygons
+      // UF labels - compute centroids from polygons
       const labelFeatures = enriched.features.map((f: any) => {
         const coords =
           f.geometry.type === "Polygon"
@@ -697,7 +697,7 @@ export default function TransparenciaMapa() {
         {/* Region header */}
         <div className="flex items-baseline justify-between mb-3">
           <h3 className="text-sm font-bold" style={{ color: "hsl(220 13% 18%)" }}>
-            {selectedUf ? `${UF_TO_STATE_NAME[selectedUf] || selectedUf} — ${selectedUf}` : "Brasil"}
+            {selectedUf ? `${UF_TO_STATE_NAME[selectedUf] || selectedUf} - ${selectedUf}` : "Brasil"}
           </h3>
           {selectedUf && (
             <span className="text-[10px] px-2 py-0.5 rounded-full font-medium" style={{ background: "hsl(207 89% 42% / 0.1)", color: "hsl(207 89% 42%)" }}>
@@ -728,7 +728,7 @@ export default function TransparenciaMapa() {
           <GovStatusBadge status={level.status} label={level.label} />
         </div>
 
-        {/* Severity breakdown — only when state selected and has events */}
+        {/* Severity breakdown - only when state selected and has events */}
         {selectedUf && ufSeverity && (ufSeverity.baixo + ufSeverity.medio + ufSeverity.alto + ufSeverity.critico) > 0 && (
           <>
             <div className="mb-2">
@@ -751,7 +751,7 @@ export default function TransparenciaMapa() {
         {selectedUf ? (
           <>
             <h3 className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "hsl(220 9% 46%)" }}>
-              Municípios — {selectedUf}
+              Municípios - {selectedUf}
             </h3>
             {municipios.length === 0 ? (
               <p className="text-xs py-3 text-center rounded-lg" style={{ color: "hsl(220 9% 46%)", background: "hsl(210 17% 96%)" }}>

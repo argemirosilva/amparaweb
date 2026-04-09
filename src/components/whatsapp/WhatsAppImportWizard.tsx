@@ -125,7 +125,7 @@ export default function WhatsAppImportWizard({ open, onOpenChange, onImportCompl
     }
     setParticipants(detected);
     if (detected.length === 1) {
-      // Only one participant found (system messages excluded) — skip step 2
+      // Only one participant found (system messages excluded) - skip step 2
       setSelectedPartner(detected[0]);
       setStep(3);
       handleImport(detected[0]);
