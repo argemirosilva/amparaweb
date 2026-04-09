@@ -1236,6 +1236,41 @@ serve(async (req) => {
         return json({ success: true });
       }
 
+      case "reprocessarGravacao": {
+        const { gravacao_id } = params;
+        if (!gravacao_id) return json({ error: "gravacao_id obrigatório" }, 400);
+
+        // Verify ownership
+        const { data: grav } = await supabase
+          .from("gravacoes")
+          .select("id, storage_path")
+          .eq("id", gravacao_id)
+          .eq("user_id", userId)
+          .single();
+        if (!grav) return json({ error: "Gravação não encontrada" }, 404);
+        if (!grav.storage_path) return json({ error: "Gravação sem áudio" }, 400);
+
+        // Reset status to pendente so process-recording picks it up
+        await supabase
+          .from("gravacoes")
+          .update({ status: "pendente", erro_processamento: null })
+          .eq("id", gravacao_id);
+
+        // Fire process-recording
+        const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+        const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+        fetch(`${supabaseUrl}/functions/v1/process-recording`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${serviceKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ gravacao_id }),
+        }).catch((e) => console.error("reprocessar error:", e));
+
+        return json({ success: true });
+      }
+
       case "getGravacaoSignedUrl": {
         const { storage_path } = params;
         if (!storage_path) return json({ error: "storage_path obrigatório" }, 400);
