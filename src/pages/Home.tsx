@@ -12,7 +12,7 @@ export default function HomePage() {
   const firstName = (usuario?.nome_completo || "").split(" ")[0];
 
   return (
-    <div className="animate-fade-in min-h-full max-w-lg mx-auto pb-6">
+    <div className="animate-fade-in min-h-full max-w-4xl pb-6">
       {/* Greeting — simple, no banner */}
       <div className="px-1 pt-2 pb-4">
         <div className="flex items-center gap-3">
