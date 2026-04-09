@@ -320,33 +320,6 @@ export default function GravacaoExpandedContent({
             {downloading ? "Baixando…" : "Baixar"}
           </Button>
         )}
-        {gravacao.status === "processado" && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-xs gap-1 text-muted-foreground hover:text-primary"
-            disabled={reprocessing}
-            onClick={async (e) => {
-              e.stopPropagation();
-              setReprocessing(true);
-              const res = await callWebApi("runMicroAnalysis", sessionToken, { recording_id: gravacao.id });
-              if (res.ok) {
-                // Reload analysis
-                const analiseRes = await callWebApi("getAnalise", sessionToken, { gravacao_id: gravacao.id });
-                if (analiseRes.ok && analiseRes.data.analise) {
-                  setAnalise(analiseRes.data.analise);
-                }
-                toast({ title: "Análise reprocessada", description: "A análise de IA foi atualizada." });
-              } else {
-                toast({ title: "Erro ao reprocessar", description: res.data?.error || "Tente novamente.", variant: "destructive" });
-              }
-              setReprocessing(false);
-            }}
-          >
-            <RotateCcw className={`w-3.5 h-3.5 ${reprocessing ? "animate-spin" : ""}`} />
-            {reprocessing ? "Reprocessando…" : "Reprocessar IA"}
-          </Button>
-        )}
         <span className="text-[10px] text-muted-foreground ml-auto">
           ID: {gravacao.id.slice(0, 8)}
         </span>
