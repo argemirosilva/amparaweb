@@ -49,12 +49,14 @@ export default function ChangePasswordCard() {
 
   const handleToggle = (nextOpen: boolean) => {
     if (!nextOpen) {
-      // Closing: reset everything
       setOpen(false);
       setAuthenticated(false);
       setGateSenha("");
+      setVerifiedPassword("");
       setIsCoercionSession(false);
       resetForms();
+      return;
+    }
       return;
     }
     setOpen(true);
