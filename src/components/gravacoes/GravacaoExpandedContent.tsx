@@ -255,6 +255,33 @@ export default function GravacaoExpandedContent({
 
       {/* Actions row */}
       <div className="flex items-center gap-2 pt-1 flex-wrap">
+        {/* Reprocess AI */}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-xs gap-1 text-muted-foreground hover:text-primary"
+          disabled={reprocessing}
+          onClick={async (e) => {
+            e.stopPropagation();
+            setReprocessing(true);
+            try {
+              const res = await callWebApi("reprocessarGravacao", sessionToken, { gravacao_id: gravacao.id });
+              if (res.ok) {
+                toast({ title: "Reprocessamento iniciado", description: "A análise será atualizada em breve." });
+              } else {
+                toast({ title: "Erro", description: res.data?.error || "Tente novamente.", variant: "destructive" });
+              }
+            } catch {
+              toast({ title: "Erro", description: "Falha ao reprocessar.", variant: "destructive" });
+            } finally {
+              setReprocessing(false);
+            }
+          }}
+        >
+          <RotateCcw className={`w-3.5 h-3.5 ${reprocessing ? "animate-spin" : ""}`} />
+          {reprocessing ? "Reprocessando…" : "Reprocessar IA"}
+        </Button>
+
         {(!gravacao.nivel_risco || gravacao.nivel_risco === "sem_risco") && (
           <AlertDialog>
             <AlertDialogTrigger asChild>
