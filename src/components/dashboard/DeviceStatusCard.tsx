@@ -207,8 +207,11 @@ export default function DeviceStatusCard() {
           </div>
         )}
 
+        {/* Card header */}
+        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">Seus dispositivos</p>
+
         {/* Icon */}
-        <div className={panicActive && device?.is_recording ? "mt-10" : panicActive ? "mt-4" : device?.is_recording ? "mt-4" : ""}>
+        <div className={panicActive && device?.is_recording ? "mt-6" : panicActive ? "" : device?.is_recording ? "" : ""}>
         <GradientIcon icon={Smartphone} size="sm" />
         </div>
 
