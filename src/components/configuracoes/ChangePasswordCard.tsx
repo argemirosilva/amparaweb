@@ -22,6 +22,7 @@ export default function ChangePasswordCard() {
   const [gateSenha, setGateSenha] = useState("");
   const [gateLoading, setGateLoading] = useState(false);
   const [isCoercionSession, setIsCoercionSession] = useState(false);
+  const [verifiedPassword, setVerifiedPassword] = useState("");
 
   // Main password state
   const [novaSenha, setNovaSenha] = useState("");
