@@ -109,7 +109,7 @@ export default function LoginPage() {
             <div className="flex items-start gap-3 text-left">
               <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-primary/50 shrink-0" />
               <p className="text-sm leading-relaxed text-muted-foreground">
-                Você não está sozinha — aqui, sua voz importa e sua segurança vem primeiro
+                Seus dados são protegidos com criptografia e total sigilo — só você tem acesso
               </p>
             </div>
           </div>
