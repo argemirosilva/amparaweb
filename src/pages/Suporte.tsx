@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Mail, Send, HelpCircle } from "lucide-react";
+import PageHeader from "@/components/ui/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -72,8 +73,8 @@ export default function SuportePage() {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <h1 className="text-2xl font-display font-bold text-foreground">Suporte</h1>
+    <div className="space-y-6 animate-fade-in max-w-4xl">
+      <PageHeader tag="Ajuda" title="Suporte" />
 
       <div className="max-w-lg space-y-6">
         {/* FAQ */}
