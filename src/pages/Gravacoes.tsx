@@ -357,12 +357,19 @@ export default function GravacoesPage() {
       {/* ── WhatsApp Import Card ── */}
       <button
         onClick={() => setWhatsAppOpen(true)}
-        className="w-full rounded-2xl border border-[#25D366]/30 bg-[#25D366]/5 hover:bg-[#25D366]/10 p-4 flex items-center gap-4 transition-all text-left group"
+        className="w-full rounded-2xl border border-[#25D366]/20 bg-card hover:bg-muted/30 p-4 flex items-center gap-4 transition-all text-left group relative overflow-hidden"
       >
-        <div className="w-12 h-12 rounded-xl bg-[#25D366]/15 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-          <MessageCircle className="w-6 h-6 text-[#25D366]" />
+        {/* Organic background blobs */}
+        <div className="absolute -left-4 -top-4 w-20 h-20 rounded-full opacity-[0.07]" style={{ backgroundColor: "#25D366" }} />
+        <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-14 h-14 rounded-full opacity-[0.05]" style={{ backgroundColor: "#25D366" }} />
+        <div className="absolute right-8 -bottom-6 w-16 h-16 rounded-full opacity-[0.04]" style={{ backgroundColor: "#25D366" }} />
+
+        <div className="relative w-11 h-11 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+          <div className="absolute inset-0 rounded-full opacity-[0.12]" style={{ backgroundColor: "#25D366" }} />
+          <div className="absolute -inset-1.5 rounded-full opacity-[0.06]" style={{ backgroundColor: "#25D366" }} />
+          <MessageCircle className="w-5 h-5 relative" style={{ color: "#25D366" }} />
         </div>
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 relative">
           <p className="text-sm font-semibold text-foreground">Analisar conversa do WhatsApp</p>
           <p className="text-xs text-muted-foreground mt-0.5">Cole ou importe uma conversa para análise de risco</p>
         </div>
