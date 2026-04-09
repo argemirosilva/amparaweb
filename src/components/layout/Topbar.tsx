@@ -18,9 +18,9 @@ export default function Topbar() {
       className="h-14 border-b border-sidebar-border flex items-center justify-between px-4 shrink-0 relative overflow-hidden"
       style={{ background: "var(--sidebar-bg-gradient)" }}
     >
-      {/* Decorative organic circles */}
-      <div className="absolute -top-8 -right-8 w-24 h-24 rounded-full opacity-[0.08]" style={{ background: "hsl(320, 70%, 55%)" }} />
-      <div className="absolute -bottom-10 left-1/4 w-20 h-20 rounded-full opacity-[0.05]" style={{ background: "hsl(280, 60%, 50%)" }} />
+      {/* Decorative ring circles */}
+      <div className="absolute -top-8 -right-8 w-24 h-24 rounded-full border opacity-[0.12]" style={{ borderColor: "hsl(320, 70%, 55%)" }} />
+      <div className="absolute -bottom-10 left-1/4 w-20 h-20 rounded-full border opacity-[0.08]" style={{ borderColor: "hsl(280, 60%, 50%)" }} />
       <div className="absolute top-2 right-1/3 w-1 h-1 rounded-full opacity-20 animate-pulse" style={{ background: "hsl(320, 70%, 60%)" }} />
 
       {/* Logo with half-circle accent */}

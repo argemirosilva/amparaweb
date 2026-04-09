@@ -45,18 +45,18 @@ export default function AppSidebar() {
     <Sidebar collapsible="icon">
       {/* Logo area with large organic semi-circle */}
       <div className="relative pt-3 pb-6 px-4 overflow-hidden">
-        {/* Large semi-circle that bleeds off the left edge */}
+        {/* Subtle ring circles */}
         <div
-          className="absolute -left-10 -top-10 w-36 h-36 rounded-full"
-          style={{ background: "linear-gradient(160deg, hsla(280,55%,52%,0.18), hsla(320,65%,55%,0.12))" }}
+          className="absolute -left-10 -top-10 w-36 h-36 rounded-full border"
+          style={{ borderColor: "hsla(280,55%,52%,0.12)" }}
         />
         <div
-          className="absolute -left-6 -top-4 w-28 h-28 rounded-full"
-          style={{ background: "linear-gradient(140deg, hsla(280,60%,48%,0.10), hsla(310,50%,55%,0.06))" }}
+          className="absolute -left-6 -top-4 w-28 h-28 rounded-full border"
+          style={{ borderColor: "hsla(280,60%,48%,0.08)" }}
         />
 
-        {/* Small accent blobs */}
-        <div className="absolute top-2 right-4 w-10 h-10 rounded-full opacity-[0.07]" style={{ background: "hsl(320, 70%, 55%)" }} />
+        {/* Small accent ring */}
+        <div className="absolute top-2 right-4 w-10 h-10 rounded-full border opacity-[0.12]" style={{ borderColor: "hsl(320, 70%, 55%)" }} />
         <div className="absolute top-14 right-8 w-1.5 h-1.5 rounded-full opacity-25 animate-pulse" style={{ background: "hsl(320, 70%, 60%)" }} />
 
         {/* Logo nestled inside the semi-circle */}
@@ -82,9 +82,9 @@ export default function AppSidebar() {
       </div>
 
       <SidebarContent className="px-2">
-        {/* Floating organic circles */}
-        <div className="absolute top-1/3 -right-8 w-24 h-24 rounded-full opacity-[0.04]" style={{ background: "hsl(320, 70%, 50%)" }} />
-        <div className="absolute bottom-1/4 -left-6 w-16 h-16 rounded-full opacity-[0.05]" style={{ background: "hsl(280, 60%, 55%)" }} />
+        {/* Floating ring circles */}
+        <div className="absolute top-1/3 -right-8 w-24 h-24 rounded-full border opacity-[0.08]" style={{ borderColor: "hsl(320, 70%, 50%)" }} />
+        <div className="absolute bottom-1/4 -left-6 w-16 h-16 rounded-full border opacity-[0.10]" style={{ borderColor: "hsl(280, 60%, 55%)" }} />
 
         <SidebarGroup>
           <SidebarGroupContent>
