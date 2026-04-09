@@ -3,8 +3,7 @@ import MonitoringStatusCard from "@/components/dashboard/MonitoringStatusCard";
 import DeviceStatusCard from "@/components/dashboard/DeviceStatusCard";
 import AudioRecorderCard from "@/components/dashboard/AudioRecorderCard";
 import RiskEvolutionCard from "@/components/dashboard/RiskEvolutionCard";
-import GradientIcon from "@/components/ui/gradient-icon";
-import { UserSearch, ArrowRight, User } from "lucide-react";
+import { UserSearch, ChevronRight, User, Shield } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function HomePage() {
@@ -13,54 +12,71 @@ export default function HomePage() {
   const firstName = (usuario?.nome_completo || "").split(" ")[0];
 
   return (
-    <div className="animate-fade-in space-y-5 min-h-full max-w-4xl">
-      {/* Hero welcome banner with avatar + email */}
-      <div className="ampara-hero-banner">
-        <div className="relative z-10 flex items-center gap-4">
+    <div className="animate-fade-in min-h-full max-w-lg mx-auto pb-6">
+      {/* Greeting — simple, no banner */}
+      <div className="px-1 pt-2 pb-4">
+        <div className="flex items-center gap-3">
           {usuario?.avatar_url ? (
-            <img src={usuario.avatar_url} alt="Avatar" className="w-12 h-12 rounded-full object-cover shrink-0 ring-2 ring-white/20" />
+            <img
+              src={usuario.avatar_url}
+              alt=""
+              className="w-11 h-11 rounded-full object-cover shrink-0"
+            />
           ) : (
-            <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center shrink-0 ring-2 ring-white/20">
-              <User className="w-6 h-6 text-white/70" />
+            <div className="w-11 h-11 rounded-full bg-muted flex items-center justify-center shrink-0">
+              <User className="w-5 h-5 text-muted-foreground" />
             </div>
           )}
           <div className="min-w-0">
-            <h1 className="text-lg md:text-xl font-bold text-white tracking-tight">
-              {firstName ? `Olá, ${firstName}` : "Visão geral"}
+            <p className="text-[13px] text-muted-foreground">Bem-vinda de volta</p>
+            <h1 className="text-xl font-bold text-foreground tracking-tight leading-tight">
+              {firstName || "Minha conta"}
             </h1>
-            <p className="text-xs md:text-sm text-white/60 mt-0.5">
-              {usuario?.email || "Sua proteção está ativa. Confira o resumo abaixo."}
-            </p>
           </div>
         </div>
       </div>
 
-      {/* Risk evolution — accent card */}
-      <RiskEvolutionCard />
-
-      {/* Device status */}
-      <DeviceStatusCard />
-
-      {/* Action cards row */}
-      <div className="grid grid-cols-2 gap-3">
-        <button
-          onClick={() => navigate("/busca-perfil")}
-          className="ampara-card-accent flex items-center gap-3 w-full text-left cursor-pointer group"
-        >
-          <div className="p-3 md:p-4 flex items-center gap-3 w-full">
-            <GradientIcon icon={UserSearch} size="sm" />
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-foreground">Pesquisar parceiro</p>
-              <p className="text-[11px] text-muted-foreground">Consultar perfil</p>
-            </div>
-            <ArrowRight className="w-4 h-4 text-muted-foreground/50 group-hover:text-primary transition-colors shrink-0" />
-          </div>
-        </button>
-        <AudioRecorderCard />
+      {/* Protection status — subtle pill */}
+      <div className="px-1 mb-4">
+        <div className="inline-flex items-center gap-2 bg-primary/10 text-primary rounded-full px-3.5 py-1.5">
+          <Shield className="w-3.5 h-3.5" />
+          <span className="text-xs font-medium">Proteção ativa</span>
+        </div>
       </div>
 
-      {/* Monitoring */}
-      <MonitoringStatusCard />
+      {/* Main content — stacked sections */}
+      <div className="space-y-3 px-1">
+        {/* Device status — primary card */}
+        <DeviceStatusCard />
+
+        {/* Risk evolution */}
+        <RiskEvolutionCard />
+
+        {/* Quick actions — native list style */}
+        <div className="rounded-xl bg-card border border-border/60 divide-y divide-border/40 overflow-hidden">
+          <button
+            onClick={() => navigate("/busca-perfil")}
+            className="flex items-center gap-3 w-full text-left px-4 py-3.5 hover:bg-muted/50 active:bg-muted transition-colors"
+          >
+            <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+              <UserSearch className="w-4.5 h-4.5 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-foreground">Pesquisar parceiro</p>
+              <p className="text-[12px] text-muted-foreground">Consultar perfil e histórico</p>
+            </div>
+            <ChevronRight className="w-4 h-4 text-muted-foreground/40 shrink-0" />
+          </button>
+
+          {/* Audio recorder inline */}
+          <div className="px-4 py-3">
+            <AudioRecorderCard />
+          </div>
+        </div>
+
+        {/* Monitoring — bottom */}
+        <MonitoringStatusCard />
+      </div>
     </div>
   );
 }
