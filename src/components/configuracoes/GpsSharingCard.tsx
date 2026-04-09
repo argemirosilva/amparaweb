@@ -103,7 +103,7 @@ export default function GpsSharingCard() {
                       className="px-2.5 py-0.5 rounded-full text-[10px] font-medium border transition-colors"
                       style={
                         gpsDuracao === opt.value
-                          ? { backgroundColor: "hsl(var(--primary))", color: "hsl(var(--primary-foreground))", borderColor: "hsl(var(--primary))" }
+                          ? { backgroundColor: "hsl(var(--primary) / 0.7)", color: "hsl(var(--primary-foreground))", borderColor: "hsl(var(--primary) / 0.7)" }
                           : { backgroundColor: "hsl(var(--background))", color: "hsl(var(--muted-foreground))", borderColor: "hsl(var(--border))" }
                       }
                     >
