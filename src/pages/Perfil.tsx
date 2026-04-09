@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import PageHeader from "@/components/ui/page-header";
 import { useAuth } from "@/contexts/AuthContext";
 import { callWebApi } from "@/services/webApiService";
 import { supabase } from "@/integrations/supabase/client";
@@ -338,11 +339,7 @@ export default function PerfilPage() {
 
   return (
     <div className="space-y-6 animate-fade-in max-w-4xl">
-      {/* Azure-style page header */}
-      <div>
-        <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-1">Conta</p>
-        <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">Perfil</h1>
-      </div>
+      <PageHeader tag="Conta" title="Perfil" />
 
       {/* Personal Data */}
       <div className="ampara-card space-y-4">

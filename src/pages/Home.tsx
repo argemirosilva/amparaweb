@@ -3,6 +3,7 @@ import MonitoringStatusCard from "@/components/dashboard/MonitoringStatusCard";
 import DeviceStatusCard from "@/components/dashboard/DeviceStatusCard";
 import AudioRecorderCard from "@/components/dashboard/AudioRecorderCard";
 import RiskEvolutionCard from "@/components/dashboard/RiskEvolutionCard";
+import PageHeader from "@/components/ui/page-header";
 import { UserSearch, ChevronRight, User } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -13,28 +14,22 @@ export default function HomePage() {
 
   return (
     <div className="animate-fade-in min-h-full max-w-4xl pb-6">
-      {/* Greeting - simple, no banner */}
-      <div className="px-1 pt-2 pb-4">
-        <div className="flex items-center gap-3">
+      {/* Greeting header with decorative background */}
+      <PageHeader tag="Início" title={`Bem-vinda, ${firstName || "Minha conta"}`}>
+        <div className="flex items-center gap-2">
           {usuario?.avatar_url ? (
             <img
               src={usuario.avatar_url}
               alt=""
-              className="w-11 h-11 rounded-full object-cover shrink-0"
+              className="w-11 h-11 rounded-full object-cover shrink-0 ring-2 ring-white/50"
             />
           ) : (
             <div className="w-11 h-11 rounded-full bg-muted flex items-center justify-center shrink-0">
               <User className="w-5 h-5 text-muted-foreground" />
             </div>
           )}
-          <div className="min-w-0">
-            <p className="text-[13px] text-muted-foreground">Bem-vinda de volta</p>
-            <h1 className="text-xl font-bold text-foreground tracking-tight leading-tight">
-              {firstName || "Minha conta"}
-            </h1>
-          </div>
         </div>
-      </div>
+      </PageHeader>
 
 
       {/* Main content - stacked sections */}
