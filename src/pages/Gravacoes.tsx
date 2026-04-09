@@ -54,6 +54,7 @@ interface Gravacao {
   timezone: string | null;
   nivel_risco: string | null;
   iniciado_em: string | null;
+  segmentos_descartados: number;
 }
 
 const RISCO_COLORS: Record<string, string> = {
