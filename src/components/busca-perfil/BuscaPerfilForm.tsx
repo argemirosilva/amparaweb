@@ -177,7 +177,7 @@ export function BuscaPerfilForm({ onSubmit, loading }: Props) {
             {Array.from({ length: Math.min(filledCount, 8) }).map((_, i) => (
               <div key={i} className="w-2 h-2 rounded-full bg-primary" />
             ))}
-            {Array.from({ length: Math.max(0, 2 - filledCount) }).map((_, i) => (
+            {Array.from({ length: Math.max(0, 5 - filledCount) }).map((_, i) => (
               <div key={i} className="w-2 h-2 rounded-full bg-muted" />
             ))}
           </div>
@@ -190,12 +190,12 @@ export function BuscaPerfilForm({ onSubmit, loading }: Props) {
       {/* Submit */}
       <button
         onClick={() => onSubmit(form)}
-        disabled={loading || filledCount < 2}
+        disabled={loading || filledCount < 5}
         className="ampara-btn-primary flex items-center justify-center gap-2"
       >
         <Search className="w-4 h-4" />
-        {filledCount < 2
-          ? `Preencha pelo menos 2 campos`
+        {filledCount < 5
+          ? `Preencha pelo menos 5 campos`
           : `Buscar correspondências`}
       </button>
 
