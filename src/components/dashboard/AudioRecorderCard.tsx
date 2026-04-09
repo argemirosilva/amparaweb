@@ -139,7 +139,7 @@ export default function AudioRecorderCard({ onUploaded }: AudioRecorderCardProps
         stream.getTracks().forEach((t) => t.stop());
         const blob = new Blob(chunksRef.current, { type: mimeType });
         const duration = elapsed;
-        // Upload original OGG/WebM directly — backend handles these formats
+        // Upload original OGG/WebM directly - backend handles these formats
         const ext = mimeType.includes("ogg") ? "ogg" : "webm";
         await uploadBlob(blob, `gravacao.${ext}`, mimeType.split(";")[0], duration);
       };

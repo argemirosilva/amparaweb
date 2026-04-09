@@ -47,7 +47,7 @@ export default function PortalLayout() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      {/* Header — same style as Landing Page */}
+      {/* Header - same style as Landing Page */}
       <header className="sticky top-0 z-50 backdrop-blur-md border-b border-border bg-white/95">
         <div className="max-w-7xl mx-auto flex items-center justify-between px-4 py-3">
           <Link to="/transparencia" className="flex items-center gap-3">
@@ -81,14 +81,14 @@ export default function PortalLayout() {
         <Outlet />
       </main>
 
-      {/* Footer — matching Landing Page style */}
+      {/* Footer - matching Landing Page style */}
       <footer className="border-t border-border bg-white px-4 md:px-8 py-8">
         <div className="max-w-7xl mx-auto text-center space-y-1">
           <p className="text-xs text-muted-foreground">
             Dados agregados. Atualização com atraso de 48h. Nenhuma informação individual é exibida.
           </p>
           <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} AMPARA — Todos os direitos reservados
+            © {new Date().getFullYear()} AMPARA - Todos os direitos reservados
           </p>
         </div>
       </footer>

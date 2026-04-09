@@ -107,7 +107,7 @@ const fmtDate = (iso: string) => {
 };
 
 const fmtDuration = (s: number | null) => {
-  if (!s) return "—";
+  if (!s) return "-";
   const m = Math.floor(s / 60);
   const sec = Math.floor(s % 60);
   return `${m}m${sec.toString().padStart(2, "0")}s`;
@@ -162,7 +162,7 @@ export default function CuradoriaDetailDrawer({ selected, onClose, onToggleCupia
       toast.success(`Avaliação de "${campo}" salva`);
       refetchAvaliacoes();
       if (result?.auto_cupiado) {
-        toast.success("Todos os campos avaliados — marcada como curada automaticamente!");
+        toast.success("Todos os campos avaliados - marcada como curada automaticamente!");
         onAutoCurada?.();
       }
     } catch (e: any) {
@@ -282,7 +282,7 @@ export default function CuradoriaDetailDrawer({ selected, onClose, onToggleCupia
                     </CollapsibleTrigger>
                     <CollapsibleContent>
                       <p className="text-sm whitespace-pre-wrap p-3 rounded bg-muted text-foreground mt-2">
-                        {selected.resumo_anonimizado || "—"}
+                        {selected.resumo_anonimizado || "-"}
                       </p>
                     </CollapsibleContent>
                   </Collapsible>

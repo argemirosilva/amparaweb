@@ -59,14 +59,14 @@ const TESTIMONIALS = [
 
 
 const FAQ_ITEMS = [
-{ q: "Como funciona o monitoramento em tempo real?", a: "O AMPARA utiliza inteligência artificial para monitorar continuamente o ambiente sonoro através do microfone do seu celular, de forma totalmente discreta — sem que ninguém perceba. O sistema analisa os áudios captados em busca de padrões que possam indicar situações de violência, como gritos, ameaças verbais e xingamentos. Quando algo suspeito é identificado, um alerta é gerado automaticamente. Você define os horários de monitoramento e pode ativá-lo ou desativá-lo a qualquer momento." },
+{ q: "Como funciona o monitoramento em tempo real?", a: "O AMPARA utiliza inteligência artificial para monitorar continuamente o ambiente sonoro através do microfone do seu celular, de forma totalmente discreta - sem que ninguém perceba. O sistema analisa os áudios captados em busca de padrões que possam indicar situações de violência, como gritos, ameaças verbais e xingamentos. Quando algo suspeito é identificado, um alerta é gerado automaticamente. Você define os horários de monitoramento e pode ativá-lo ou desativá-lo a qualquer momento." },
 { q: "Meus dados estão seguros?", a: "Sua segurança digital é nossa prioridade máxima. Utilizamos criptografia de ponta a ponta em todas as transmissões, e os dados são armazenados em servidores seguros com criptografia em repouso. Nenhuma informação é compartilhada com terceiros sem o seu consentimento explícito. Gravações que não apresentam risco são automaticamente excluídas conforme o período de retenção que você configurar. Seguimos integralmente a LGPD (Lei Geral de Proteção de Dados) e você pode solicitar a exclusão dos seus dados a qualquer momento." },
-{ q: "Quem pode ver minhas informações?", a: "Apenas você tem acesso completo às suas informações. Os guardiões que você cadastrar só recebem notificações e localização em situações de emergência — eles não têm acesso às suas gravações ou análises. Nossa equipe de suporte técnico só pode acessar dados específicos mediante sua solicitação e consentimento explícito por código de verificação, e cada acesso fica registrado em um log de auditoria completo." },
-{ q: "O AMPARA é gratuito?", a: "Sim, o AMPARA é 100% gratuito para todas as mulheres. Não há nenhuma cobrança — nem no cadastro, nem no uso de qualquer funcionalidade. Nosso compromisso é com a proteção de todas as mulheres." },
+{ q: "Quem pode ver minhas informações?", a: "Apenas você tem acesso completo às suas informações. Os guardiões que você cadastrar só recebem notificações e localização em situações de emergência - eles não têm acesso às suas gravações ou análises. Nossa equipe de suporte técnico só pode acessar dados específicos mediante sua solicitação e consentimento explícito por código de verificação, e cada acesso fica registrado em um log de auditoria completo." },
+{ q: "O AMPARA é gratuito?", a: "Sim, o AMPARA é 100% gratuito para todas as mulheres. Não há nenhuma cobrança - nem no cadastro, nem no uso de qualquer funcionalidade. Nosso compromisso é com a proteção de todas as mulheres." },
 { q: "Como funciona a gravação de áudio?", a: "Quando o monitoramento está ativo, o aplicativo grava o áudio ambiente em segundo plano no seu dispositivo, mesmo com a tela bloqueada. Os áudios são enviados automaticamente para nossos servidores, onde a inteligência artificial transcreve o conteúdo e analisa padrões de linguagem, tom de voz e presença de palavras ofensivas. A análise gera um relatório com nível de risco, sentimento predominante e categorias de violência identificadas. Gravações sem risco são excluídas automaticamente após o período que você definir nas configurações." },
-{ q: "Posso desativar o monitoramento a qualquer momento?", a: "Sim, você tem total controle sobre o aplicativo. Pode ativar e desativar o monitoramento a qualquer momento pelas configurações. Também é possível definir horários específicos para cada dia da semana — por exemplo, ativar apenas durante a noite ou nos finais de semana. O AMPARA nunca grava sem que o monitoramento esteja ativo. Sua autonomia e privacidade são respeitadas em todas as etapas." },
-{ q: "O que são guardiões?", a: "Guardiões são pessoas de sua máxima confiança — como familiares, amigos ou vizinhos — que você cadastra no aplicativo para receber alertas em situações de emergência. Quando você aciona o botão de pânico, seus guardiões são notificados imediatamente via WhatsApp com sua localização em tempo real. Você pode cadastrar até 5 guardiões, escolhendo o nome, telefone e o tipo de vínculo. Pode adicioná-los ou removê-los a qualquer momento." },
-{ q: "Como acionar ajuda em caso de emergência?", a: "Em situações de emergência, você pode acionar o botão de pânico dentro do aplicativo. Ao ativar, o sistema notifica automaticamente todos os seus guardiões via WhatsApp, compartilhando sua localização em tempo real. Também é possível configurar o acionamento de autoridades competentes. Além disso, você pode ligar diretamente para o Ligue 180 (Central de Atendimento à Mulher) ou o 190 (Polícia Militar) a partir do próprio aplicativo. O AMPARA também possui uma senha de coação — se alguém forçar você a abrir o app, essa senha simula uma tela normal enquanto envia um alerta silencioso." }];
+{ q: "Posso desativar o monitoramento a qualquer momento?", a: "Sim, você tem total controle sobre o aplicativo. Pode ativar e desativar o monitoramento a qualquer momento pelas configurações. Também é possível definir horários específicos para cada dia da semana - por exemplo, ativar apenas durante a noite ou nos finais de semana. O AMPARA nunca grava sem que o monitoramento esteja ativo. Sua autonomia e privacidade são respeitadas em todas as etapas." },
+{ q: "O que são guardiões?", a: "Guardiões são pessoas de sua máxima confiança - como familiares, amigos ou vizinhos - que você cadastra no aplicativo para receber alertas em situações de emergência. Quando você aciona o botão de pânico, seus guardiões são notificados imediatamente via WhatsApp com sua localização em tempo real. Você pode cadastrar até 5 guardiões, escolhendo o nome, telefone e o tipo de vínculo. Pode adicioná-los ou removê-los a qualquer momento." },
+{ q: "Como acionar ajuda em caso de emergência?", a: "Em situações de emergência, você pode acionar o botão de pânico dentro do aplicativo. Ao ativar, o sistema notifica automaticamente todos os seus guardiões via WhatsApp, compartilhando sua localização em tempo real. Também é possível configurar o acionamento de autoridades competentes. Além disso, você pode ligar diretamente para o Ligue 180 (Central de Atendimento à Mulher) ou o 190 (Polícia Militar) a partir do próprio aplicativo. O AMPARA também possui uma senha de coação - se alguém forçar você a abrir o app, essa senha simula uma tela normal enquanto envia um alerta silencioso." }];
 
 
 
@@ -202,7 +202,7 @@ export default function LandingPage() {
         </div>
       </header>
 
-      {/* ══════ HERO — Azure-inspired light gradient with abstract curves ══════ */}
+      {/* ══════ HERO - Azure-inspired light gradient with abstract curves ══════ */}
       <section className="relative overflow-hidden min-h-[420px] md:min-h-[520px]">
         {/* Abstract gradient background */}
         <div className="absolute inset-0" style={{
@@ -236,7 +236,7 @@ export default function LandingPage() {
               AMPARA Mulher
             </h1>
             <p className="text-base md:text-lg text-muted-foreground max-w-lg leading-relaxed">
-               Você não está sozinha. O AMPARA te protege, acompanha sua situação e te orienta sobre seus direitos — tudo pelo celular, de graça e em total sigilo.
+               Você não está sozinha. O AMPARA te protege, acompanha sua situação e te orienta sobre seus direitos - tudo pelo celular, de graça e em total sigilo.
              </p>
             <div className="flex flex-wrap gap-3 pt-2">
               <Link to="/cadastro" className="ampara-btn-primary !w-auto text-sm md:text-base !py-2.5 !px-6 flex items-center gap-2">
@@ -342,7 +342,7 @@ export default function LandingPage() {
         </div>
        </section>
 
-      {/* ══════ ECOSSISTEMA — 3 pilares visuais ══════ */}
+      {/* ══════ ECOSSISTEMA - 3 pilares visuais ══════ */}
       <section id="ecossistema" className="py-16 md:py-24 relative overflow-hidden" style={{ background: "linear-gradient(180deg, hsl(175, 35%, 95%), hsl(200, 30%, 96%), hsl(260, 20%, 97%))" }}>
         <div className="max-w-6xl mx-auto px-4">
           <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-3">Ecossistema</p>
@@ -352,7 +352,7 @@ export default function LandingPage() {
           </p>
 
           <div className="grid md:grid-cols-3 gap-6 mt-12">
-            {/* Pilar 1 — Proteção */}
+            {/* Pilar 1 - Proteção */}
             <div className="rounded-2xl p-7 bg-white border border-border hover:shadow-xl transition-all duration-300 group flex flex-col">
               <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-5 group-hover:bg-primary/15 transition-colors">
                 <Shield className="w-7 h-7 text-primary" />
@@ -377,7 +377,7 @@ export default function LandingPage() {
               </ul>
             </div>
 
-            {/* Pilar 2 — Monitoramento e Dados */}
+            {/* Pilar 2 - Monitoramento e Dados */}
             <div className="rounded-2xl p-7 bg-white border border-border hover:shadow-xl transition-all duration-300 group flex flex-col">
               <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-5 group-hover:bg-primary/15 transition-colors">
                 <Activity className="w-7 h-7 text-primary" />
@@ -402,7 +402,7 @@ export default function LandingPage() {
               </ul>
             </div>
 
-            {/* Pilar 3 — Orientação */}
+            {/* Pilar 3 - Orientação */}
             <div className="rounded-2xl p-7 bg-white border border-border hover:shadow-xl transition-all duration-300 group flex flex-col">
               <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-5 group-hover:bg-primary/15 transition-colors">
                 <BookOpen className="w-7 h-7 text-primary" />
@@ -438,7 +438,7 @@ export default function LandingPage() {
             Pela primeira vez na história, dados reais sobre violência doméstica
           </h2>
           <p className="text-muted-foreground mt-3 max-w-2xl text-sm md:text-base leading-relaxed">
-            Até hoje, ninguém sabia de verdade o que acontece dentro de casa. O AMPARA muda isso — sem nunca expor quem você é.
+            Até hoje, ninguém sabia de verdade o que acontece dentro de casa. O AMPARA muda isso - sem nunca expor quem você é.
           </p>
 
           <div className="grid md:grid-cols-2 gap-6 mt-12">
@@ -449,7 +449,7 @@ export default function LandingPage() {
               </div>
               <h3 className="text-lg md:text-xl font-bold text-foreground mb-2">O que isso muda na sua vida</h3>
               <p className="text-sm text-muted-foreground leading-relaxed mb-4">
-                Quando mais mulheres participam, a proteção fica mais forte pra todas — e você nunca precisa se expor.
+                Quando mais mulheres participam, a proteção fica mais forte pra todas - e você nunca precisa se expor.
               </p>
               <ul className="space-y-3 mt-auto">
                 <li className="flex items-start gap-2 text-sm text-muted-foreground">
@@ -474,12 +474,12 @@ export default function LandingPage() {
               </div>
               <h3 className="text-lg md:text-xl font-bold text-foreground mb-2">O que isso muda no Brasil</h3>
               <p className="text-sm text-muted-foreground leading-relaxed mb-4">
-                Pela primeira vez, órgãos públicos e ONGs terão acesso a dados reais e atualizados — não mais com meses ou anos de atraso.
+                Pela primeira vez, órgãos públicos e ONGs terão acesso a dados reais e atualizados - não mais com meses ou anos de atraso.
               </p>
               <ul className="space-y-3 mt-auto">
                 <li className="flex items-start gap-2 text-sm text-muted-foreground">
                    <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                  <span>Dados disponíveis em tempo real para órgãos públicos e ONGs — não mais com atraso de meses ou anos</span>
+                  <span>Dados disponíveis em tempo real para órgãos públicos e ONGs - não mais com atraso de meses ou anos</span>
                 </li>
                 <li className="flex items-start gap-2 text-sm text-muted-foreground">
                    <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
@@ -508,7 +508,7 @@ export default function LandingPage() {
                 <h3 className="text-xl md:text-2xl font-bold">Sua segurança é nossa prioridade absoluta</h3>
               </div>
               <p className="text-sm md:text-base opacity-90 max-w-2xl mb-6 leading-relaxed">
-                Ninguém — nem o governo, nem a polícia, nem nós — consegue saber quem você é pelos dados do painel público.
+                Ninguém - nem o governo, nem a polícia, nem nós - consegue saber quem você é pelos dados do painel público.
               </p>
               <div className="grid sm:grid-cols-3 gap-4">
                 <div className="flex items-start gap-3 bg-white/10 rounded-xl p-4">
@@ -522,7 +522,7 @@ export default function LandingPage() {
                   <Clock className="w-5 h-5 shrink-0 mt-0.5 opacity-80" />
                   <div>
                     <p className="text-sm font-semibold">Atraso de 48h</p>
-                    <p className="text-xs opacity-80 mt-1">Nenhum dado aparece em tempo real — tudo tem um atraso de segurança de 48 horas</p>
+                    <p className="text-xs opacity-80 mt-1">Nenhum dado aparece em tempo real - tudo tem um atraso de segurança de 48 horas</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3 bg-white/10 rounded-xl p-4">
@@ -567,7 +567,7 @@ export default function LandingPage() {
           <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-3">Fluxo de Proteção</p>
           <h2 className="text-2xl md:text-4xl font-bold text-foreground max-w-2xl">Como o AMPARA te protege na prática</h2>
           <p className="text-muted-foreground mt-3 max-w-2xl text-sm md:text-base leading-relaxed">
-            Do monitoramento ao acionamento de autoridades — cada etapa funciona automaticamente para sua segurança.
+            Do monitoramento ao acionamento de autoridades - cada etapa funciona automaticamente para sua segurança.
           </p>
 
           {/* Desktop: horizontal 4-column pipeline */}
@@ -622,7 +622,7 @@ export default function LandingPage() {
           <div className="lg:hidden mt-10 space-y-6">
             {/* Trigger card */}
             <div className="rounded-2xl border border-border bg-white p-5 shadow-sm">
-              <p className="text-[10px] font-semibold text-primary uppercase tracking-widest mb-3">Gatilho — escolha uma forma de iniciar</p>
+              <p className="text-[10px] font-semibold text-primary uppercase tracking-widest mb-3">Gatilho - escolha uma forma de iniciar</p>
               <div className="space-y-3">
                 {FLOW_TRIGGERS.map((t) =>
                 <div key={t.title} className="flex items-center gap-3">
@@ -733,8 +733,8 @@ export default function LandingPage() {
                 "Auditoria completa de acessos de suporte",
                 "Senha de coação para situações de emergência",
                 "Controle total sobre seus dados",
-                "Guardiões só recebem alertas — sem acesso a gravações",
-                "Dados públicos são 100% anonimizados — impossível identificar qualquer pessoa"].
+                "Guardiões só recebem alertas - sem acesso a gravações",
+                "Dados públicos são 100% anonimizados - impossível identificar qualquer pessoa"].
                 map((b) =>
                 <li key={b} className="flex items-center gap-3 text-sm text-foreground">
                     <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
@@ -805,7 +805,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ══════ CTA — FAÇA PARTE ══════ */}
+      {/* ══════ CTA - FAÇA PARTE ══════ */}
       <section className="py-16 md:py-24 relative overflow-hidden" style={{
         background: "linear-gradient(135deg, hsl(255, 55%, 28%), hsl(220, 75%, 38%), hsl(210, 80%, 45%))"
       }}>

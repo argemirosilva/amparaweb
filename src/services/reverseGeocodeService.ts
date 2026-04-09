@@ -200,7 +200,7 @@ export async function resolveAddress(lat: number, lon: number): Promise<GeoResul
     return { ...cached.result, cached: true };
   }
 
-  // 2. Deduplication — reuse inflight promise
+  // 2. Deduplication - reuse inflight promise
   const existing = inflight.get(key);
   if (existing) {
     const result = await existing;

@@ -235,7 +235,7 @@ export default function SuporteChat() {
           )}
         </div>
 
-        {/* Sidebar — Grants & Info */}
+        {/* Sidebar - Grants & Info */}
         <div className="w-72 shrink-0 space-y-4 hidden lg:block">
           {/* User info */}
           <div className="rounded-lg border p-4" style={{ background: "hsl(0 0% 100%)", borderColor: "hsl(220 13% 91%)" }}>

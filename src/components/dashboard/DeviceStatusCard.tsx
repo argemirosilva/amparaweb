@@ -263,7 +263,7 @@ export default function DeviceStatusCard() {
             };
 
             const tooltipText = recentGps
-              ? `Localização ativa${locationInterval ? ` — atualizando a cada ${formatInterval(locationInterval)}` : ""}`
+              ? `Localização ativa${locationInterval ? ` - atualizando a cada ${formatInterval(locationInterval)}` : ""}`
               : location?.created_at
                 ? `Sem atualização recente · Última: ${timeSince(location.created_at)}`
                 : "Sem dados de GPS";

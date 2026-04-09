@@ -31,35 +31,35 @@ interface Setting {
 const INTEGRATION_CATEGORIES = [
   {
     key: "integracao_email",
-    label: "E-mail SMTP — Localweb",
+    label: "E-mail SMTP - Localweb",
     description: "Serviço de envio de e-mails transacionais (verificação, convite, recuperação de senha) via SMTP SSL.",
     icon: Mail,
     color: "hsl(24 80% 50%)",
   },
   {
     key: "integracao_agreggar",
-    label: "Agreggar — Transcrição de Áudio",
+    label: "Agreggar - Transcrição de Áudio",
     description: "Serviço de speech-to-text utilizado para transcrever gravações de monitoramento.",
     icon: Mic,
     color: "hsl(262 60% 50%)",
   },
   {
     key: "integracao_ia",
-    label: "Análise de IA — OrizonTech AI Gateway",
+    label: "Análise de IA - OrizonTech AI Gateway",
     description: "Modelos de inteligência artificial para análise de risco e classificação de gravações.",
     icon: Brain,
     color: "hsl(207 89% 42%)",
   },
   {
     key: "integracao_sinergytech",
-    label: "SinergyTech — Chamadas de Segurança",
+    label: "SinergyTech - Chamadas de Segurança",
     description: "Integração com a plataforma OCS/Agreggar para discagem automática (speedDial) em alertas de emergência.",
     icon: PhoneOutgoing,
     color: "hsl(210 80% 45%)",
   },
   {
     key: "integracao_whatsapp",
-    label: "WhatsApp Business — Notificações",
+    label: "WhatsApp Business - Notificações",
     description: "Envio de alertas e notificações para guardiões via API do WhatsApp Business (Meta).",
     icon: MessageCircle,
     color: "hsl(142 70% 45%)",
@@ -329,7 +329,7 @@ export default function AdminIntegracoes() {
                       </DialogTrigger>
                       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                         <DialogHeader>
-                          <DialogTitle>Testar Acionamento — SinergyTech SpeedDial</DialogTitle>
+                          <DialogTitle>Testar Acionamento - SinergyTech SpeedDial</DialogTitle>
                         </DialogHeader>
                         <AdminCopom embedded apiBaseUrl={items.find((s) => s.chave === "sinergytech_api_url")?.valor || ""} />
                       </DialogContent>

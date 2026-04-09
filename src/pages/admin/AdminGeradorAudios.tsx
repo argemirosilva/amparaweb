@@ -81,7 +81,7 @@ async function callApi(
 }
 
 function formatDuration(sec: number | null) {
-  if (!sec) return "—";
+  if (!sec) return "-";
   const m = Math.floor(sec / 60);
   const s = sec % 60;
   return `${m}:${String(s).padStart(2, "0")}`;
@@ -233,7 +233,7 @@ export default function AdminGeradorAudios() {
           const modeEmoji = isEscalation ? "🔺" : (itemMode === "briga_saudavel" ? "🟢" : "🔴");
           const userLabel = randomMode ? ` → ${userName}` : "";
           addLog(
-            `✅ #${r.item_index} ${modeEmoji} ${r.result.topic} — ${formatDuration(r.result.duration)}${userLabel}`
+            `✅ #${r.item_index} ${modeEmoji} ${r.result.topic} - ${formatDuration(r.result.duration)}${userLabel}`
           );
         } else {
           addLog(`❌ #${r.item_index} falhou: ${r.result?.error || "erro desconhecido"}`);
@@ -282,7 +282,7 @@ export default function AdminGeradorAudios() {
       } else if (r.result?.success) {
         const userName = usuarios.find(u => u.id === itemUserId)?.nome_completo || "";
         const modeEmoji = itemMode === "briga_saudavel" ? "🟢" : "🔴";
-        addLog(`✅ #${r.item_index} ${modeEmoji} ${r.result.topic} — ${formatDuration(r.result.duration)}${randomMode ? ` → ${userName}` : ""}`);
+        addLog(`✅ #${r.item_index} ${modeEmoji} ${r.result.topic} - ${formatDuration(r.result.duration)}${randomMode ? ` → ${userName}` : ""}`);
       } else {
         addLog(`❌ #${r.item_index} falhou: ${r.result?.error || "erro desconhecido"}`);
       }
@@ -302,7 +302,7 @@ export default function AdminGeradorAudios() {
     const STALL_TIMEOUT_MS = 90_000; // 90s without progress = stall
     
     addLog("🧠 ═══════════════════════════════════════════");
-    addLog("🧠 ANÁLISE EM LOTE — INICIANDO");
+    addLog("🧠 ANÁLISE EM LOTE - INICIANDO");
     addLog(`🧠 Batch size: ${BATCH_SIZE} | Timeout stall: ${STALL_TIMEOUT_MS / 1000}s`);
     addLog("🧠 ═══════════════════════════════════════════");
 
@@ -334,7 +334,7 @@ export default function AdminGeradorAudios() {
         if (!res.ok) {
           consecutiveErrors++;
           totalErrors++;
-          addLog(`❌ Lote #${batchNumber}: HTTP ${res.status} — ${res.statusText}`);
+          addLog(`❌ Lote #${batchNumber}: HTTP ${res.status} - ${res.statusText}`);
           if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
             addLog(`🛑 ${MAX_CONSECUTIVE_ERRORS} erros consecutivos. Parando.`);
             break;
@@ -374,7 +374,7 @@ export default function AdminGeradorAudios() {
           addLog(`⚠️ Lote #${batchNumber}: 0 analisadas (${batchDuration}s). Restam: ${remaining}`);
           // Check stall
           if (Date.now() - lastProgressAt > STALL_TIMEOUT_MS) {
-            addLog(`🔄 STALL DETECTADO — sem progresso há ${((Date.now() - lastProgressAt) / 1000).toFixed(0)}s. Retentando...`);
+            addLog(`🔄 STALL DETECTADO - sem progresso há ${((Date.now() - lastProgressAt) / 1000).toFixed(0)}s. Retentando...`);
             await new Promise(r => setTimeout(r, 3000));
           }
         }
@@ -391,7 +391,7 @@ export default function AdminGeradorAudios() {
       } catch (err: any) {
         consecutiveErrors++;
         totalErrors++;
-        addLog(`❌ Lote #${batchNumber}: Exceção — ${err.message}`);
+        addLog(`❌ Lote #${batchNumber}: Exceção - ${err.message}`);
         if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
           addLog(`🛑 ${MAX_CONSECUTIVE_ERRORS} erros consecutivos. Parando.`);
           break;
@@ -747,7 +747,7 @@ export default function AdminGeradorAudios() {
                           className="text-xs truncate max-w-[160px]"
                           title={item.topic || undefined}
                         >
-                          {item.topic || "—"}
+                          {item.topic || "-"}
                         </TableCell>
                         <TableCell className="text-xs">
                           {formatDuration(item.duration_sec)}

@@ -17,7 +17,7 @@ export default function NiveisAlertaLegenda() {
         <CollapsibleTrigger asChild>
           <Card className="cursor-pointer hover:bg-accent/50 transition-colors">
             <CardContent className="px-4 py-3 flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">Grave e Crítico — baseados na Lei Maria da Penha</p>
+              <p className="text-sm text-muted-foreground">Grave e Crítico - baseados na Lei Maria da Penha</p>
               <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
             </CardContent>
           </Card>

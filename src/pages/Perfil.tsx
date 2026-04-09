@@ -399,22 +399,22 @@ export default function PerfilPage() {
         {!editingPerfil ? (
           <>
             <div className="grid grid-cols-2 gap-3 text-sm">
-              <div><p className="text-muted-foreground">Telefone</p><p className="text-foreground">{perfil?.telefone || "—"}</p></div>
-              <div><p className="text-muted-foreground">Nascimento</p><p className="text-foreground">{perfil?.data_nascimento || "—"}</p></div>
+              <div><p className="text-muted-foreground">Telefone</p><p className="text-foreground">{perfil?.telefone || "-"}</p></div>
+              <div><p className="text-muted-foreground">Nascimento</p><p className="text-foreground">{perfil?.data_nascimento || "-"}</p></div>
             </div>
 
             {perfilExpanded && (
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div className="col-span-2">
                   <p className="text-muted-foreground">Endereço</p>
-                  <p className="text-foreground">{perfil?.endereco_fixo || "—"}</p>
+                  <p className="text-foreground">{perfil?.endereco_fixo || "-"}</p>
                   {perfil?.endereco_referencia && <p className="text-xs text-muted-foreground mt-0.5">Ref: {perfil.endereco_referencia}</p>}
                 </div>
                 <div><p className="text-muted-foreground">Tem filhos?</p><p className="text-foreground">{perfil?.tem_filhos ? "Sim" : "Não"}</p></div>
                 <div><p className="text-muted-foreground">Mora com agressor?</p><p className="text-foreground">{perfil?.mora_com_agressor ? "Sim" : "Não"}</p></div>
-                <div><p className="text-muted-foreground">Cor / Raça</p><p className="text-foreground">{perfil?.cor_raca || "—"}</p></div>
-                <div><p className="text-muted-foreground">Escolaridade</p><p className="text-foreground">{perfil?.escolaridade || "—"}</p></div>
-                <div className="col-span-2"><p className="text-muted-foreground">Profissão</p><p className="text-foreground">{perfil?.profissao || "—"}</p></div>
+                <div><p className="text-muted-foreground">Cor / Raça</p><p className="text-foreground">{perfil?.cor_raca || "-"}</p></div>
+                <div><p className="text-muted-foreground">Escolaridade</p><p className="text-foreground">{perfil?.escolaridade || "-"}</p></div>
+                <div className="col-span-2"><p className="text-muted-foreground">Profissão</p><p className="text-foreground">{perfil?.profissao || "-"}</p></div>
               </div>
             )}
 

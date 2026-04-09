@@ -340,7 +340,7 @@ export default function AdminRelatorios() {
     alertas.forEach((a: any) => { tipoAcionamento[a.tipo_acionamento || "não informado"] = (tipoAcionamento[a.tipo_acionamento || "não informado"] || 0) + 1; });
 
     const tempos = alertas.filter((a: any) => a.tempo_ate_cancelamento_segundos != null).map((a: any) => a.tempo_ate_cancelamento_segundos);
-    const tempoMedio = tempos.length ? (tempos.reduce((a: number, b: number) => a + b, 0) / tempos.length).toFixed(0) + "s" : "—";
+    const tempoMedio = tempos.length ? (tempos.reduce((a: number, b: number) => a + b, 0) / tempos.length).toFixed(0) + "s" : "-";
 
     const diasSemana = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
     const porDia = [0, 0, 0, 0, 0, 0, 0];
@@ -392,7 +392,7 @@ export default function AdminRelatorios() {
             rows={alertas.slice(0, 50).map((a: any) => [
               format(new Date(a.criado_em), "dd/MM/yy HH:mm", { locale: ptBR }),
               a.status,
-              a.tipo_acionamento || "—",
+              a.tipo_acionamento || "-",
               a.guardioes_notificados ? "Sim" : "Não",
               a.autoridades_acionadas ? "Sim" : "Não",
               a.latitude ? "Sim" : "Não",
@@ -465,8 +465,8 @@ export default function AdminRelatorios() {
             rows={filteredGravacoes.slice(0, 50).map((g: any) => [
               format(new Date(g.created_at), "dd/MM/yy HH:mm", { locale: ptBR }),
               g.status,
-              g.duracao_segundos ? `${Math.round(g.duracao_segundos)}s` : "—",
-              g.tamanho_mb ? `${g.tamanho_mb.toFixed(1)} MB` : "—",
+              g.duracao_segundos ? `${Math.round(g.duracao_segundos)}s` : "-",
+              g.tamanho_mb ? `${g.tamanho_mb.toFixed(1)} MB` : "-",
             ])}
           />
         </Section>
@@ -491,7 +491,7 @@ export default function AdminRelatorios() {
       <div className="space-y-6">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <KpiCard label="Total Sessões" value={total_sessions} />
-          <KpiCard label="Média Geral" value={avg_rating > 0 ? `${avg_rating.toFixed(1)} ★` : "—"} />
+          <KpiCard label="Média Geral" value={avg_rating > 0 ? `${avg_rating.toFixed(1)} ★` : "-"} />
           <KpiCard label="% Avaliadas" value={`${pctRated}%`} />
           <KpiCard label="Total Agentes" value={total_agents} />
         </div>
@@ -524,7 +524,7 @@ export default function AdminRelatorios() {
               a.name,
               a.total_sessions,
               a.total_ratings,
-              a.avg_rating > 0 ? `${a.avg_rating.toFixed(1)} ★` : "—",
+              a.avg_rating > 0 ? `${a.avg_rating.toFixed(1)} ★` : "-",
             ])}
           />
         </Section>

@@ -13,7 +13,7 @@ export default function HomePage() {
 
   return (
     <div className="animate-fade-in min-h-full max-w-4xl pb-6">
-      {/* Greeting — simple, no banner */}
+      {/* Greeting - simple, no banner */}
       <div className="px-1 pt-2 pb-4">
         <div className="flex items-center gap-3">
           {usuario?.avatar_url ? (
@@ -36,7 +36,7 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Protection status — subtle pill */}
+      {/* Protection status - subtle pill */}
       <div className="px-1 mb-4">
         <div className="inline-flex items-center gap-2 bg-primary/10 text-primary rounded-full px-3.5 py-1.5">
           <Shield className="w-3.5 h-3.5" />
@@ -44,15 +44,15 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Main content — stacked sections */}
+      {/* Main content - stacked sections */}
       <div className="space-y-3 px-1">
-        {/* Device status — primary card */}
+        {/* Device status - primary card */}
         <DeviceStatusCard />
 
         {/* Risk evolution */}
         <RiskEvolutionCard />
 
-        {/* Quick actions — native list style */}
+        {/* Quick actions - native list style */}
         <div className="rounded-xl bg-card border border-border/60 divide-y divide-border/40 overflow-hidden">
           <button
             onClick={() => navigate("/busca-perfil")}
@@ -74,7 +74,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Monitoring — bottom */}
+        {/* Monitoring - bottom */}
         <MonitoringStatusCard />
       </div>
     </div>

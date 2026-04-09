@@ -70,7 +70,7 @@ const RISCO_LABELS: Record<string, string> = {
 };
 
 function formatDuration(s: number | null): string {
-  if (!s) return "—";
+  if (!s) return "-";
   const m = Math.floor(s / 60);
   const sec = Math.floor(s % 60);
   if (m > 60) {

@@ -140,7 +140,7 @@ export default function AcionamentosCard() {
         </CardContent>
       </Card>
 
-      {/* Níveis de Alerta — Collapsible */}
+      {/* Níveis de Alerta - Collapsible */}
       <NiveisAlertaInline />
     </div>
   );

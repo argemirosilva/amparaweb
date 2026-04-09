@@ -59,10 +59,10 @@ function SlideCapa() {
 
 function SlideProblema() {
   const problems = [
-    { icon: AlertTriangle, title: "Dados chegam tarde demais", desc: "Os levantamentos sobre violência doméstica levam de 2 a 4 anos para serem publicados. Quando viram políticas públicas, a realidade já mudou — e as soluções nascem obsoletas. (Fonte: FBSP — ciclo de publicação do Anuário de Segurança Pública)" },
-    { icon: TrendingDown, title: "Zero dados preventivos", desc: "Hoje só existem dados reativos: contagem de boletins de ocorrência e feminicídios consumados. Não há nenhum sistema nacional que capture sinais de risco antes da agressão acontecer. (Fonte: IPEA — Atlas da Violência 2024)" },
+    { icon: AlertTriangle, title: "Dados chegam tarde demais", desc: "Os levantamentos sobre violência doméstica levam de 2 a 4 anos para serem publicados. Quando viram políticas públicas, a realidade já mudou - e as soluções nascem obsoletas. (Fonte: FBSP - ciclo de publicação do Anuário de Segurança Pública)" },
+    { icon: TrendingDown, title: "Zero dados preventivos", desc: "Hoje só existem dados reativos: contagem de boletins de ocorrência e feminicídios consumados. Não há nenhum sistema nacional que capture sinais de risco antes da agressão acontecer. (Fonte: IPEA - Atlas da Violência 2024)" },
     { icon: Clock, title: "Ciclo lento gera soluções ineficazes", desc: "O caminho coleta → análise → política pública leva em média 3 a 5 anos. Nesse intervalo, o perfil das vítimas, agressores e dinâmicas de violência se transforma, tornando as ações defasadas. (Fonte: CNJ / DataSenado, 2023)" },
-    { icon: Users, title: "Vítimas invisíveis ao sistema", desc: "Apenas 10% das mulheres em situação de violência registram ocorrência. As demais ficam fora de qualquer base de dados, sem proteção e sem voz. (Fonte: DataSenado — Pesquisa Violência Doméstica, 2023)" },
+    { icon: Users, title: "Vítimas invisíveis ao sistema", desc: "Apenas 10% das mulheres em situação de violência registram ocorrência. As demais ficam fora de qualquer base de dados, sem proteção e sem voz. (Fonte: DataSenado - Pesquisa Violência Doméstica, 2023)" },
   ];
   return (
     <motion.div className="flex flex-col items-center justify-center h-full gap-8 px-6" variants={stagger} initial="hidden" animate="visible">
@@ -200,7 +200,7 @@ function SlideMercado() {
   const segments = [
     { label: "TAM", title: "Mercado Total Endereçável", value: "R$ 12 bi", desc: "Mulheres em situação de vulnerabilidade no Brasil (~17 milhões) (Fonte: IBGE/PNAD 2023)", color: "from-violet-500 to-violet-700", size: "w-64 h-64 md:w-72 md:h-72" },
     { label: "SAM", title: "Mercado Alcançável", value: "R$ 2,4 bi", desc: "Municípios com secretarias de proteção à mulher (~2.500) (Fonte: MUNIC/IBGE 2023)", color: "from-cyan-500 to-cyan-700", size: "w-48 h-48 md:w-56 md:h-56" },
-    { label: "SOM", title: "Mercado Obtível", value: "R$ 80–100 mi", desc: "Convênios estaduais e municipais ativos — meta 3 anos (Estimativa interna Orizon Tech)", color: "from-emerald-500 to-emerald-700", size: "w-36 h-36 md:w-44 md:h-44" },
+    { label: "SOM", title: "Mercado Obtível", value: "R$ 80–100 mi", desc: "Convênios estaduais e municipais ativos - meta 3 anos (Estimativa interna Orizon Tech)", color: "from-emerald-500 to-emerald-700", size: "w-36 h-36 md:w-44 md:h-44" },
   ];
   return (
     <motion.div className="flex flex-col items-center justify-center h-full gap-8 px-6" variants={stagger} initial="hidden" animate="visible">

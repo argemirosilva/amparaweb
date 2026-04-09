@@ -300,7 +300,7 @@ export default function AdminUsuarios() {
             >
               <option value="todos">Todos os órgãos</option>
               {tenants.map((t) => (
-                <option key={t.id} value={t.id}>{t.sigla} — {t.nome}</option>
+                <option key={t.id} value={t.id}>{t.sigla} - {t.nome}</option>
               ))}
             </select>
           </div>
@@ -337,7 +337,7 @@ export default function AdminUsuarios() {
                   <td className="px-4 py-3 font-medium text-foreground">{u.nome_completo}</td>
                   <td className="px-4 py-3 text-muted-foreground">{u.email}</td>
                   <td className="px-4 py-3 text-xs text-muted-foreground">
-                    {u.orgao || <span className="opacity-40">—</span>}
+                    {u.orgao || <span className="opacity-40">-</span>}
                   </td>
                   <td className="px-4 py-3 text-xs text-muted-foreground">
                     {u.role ? (ROLE_LABELS[u.role] || u.role) : <span className="opacity-40">Usuária</span>}
@@ -346,7 +346,7 @@ export default function AdminUsuarios() {
                     <GovStatusBadge status={statusMap[u.status] || "amarelo"} label={u.status} />
                   </td>
                   <td className="px-4 py-3 text-xs text-muted-foreground">
-                    {u.ultimo_acesso ? new Date(u.ultimo_acesso).toLocaleDateString("pt-BR") : "—"}
+                    {u.ultimo_acesso ? new Date(u.ultimo_acesso).toLocaleDateString("pt-BR") : "-"}
                   </td>
                   <td className="px-4 py-3">
                     <button
@@ -485,7 +485,7 @@ export default function AdminUsuarios() {
                   >
                     <option value="">Sem órgão</option>
                     {tenants.map((t) => (
-                      <option key={t.id} value={t.id}>{t.sigla} — {t.nome}</option>
+                      <option key={t.id} value={t.id}>{t.sigla} - {t.nome}</option>
                     ))}
                   </select>
                 </div>
@@ -577,10 +577,10 @@ export default function AdminUsuarios() {
                   {[
                     { label: "Nome", value: drawerUser.nome_completo },
                     { label: "Email", value: drawerUser.email },
-                    { label: "Órgão", value: drawerUser.orgao || "—" },
+                    { label: "Órgão", value: drawerUser.orgao || "-" },
                     { label: "Status", value: drawerUser.status },
                     { label: "Cadastro", value: new Date(drawerUser.created_at).toLocaleDateString("pt-BR") },
-                    { label: "Último acesso", value: drawerUser.ultimo_acesso ? new Date(drawerUser.ultimo_acesso).toLocaleDateString("pt-BR") : "—" },
+                    { label: "Último acesso", value: drawerUser.ultimo_acesso ? new Date(drawerUser.ultimo_acesso).toLocaleDateString("pt-BR") : "-" },
                   ].map((f) => (
                     <div key={f.label}>
                       <p className="text-xs font-medium" style={{ color: "hsl(220 9% 46%)" }}>{f.label}</p>
@@ -861,7 +861,7 @@ export default function AdminUsuarios() {
                   >
                     <option value="">Selecione o órgão</option>
                     {tenants.map((t) => (
-                      <option key={t.id} value={t.id}>{t.sigla} — {t.nome}</option>
+                      <option key={t.id} value={t.id}>{t.sigla} - {t.nome}</option>
                     ))}
                   </select>
                 </div>

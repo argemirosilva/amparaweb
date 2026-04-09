@@ -352,7 +352,7 @@ export default function GravacaoExpandedContent({
         </span>
       </div>
 
-      {/* AI Analysis Card — hide for sem_risco */}
+      {/* AI Analysis Card - hide for sem_risco */}
       {(
         <AnaliseCard
           gravacaoId={gravacao.id}
