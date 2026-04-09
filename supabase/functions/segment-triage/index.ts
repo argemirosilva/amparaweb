@@ -248,13 +248,9 @@ Deno.serve(async (req) => {
     // 1. Transcribe
     const transcricao = await transcribeSegment(storage_path);
     if (!transcricao || transcricao.trim().length < 3) {
-      // No usable transcription — mark as sem_risco
-      await supabase
-        .from("gravacoes_segmentos")
-        .update({ triage_risco: "sem_risco", triage_transcricao: transcricao || "", triage_at: new Date().toISOString() })
-        .eq("id", segment_id);
-      console.log(`[TRIAGE] No transcription for segment ${segment_id}`);
-      return json({ ok: true, risco: "sem_risco", reason: "no_transcription" });
+      // No usable transcription — leave triage_risco NULL so segment is treated as relevant (safe fallback)
+      console.log(`[TRIAGE] No transcription for segment ${segment_id} — keeping as relevant (NULL)`);
+      return json({ ok: true, risco: null, reason: "no_transcription" });
     }
 
     const normalizedText = normalize(transcricao);
