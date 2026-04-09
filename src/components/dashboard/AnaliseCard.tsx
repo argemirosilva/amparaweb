@@ -87,6 +87,8 @@ const VIOLENCIA_MAP: Record<string, string> = {
   fisica: "Física", psicologica: "Psicológica", moral: "Moral",
   patrimonial: "Patrimonial", sexual: "Sexual", nenhuma: "Nenhuma",
   violencia_fisica: "Física", violencia_psicologica: "Psicológica",
+  violencia_moral: "Moral", violencia_patrimonial: "Patrimonial",
+  violencia_sexual: "Sexual",
   ameaca: "Ameaça", coercao: "Coerção", controle: "Controle", assedio: "Assédio",
 };
 
