@@ -57,8 +57,8 @@ export default function HomePage() {
             onClick={() => navigate("/busca-perfil")}
             className="flex items-center gap-3 w-full text-left px-4 py-3.5 hover:bg-muted/50 active:bg-muted transition-colors"
           >
-            <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-              <UserSearch className="w-4.5 h-4.5 text-primary" />
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: "var(--ampara-gradient-soft)" }}>
+              <UserSearch className="w-[18px] h-[18px]" style={{ color: "hsl(var(--ampara-magenta))" }} />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-foreground">Pesquisar parceiro</p>
