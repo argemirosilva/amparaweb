@@ -1,48 +1,74 @@
 
 
-# Plano: Descarte de Segmentos Irrelevantes na Concatenacao
+# Plano: Enriquecer Triagem com Contexto de Ameaca
 
-## Resumo
+## Problema atual
 
-Segmentos `sem_risco` sao excluidos da concatenacao. Gravacoes resultantes que nao tem nenhum segmento relevante sao marcadas como `sem_risco` sem transcricao nem analise visivel. Na interface, gravacoes `sem_risco` mostram apenas o status — sem transcricao, sem card de analise.
+A triagem retorna apenas `nivel_risco` (sem_risco/moderado/alto/critico) e `motivo` (texto curto). Quando o sistema dispara WhatsApp ou liga para COPOM, nao tem como informar **o que especificamente aconteceu** -- se foi ameaca de morte, agressao fisica em curso, etc.
+
+## Proposta
+
+Expandir o JSON de retorno da IA de triagem para incluir **flags contextuais** que descrevem a situacao concreta. Esses flags sao salvos no banco e passados adiante para WhatsApp e COPOM.
+
+### Novo formato do JSON de triagem
+
+```json
+{
+  "nivel_risco": "critico",
+  "motivo": "Ameaca de morte com mencao a faca",
+  "contexto_emergencia": {
+    "ameaca_morte": true,
+    "agressao_fisica": false,
+    "agressao_em_curso": false,
+    "ameaca_agressao_fisica": true,
+    "pedido_socorro": false,
+    "mencao_arma": true,
+    "descricao_curta": "Agressor ameacou matar vitima com faca"
+  }
+}
+```
+
+Os campos booleanos sao rapidos de processar e o `descricao_curta` e uma frase humana para usar nas notificacoes.
 
 ## Alteracoes
 
-### 1. Migration — nova coluna `segmentos_descartados`
+### 1. Prompt de triagem (buildAnalysisPrompt.ts)
 
-```sql
-ALTER TABLE gravacoes ADD COLUMN segmentos_descartados integer NOT NULL DEFAULT 0;
-```
+Atualizar o prompt padrao para solicitar o objeto `contexto_emergencia` no JSON de retorno, alem do `nivel_risco` e `motivo` ja existentes.
 
-### 2. `session-maintenance/index.ts`
+### 2. Coluna no banco (migration)
 
-Na etapa de concatenacao (~linha 421):
-- Separar segmentos em relevantes (`triage_risco != 'sem_risco'` ou `NULL`) e descartados (`triage_risco = 'sem_risco'`)
-- Concatenar apenas relevantes
-- Se TODOS forem `sem_risco`: ainda concatenar o audio (para arquivo), mas marcar gravacao com `status = 'sem_risco'`, salvar `segmentos_descartados`, e NAO disparar `process-recording`
-- Se ha relevantes: concatenar normalmente, salvar `segmentos_descartados`, disparar `process-recording`
+Adicionar coluna `triage_contexto` (JSONB, nullable) na tabela `gravacoes_segmentos` para persistir os flags.
 
-### 3. `process-recording/index.ts`
+### 3. segment-triage/index.ts
 
-Adicionar early return no inicio: se gravacao ja tem `status = 'sem_risco'`, retornar sem processar.
+- `classifyRisk` passa a retornar um objeto `{ nivel_risco, motivo, contexto_emergencia }` em vez de apenas string.
+- Salvar `triage_contexto` junto com `triage_risco` e `triage_transcricao`.
+- Passar `contexto_emergencia` para `fireWhatsApp` e `fireCopomCall`.
 
-### 4. Frontend — `GravacaoExpandedContent.tsx`
+### 4. send-whatsapp/index.ts
 
-- Se `status === 'sem_risco'`: nao mostrar transcricao, nao mostrar AnaliseCard
-- Mostrar badge "Sem risco — X segmentos descartados" quando `segmentos_descartados > 0`
+- Receber campo opcional `contexto` no body.
+- Usar `contexto.descricao_curta` como parametro adicional no template WhatsApp (se o template suportar), ou incluir no parametro existente de endereco/tipo.
+- Salvar contexto no audit log.
 
-### 5. Frontend — `Gravacoes.tsx`
+### 5. copom-outbound-call/index.ts
 
-- Badge inline discreto mostrando segmentos descartados quando aplicavel
-- Gravacoes `sem_risco` exibem apenas status, sem preview de transcricao
+- Receber campo opcional `contexto` no body.
+- Incluir `descricao_curta` no payload de contexto da ligacao para que o operador saiba o que aconteceu.
+
+### 6. Admin UI (AdminPromptsIA.tsx)
+
+- Atualizar o placeholder do prompt de triagem para refletir o novo formato JSON esperado.
 
 ## Arquivos modificados
 
 | Arquivo | Alteracao |
 |---------|----------|
-| Migration SQL | ADD COLUMN `segmentos_descartados` |
-| `session-maintenance/index.ts` | Filtrar segmentos antes de concatenar |
-| `process-recording/index.ts` | Early return se sem_risco |
-| `GravacaoExpandedContent.tsx` | Ocultar transcricao/analise para sem_risco |
-| `Gravacoes.tsx` | Badge de segmentos descartados |
+| Migration SQL | ADD COLUMN `triage_contexto` JSONB |
+| `_shared/buildAnalysisPrompt.ts` | Novo prompt padrao com contexto_emergencia |
+| `segment-triage/index.ts` | Parse e persistencia do contexto |
+| `send-whatsapp/index.ts` | Receber e usar contexto nas msgs |
+| `copom-outbound-call/index.ts` | Receber e usar contexto na ligacao |
+| `AdminPromptsIA.tsx` | Placeholder atualizado |
 
