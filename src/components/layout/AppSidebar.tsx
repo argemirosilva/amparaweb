@@ -49,9 +49,9 @@ export default function AppSidebar() {
         <div className="absolute -top-4 -left-4 w-24 h-24 rounded-full opacity-[0.08]" style={{ background: "hsl(320, 70%, 55%)" }} />
         <div className="absolute -bottom-6 -right-6 w-16 h-16 rounded-full opacity-[0.05]" style={{ background: "hsl(280, 60%, 50%)" }} />
         <div className="relative w-8 h-8 rounded-full overflow-hidden shrink-0">
-          <img src={amparaLogo} alt="AMPARA" className="w-full h-full object-cover" />
+          <img src={amparaLogo} alt="AMPARA" className="w-full h-full object-cover invert mix-blend-screen" />
         </div>
-        <span className="font-display font-bold text-sidebar-foreground text-lg group-data-[collapsible=icon]:hidden relative">
+        <span className="font-display font-bold text-white text-lg group-data-[collapsible=icon]:hidden relative">
           AMPARA
         </span>
       </div>
@@ -122,7 +122,7 @@ export default function AppSidebar() {
         {/* Desenvolvido por */}
         <div className="group-data-[collapsible=icon]:hidden border-t border-sidebar-border pt-3 pb-2 px-3 flex items-center justify-center gap-2">
           <span className="text-[10px] text-sidebar-foreground/40 tracking-wide whitespace-nowrap">Desenvolvido por</span>
-          <img src={orizonLogo} alt="Orizon Tech" className="h-6 object-contain" />
+          <img src={orizonLogo} alt="Orizon Tech" className="h-6 object-contain mix-blend-screen" style={{ filter: "invert(1) hue-rotate(180deg)" }} />
         </div>
       </SidebarFooter>
     </Sidebar>
