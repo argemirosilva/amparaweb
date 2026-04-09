@@ -252,7 +252,7 @@ export default function LandingPage() {
 
         <div className="max-w-7xl mx-auto px-4 py-12 md:py-20 grid md:grid-cols-2 gap-8 items-center relative z-10">
           <div className="space-y-5">
-            <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold leading-tight text-foreground tracking-tight">
+            <h1 className="text-xl md:text-2xl lg:text-3xl font-bold leading-tight text-foreground tracking-tight">
               Proteção inteligente para mulheres
             </h1>
             <p className="text-base md:text-lg text-muted-foreground max-w-lg leading-relaxed">
