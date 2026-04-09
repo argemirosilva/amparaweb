@@ -461,21 +461,17 @@ export default function GravacoesPage() {
                       >
                         {/* Organic risk indicator on right side */}
                         {g.nivel_risco && g.nivel_risco !== "sem_risco" && (
-                          <div className="absolute right-0 top-0 bottom-0 pointer-events-none overflow-hidden rounded-r-xl" style={{ width: "48px" }}>
+                          <div className="absolute right-0 top-0 bottom-0 pointer-events-none overflow-hidden rounded-r-xl" style={{ width: "52px" }}>
                             <div
-                              className="absolute -right-3 top-1/2 -translate-y-1/2 w-16 h-16 rounded-full opacity-[0.12]"
-                              style={{ backgroundColor: RISCO_COLORS[g.nivel_risco] }}
+                              className="absolute -right-6 top-1/2 -translate-y-1/2 w-24 h-24 rounded-full"
+                              style={{ background: `radial-gradient(circle, ${RISCO_COLORS[g.nivel_risco]}18 0%, ${RISCO_COLORS[g.nivel_risco]}08 40%, transparent 70%)` }}
                             />
-                            <div
-                              className="absolute -right-1 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full opacity-[0.08]"
-                              style={{ backgroundColor: RISCO_COLORS[g.nivel_risco] }}
-                            />
-                            <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex flex-col items-center gap-0.5">
+                            <div className="absolute right-3 top-1/2 -translate-y-1/2 flex flex-col items-center gap-0.5">
                               <span
-                                className="w-2.5 h-2.5 rounded-full shadow-sm"
-                                style={{ backgroundColor: RISCO_COLORS[g.nivel_risco] }}
+                                className="w-2.5 h-2.5 rounded-full"
+                                style={{ backgroundColor: RISCO_COLORS[g.nivel_risco], boxShadow: `0 0 6px ${RISCO_COLORS[g.nivel_risco]}40` }}
                               />
-                              <span className="text-[8px] font-medium text-muted-foreground leading-none">
+                              <span className="text-[8px] font-medium text-muted-foreground/70 leading-none">
                                 {(RISCO_LABELS[g.nivel_risco] || g.nivel_risco).slice(0, 4)}
                               </span>
                             </div>
