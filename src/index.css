@@ -53,8 +53,8 @@ html, body, #root {
 
     --radius: 0.75rem;
 
-    --sidebar-background: 280 20% 95%;
-    --sidebar-bg-gradient: linear-gradient(160deg, hsl(280, 25%, 94%), hsl(300, 18%, 92%), hsl(320, 15%, 90%));
+    --sidebar-background: 280 22% 92%;
+    --sidebar-bg-gradient: linear-gradient(160deg, hsl(280, 28%, 90%), hsl(300, 22%, 88%), hsl(320, 18%, 86%));
     --sidebar-foreground: 260 15% 35%;
     --sidebar-primary: 280 55% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
