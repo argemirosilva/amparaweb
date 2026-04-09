@@ -57,8 +57,6 @@ export default function ChangePasswordCard() {
       resetForms();
       return;
     }
-      return;
-    }
     setOpen(true);
   };
 
