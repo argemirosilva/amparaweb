@@ -43,40 +43,57 @@ export default function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon">
-      {/* Logo area with organic curve */}
-      <div className="relative p-4 flex items-center gap-3 overflow-hidden">
-        {/* Decorative blob behind logo */}
-        <div className="absolute -top-4 -left-4 w-24 h-24 rounded-full opacity-[0.08]" style={{ background: "hsl(320, 70%, 55%)" }} />
-        <div className="absolute -bottom-6 -right-6 w-16 h-16 rounded-full opacity-[0.05]" style={{ background: "hsl(280, 60%, 50%)" }} />
-        <div className="relative w-8 h-8 rounded-full overflow-hidden shrink-0">
-          <img src={amparaLogo} alt="AMPARA" className="w-full h-full object-cover invert mix-blend-screen" />
+      {/* Logo area with organic half-circle */}
+      <div className="relative p-4 pb-6 overflow-hidden">
+        {/* Large organic circles in background */}
+        <div className="absolute -top-16 -left-16 w-44 h-44 rounded-full opacity-[0.12]" style={{ background: "linear-gradient(135deg, hsl(280,60%,48%), hsl(320,70%,50%))" }} />
+        <div className="absolute -top-8 -right-12 w-28 h-28 rounded-full opacity-[0.08]" style={{ background: "hsl(320, 70%, 55%)" }} />
+        <div className="absolute top-12 -left-6 w-16 h-16 rounded-full opacity-[0.06]" style={{ background: "hsl(280, 50%, 60%)" }} />
+
+        {/* Sparkle dots */}
+        <div className="absolute top-4 right-6 w-1.5 h-1.5 rounded-full opacity-20 animate-pulse" style={{ background: "hsl(320, 70%, 60%)" }} />
+        <div className="absolute top-10 right-3 w-1 h-1 rounded-full opacity-15 animate-pulse" style={{ background: "hsl(280, 60%, 55%)", animationDelay: "0.7s" }} />
+
+        {/* Logo inside half-circle accent */}
+        <div className="relative flex items-center gap-3">
+          <div className="relative">
+            {/* Half-circle backdrop */}
+            <div className="absolute -inset-2 rounded-full" style={{ background: "linear-gradient(135deg, hsla(280,60%,48%,0.15), hsla(320,70%,50%,0.1))" }} />
+            <div className="relative w-9 h-9 rounded-full overflow-hidden ring-2 ring-[hsla(280,60%,48%,0.2)]">
+              <img src={amparaLogo} alt="AMPARA" className="w-full h-full object-cover" />
+            </div>
+          </div>
+          <span className="font-display font-bold text-sidebar-foreground text-lg group-data-[collapsible=icon]:hidden">
+            AMPARA
+          </span>
         </div>
-        <span className="font-display font-bold text-white text-lg group-data-[collapsible=icon]:hidden relative">
-          AMPARA
-        </span>
       </div>
 
       {/* Curved divider */}
-      <div className="relative h-4 -mt-1">
-        <svg viewBox="0 0 200 16" preserveAspectRatio="none" className="w-full h-full">
-          <path d="M0,0 C60,16 140,16 200,0 L200,16 L0,16 Z" fill="hsl(320, 70%, 55%)" fillOpacity="0.06" />
+      <div className="relative h-3 -mt-1">
+        <svg viewBox="0 0 200 12" preserveAspectRatio="none" className="w-full h-full">
+          <path d="M0,0 C60,12 140,12 200,0 L200,12 L0,12 Z" fill="hsl(280, 60%, 48%)" fillOpacity="0.06" />
         </svg>
       </div>
 
       <SidebarContent className="px-2">
+        {/* Floating organic circles */}
+        <div className="absolute top-1/3 -right-8 w-24 h-24 rounded-full opacity-[0.04]" style={{ background: "hsl(320, 70%, 50%)" }} />
+        <div className="absolute bottom-1/4 -left-6 w-16 h-16 rounded-full opacity-[0.05]" style={{ background: "hsl(280, 60%, 55%)" }} />
+
         <SidebarGroup>
           <SidebarGroupContent>
-            <SidebarMenu className="space-y-1">
+            <SidebarMenu className="space-y-0.5">
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.url}>
                   <SidebarMenuButton asChild>
                     <NavLink
                       to={item.url}
                       end
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sidebar-foreground/70 transition-all duration-200 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sidebar-foreground/70 transition-all duration-200 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
                       activeClassName="text-sidebar-primary font-medium ampara-sidebar-active"
                     >
-                      <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-all duration-200">
+                      <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0">
                         <item.icon className="w-[18px] h-[18px]" />
                       </div>
                       <span className="group-data-[collapsible=icon]:hidden text-sm">{item.title}</span>
@@ -102,7 +119,7 @@ export default function AppSidebar() {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <SidebarMenuButton onClick={() => navigate("/support")} className="w-fit rounded-xl">
-                    <Headset className="w-5 h-5 shrink-0 text-sidebar-foreground/70" />
+                    <Headset className="w-5 h-5 shrink-0 text-sidebar-foreground/50" />
                   </SidebarMenuButton>
                 </TooltipTrigger>
                 <TooltipContent side="right">
@@ -113,8 +130,8 @@ export default function AppSidebar() {
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton onClick={handleLogout} className="rounded-xl">
-              <LogOut className="w-5 h-5 shrink-0 text-sidebar-foreground/70" />
-              <span className="group-data-[collapsible=icon]:hidden text-sidebar-foreground/70">Sair</span>
+              <LogOut className="w-5 h-5 shrink-0 text-sidebar-foreground/50" />
+              <span className="group-data-[collapsible=icon]:hidden text-sidebar-foreground/50">Sair</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
@@ -122,7 +139,7 @@ export default function AppSidebar() {
         {/* Desenvolvido por */}
         <div className="group-data-[collapsible=icon]:hidden border-t border-sidebar-border pt-3 pb-2 px-3 flex items-center justify-center gap-2">
           <span className="text-[10px] text-sidebar-foreground/40 tracking-wide whitespace-nowrap">Desenvolvido por</span>
-          <img src={orizonLogo} alt="Orizon Tech" className="h-6 object-contain mix-blend-screen" style={{ filter: "invert(1) hue-rotate(180deg)" }} />
+          <img src={orizonLogo} alt="Orizon Tech" className="h-6 object-contain opacity-60" />
         </div>
       </SidebarFooter>
     </Sidebar>
