@@ -74,12 +74,7 @@ export default function AppSidebar() {
                       to={item.url}
                       end
                       className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sidebar-foreground/70 transition-all duration-200 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                      activeClassName="text-sidebar-primary font-medium"
-                      style={({ isActive }: { isActive: boolean }) =>
-                        isActive
-                          ? { background: "linear-gradient(135deg, hsla(280,60%,50%,0.15), hsla(320,70%,55%,0.1))" }
-                          : undefined
-                      }
+                      activeClassName="text-sidebar-primary font-medium ampara-sidebar-active"
                     >
                       <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-all duration-200">
                         <item.icon className="w-[18px] h-[18px]" />
