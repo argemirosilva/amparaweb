@@ -1,0 +1,1 @@
+ALTER TABLE public.gravacoes_segmentos ADD COLUMN triage_contexto jsonb DEFAULT NULL;

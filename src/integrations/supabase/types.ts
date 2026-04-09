@@ -932,6 +932,7 @@ export type Database = {
           timezone: string | null
           timezone_offset_minutes: number | null
           triage_at: string | null
+          triage_contexto: Json | null
           triage_risco: string | null
           triage_transcricao: string | null
           user_id: string
@@ -950,6 +951,7 @@ export type Database = {
           timezone?: string | null
           timezone_offset_minutes?: number | null
           triage_at?: string | null
+          triage_contexto?: Json | null
           triage_risco?: string | null
           triage_transcricao?: string | null
           user_id: string
@@ -968,6 +970,7 @@ export type Database = {
           timezone?: string | null
           timezone_offset_minutes?: number | null
           triage_at?: string | null
+          triage_contexto?: Json | null
           triage_risco?: string | null
           triage_transcricao?: string | null
           user_id?: string
