@@ -50,6 +50,31 @@ async function getTriageWords(supabase: ReturnType<typeof createClient>) {
   return palavras;
 }
 
+// ── Transcription provider config cache ──
+
+let cachedTranscriptionConfig: { provider: string; apiUrl: string; fetchedAt: number } | null = null;
+
+async function getTranscriptionConfig(supabase: ReturnType<typeof createClient>) {
+  if (cachedTranscriptionConfig && Date.now() - cachedTranscriptionConfig.fetchedAt < CACHE_TTL_MS) {
+    return cachedTranscriptionConfig;
+  }
+  const { data } = await supabase
+    .from("admin_settings")
+    .select("chave, valor")
+    .in("chave", ["transcricao_provider", "transcricao_api_url"]);
+  
+  const map: Record<string, string> = {};
+  for (const row of data || []) map[row.chave] = row.valor;
+
+  const config = {
+    provider: map["transcricao_provider"] || "lovable_ai",
+    apiUrl: map["transcricao_api_url"] || "https://api.agreggar.com/Transcription/Transcribe",
+    fetchedAt: Date.now(),
+  };
+  cachedTranscriptionConfig = config;
+  return config;
+}
+
 // ── Text normalization (lowercase + remove accents) ──
 
 function normalize(text: string): string {
