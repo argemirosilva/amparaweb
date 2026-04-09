@@ -1003,11 +1003,14 @@ async function handleValidatePassword(
     loginTipo = "coacao";
     await supabase.from("audit_logs").insert({
       user_id: user.id,
-      action_type: "coacao_validate_password",
+      action_type: "coercion_event",
       success: true,
       ip_address: ip,
-      details: { silent: true },
+      details: { silent: true, source: "settings_gate" },
     });
+
+    // Fire-and-forget: notify guardians via WhatsApp about coercion
+    fireWhatsApp(user.id, "coacao");
   }
 
   return jsonResponse({ success: true, loginTipo });
