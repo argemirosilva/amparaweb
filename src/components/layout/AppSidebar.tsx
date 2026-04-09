@@ -21,7 +21,7 @@ import {
   SidebarMenuItem,
   SidebarFooter,
 } from "@/components/ui/sidebar";
-import amparaLogo from "@/assets/ampara-circle-logo.png";
+import amparaLogo from "@/assets/ampara-circle-logo-color.png";
 import orizonLogo from "@/assets/orizon-tech-logo-2.png";
 
 const menuItems = [
