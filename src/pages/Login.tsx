@@ -61,7 +61,7 @@ export default function LoginPage() {
           <div className="relative inline-block">
             <div className="absolute -inset-4 rounded-full border opacity-[0.12]" style={{ borderColor: "hsl(280, 60%, 48%)" }} />
             <div className="absolute -inset-8 rounded-full border opacity-[0.06]" style={{ borderColor: "hsl(320, 70%, 55%)" }} />
-            <div className="relative w-20 h-20 rounded-full overflow-hidden ring-[3px] ring-primary/20 shadow-lg mx-auto">
+            <div className="relative w-28 h-28 rounded-full overflow-hidden ring-[3px] ring-primary/20 shadow-lg mx-auto">
               <img src={amparaLogo} alt="AMPARA" className="w-full h-full object-cover" />
             </div>
           </div>
