@@ -29,6 +29,7 @@ serve(async (req) => {
   try {
     const body = await req.json();
     const context = body.context;
+    const contextoEmergencia = body.contexto;
     const userId = body.user_id;
     const skipCooldown = body.skip_cooldown === true;
 
@@ -165,6 +166,11 @@ serve(async (req) => {
       const plateSpeak = formatToSpeak(v?.plate_partial, "placa");
       if (v?.plate_partial) veiculoStr = veiculoStr ? `${veiculoStr} placa ${plateSpeak || v.plate_partial}` : `placa ${plateSpeak || v.plate_partial}`;
       add("VEICULO", (veiculoStr || "não informado").replace(/,/g, ""));
+    }
+
+    // ── Add emergency context from triage ──
+    if (contextoEmergencia?.descricao_curta) {
+      autoFields.push({ fieldName: "DESCRICAO_EMERGENCIA", value: contextoEmergencia.descricao_curta });
     }
 
     // ── Authenticate with SinergyTech ──

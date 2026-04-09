@@ -27,9 +27,9 @@ const PROMPTS: PromptConfig[] = [
   {
     key: "ia_prompt_triagem",
     label: "Triagem Rápida",
-    description: "Prompt leve e rápido para classificar risco (seguro/moderado/alto/critico) antes da análise completa. Usa modelo Flash-Lite para máxima velocidade.",
+    description: "Prompt leve e rápido para classificar risco (seguro/moderado/alto/critico) e extrair contexto de emergência. Usa modelo Flash-Lite para máxima velocidade.",
     icon: Zap,
-    placeholder: `Analise a transcrição abaixo e classifique o nível de risco.\nRetorne APENAS JSON: {"resultado":"seguro|moderado|alto|critico","motivo":"justificativa curta"}\n\nRegras:\n- "seguro": silêncio, assunto cotidiano, sem indicadores de risco\n- "moderado": tensão verbal, mas sem ameaça direta\n- "alto": ameaças, gritos intensos, agressão verbal grave\n- "critico": violência iminente, pedidos de socorro, menção a armas`,
+    placeholder: `Analise a transcrição abaixo e classifique o nível de risco de violência doméstica.\nRetorne APENAS JSON:\n{"resultado":"seguro|moderado|alto|critico","motivo":"justificativa curta","contexto_emergencia":{"ameaca_morte":false,"agressao_fisica":false,"agressao_em_curso":false,"ameaca_agressao_fisica":false,"pedido_socorro":false,"mencao_arma":false,"descricao_curta":""}}\n\nRegras para resultado:\n- "seguro": silêncio, assunto cotidiano\n- "moderado": tensão verbal, sem ameaça direta\n- "alto": ameaças, gritos intensos, agressão verbal\n- "critico": violência iminente, socorro, menção a armas\n\ncontexto_emergencia: flags booleanos + descricao_curta (1 frase para notificações)`,
   },
   {
     key: "ia_prompt_analise",
