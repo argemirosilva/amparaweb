@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Ear } from "lucide-react";
-import GradientIcon from "@/components/ui/gradient-icon";
+
 
 const DAY_KEYS = ["dom", "seg", "ter", "qua", "qui", "sex", "sab"] as const;
 const DAY_LABELS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"] as const;
