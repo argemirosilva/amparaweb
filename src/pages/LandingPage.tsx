@@ -206,14 +206,6 @@ export default function LandingPage() {
           <nav className="hidden lg:flex items-center gap-6">
             <NavItems />
           </nav>
-          <div className="hidden lg:flex items-center gap-2">
-            <Link to="/login" className="ampara-btn-secondary !w-auto flex items-center gap-1.5 text-xs py-[5px] px-[12px]">
-              Acesso Portal
-            </Link>
-            <Link to="/cadastro" className="ampara-btn-primary !w-auto flex items-center gap-1.5 text-xs py-[5px] px-[12px]">
-              Cadastre-se
-            </Link>
-          </div>
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>
               <button className="lg:hidden p-2 text-foreground" aria-label="Menu">
