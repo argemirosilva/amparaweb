@@ -3,7 +3,7 @@ import MonitoringStatusCard from "@/components/dashboard/MonitoringStatusCard";
 import DeviceStatusCard from "@/components/dashboard/DeviceStatusCard";
 import AudioRecorderCard from "@/components/dashboard/AudioRecorderCard";
 import RiskEvolutionCard from "@/components/dashboard/RiskEvolutionCard";
-import { UserSearch, ChevronRight, User, Shield } from "lucide-react";
+import { UserSearch, ChevronRight, User } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function HomePage() {
@@ -38,8 +38,7 @@ export default function HomePage() {
 
       {/* Protection status - subtle pill */}
       <div className="px-1 mb-4">
-        <div className="inline-flex items-center gap-2 bg-primary/10 text-primary rounded-full px-3.5 py-1.5">
-          <Shield className="w-3.5 h-3.5" />
+        <div className="inline-flex items-center bg-primary/10 text-primary rounded-full px-3.5 py-1.5">
           <span className="text-xs font-medium">Proteção ativa</span>
         </div>
       </div>
