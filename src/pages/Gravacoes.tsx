@@ -376,32 +376,41 @@ export default function GravacoesPage() {
       {/* ── Recorder card ── */}
       <AudioRecorderCard onUploaded={() => { setPage(1); loadData(); }} />
 
-      {/* ── Risk filter pills ── */}
-      <div className="flex items-center gap-2 flex-wrap">
-        {["", "sem_risco", "moderado", "alto", "critico"].map((r) => {
-          const isActive = filterRisco === r;
-          const color = r ? RISCO_COLORS[r] : undefined;
-          return (
-            <button
-              key={r}
-              onClick={() => { setFilterRisco(r); setPage(1); }}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all duration-200 ${
-                isActive ? "shadow-sm" : "hover:shadow-sm"
-              }`}
-              style={
-                r === ""
-                  ? isActive
-                    ? { backgroundColor: "hsl(var(--primary))", color: "hsl(var(--primary-foreground))", borderColor: "hsl(var(--primary))" }
-                    : { backgroundColor: "hsl(var(--background))", color: "hsl(var(--muted-foreground))", borderColor: "hsl(var(--border))" }
-                  : isActive
-                    ? { backgroundColor: `${color}20`, color, borderColor: `${color}50` }
-                    : { backgroundColor: "hsl(var(--background))", color: `${color}cc`, borderColor: "hsl(var(--border))" }
-              }
-            >
-              {r === "" ? "Todas" : RISCO_LABELS[r] || r}
-            </button>
-          );
-        })}
+      {/* ── Risk filter card ── */}
+      <div className="rounded-xl border border-border bg-card p-3 flex items-center gap-3 flex-wrap">
+        <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider shrink-0">Nível de risco</span>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {["", "sem_risco", "moderado", "alto", "critico"].map((r) => {
+            const isActive = filterRisco === r;
+            const color = r ? RISCO_COLORS[r] : undefined;
+            return (
+              <button
+                key={r}
+                onClick={() => { setFilterRisco(r); setPage(1); }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 flex items-center gap-1.5 ${
+                  isActive ? "shadow-sm" : "hover:bg-muted/50"
+                }`}
+                style={
+                  r === ""
+                    ? isActive
+                      ? { backgroundColor: "hsl(var(--primary))", color: "hsl(var(--primary-foreground))" }
+                      : { color: "hsl(var(--muted-foreground))" }
+                    : isActive
+                      ? { backgroundColor: `${color}15`, color }
+                      : { color: `${color}aa` }
+                }
+              >
+                {r !== "" && (
+                  <span
+                    className="w-2 h-2 rounded-full shrink-0"
+                    style={{ backgroundColor: color }}
+                  />
+                )}
+                {r === "" ? "Todas" : RISCO_LABELS[r] || r}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* ── Advanced Filters ── */}
