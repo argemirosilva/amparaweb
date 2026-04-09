@@ -253,17 +253,14 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 py-12 md:py-20 grid md:grid-cols-2 gap-8 items-center relative z-10">
           <div className="space-y-5">
             <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold leading-tight text-foreground tracking-tight">
-              AMPARA Mulher
+              Proteção inteligente para mulheres
             </h1>
             <p className="text-base md:text-lg text-muted-foreground max-w-lg leading-relaxed">
               Você não está sozinha. O AMPARA te protege, acompanha sua situação e te orienta sobre seus direitos - tudo pelo celular, de graça e em total sigilo.
             </p>
             <div className="flex flex-wrap gap-3 pt-2">
-              <Link to="/cadastro" className="ampara-btn-primary !w-auto text-sm md:text-base !py-2.5 !px-6 flex items-center gap-2">
+              <Link to="/cadastro" className="!w-auto text-sm md:text-base flex items-center gap-2 px-6 py-2.5 rounded-xl border-2 border-primary/40 text-foreground font-semibold hover:bg-primary/5 transition-colors backdrop-blur-sm">
                 Cadastre-se gratuitamente
-              </Link>
-              <Link to="/login" className="!w-auto flex items-center gap-2 px-5 py-2.5 rounded-xl border-2 border-primary/30 text-foreground text-sm font-semibold hover:bg-primary/5 transition-colors backdrop-blur-sm">
-                Acessar o Portal
               </Link>
               <a href="https://instagram.com/amparamulheres" target="_blank" rel="noopener noreferrer" aria-label="Instagram @amparamulheres" className="inline-flex items-center justify-center w-10 h-10 rounded-xl border-2 border-primary/20 text-primary hover:bg-primary/5 transition-colors backdrop-blur-sm">
                 <Instagram className="w-5 h-5" />
