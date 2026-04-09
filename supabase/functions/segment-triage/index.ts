@@ -410,7 +410,7 @@ Deno.serve(async (req) => {
     console.log(`[TRIAGE] Starting for segment ${segment_id}, user ${user_id}`);
 
     // 1. Transcribe
-    const transcricao = await transcribeSegment(storage_path);
+    const transcricao = await transcribeSegment(storage_path, supabase);
     if (!transcricao || transcricao.trim().length < 3) {
       // No usable transcription — leave triage_risco NULL so segment is treated as relevant (safe fallback)
       console.log(`[TRIAGE] No transcription for segment ${segment_id} — keeping as relevant (NULL)`);
