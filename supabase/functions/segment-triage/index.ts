@@ -62,47 +62,67 @@ function normalize(text: string): string {
 // ── Transcription via Agreggar ──
 
 async function transcribeSegment(storagePath: string): Promise<string | null> {
+  const MAX_RETRIES = 3;
+  const RETRY_DELAYS = [1000, 2000, 4000]; // ms
+
+  // Download from R2 (once)
+  let audioBytes: Uint8Array;
   try {
-    // Download from R2
     const r2 = getR2Client();
     const r2Resp = await r2.fetch(r2Url(storagePath), { method: "GET" });
     if (!r2Resp.ok) {
       console.error(`R2 download failed: ${r2Resp.status}`);
       return null;
     }
-    const audioBytes = new Uint8Array(await r2Resp.arrayBuffer());
-
-    // Detect format from extension
-    const ext = storagePath.split(".").pop()?.toLowerCase() || "ogg";
-    // Map iOS formats to ogg for Agreggar compatibility
-    const formatMap: Record<string, string> = {
-      mp3: "ogg", mp4: "ogg", m4a: "ogg", aac: "ogg", caf: "ogg",
-      ogg: "ogg", opus: "ogg", wav: "wav", webm: "ogg",
-    };
-    const format = formatMap[ext] || "ogg";
-
-    // Call Agreggar
-    const formData = new FormData();
-    formData.append("file", new Blob([audioBytes]), `audio.${format}`);
-    formData.append("format", format);
-    formData.append("language", "pt");
-
-    const agreggarRes = await fetch(
-      "https://api.agreggar.com/Transcription/Transcribe",
-      { method: "POST", body: formData }
-    );
-
-    if (!agreggarRes.ok) {
-      console.error(`Agreggar error: ${agreggarRes.status}`);
-      return null;
-    }
-
-    const result = await agreggarRes.json();
-    return result?.text || result?.transcription || null;
+    audioBytes = new Uint8Array(await r2Resp.arrayBuffer());
   } catch (e) {
-    console.error("Transcription error:", e);
+    console.error("R2 download error:", e);
     return null;
   }
+
+  // Detect format from extension
+  const ext = storagePath.split(".").pop()?.toLowerCase() || "ogg";
+  const formatMap: Record<string, string> = {
+    mp3: "ogg", mp4: "ogg", m4a: "ogg", aac: "ogg", caf: "ogg",
+    ogg: "ogg", opus: "ogg", wav: "wav", webm: "ogg",
+  };
+  const format = formatMap[ext] || "ogg";
+
+  // Retry loop for Agreggar API
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    try {
+      const formData = new FormData();
+      formData.append("file", new Blob([audioBytes]), `audio.${format}`);
+      formData.append("format", format);
+      formData.append("language", "pt");
+
+      const agreggarRes = await fetch(
+        "https://api.agreggar.com/Transcription/Transcribe",
+        { method: "POST", body: formData }
+      );
+
+      if (!agreggarRes.ok) {
+        const body = await agreggarRes.text();
+        console.error(`Agreggar error (attempt ${attempt + 1}/${MAX_RETRIES}): ${agreggarRes.status} — ${body}`);
+        if (attempt < MAX_RETRIES - 1) {
+          await new Promise((r) => setTimeout(r, RETRY_DELAYS[attempt]));
+          continue;
+        }
+        return null;
+      }
+
+      const result = await agreggarRes.json();
+      return result?.text || result?.transcription || null;
+    } catch (e) {
+      console.error(`Transcription error (attempt ${attempt + 1}/${MAX_RETRIES}):`, e);
+      if (attempt < MAX_RETRIES - 1) {
+        await new Promise((r) => setTimeout(r, RETRY_DELAYS[attempt]));
+        continue;
+      }
+      return null;
+    }
+  }
+  return null;
 }
 
 // ── Keyword scan ──
