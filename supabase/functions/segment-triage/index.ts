@@ -50,6 +50,31 @@ async function getTriageWords(supabase: ReturnType<typeof createClient>) {
   return palavras;
 }
 
+// ── Transcription provider config cache ──
+
+let cachedTranscriptionConfig: { provider: string; apiUrl: string; fetchedAt: number } | null = null;
+
+async function getTranscriptionConfig(supabase: ReturnType<typeof createClient>) {
+  if (cachedTranscriptionConfig && Date.now() - cachedTranscriptionConfig.fetchedAt < CACHE_TTL_MS) {
+    return cachedTranscriptionConfig;
+  }
+  const { data } = await supabase
+    .from("admin_settings")
+    .select("chave, valor")
+    .in("chave", ["transcricao_provider", "transcricao_api_url"]);
+  
+  const map: Record<string, string> = {};
+  for (const row of data || []) map[row.chave] = row.valor;
+
+  const config = {
+    provider: map["transcricao_provider"] || "lovable_ai",
+    apiUrl: map["transcricao_api_url"] || "https://api.agreggar.com/Transcription/Transcribe",
+    fetchedAt: Date.now(),
+  };
+  cachedTranscriptionConfig = config;
+  return config;
+}
+
 // ── Text normalization (lowercase + remove accents) ──
 
 function normalize(text: string): string {
@@ -59,11 +84,11 @@ function normalize(text: string): string {
     .replace(/[\u0300-\u036f]/g, "");
 }
 
-// ── Transcription via Agreggar ──
+// ── Transcription via configurable provider ──
 
-async function transcribeSegment(storagePath: string): Promise<string | null> {
+async function transcribeSegment(storagePath: string, supabase: ReturnType<typeof createClient>): Promise<string | null> {
   const MAX_RETRIES = 3;
-  const RETRY_DELAYS = [1000, 2000, 4000]; // ms
+  const RETRY_DELAYS = [1000, 2000, 4000];
 
   // Download from R2 (once)
   let audioBytes: Uint8Array;
@@ -80,7 +105,106 @@ async function transcribeSegment(storagePath: string): Promise<string | null> {
     return null;
   }
 
-  // Detect format from extension
+  const config = await getTranscriptionConfig(supabase);
+  console.log(`[TRIAGE] Transcription provider: ${config.provider}`);
+
+  if (config.provider === "lovable_ai") {
+    return transcribeViaLovableAI(audioBytes, storagePath, MAX_RETRIES, RETRY_DELAYS);
+  } else {
+    return transcribeViaAgreggar(audioBytes, storagePath, config.apiUrl, MAX_RETRIES, RETRY_DELAYS);
+  }
+}
+
+// ── Lovable AI Gateway transcription (Gemini Flash with audio) ──
+
+async function transcribeViaLovableAI(
+  audioBytes: Uint8Array,
+  storagePath: string,
+  maxRetries: number,
+  retryDelays: number[]
+): Promise<string | null> {
+  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+  if (!LOVABLE_API_KEY) {
+    console.error("LOVABLE_API_KEY not configured for transcription");
+    return null;
+  }
+
+  // Detect mime type from extension
+  const ext = storagePath.split(".").pop()?.toLowerCase() || "ogg";
+  const mimeMap: Record<string, string> = {
+    mp3: "audio/mpeg", ogg: "audio/ogg", opus: "audio/ogg",
+    wav: "audio/wav", webm: "audio/webm", m4a: "audio/mp4",
+    mp4: "audio/mp4", aac: "audio/aac", caf: "audio/x-caf",
+  };
+  const mimeType = mimeMap[ext] || "audio/ogg";
+
+  // Convert to base64
+  const base64Audio = btoa(String.fromCharCode(...audioBytes));
+
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash",
+          messages: [
+            {
+              role: "system",
+              content: "Você é um transcritor de áudio. Transcreva exatamente o que é dito no áudio em português brasileiro. Retorne APENAS o texto transcrito, sem formatação, sem aspas, sem explicações. Se não houver fala, retorne uma string vazia.",
+            },
+            {
+              role: "user",
+              content: [
+                {
+                  type: "input_audio",
+                  input_audio: { data: base64Audio, format: ext === "wav" ? "wav" : "mp3" },
+                },
+                { type: "text", text: "Transcreva o áudio acima." },
+              ],
+            },
+          ],
+        }),
+      });
+
+      if (!res.ok) {
+        const body = await res.text();
+        console.error(`Lovable AI transcription error (attempt ${attempt + 1}/${maxRetries}): ${res.status} — ${body}`);
+        if (attempt < maxRetries - 1) {
+          await new Promise((r) => setTimeout(r, retryDelays[attempt]));
+          continue;
+        }
+        return null;
+      }
+
+      const data = await res.json();
+      const text = data.choices?.[0]?.message?.content?.trim() || null;
+      console.log(`[TRIAGE] Lovable AI transcription OK (${text?.length || 0} chars)`);
+      return text;
+    } catch (e) {
+      console.error(`Lovable AI transcription error (attempt ${attempt + 1}/${maxRetries}):`, e);
+      if (attempt < maxRetries - 1) {
+        await new Promise((r) => setTimeout(r, retryDelays[attempt]));
+        continue;
+      }
+      return null;
+    }
+  }
+  return null;
+}
+
+// ── Agreggar API transcription (legacy) ──
+
+async function transcribeViaAgreggar(
+  audioBytes: Uint8Array,
+  storagePath: string,
+  apiUrl: string,
+  maxRetries: number,
+  retryDelays: number[]
+): Promise<string | null> {
   const ext = storagePath.split(".").pop()?.toLowerCase() || "ogg";
   const formatMap: Record<string, string> = {
     mp3: "ogg", mp4: "ogg", m4a: "ogg", aac: "ogg", caf: "ogg",
@@ -88,24 +212,20 @@ async function transcribeSegment(storagePath: string): Promise<string | null> {
   };
   const format = formatMap[ext] || "ogg";
 
-  // Retry loop for Agreggar API
-  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       const formData = new FormData();
       formData.append("file", new Blob([audioBytes]), `audio.${format}`);
       formData.append("format", format);
       formData.append("language", "pt");
 
-      const agreggarRes = await fetch(
-        "https://api.agreggar.com/Transcription/Transcribe",
-        { method: "POST", body: formData }
-      );
+      const agreggarRes = await fetch(apiUrl, { method: "POST", body: formData });
 
       if (!agreggarRes.ok) {
         const body = await agreggarRes.text();
-        console.error(`Agreggar error (attempt ${attempt + 1}/${MAX_RETRIES}): ${agreggarRes.status} — ${body}`);
-        if (attempt < MAX_RETRIES - 1) {
-          await new Promise((r) => setTimeout(r, RETRY_DELAYS[attempt]));
+        console.error(`Agreggar error (attempt ${attempt + 1}/${maxRetries}): ${agreggarRes.status} — ${body}`);
+        if (attempt < maxRetries - 1) {
+          await new Promise((r) => setTimeout(r, retryDelays[attempt]));
           continue;
         }
         return null;
@@ -114,9 +234,9 @@ async function transcribeSegment(storagePath: string): Promise<string | null> {
       const result = await agreggarRes.json();
       return result?.text || result?.transcription || null;
     } catch (e) {
-      console.error(`Transcription error (attempt ${attempt + 1}/${MAX_RETRIES}):`, e);
-      if (attempt < MAX_RETRIES - 1) {
-        await new Promise((r) => setTimeout(r, RETRY_DELAYS[attempt]));
+      console.error(`Agreggar error (attempt ${attempt + 1}/${maxRetries}):`, e);
+      if (attempt < maxRetries - 1) {
+        await new Promise((r) => setTimeout(r, retryDelays[attempt]));
         continue;
       }
       return null;
@@ -290,7 +410,7 @@ Deno.serve(async (req) => {
     console.log(`[TRIAGE] Starting for segment ${segment_id}, user ${user_id}`);
 
     // 1. Transcribe
-    const transcricao = await transcribeSegment(storage_path);
+    const transcricao = await transcribeSegment(storage_path, supabase);
     if (!transcricao || transcricao.trim().length < 3) {
       // No usable transcription — leave triage_risco NULL so segment is treated as relevant (safe fallback)
       console.log(`[TRIAGE] No transcription for segment ${segment_id} — keeping as relevant (NULL)`);
