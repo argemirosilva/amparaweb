@@ -1139,7 +1139,7 @@ serve(async (req) => {
 
         let query = supabase
           .from("gravacoes")
-          .select("id, created_at, duracao_segundos, tamanho_mb, status, storage_path, transcricao, device_id, timezone, monitor_session_id, monitoramento_sessoes(iniciado_em)", { count: "exact" })
+          .select("id, created_at, duracao_segundos, tamanho_mb, status, storage_path, transcricao, device_id, timezone, segmentos_descartados, monitor_session_id, monitoramento_sessoes(iniciado_em)", { count: "exact" })
           .eq("user_id", userId)
           .order("created_at", { ascending: false })
           .range(offset, offset + per_page - 1);

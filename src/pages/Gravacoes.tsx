@@ -28,6 +28,7 @@ import {
   CheckSquare,
   X,
   MessageCircle,
+  Filter,
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -54,6 +55,7 @@ interface Gravacao {
   timezone: string | null;
   nivel_risco: string | null;
   iniciado_em: string | null;
+  segmentos_descartados: number;
 }
 
 const RISCO_COLORS: Record<string, string> = {
@@ -534,6 +536,21 @@ export default function GravacoesPage() {
                                   <Clock className="w-3 h-3" />
                                   {formatDuration(g.duracao_segundos)}
                                 </span>
+                                {g.segmentos_descartados > 0 && (
+                                  <TooltipProvider delayDuration={300}>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <span className="text-[10px] inline-flex items-center gap-0.5 text-muted-foreground/60 cursor-help">
+                                          <Filter className="w-2.5 h-2.5" />
+                                          {g.segmentos_descartados}
+                                        </span>
+                                      </TooltipTrigger>
+                                      <TooltipContent side="bottom" className="max-w-[220px] text-center">
+                                        <p className="text-xs">{g.segmentos_descartados} segmento{g.segmentos_descartados > 1 ? "s" : ""} descartado{g.segmentos_descartados > 1 ? "s" : ""} por irrelevância</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                )}
                                 {g.nivel_risco === "sem_risco" && (() => {
                                   const displayTime = getDisplayTime(g);
                                   const countdown = getRetentionCountdown(displayTime, retencaoDias);
