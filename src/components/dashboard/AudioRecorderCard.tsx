@@ -216,7 +216,7 @@ export default function AudioRecorderCard({ onUploaded }: AudioRecorderCardProps
   if (!sessionToken) return null;
 
   return (
-    <div className="ampara-card p-3 space-y-2">
+    <div className="space-y-2">
       {/* Recorder / Upload controls */}
       <div className="flex items-center gap-2 flex-wrap">
         {!recording && !uploading && !converting &&

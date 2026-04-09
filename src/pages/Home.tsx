@@ -24,26 +24,30 @@ export default function HomePage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <DeviceStatusCard />
 
-          {/* Quick actions - organic card */}
-          <div className="rounded-2xl bg-card border border-border/60 overflow-hidden h-full"
-            style={{ boxShadow: "0 1px 3px 0 hsl(320 40% 30% / 0.04), 0 4px 16px -4px hsl(280 40% 30% / 0.06)" }}>
-            <button
-              onClick={() => navigate("/busca-perfil")}
-              className="flex items-center gap-3 w-full text-left px-4 py-3.5 hover:bg-muted/50 active:bg-muted transition-colors"
-            >
-              <GradientIcon icon={UserSearch} size="sm" />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground">Pesquisar parceiro</p>
-                <p className="text-[11px] text-muted-foreground">Consultar perfil e histórico</p>
+          {/* Quick actions card - matching DeviceStatusCard style */}
+          <div className="ampara-card p-5 flex flex-col">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">Ações rápidas</p>
+
+            <div className="space-y-2.5 flex-1">
+              {/* Pesquisar parceiro */}
+              <div className="rounded-xl border border-border/60 bg-background/50">
+                <button
+                  onClick={() => navigate("/busca-perfil")}
+                  className="flex items-center gap-2.5 w-full text-left px-3.5 py-3 hover:bg-muted/50 active:bg-muted transition-colors rounded-xl"
+                >
+                  <GradientIcon icon={UserSearch} size="sm" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground">Pesquisar parceiro</p>
+                    <p className="text-[11px] text-muted-foreground">Consultar perfil e histórico</p>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-muted-foreground/40 shrink-0" />
+                </button>
               </div>
-              <ChevronRight className="w-4 h-4 text-muted-foreground/40 shrink-0" />
-            </button>
 
-            <div className="h-px bg-border/40 mx-4" />
-
-            {/* Audio recorder inline */}
-            <div className="px-4 py-3">
-              <AudioRecorderCard />
+              {/* Audio recorder */}
+              <div className="rounded-xl border border-border/60 bg-background/50 px-3.5 py-3">
+                <AudioRecorderCard />
+              </div>
             </div>
           </div>
         </div>
