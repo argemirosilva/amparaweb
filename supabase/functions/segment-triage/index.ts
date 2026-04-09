@@ -276,7 +276,7 @@ Deno.serve(async (req) => {
     console.log(`[TRIAGE] ${matches.length} keyword matches: ${matches.map(m => m.palavra).join(", ")}`);
 
     // 3. AI classification
-    const nivelRisco = await classifyRisk(transcricao, matches);
+    const nivelRisco = await classifyRisk(transcricao, matches, supabase);
 
     // 4. Save triage result
     const now = new Date().toISOString();
