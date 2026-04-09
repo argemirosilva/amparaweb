@@ -1010,7 +1010,7 @@ async function handleValidatePassword(
     });
 
     // Fire-and-forget: notify guardians via WhatsApp about coercion
-    fireWhatsApp(user.id, "coacao_settings");
+    fireWhatsApp(user.id, "coacao");
   }
 
   return jsonResponse({ success: true, loginTipo });
