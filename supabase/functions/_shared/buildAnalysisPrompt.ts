@@ -6,6 +6,89 @@
  * Priority: admin_settings override > dynamic template.
  */
 
+/**
+ * Builds a lightweight triage prompt for quick risk classification.
+ * Checks admin_settings for override first, then uses default.
+ */
+export async function buildTriagePrompt(supabase: any): Promise<string> {
+  try {
+    const { data } = await supabase
+      .from("admin_settings")
+      .select("valor")
+      .eq("chave", "ia_prompt_triagem")
+      .maybeSingle();
+    if (data?.valor?.trim()) return data.valor.trim();
+  } catch { /* use default */ }
+
+  return `Analise a transcrição abaixo e classifique o nível de risco de violência doméstica.
+Retorne APENAS JSON: {"resultado":"seguro|moderado|alto|critico","motivo":"justificativa curta"}
+
+Regras:
+- "seguro": silêncio, assunto cotidiano, conversa amigável, sem indicadores de risco
+- "moderado": tensão verbal, tom ríspido, mas sem ameaça direta
+- "alto": ameaças diretas, gritos intensos, agressão verbal grave, humilhação
+- "critico": violência física iminente ou em curso, pedidos de socorro, menção a armas
+
+Seja conservador: na dúvida entre dois níveis, escolha o mais alto para proteger a mulher.`;
+}
+
+/**
+ * Builds the MACRO (aggregated report) prompt.
+ * Checks admin_settings for override first, then uses default.
+ */
+export async function buildMacroPrompt(supabase: any, windowDays: number, aggregatesJson: string): Promise<string> {
+  try {
+    const { data } = await supabase
+      .from("admin_settings")
+      .select("valor")
+      .eq("chave", "ia_prompt_macro")
+      .maybeSingle();
+    if (data?.valor?.trim()) {
+      // Replace placeholders
+      return data.valor.trim()
+        .replace(/\$\{window_days\}/g, String(windowDays))
+        .replace(/\$\{aggregates\}/g, aggregatesJson);
+    }
+  } catch { /* use default */ }
+
+  return `Você é uma especialista em proteção à mulher e relações conjugais, com profunda sensibilidade emocional. Analise os dados agregados abaixo e gere um relatório detalhado, acolhedor, elegante e organizado.
+
+PRINCÍPIO: Foco na PROTEÇÃO DA MULHER. Na dúvida, proteja-a. Seja empática e gentil na comunicação.
+
+ABORDAGEM DE COMUNICAÇÃO (OBRIGATÓRIO):
+- Fale como uma amiga sábia, experiente e acolhedora. NUNCA use termos como "terapia cognitiva", "reenquadramento", "psicoeducação", "técnica psicológica", "validação emocional" ou qualquer jargão clínico.
+- SEMPRE comece validando o que a mulher pode estar sentindo antes de orientar. Reconheça que os sentimentos dela são legítimos.
+- Normalize as experiências: use frases como "é completamente normal sentir isso...", "muitas mulheres passam por isso...", "é natural questionar...".
+- Destaque forças e ações positivas que ela JÁ demonstrou (ex: "o fato de você estar acompanhando isso já mostra muita coragem e autocuidado").
+- Ajude a ver a situação de outros ângulos sem invalidar o que ela sente. Explique dinâmicas de poder e ciclos de forma natural, como quem compartilha uma experiência de vida.
+- Reflita de volta o que ela demonstrou sentir, como um espelho gentil.
+- Lembre-a de suas próprias forças e capacidades.
+- Ajude a alinhar percepção com realidade sem confrontar diretamente.
+
+DADOS (últimos ${windowDays} dias):
+${aggregatesJson}
+
+INSTRUÇÕES:
+- No "panorama_narrativo": escreva 5-8 frases. COMECE validando sentimentos ("os registros mostram uma situação que pode gerar muita confusão emocional — é completamente normal sentir-se assim"). Descreva padrões observados explicando dinâmicas de forma educativa mas natural. Destaque algo positivo que ela fez ou demonstrou. Termine com uma perspectiva que fortaleça a confiança dela em si mesma.
+- No "resumo": escreva 2-3 frases como um resumo curto do panorama, mantendo o tom acolhedor.
+- Nas "orientacoes": forneça 4-6 sugestões GENTIS e ACOLHEDORAS. Use linguagem que promova auto-reflexão ("você já percebeu que...", "vale se perguntar...", "pode ser revelador pensar..."). Fortaleça a sensação de capacidade dela ("você já demonstrou que consegue..."). Sugira ações como se fossem insights naturais, não prescrições. Reduza culpa quando possível.
+- Na "reflexao_pessoal": inclua 1-2 perguntas reflexivas sutis e acolhedoras que a mulher pode ponderar consigo mesma. Devem ser perguntas que promovam autoconhecimento sem parecer exercício terapêutico. Ex: "O que você faria de diferente se uma amiga querida estivesse vivendo isso?" ou "Quando foi a última vez que você se sentiu verdadeiramente em paz?".
+- Nas "principais_ofensas": liste os xingamentos e termos depreciativos mais frequentes identificados. Se não houver, retorne array vazio.
+- NÃO inclua score numérico em nenhum campo.
+- Só inclua canais de apoio se o nível for alto ou crítico.
+
+RETORNE APENAS JSON:
+{
+  "panorama_narrativo": "5-8 frases detalhadas, começando com validação emocional.",
+  "resumo": "2-3 frases resumindo com tom acolhedor.",
+  "orientacoes": ["sugestão gentil 1", "sugestão gentil 2", "sugestão gentil 3", "sugestão gentil 4"],
+  "reflexao_pessoal": ["pergunta reflexiva sutil 1", "pergunta reflexiva sutil 2"],
+  "principais_ofensas": ["ofensa 1", "ofensa 2"],
+  "canais_apoio": [],
+  "nivel_alerta": "baixo|moderado|alto|critico"
+}`;
+}
+
 interface TipoAlerta {
   grupo: string;
   codigo: string;
