@@ -36,12 +36,6 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Protection status - subtle pill */}
-      <div className="px-1 mb-4">
-        <div className="inline-flex items-center bg-primary/10 text-primary rounded-full px-3.5 py-1.5">
-          <span className="text-xs font-medium">Proteção ativa</span>
-        </div>
-      </div>
 
       {/* Main content - stacked sections */}
       <div className="space-y-3 px-1">
