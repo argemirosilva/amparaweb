@@ -266,6 +266,23 @@ export default function AdminConfiguracoes() {
           </div>
         )}
       </div>
+      {/* Prompts de IA - Collapsible */}
+      <div className="mt-4 rounded-lg border border-border bg-card shadow-sm overflow-hidden">
+        <button
+          onClick={() => setPromptsOpen((v) => !v)}
+          className="w-full px-4 py-3 flex items-center gap-2 bg-muted/50 hover:bg-muted/70 transition-colors text-left"
+        >
+          <BrainCircuit className="w-4 h-4 text-primary" />
+          <h2 className="text-sm font-semibold text-foreground flex-1">Prompts de IA</h2>
+          <span className="text-xs text-muted-foreground mr-2">Configurar os 3 prompts de análise (Triagem, MICRO, MACRO)</span>
+          {promptsOpen ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
+        </button>
+        {promptsOpen && (
+          <div className="p-4">
+            <AdminPromptsIA />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
