@@ -15,7 +15,7 @@ export default function Topbar() {
 
   return (
     <header
-      className="h-14 border-b border-sidebar-border flex items-center justify-between px-4 shrink-0 relative overflow-hidden"
+      className="h-14 border-b border-sidebar-border flex items-center justify-between px-4 shrink-0 relative overflow-hidden sticky top-0 z-40"
       style={{ background: "var(--sidebar-bg-gradient)" }}
     >
       {/* Decorative ring circles */}
