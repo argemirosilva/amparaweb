@@ -124,9 +124,9 @@ export default function AppSidebar() {
         </SidebarMenu>
 
         {/* Desenvolvido por */}
-        <div className="group-data-[collapsible=icon]:hidden border-t border-sidebar-border pt-4 pb-3 px-3 flex flex-col items-center gap-1.5">
-          <span className="text-[9px] text-sidebar-foreground/40 tracking-[0.2em] uppercase">Desenvolvido por</span>
-          <img src={orizonLogo} alt="Orizon Tech" className="h-7 object-contain opacity-70 dark:invert" />
+        <div className="group-data-[collapsible=icon]:hidden border-t border-sidebar-border pt-3 pb-2 px-3 flex items-center justify-center gap-1.5">
+          <span className="text-[8px] text-sidebar-foreground/35 tracking-[0.15em] uppercase whitespace-nowrap">Desenvolvido por</span>
+          <img src={orizonLogo} alt="Orizon Tech" className="h-4 object-contain opacity-60 dark:invert" />
         </div>
       </SidebarFooter>
     </Sidebar>
