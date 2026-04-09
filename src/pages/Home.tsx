@@ -38,7 +38,7 @@ export default function HomePage() {
 
       {/* Protection status — subtle pill */}
       <div className="px-1 mb-4">
-        <div className="inline-flex items-center gap-2 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 rounded-full px-3.5 py-1.5">
+        <div className="inline-flex items-center gap-2 bg-primary/10 text-primary rounded-full px-3.5 py-1.5">
           <Shield className="w-3.5 h-3.5" />
           <span className="text-xs font-medium">Proteção ativa</span>
         </div>
