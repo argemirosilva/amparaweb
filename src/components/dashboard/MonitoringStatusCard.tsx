@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Ear } from "lucide-react";
-import GradientIcon from "@/components/ui/gradient-icon";
+
 
 const DAY_KEYS = ["dom", "seg", "ter", "qua", "qui", "sex", "sab"] as const;
 const DAY_LABELS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"] as const;
@@ -116,8 +116,10 @@ export default function MonitoringStatusCard() {
 
   return (
     <div className="ampara-card px-4 py-3">
-      <div className="flex items-center gap-2.5">
-        <GradientIcon icon={Ear} size="sm" />
+      <div className="flex items-center gap-3">
+        <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: "var(--ampara-gradient-soft)" }}>
+          <Ear className="w-[18px] h-[18px]" style={{ color: "hsl(var(--ampara-magenta))" }} />
+        </div>
         <div className="min-w-0">
           <p className="text-sm font-semibold text-primary">
             {state?.type === "monitoring" || state?.type === "monitoring_no_window" ? "Monitorando" : "Monitoramento"}
