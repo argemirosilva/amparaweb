@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
-import amparaLogo from "@/assets/ampara-logo.png";
+import amparaLogo from "@/assets/ampara-circle-logo.png";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -38,28 +38,51 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-[100dvh] flex items-center justify-center p-4 bg-background">
-      <div className="w-full max-w-md animate-fade-in">
-        {/* Logo */}
-        <div className="text-center mb-6">
-          <img src={amparaLogo} alt="AMPARA" className="w-24 h-24 mx-auto mb-2 object-contain" />
-          <p className="text-xs font-semibold text-primary uppercase tracking-widest">Portal da Mulher</p>
+    <div
+      className="min-h-[100dvh] flex items-center justify-center p-4 relative overflow-hidden"
+      style={{ background: "linear-gradient(160deg, hsl(280, 25%, 96%), hsl(300, 18%, 94%), hsl(320, 15%, 92%))" }}
+    >
+      {/* Decorative ring circles */}
+      <div className="absolute -top-20 -left-20 w-72 h-72 rounded-full border opacity-[0.08]" style={{ borderColor: "hsl(280, 60%, 50%)" }} />
+      <div className="absolute -top-10 -left-10 w-48 h-48 rounded-full border opacity-[0.06]" style={{ borderColor: "hsl(320, 70%, 55%)" }} />
+      <div className="absolute -bottom-16 -right-16 w-64 h-64 rounded-full border opacity-[0.07]" style={{ borderColor: "hsl(320, 70%, 50%)" }} />
+      <div className="absolute -bottom-8 -right-8 w-40 h-40 rounded-full border opacity-[0.05]" style={{ borderColor: "hsl(280, 55%, 52%)" }} />
+      <div className="absolute top-1/4 right-1/4 w-32 h-32 rounded-full border opacity-[0.04]" style={{ borderColor: "hsl(300, 50%, 55%)" }} />
+      <div className="absolute bottom-1/3 left-1/5 w-20 h-20 rounded-full border opacity-[0.06]" style={{ borderColor: "hsl(280, 60%, 48%)" }} />
+
+      {/* Small accent dots */}
+      <div className="absolute top-16 right-20 w-2 h-2 rounded-full opacity-20 animate-pulse" style={{ background: "hsl(320, 70%, 60%)" }} />
+      <div className="absolute bottom-24 left-16 w-1.5 h-1.5 rounded-full opacity-25 animate-pulse" style={{ background: "hsl(280, 60%, 55%)" }} />
+      <div className="absolute top-1/2 right-12 w-1 h-1 rounded-full opacity-15 animate-pulse" style={{ background: "hsl(310, 65%, 55%)", animationDelay: "1s" }} />
+
+      <div className="w-full max-w-md animate-fade-in relative z-10">
+        {/* Logo with organic backdrop */}
+        <div className="text-center mb-8">
+          <div className="relative inline-block">
+            <div className="absolute -inset-4 rounded-full border opacity-[0.12]" style={{ borderColor: "hsl(280, 60%, 48%)" }} />
+            <div className="absolute -inset-8 rounded-full border opacity-[0.06]" style={{ borderColor: "hsl(320, 70%, 55%)" }} />
+            <div className="relative w-20 h-20 rounded-full overflow-hidden ring-[3px] ring-primary/20 shadow-lg mx-auto">
+              <img src={amparaLogo} alt="AMPARA" className="w-full h-full object-cover" />
+            </div>
+          </div>
+          <h1 className="mt-4 text-xl font-display font-bold text-foreground tracking-tight">AMPARA</h1>
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest mt-1">Portal da Mulher</p>
         </div>
 
         {/* Card */}
-        <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
-          <h2 className="text-xl font-bold text-foreground mb-1">Acesse sua conta</h2>
+        <div className="rounded-2xl border border-border/60 bg-card/80 backdrop-blur-sm p-6 shadow-lg">
+          <h2 className="text-lg font-bold text-foreground mb-1">Acesse sua conta</h2>
           <p className="text-sm text-muted-foreground mb-5">Entre com seu email e senha para continuar</p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {verified && (
-              <div className="rounded-lg bg-accent border border-border p-3 text-sm text-accent-foreground">
+              <div className="rounded-xl bg-accent/50 border border-border p-3 text-sm text-accent-foreground">
                 Email verificado com sucesso! Faça login para continuar.
               </div>
             )}
 
             {error && (
-              <div className="rounded-lg bg-destructive/10 border border-destructive/20 p-3 text-sm text-destructive">
+              <div className="rounded-xl bg-destructive/10 border border-destructive/20 p-3 text-sm text-destructive">
                 {error}
               </div>
             )}
@@ -68,7 +91,7 @@ export default function LoginPage() {
               <label className="block text-sm font-medium text-foreground mb-1.5">Email</label>
               <input
                 type="email"
-                className="w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm outline-none transition-colors focus:ring-2 focus:ring-ring/40 focus:border-primary placeholder:text-muted-foreground"
+                className="w-full rounded-xl border border-input bg-background/70 px-3.5 py-2.5 text-sm outline-none transition-all focus:ring-2 focus:ring-primary/30 focus:border-primary/50 placeholder:text-muted-foreground"
                 placeholder="seu@email.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -81,7 +104,7 @@ export default function LoginPage() {
               <div className="relative">
                 <input
                   type={showSenha ? "text" : "password"}
-                  className="w-full rounded-lg border border-input bg-background px-3 py-2.5 pr-12 text-sm outline-none transition-colors focus:ring-2 focus:ring-ring/40 focus:border-primary placeholder:text-muted-foreground"
+                  className="w-full rounded-xl border border-input bg-background/70 px-3.5 py-2.5 pr-12 text-sm outline-none transition-all focus:ring-2 focus:ring-primary/30 focus:border-primary/50 placeholder:text-muted-foreground"
                   placeholder="Sua senha"
                   value={senha}
                   onChange={(e) => setSenha(e.target.value)}
@@ -99,7 +122,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-lg py-2.5 px-4 text-sm font-semibold text-white transition-opacity disabled:opacity-60"
+              className="w-full rounded-xl py-2.5 px-4 text-sm font-semibold text-white transition-all disabled:opacity-60 hover:shadow-md hover:brightness-105"
               style={{ background: "linear-gradient(135deg, hsl(280, 60%, 48%), hsl(320, 70%, 50%))" }}
             >
               {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : "Acessar"}
