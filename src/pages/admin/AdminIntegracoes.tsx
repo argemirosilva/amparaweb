@@ -45,7 +45,7 @@ const INTEGRATION_CATEGORIES = [
   },
   {
     key: "integracao_ia",
-    label: "Análise de IA — Lovable AI Gateway",
+    label: "Análise de IA — OrizonTech AI Gateway",
     description: "Modelos de inteligência artificial para análise de risco e classificação de gravações.",
     icon: Brain,
     color: "hsl(207 89% 42%)",
