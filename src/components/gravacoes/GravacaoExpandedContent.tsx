@@ -126,7 +126,7 @@ export default function GravacaoExpandedContent({
     }
   }, [resetCollapseTimer]);
 
-  // Fetch analysis when component mounts (for processado recordings)
+  // Fetch analysis when component mounts (for processado recordings, skip for sem_risco)
   useEffect(() => {
     if (gravacao.status !== "processado") {
       setLoadedAnalise(true);
@@ -139,6 +139,8 @@ export default function GravacaoExpandedContent({
       setLoadedAnalise(true);
     });
   }, [gravacao.id, gravacao.status, sessionToken]);
+
+  const isSemRisco = gravacao.status === "sem_risco";
 
   const riscoColor = useMemo(
     () => resolveRiscoColor(gravacao.nivel_risco),
@@ -206,8 +208,8 @@ export default function GravacaoExpandedContent({
         <p className="text-xs text-muted-foreground italic">Áudio não disponível</p>
       )}
 
-      {/* Transcription with highlights */}
-      {gravacao.transcricao && (
+      {/* Transcription with highlights — hide for sem_risco */}
+      {!isSemRisco && gravacao.transcricao && (
         <details
           className="rounded-lg border border-border/50 overflow-hidden group"
           onToggle={(e) => {
@@ -326,7 +328,7 @@ export default function GravacaoExpandedContent({
       </div>
 
       {/* AI Analysis Card - hide for sem_risco */}
-      {(
+      {!isSemRisco && (
         <AnaliseCard
           gravacaoId={gravacao.id}
           status={gravacao.status}
@@ -334,6 +336,13 @@ export default function GravacaoExpandedContent({
           preloadedData={loadedAnalise ? analise : undefined}
           onActiveChange={handleAnaliseActiveChange}
         />
+      )}
+
+      {/* Sem risco notice */}
+      {isSemRisco && (
+        <div className="text-xs text-muted-foreground bg-muted/30 rounded-lg px-3 py-2 text-center">
+          Nenhum risco identificado — análise completa não aplicável.
+        </div>
       )}
 
     </div>

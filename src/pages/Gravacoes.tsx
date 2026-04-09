@@ -175,6 +175,7 @@ const STATUS_MAP: Record<string, { label: string; variant: "default" | "secondar
   processando: { label: "Processando", variant: "default" },
   processado: { label: "Processado", variant: "default" },
   transcrito: { label: "Transcrito", variant: "default" },
+  sem_risco: { label: "Sem Risco", variant: "secondary" },
   erro: { label: "Erro", variant: "destructive" },
 };
 
