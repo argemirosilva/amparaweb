@@ -550,7 +550,6 @@ export default function GravacoesPage() {
                                     </Tooltip>
                                   </TooltipProvider>
                                 )}
-                                </span>
                                 {g.nivel_risco === "sem_risco" && (() => {
                                   const displayTime = getDisplayTime(g);
                                   const countdown = getRetentionCountdown(displayTime, retencaoDias);
