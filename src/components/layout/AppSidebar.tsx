@@ -45,26 +45,11 @@ export default function AppSidebar() {
     <Sidebar collapsible="icon">
       {/* Logo area with large organic semi-circle */}
       <div className="relative pt-3 pb-6 px-4 overflow-hidden">
-        {/* Subtle ring circles */}
-        <div
-          className="absolute -left-6 -top-6 w-24 h-24 rounded-full border"
-          style={{ borderColor: "hsla(280,55%,52%,0.12)" }}
-        />
-        <div
-          className="absolute -left-3 -top-2 w-18 h-18 rounded-full border"
-          style={{ borderColor: "hsla(280,60%,48%,0.08)" }}
-        />
 
-        {/* Small accent ring */}
-        <div className="absolute top-2 right-4 w-10 h-10 rounded-full border opacity-[0.12]" style={{ borderColor: "hsl(320, 70%, 55%)" }} />
-        <div className="absolute top-14 right-8 w-1.5 h-1.5 rounded-full opacity-25 animate-pulse" style={{ background: "hsl(320, 70%, 60%)" }} />
-
-        {/* Logo nestled inside the semi-circle */}
+        {/* Logo */}
         <div className="relative flex items-center gap-3">
           <div className="relative">
-            <div className="absolute -inset-3 rounded-full" style={{ background: "linear-gradient(135deg, hsla(280,55%,50%,0.22), hsla(320,65%,55%,0.14))" }} />
-            <div className="absolute -inset-5 rounded-full" style={{ background: "linear-gradient(135deg, hsla(280,55%,50%,0.08), hsla(320,65%,55%,0.05))" }} />
-            <div className="relative w-20 h-20 rounded-full overflow-hidden ring-[2.5px] ring-primary/25 shadow-md">
+            <div className="relative w-20 h-20 rounded-full overflow-hidden">
               <img src={amparaLogo} alt="AMPARA" className="w-full h-full object-cover" />
             </div>
           </div>
