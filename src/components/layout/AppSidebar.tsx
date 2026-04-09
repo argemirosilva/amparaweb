@@ -43,27 +43,32 @@ export default function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon">
-      {/* Logo area with organic half-circle */}
-      <div className="relative p-4 pb-6 overflow-hidden">
-        {/* Large organic circles in background */}
-        <div className="absolute -top-16 -left-16 w-44 h-44 rounded-full opacity-[0.12]" style={{ background: "linear-gradient(135deg, hsl(280,60%,48%), hsl(320,70%,50%))" }} />
-        <div className="absolute -top-8 -right-12 w-28 h-28 rounded-full opacity-[0.08]" style={{ background: "hsl(320, 70%, 55%)" }} />
-        <div className="absolute top-12 -left-6 w-16 h-16 rounded-full opacity-[0.06]" style={{ background: "hsl(280, 50%, 60%)" }} />
+      {/* Logo area with large organic semi-circle */}
+      <div className="relative pt-3 pb-6 px-4 overflow-hidden">
+        {/* Large semi-circle that bleeds off the left edge */}
+        <div
+          className="absolute -left-10 -top-10 w-36 h-36 rounded-full"
+          style={{ background: "linear-gradient(160deg, hsla(280,55%,52%,0.18), hsla(320,65%,55%,0.12))" }}
+        />
+        <div
+          className="absolute -left-6 -top-4 w-28 h-28 rounded-full"
+          style={{ background: "linear-gradient(140deg, hsla(280,60%,48%,0.10), hsla(310,50%,55%,0.06))" }}
+        />
 
-        {/* Sparkle dots */}
-        <div className="absolute top-4 right-6 w-1.5 h-1.5 rounded-full opacity-20 animate-pulse" style={{ background: "hsl(320, 70%, 60%)" }} />
-        <div className="absolute top-10 right-3 w-1 h-1 rounded-full opacity-15 animate-pulse" style={{ background: "hsl(280, 60%, 55%)", animationDelay: "0.7s" }} />
+        {/* Small accent blobs */}
+        <div className="absolute top-2 right-4 w-10 h-10 rounded-full opacity-[0.07]" style={{ background: "hsl(320, 70%, 55%)" }} />
+        <div className="absolute top-14 right-8 w-1.5 h-1.5 rounded-full opacity-25 animate-pulse" style={{ background: "hsl(320, 70%, 60%)" }} />
 
-        {/* Logo inside half-circle accent */}
+        {/* Logo nestled inside the semi-circle */}
         <div className="relative flex items-center gap-3">
           <div className="relative">
-            {/* Half-circle backdrop */}
-            <div className="absolute -inset-2 rounded-full" style={{ background: "linear-gradient(135deg, hsla(280,60%,48%,0.15), hsla(320,70%,50%,0.1))" }} />
-            <div className="relative w-9 h-9 rounded-full overflow-hidden ring-2 ring-[hsla(280,60%,48%,0.2)]">
+            <div className="absolute -inset-3 rounded-full" style={{ background: "linear-gradient(135deg, hsla(280,55%,50%,0.22), hsla(320,65%,55%,0.14))" }} />
+            <div className="absolute -inset-5 rounded-full" style={{ background: "linear-gradient(135deg, hsla(280,55%,50%,0.08), hsla(320,65%,55%,0.05))" }} />
+            <div className="relative w-10 h-10 rounded-full overflow-hidden ring-[2.5px] ring-primary/25 shadow-md">
               <img src={amparaLogo} alt="AMPARA" className="w-full h-full object-cover" />
             </div>
           </div>
-          <span className="font-display font-bold text-sidebar-foreground text-lg group-data-[collapsible=icon]:hidden">
+          <span className="font-display font-bold text-sidebar-foreground text-lg tracking-tight group-data-[collapsible=icon]:hidden">
             AMPARA
           </span>
         </div>
