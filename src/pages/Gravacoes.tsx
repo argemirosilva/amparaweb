@@ -357,7 +357,8 @@ export default function GravacoesPage() {
       {/* ── WhatsApp Import Card ── */}
       <button
         onClick={() => setWhatsAppOpen(true)}
-        className="w-full rounded-2xl border border-[#25D366]/20 bg-card hover:bg-muted/30 p-4 flex items-center gap-4 transition-all text-left group relative overflow-hidden"
+        className="w-full rounded-2xl border-0 bg-card p-4 flex items-center gap-4 transition-all text-left group relative overflow-hidden"
+        style={{ background: "linear-gradient(135deg, hsla(145,63%,42%,0.04) 0%, transparent 50%, hsla(145,63%,42%,0.02) 100%)" }}
       >
         {/* Organic background blobs */}
         <div className="absolute -left-4 -top-4 w-20 h-20 rounded-full opacity-[0.07]" style={{ backgroundColor: "#25D366" }} />
