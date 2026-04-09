@@ -179,7 +179,12 @@ export default function MacroReportCard({
       {/* Header bar */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Badge className={`${alerta.bg} ${alerta.color} text-[10px] border ${alerta.border} font-medium`}>
+          <Badge variant="outline" className="text-[10px] font-medium text-muted-foreground flex items-center gap-1.5">
+            <span className={`w-2 h-2 rounded-full shrink-0 ${
+              (output.nivel_alerta || "baixo") === "baixo" ? "bg-emerald-500" :
+              (output.nivel_alerta || "baixo") === "moderado" ? "bg-amber-500" :
+              (output.nivel_alerta || "baixo") === "alto" ? "bg-orange-500" : "bg-red-500"
+            }`} />
             {alerta.label}
           </Badge>
           {isStale && (

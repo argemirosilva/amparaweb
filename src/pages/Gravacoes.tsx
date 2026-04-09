@@ -385,17 +385,8 @@ export default function GravacoesPage() {
                 key={r}
                 onClick={() => { setFilterRisco(r); setPage(1); }}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 flex items-center gap-1.5 ${
-                  isActive ? "shadow-sm" : "hover:bg-muted/50"
+                  isActive ? "bg-muted shadow-sm text-foreground" : "text-muted-foreground hover:bg-muted/50"
                 }`}
-                style={
-                  r === ""
-                    ? isActive
-                      ? { backgroundColor: "hsl(var(--primary))", color: "hsl(var(--primary-foreground))" }
-                      : { color: "hsl(var(--muted-foreground))" }
-                    : isActive
-                      ? { backgroundColor: `${color}15`, color }
-                      : { color: `${color}aa` }
-                }
               >
                 {r !== "" && (
                   <span
@@ -535,14 +526,11 @@ export default function GravacoesPage() {
                               </div>
                               <div className="flex items-center gap-1.5 shrink-0">
                                 {g.nivel_risco && (
-                                  <span
-                                    className="text-[10px] font-semibold px-2.5 py-0.5 rounded-lg leading-4 border"
-                                    style={{
-                                      backgroundColor: `${RISCO_COLORS[g.nivel_risco]}15`,
-                                      color: RISCO_COLORS[g.nivel_risco],
-                                      borderColor: `${RISCO_COLORS[g.nivel_risco]}30`,
-                                    }}
-                                  >
+                                  <span className="text-[10px] font-medium px-2.5 py-0.5 rounded-lg leading-4 border border-border bg-muted/40 text-muted-foreground flex items-center gap-1.5">
+                                    <span
+                                      className="w-2 h-2 rounded-full shrink-0"
+                                      style={{ backgroundColor: RISCO_COLORS[g.nivel_risco] }}
+                                    />
                                     {RISCO_LABELS[g.nivel_risco] || g.nivel_risco}
                                   </span>
                                 )}
