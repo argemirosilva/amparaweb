@@ -21,16 +21,25 @@ interface Assessment {
   period_end: string;
 }
 
-// Brand colors for chart
-const CHART_STROKE = "hsl(207, 89%, 42%)";
-const CHART_ACCENT = "hsl(195, 80%, 40%)";
+// Risk level colors (matching gravacoes)
+const RISCO_COLORS: Record<string, string> = {
+  "Sem Risco": "#22c55e",
+  "Baixo": "#22c55e",
+  "Moderado": "#eab308",
+  "Alto": "#f97316",
+  "Crítico": "#ef4444",
+};
 
-const levelConfig: Record<string, { icon: typeof Activity; className: string }> = {
-  "Sem Risco": { icon: CircleCheck, className: "bg-green-100 text-green-700 border-green-200" },
-  "Baixo": { icon: CircleCheck, className: "bg-green-100 text-green-700 border-green-200" },
-  "Moderado": { icon: Activity, className: "bg-yellow-100 text-yellow-700 border-yellow-200" },
-  "Alto": { icon: AlertTriangle, className: "bg-orange-100 text-orange-700 border-orange-200" },
-  "Crítico": { icon: CircleAlert, className: "bg-red-100 text-red-700 border-red-200" },
+// Brand colors for chart
+const CHART_STROKE = "hsl(280, 60%, 48%)";
+const CHART_ACCENT = "hsl(320, 70%, 50%)";
+
+const levelConfig: Record<string, { icon: typeof Activity }> = {
+  "Sem Risco": { icon: CircleCheck },
+  "Baixo": { icon: CircleCheck },
+  "Moderado": { icon: Activity },
+  "Alto": { icon: AlertTriangle },
+  "Crítico": { icon: CircleAlert },
 };
 
 const trendIcons = {
