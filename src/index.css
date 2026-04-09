@@ -53,14 +53,14 @@ html, body, #root {
 
     --radius: 0.75rem;
 
-    --sidebar-background: 255 20% 18%;
-    --sidebar-bg-gradient: linear-gradient(135deg, hsl(255, 20%, 18%), hsl(265, 18%, 20%), hsl(275, 16%, 23%));
-    --sidebar-foreground: 260 12% 78%;
-    --sidebar-primary: 320 60% 60%;
+    --sidebar-background: 280 20% 95%;
+    --sidebar-bg-gradient: linear-gradient(160deg, hsl(280, 25%, 94%), hsl(300, 18%, 92%), hsl(320, 15%, 90%));
+    --sidebar-foreground: 260 15% 35%;
+    --sidebar-primary: 280 55% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 260 14% 24%;
-    --sidebar-accent-foreground: 260 10% 90%;
-    --sidebar-border: 260 12% 26%;
+    --sidebar-accent: 280 20% 88%;
+    --sidebar-accent-foreground: 280 30% 25%;
+    --sidebar-border: 280 12% 86%;
     --sidebar-ring: 280 60% 48%;
 
     /* AMPARA brand tokens — Purple-Magenta */
