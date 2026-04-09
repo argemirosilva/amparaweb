@@ -116,7 +116,78 @@ async function runMicro(supabase: any, jobId: string, payload: any): Promise<any
     }
   }
 
-  // Run AI
+  // ── FAST TRIAGE PRE-FILTER ──
+  // Skip full analysis for safe/silent recordings
+  if (recording_id && !import_id) {
+    try {
+      const triagePrompt = await buildTriagePrompt(supabase);
+      const triageRaw = await callAI([
+        { role: "system", content: triagePrompt },
+        { role: "user", content: transcricao },
+      ], "google/gemini-2.5-flash-lite");
+
+      let triageParsed: any = null;
+      try { triageParsed = parseAIJson(triageRaw); } catch { /* ignore */ }
+      const resultado = triageParsed?.resultado || triageParsed?.nivel_risco;
+
+      if (resultado === "seguro") {
+        console.log(`[MICRO] Triage classified as "seguro" for recording ${recording_id} — skipping full analysis`);
+
+        // Save minimal result
+        if (recording_id) {
+          await supabase.from("analysis_micro_results")
+            .update({ latest: false })
+            .eq("recording_id", recording_id).eq("latest", true);
+        }
+
+        const safeOutput = {
+          resumo_contexto: triageParsed?.motivo || "Conversa sem indicadores de risco identificados.",
+          tipos_violencia: ["nenhuma"],
+          nivel_risco: "sem_risco",
+          classificacao_contexto: "saudavel",
+          sentimento: "neutro",
+          palavras_chave: [],
+          xingamentos: [],
+          categorias: ["nenhuma"],
+          taticas_manipulativas: [],
+          orientacoes_vitima: [],
+          sinais_alerta: [],
+          ciclo_violencia: { fase_atual: "nao_identificado", transicao_detectada: false, encurtamento_ciclo: false, justificativa: "Sem indicadores de risco." },
+          analise_linguagem: [],
+          padroes_detectados: [],
+          _triage_skip: true,
+        };
+
+        const { data: inserted } = await supabase.from("analysis_micro_results").insert({
+          user_id, recording_id, transcription_id: transcription_id || null,
+          prompt_version: MICRO_PROMPT_VERSION, model: "triage-skip/gemini-2.5-flash-lite",
+          input_hash: inputHash, output_json: safeOutput,
+          risk_level: "sem_risco", context_classification: "saudavel",
+          cycle_phase: "nao_identificado", status: "success", latest: true,
+        }).select("id").single();
+
+        // Legacy table
+        const { data: existingLegacy } = await supabase
+          .from("gravacoes_analises").select("id").eq("gravacao_id", recording_id).maybeSingle();
+        const legacyData = {
+          gravacao_id: recording_id, user_id,
+          resumo: safeOutput.resumo_contexto, sentimento: "neutro",
+          nivel_risco: "sem_risco", categorias: ["nenhuma"],
+          palavras_chave: [], xingamentos: [],
+          analise_completa: safeOutput, modelo_usado: "triage-skip/gemini-2.5-flash-lite",
+        };
+        if (existingLegacy) await supabase.from("gravacoes_analises").update(legacyData).eq("id", existingLegacy.id);
+        else await supabase.from("gravacoes_analises").insert(legacyData);
+
+        return { result_id: inserted?.id, risk_level: "sem_risco", triage_skipped: true };
+      }
+      console.log(`[MICRO] Triage classified as "${resultado}" — proceeding with full analysis`);
+    } catch (e) {
+      console.warn("[MICRO] Triage pre-filter failed, proceeding with full analysis:", e);
+    }
+  }
+
+  // Run full AI analysis
   const systemPrompt = await buildAnalysisPrompt(supabase);
   const userPromptPrefix = import_id
     ? `Analise esta conversa do WhatsApp (contato: ${payload.contact_label || "parceiro"}):\n\n`
