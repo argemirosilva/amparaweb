@@ -12,6 +12,7 @@ import AudioRecorderCard from "@/components/dashboard/AudioRecorderCard";
 import GravacaoExpandedContent from "@/components/gravacoes/GravacaoExpandedContent";
 import GravacoesFilterBar from "@/components/gravacoes/GravacoesFilterBar";
 import GradientIcon from "@/components/ui/gradient-icon";
+import PageHeader from "@/components/ui/page-header";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   Mic,
@@ -306,56 +307,52 @@ export default function GravacoesPage() {
 
   return (
     <div className="space-y-6 animate-fade-in max-w-4xl">
-      {/* ── Page header (Azure-style) ── */}
-      <div>
-        <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-1">Gravações</p>
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">Suas gravações de áudio</h1>
-          <div className="flex items-center gap-2 text-sm">
-            {!selectMode && semRiscoIds.length > 0 && (
-              <Button variant="outline" size="sm" className="text-xs gap-1.5 rounded-lg" onClick={() => setSelectMode(true)}>
-                <CheckSquare className="w-3.5 h-3.5" />
-                Selecionar
+      {/* ── Page header ── */}
+      <PageHeader tag="Gravações" title="Suas gravações de áudio">
+        <div className="flex items-center gap-2 text-sm">
+          {!selectMode && semRiscoIds.length > 0 && (
+            <Button variant="outline" size="sm" className="text-xs gap-1.5 rounded-lg" onClick={() => setSelectMode(true)}>
+              <CheckSquare className="w-3.5 h-3.5" />
+              Selecionar
+            </Button>
+          )}
+          {selectMode && (
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" className="text-xs gap-1 rounded-lg" onClick={toggleSelectAll}>
+                {selected.size === semRiscoIds.length ? "Desmarcar todas" : `Selecionar todas (${semRiscoIds.length})`}
               </Button>
-            )}
-            {selectMode && (
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" className="text-xs gap-1 rounded-lg" onClick={toggleSelectAll}>
-                  {selected.size === semRiscoIds.length ? "Desmarcar todas" : `Selecionar todas (${semRiscoIds.length})`}
-                </Button>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="destructive" size="sm" className="text-xs gap-1 rounded-lg" disabled={selected.size === 0 || batchDeleting}>
-                      <Trash2 className="w-3.5 h-3.5" />
-                      {batchDeleting ? "Excluindo…" : `Excluir (${selected.size})`}
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Excluir {selected.size} gravação(ões)?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Esta ação não pode ser desfeita. As gravações selecionadas e suas análises serão removidas permanentemente.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                      <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={handleBatchDelete}>
-                        Excluir {selected.size}
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={exitSelectMode}>
-                  <X className="w-4 h-4" />
-                </Button>
-              </div>
-            )}
-            <span className="text-muted-foreground text-xs bg-muted px-2.5 py-1 rounded-full font-medium">
-              {total} {total === 1 ? "gravação" : "gravações"}
-            </span>
-          </div>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" size="sm" className="text-xs gap-1 rounded-lg" disabled={selected.size === 0 || batchDeleting}>
+                    <Trash2 className="w-3.5 h-3.5" />
+                    {batchDeleting ? "Excluindo…" : `Excluir (${selected.size})`}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Excluir {selected.size} gravação(ões)?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Esta ação não pode ser desfeita. As gravações selecionadas e suas análises serão removidas permanentemente.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={handleBatchDelete}>
+                      Excluir {selected.size}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={exitSelectMode}>
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+          )}
+          <span className="text-muted-foreground text-xs bg-muted px-2.5 py-1 rounded-full font-medium">
+            {total} {total === 1 ? "gravação" : "gravações"}
+          </span>
         </div>
-      </div>
+      </PageHeader>
 
       {/* ── WhatsApp Import Card ── */}
       <button
