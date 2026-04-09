@@ -1271,7 +1271,7 @@ serve(async (req) => {
         return json({ success: true });
       }
 
-
+      case "getGravacaoSignedUrl": {
         const { storage_path } = params;
         if (!storage_path) return json({ error: "storage_path obrigatório" }, 400);
 
