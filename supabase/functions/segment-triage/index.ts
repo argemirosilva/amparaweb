@@ -130,9 +130,24 @@ function scanKeywords(
 
 // ── AI risk classification ──
 
+import { buildTriagePrompt } from "../_shared/buildAnalysisPrompt.ts";
+
+// Cache triage prompt (5 min TTL)
+let cachedTriagePrompt: { prompt: string; fetchedAt: number } | null = null;
+
+async function getTriagePrompt(supabase: ReturnType<typeof createClient>): Promise<string> {
+  if (cachedTriagePrompt && Date.now() - cachedTriagePrompt.fetchedAt < CACHE_TTL_MS) {
+    return cachedTriagePrompt.prompt;
+  }
+  const prompt = await buildTriagePrompt(supabase);
+  cachedTriagePrompt = { prompt, fetchedAt: Date.now() };
+  return prompt;
+}
+
 async function classifyRisk(
   transcricao: string,
-  matches: KeywordMatch[]
+  matches: KeywordMatch[],
+  supabase: ReturnType<typeof createClient>
 ): Promise<string> {
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
   if (!LOVABLE_API_KEY) {
@@ -141,6 +156,7 @@ async function classifyRisk(
   }
 
   const matchList = matches.map((m) => `${m.palavra} (${m.grupo})`).join(", ");
+  const systemPrompt = await getTriagePrompt(supabase);
 
   try {
     const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -152,19 +168,8 @@ async function classifyRisk(
       body: JSON.stringify({
         model: "google/gemini-2.5-flash-lite",
         messages: [
-          {
-            role: "system",
-            content: `Classifique o risco desta fala. Retorne APENAS JSON: {"nivel_risco":"sem_risco|moderado|alto|critico"}
-Contexto: transcrição de áudio de monitoramento de violência doméstica.
-- sem_risco: conversa normal sem indicadores de perigo
-- moderado: tensão verbal, mas sem ameaça direta
-- alto: ameaças diretas, gritos intensos, sinais de agressão verbal grave
-- critico: violência física iminente ou em curso, pedidos de socorro, menção a armas`,
-          },
-          {
-            role: "user",
-            content: `Palavras detectadas: [${matchList}]\nTranscrição: ${transcricao}`,
-          },
+          { role: "system", content: systemPrompt },
+          { role: "user", content: `Palavras detectadas: [${matchList}]\nTranscrição: ${transcricao}` },
         ],
       }),
     });
@@ -184,7 +189,8 @@ Contexto: transcrição de áudio de monitoramento de violência doméstica.
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]);
       const valid = ["sem_risco", "moderado", "alto", "critico"];
-      if (valid.includes(parsed.nivel_risco)) return parsed.nivel_risco;
+      const nivel = parsed.nivel_risco || parsed.resultado;
+      if (valid.includes(nivel)) return nivel;
     }
     return "moderado";
   } catch (e) {
