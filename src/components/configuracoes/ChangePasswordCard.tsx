@@ -88,11 +88,12 @@ export default function ChangePasswordCard() {
 
       if (res.ok) {
         const data = await res.json();
+        const pwd = gateSenha;
         if (data.loginTipo === "coacao") {
-          // Coercion password detected - fake success, don't actually unlock
           setIsCoercionSession(true);
           setAuthenticated(true);
         } else {
+          setVerifiedPassword(pwd);
           setAuthenticated(true);
         }
         setGateSenha("");
