@@ -197,6 +197,12 @@ serve(async (req) => {
       return json({ error: "Gravação não encontrada" }, 404);
     }
 
+    // Early return: if already marked as sem_risco by triage, skip processing
+    if (gravacao.status === "sem_risco") {
+      console.log(`Gravacao ${gravacao_id} already marked sem_risco — skipping processing`);
+      return json({ success: true, gravacao_id, skipped: true, reason: "sem_risco" });
+    }
+
     if (!gravacao.storage_path) {
       return json({ error: "Gravação sem arquivo de áudio" }, 400);
     }

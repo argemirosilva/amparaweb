@@ -417,10 +417,10 @@ serve(async (req) => {
             results.push({ action: "already_processed", session_id: session.id });
             continue;
           }
-          // Fetch segments ordered by index
+          // Fetch segments ordered by index (include triage_risco)
           const { data: segments } = await supabase
             .from("gravacoes_segmentos")
-            .select("id, storage_path, file_url, duracao_segundos, segmento_idx")
+            .select("id, storage_path, file_url, duracao_segundos, segmento_idx, triage_risco")
             .eq("monitor_session_id", session.id)
             .order("segmento_idx", { ascending: true });
 
@@ -444,11 +444,23 @@ serve(async (req) => {
             continue;
           }
 
+          // ── Filter: separate relevant vs discarded (sem_risco) segments ──
+          const relevantSegments = segments.filter(
+            (s: any) => s.triage_risco !== "sem_risco"
+          );
+          const discardedCount = segments.length - relevantSegments.length;
+          const allSafe = relevantSegments.length === 0;
+
+          // Determine which segments to concatenate
+          const segmentsToConcat = allSafe ? segments : relevantSegments;
+
+          console.log(`Session ${session.id}: ${segments.length} total, ${discardedCount} discarded (sem_risco), allSafe=${allSafe}`);
+
           // ── Download and concatenate segments ──
           const buffers: Uint8Array[] = [];
           let downloadFailed = false;
 
-          for (const seg of segments) {
+          for (const seg of segmentsToConcat) {
             const path = seg.storage_path || seg.file_url;
             if (!path) {
               console.error(`Segment ${seg.id} has no storage_path or file_url`);
@@ -514,9 +526,9 @@ serve(async (req) => {
             continue;
           }
 
-          // Calculate total duration
+          // Calculate total duration (only from concatenated segments)
           let totalDuration = 0;
-          for (const seg of segments) {
+          for (const seg of segmentsToConcat) {
             totalDuration += seg.duracao_segundos || 30;
           }
 
@@ -533,7 +545,7 @@ serve(async (req) => {
             continue;
           }
 
-          // Insert gravacao
+          // Insert gravacao — mark as sem_risco if all segments were safe
           const { data: gravacao } = await supabase
             .from("gravacoes")
             .insert({
@@ -542,8 +554,9 @@ serve(async (req) => {
               storage_path: finalPath,
               file_url: r2Config.publicUrl ? `${r2Config.publicUrl}/${finalPath}` : finalPath,
               duracao_segundos: totalDuration,
-              status: "pendente",
+              status: allSafe ? "sem_risco" : "pendente",
               monitor_session_id: session.id,
+              segmentos_descartados: discardedCount,
             })
             .select("id")
             .single();
@@ -601,23 +614,28 @@ serve(async (req) => {
             details: { session_id: session.id, count: cleanupCount },
           });
 
-          // ── Fire-and-forget: trigger process-recording ──
-          const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-          const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-          fetch(`${supabaseUrl}/functions/v1/process-recording`, {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${serviceKey}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ gravacao_id: gravacao.id }),
-          }).catch((e) => console.error("process-recording trigger error:", e));
+          // ── Fire-and-forget: trigger process-recording (skip if all segments were safe) ──
+          if (!allSafe) {
+            const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+            const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+            fetch(`${supabaseUrl}/functions/v1/process-recording`, {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${serviceKey}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ gravacao_id: gravacao.id }),
+            }).catch((e) => console.error("process-recording trigger error:", e));
+          } else {
+            console.log(`Skipping process-recording for gravacao ${gravacao.id} (all segments sem_risco)`);
+          }
 
           results.push({
-            action: "concatenated",
+            action: allSafe ? "concatenated_sem_risco" : "concatenated",
             session_id: session.id,
             gravacao_id: gravacao.id,
             segments: segments.length,
+            discarded: discardedCount,
             duration: totalDuration,
           });
         } catch (sessionErr) {

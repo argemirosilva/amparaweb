@@ -789,6 +789,7 @@ export type Database = {
           id: string
           monitor_session_id: string | null
           processado_em: string | null
+          segmentos_descartados: number
           status: string
           storage_path: string | null
           tamanho_mb: number | null
@@ -807,6 +808,7 @@ export type Database = {
           id?: string
           monitor_session_id?: string | null
           processado_em?: string | null
+          segmentos_descartados?: number
           status?: string
           storage_path?: string | null
           tamanho_mb?: number | null
@@ -825,6 +827,7 @@ export type Database = {
           id?: string
           monitor_session_id?: string | null
           processado_em?: string | null
+          segmentos_descartados?: number
           status?: string
           storage_path?: string | null
           tamanho_mb?: number | null
