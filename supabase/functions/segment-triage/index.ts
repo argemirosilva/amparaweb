@@ -144,15 +144,29 @@ async function getTriagePrompt(supabase: ReturnType<typeof createClient>): Promi
   return prompt;
 }
 
+interface TriageResult {
+  nivel_risco: string;
+  motivo?: string;
+  contexto_emergencia?: {
+    ameaca_morte?: boolean;
+    agressao_fisica?: boolean;
+    agressao_em_curso?: boolean;
+    ameaca_agressao_fisica?: boolean;
+    pedido_socorro?: boolean;
+    mencao_arma?: boolean;
+    descricao_curta?: string;
+  };
+}
+
 async function classifyRisk(
   transcricao: string,
   matches: KeywordMatch[],
   supabase: ReturnType<typeof createClient>
-): Promise<string> {
+): Promise<TriageResult> {
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
   if (!LOVABLE_API_KEY) {
     console.error("LOVABLE_API_KEY not configured");
-    return "moderado"; // fallback
+    return { nivel_risco: "moderado" };
   }
 
   const matchList = matches.map((m) => `${m.palavra} (${m.grupo})`).join(", ");
@@ -176,7 +190,7 @@ async function classifyRisk(
 
     if (!res.ok) {
       console.error(`AI classification error: ${res.status}`);
-      return "moderado";
+      return { nivel_risco: "moderado" };
     }
 
     const data = await res.json();
@@ -190,12 +204,18 @@ async function classifyRisk(
       const parsed = JSON.parse(jsonMatch[0]);
       const valid = ["sem_risco", "moderado", "alto", "critico"];
       const nivel = parsed.nivel_risco || parsed.resultado;
-      if (valid.includes(nivel)) return nivel;
+      if (valid.includes(nivel)) {
+        return {
+          nivel_risco: nivel,
+          motivo: parsed.motivo,
+          contexto_emergencia: parsed.contexto_emergencia || undefined,
+        };
+      }
     }
-    return "moderado";
+    return { nivel_risco: "moderado" };
   } catch (e) {
     console.error("AI classification error:", e);
-    return "moderado";
+    return { nivel_risco: "moderado" };
   }
 }
 
