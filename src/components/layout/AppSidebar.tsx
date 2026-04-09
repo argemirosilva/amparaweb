@@ -64,9 +64,6 @@ export default function AppSidebar() {
       </div>
 
       <SidebarContent className="px-2">
-        {/* Floating ring circles */}
-        <div className="absolute top-1/3 -right-8 w-24 h-24 rounded-full border opacity-[0.08]" style={{ borderColor: "hsl(320, 70%, 50%)" }} />
-        <div className="absolute bottom-1/4 -left-6 w-16 h-16 rounded-full border opacity-[0.10]" style={{ borderColor: "hsl(280, 60%, 55%)" }} />
 
         <SidebarGroup>
           <SidebarGroupContent>
