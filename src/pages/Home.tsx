@@ -32,7 +32,7 @@ export default function HomePage() {
                 onClick={() => navigate("/busca-perfil")}
                 className="flex items-center gap-3 w-full text-left p-4 rounded-2xl border border-border bg-background hover:bg-muted/50 active:scale-[0.98] transition-all duration-200"
               >
-                <div className="w-10 h-10 rounded-xl bg-primary/8 flex items-center justify-center shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-primary/[0.08] flex items-center justify-center shrink-0">
                   <UserSearch className="w-5 h-5 text-primary" />
                 </div>
                 <div className="flex-1 min-w-0">

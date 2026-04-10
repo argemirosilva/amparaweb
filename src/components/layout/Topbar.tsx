@@ -34,7 +34,7 @@ export default function Topbar() {
         </span>
         <Avatar className="w-8 h-8 ring-1 ring-border group-hover:ring-primary/30 transition-all">
           <AvatarImage src={usuario?.avatar_url || undefined} alt={usuario?.nome_completo} />
-          <AvatarFallback className="bg-primary/8 text-primary text-xs font-medium">
+          <AvatarFallback className="bg-primary/[0.08] text-primary text-xs font-medium">
             {initials || <User className="w-3.5 h-3.5" />}
           </AvatarFallback>
         </Avatar>
