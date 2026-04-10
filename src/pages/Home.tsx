@@ -3,49 +3,47 @@ import MonitoringStatusCard from "@/components/dashboard/MonitoringStatusCard";
 import DeviceStatusCard from "@/components/dashboard/DeviceStatusCard";
 import AudioRecorderCard from "@/components/dashboard/AudioRecorderCard";
 import RiskEvolutionCard from "@/components/dashboard/RiskEvolutionCard";
-import { UserSearch, ChevronRight, User, Shield, Mic, Upload } from "lucide-react";
+import { UserSearch, ChevronRight, Mic } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import GradientIcon from "@/components/ui/gradient-icon";
 
 export default function HomePage() {
   const navigate = useNavigate();
   const { usuario } = useAuth();
-  const firstName = (usuario?.nome_completo || "").split(" ")[0];
 
   return (
     <div className="animate-fade-in min-h-full max-w-4xl pb-6">
-
-      {/* Main content */}
-      <div className="space-y-3 px-1">
-        {/* Risk evolution */}
+      <div className="space-y-4 px-1">
+        {/* Risk evolution — hero card */}
         <RiskEvolutionCard />
 
-        {/* Device status + Quick actions side by side on desktop */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {/* Device + Quick actions */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <DeviceStatusCard />
 
-          {/* Quick actions card - matching DeviceStatusCard style */}
+          {/* Quick actions */}
           <div className="ampara-card p-5 flex flex-col">
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">Ações rápidas</p>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4 font-display">
+              Ações rápidas
+            </p>
 
-            <div className="space-y-2.5 flex-1">
-              {/* Pesquisar parceiro */}
-              <div className="rounded-xl border border-border/60 bg-background/50">
-                <button
-                  onClick={() => navigate("/busca-perfil")}
-                  className="flex items-center gap-2.5 w-full text-left px-3.5 py-3 hover:bg-muted/50 active:bg-muted transition-colors rounded-xl"
-                >
-                  <GradientIcon icon={UserSearch} size="sm" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-foreground">Pesquisar parceiro</p>
-                    <p className="text-[11px] text-muted-foreground">Consultar perfil e histórico</p>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-muted-foreground/40 shrink-0" />
-                </button>
-              </div>
+            <div className="space-y-3 flex-1">
+              {/* Search partner */}
+              <button
+                onClick={() => navigate("/busca-perfil")}
+                className="flex items-center gap-3 w-full text-left p-4 rounded-2xl border border-border bg-background hover:bg-muted/50 active:scale-[0.98] transition-all duration-200"
+              >
+                <div className="w-10 h-10 rounded-xl bg-primary/8 flex items-center justify-center shrink-0">
+                  <UserSearch className="w-5 h-5 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-foreground">Pesquisar parceiro</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Consultar perfil e histórico</p>
+                </div>
+                <ChevronRight className="w-4 h-4 text-muted-foreground/40 shrink-0" />
+              </button>
 
               {/* Audio recorder */}
-              <div className="rounded-xl border border-border/60 bg-background/50 px-3.5 py-3">
+              <div className="p-4 rounded-2xl border border-border bg-background">
                 <AudioRecorderCard />
               </div>
             </div>
