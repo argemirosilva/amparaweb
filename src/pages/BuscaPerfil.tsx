@@ -4,7 +4,7 @@ import { callWebApi } from "@/services/webApiService";
 import { BuscaPerfilForm } from "@/components/busca-perfil/BuscaPerfilForm";
 import { BuscaPerfilResults } from "@/components/busca-perfil/BuscaPerfilResults";
 import PageHeader from "@/components/ui/page-header";
-import { Loader2, UserSearch, ArrowLeft, CircleAlert } from "lucide-react";
+import { Loader2, ArrowLeft, AlertTriangle, Info } from "lucide-react";
 
 export interface SearchResult {
   profile_id: string;
@@ -114,23 +114,24 @@ export default function BuscaPerfilPage() {
     <div className="p-4 pb-24 max-w-2xl mx-auto space-y-5">
       <PageHeader tag="Pesquisa" title="Pesquisar parceiro" subtitle="Pesquise por dados parciais - nunca expomos dados sensíveis" />
 
-      {/* Info box */}
-      <div className="rounded-xl border border-border bg-card p-4 space-y-2.5">
-        <div className="flex items-start gap-3">
-          <CircleAlert className="w-5 h-5 text-primary mt-0.5 shrink-0" />
-          <div className="space-y-1.5">
-            <p className="text-sm text-foreground leading-relaxed">
-              Cruza dados parciais com relatos anônimos de outras mulheres para indicar possíveis riscos. Quanto mais campos preencher, melhor o resultado.
-            </p>
-            <p className="text-xs text-amber-600 dark:text-amber-400 leading-relaxed font-medium">
-              ⚠ ATENÇÃO: Resultados indicativos, baseados em relatos voluntários e não auditados. Não há garantia de veracidade ou de que se referem à mesma pessoa. Devem ser utilizados apenas como sinal de atenção, não substituindo denúncias formais.
-            </p>
-          </div>
-        </div>
+      {/* System explanation */}
+      <div className="ampara-alert-info flex items-start gap-3">
+        <Info className="w-5 h-5 text-primary mt-0.5 shrink-0" />
+        <p className="text-sm text-foreground leading-relaxed">
+          Cruza dados parciais com relatos anônimos de outras mulheres para indicar possíveis riscos. Quanto mais campos preencher, melhor o resultado.
+        </p>
+      </div>
+
+      {/* Legal warning */}
+      <div className="ampara-alert-warning flex items-start gap-3">
+        <AlertTriangle className="w-5 h-5 text-warning mt-0.5 shrink-0" />
+        <p className="text-sm text-foreground/80 leading-relaxed">
+          <strong>Atenção:</strong> Resultados indicativos, baseados em relatos voluntários e não auditados. Não há garantia de veracidade. Devem ser utilizados apenas como sinal de atenção, não substituindo denúncias formais.
+        </p>
       </div>
 
       {error && (
-        <div className="rounded-xl bg-destructive/10 border border-destructive/20 p-3 text-sm text-destructive flex items-center gap-2">
+        <div className="ampara-alert-danger text-sm text-destructive flex items-center gap-2">
           <span className="shrink-0">❌</span> {error}
         </div>
       )}
@@ -144,7 +145,9 @@ export default function BuscaPerfilPage() {
                 <div className="w-14 h-14 rounded-full border-4 border-primary/20" />
                 <Loader2 className="w-14 h-14 animate-spin text-primary absolute inset-0" />
               </div>
-              <span className="mt-4 text-sm text-muted-foreground font-medium">Analisando correspondências com IA...</span>
+              <span className="mt-4 text-sm text-muted-foreground font-medium">
+                Analisando correspondências com IA...
+              </span>
             </div>
           )}
         </>
@@ -152,7 +155,7 @@ export default function BuscaPerfilPage() {
         <div className="space-y-4">
           <button
             onClick={() => setResults(null)}
-            className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors"
+            className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted transition-colors"
           >
             <ArrowLeft className="w-4 h-4" /> Nova busca
           </button>
