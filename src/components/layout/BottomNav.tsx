@@ -58,7 +58,7 @@ export default function BottomNav() {
                 active ? "text-primary" : "text-muted-foreground"
               }`}
             >
-              <div className={`p-1.5 rounded-xl transition-all duration-200 ${active ? "bg-primary/8" : ""}`}>
+              <div className={`p-1.5 rounded-xl transition-all duration-200 ${active ? "bg-primary/[0.08]" : ""}`}>
                 <item.icon className="w-5 h-5" strokeWidth={active ? 2.2 : 1.8} />
               </div>
               <span className={`text-[10px] leading-tight ${active ? "font-semibold" : "font-medium"}`}>
