@@ -12,7 +12,7 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Poppins:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 html, body, #root {
   max-width: 100vw;
@@ -21,79 +21,80 @@ html, body, #root {
 
 @layer base {
   :root {
-    --background: 0 0% 99%;
-    --foreground: 210 20% 14%;
+    /* Core palette — #6D28D9 → HSL(263, 70%, 50%) */
+    --background: 240 7% 97%;       /* #F7F7FA */
+    --foreground: 240 10% 13%;      /* #1F1F24 */
 
-    --card: 0 0% 100%;
-    --card-foreground: 210 20% 14%;
+    --card: 0 0% 100%;              /* #FFFFFF */
+    --card-foreground: 240 10% 13%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 210 20% 14%;
+    --popover-foreground: 240 10% 13%;
 
-    /* Purple-magenta primary */
-    --primary: 280 60% 48%;
+    --primary: 263 70% 50%;         /* #6D28D9 */
     --primary-foreground: 0 0% 100%;
 
-    /* Light purple secondary */
-    --secondary: 280 20% 96%;
-    --secondary-foreground: 280 60% 40%;
+    --secondary: 263 20% 96%;
+    --secondary-foreground: 263 70% 42%;
 
-    --muted: 210 14% 95%;
-    --muted-foreground: 210 8% 46%;
+    --muted: 240 6% 94%;
+    --muted-foreground: 220 9% 46%; /* #6B7280 */
 
-    --accent: 280 25% 93%;
-    --accent-foreground: 280 50% 40%;
+    --accent: 263 25% 94%;
+    --accent-foreground: 263 50% 40%;
 
-    --destructive: 0 84% 60%;
+    --destructive: 0 84% 60%;      /* #EF4444 */
     --destructive-foreground: 0 0% 100%;
 
-    --border: 210 14% 91%;
-    --input: 210 12% 89%;
-    --ring: 280 60% 48%;
+    --border: 240 10% 94%;         /* #EAEAF0 */
+    --input: 240 8% 92%;
+    --ring: 263 70% 50%;
 
-    --radius: 0.75rem;
+    --radius: 1rem;                /* 16px */
 
-    --sidebar-background: 280 22% 92%;
-    --sidebar-bg-gradient: linear-gradient(160deg, hsl(280, 28%, 90%), hsl(300, 22%, 88%), hsl(320, 18%, 86%));
-    --sidebar-foreground: 260 15% 35%;
-    --sidebar-primary: 280 55% 50%;
+    /* Sidebar */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 240 10% 30%;
+    --sidebar-primary: 263 70% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 280 20% 88%;
-    --sidebar-accent-foreground: 280 30% 25%;
-    --sidebar-border: 280 12% 86%;
-    --sidebar-ring: 280 60% 48%;
+    --sidebar-accent: 263 20% 95%;
+    --sidebar-accent-foreground: 263 30% 25%;
+    --sidebar-border: 240 10% 94%;
+    --sidebar-ring: 263 70% 50%;
 
-    /* AMPARA brand tokens — Purple-Magenta */
-    --ampara-magenta: 320 70% 50%;
-    --ampara-purple: 280 60% 48%;
-    --ampara-deep-blue: 270 65% 35%;
-    --ampara-cyan: 320 70% 55%;
+    /* AMPARA brand tokens */
+    --ampara-purple: 263 70% 50%;
+    --ampara-magenta: 292 84% 61%;  /* #D946EF */
+    --ampara-deep-blue: 263 65% 35%;
+    --ampara-cyan: 292 70% 55%;
 
-    --ampara-gradient: linear-gradient(135deg, hsl(280, 60%, 48%), hsl(320, 70%, 50%));
-    --ampara-gradient-soft: linear-gradient(135deg, hsl(280, 20%, 97%), hsl(320, 25%, 95%));
-    --ampara-gradient-icon: linear-gradient(160deg, hsl(280, 60%, 48%), hsl(320, 70%, 50%));
-    --ampara-panel-bg: linear-gradient(160deg, hsl(232, 30%, 10%), hsl(250, 25%, 13%));
-    --ampara-shadow: 0 4px 20px -4px hsl(280 60% 48% / 0.12);
+    --ampara-gradient: linear-gradient(135deg, hsl(263, 70%, 50%), hsl(292, 84%, 61%));
+    --ampara-gradient-soft: linear-gradient(135deg, hsl(263, 20%, 97%), hsl(292, 15%, 96%));
+    --ampara-gradient-icon: linear-gradient(160deg, hsl(263, 70%, 50%), hsl(292, 84%, 61%));
+    --ampara-shadow: 0 4px 20px -4px hsl(263 70% 50% / 0.12);
+    --ampara-shadow-lg: 0 8px 36px -6px hsl(263 70% 50% / 0.25);
 
-    /* Hero / premium banner */
-    --ampara-hero-bg: linear-gradient(135deg, hsl(232, 30%, 8%), hsl(250, 25%, 12%), hsl(280, 20%, 14%));
-    --ampara-hero-glow: radial-gradient(ellipse at 80% 20%, hsl(280 50% 40% / 0.18), transparent 60%);
+    /* Success / Warning / Danger */
+    --success: 142 71% 45%;       /* #22C55E */
+    --warning: 38 92% 50%;        /* #F59E0B */
 
-    /* Níveis de risco — classificação contextual */
-    --risco-sem-risco: 152 69% 40%;
+    /* Risk levels */
+    --risco-sem-risco: 142 71% 45%;
     --risco-moderado: 38 92% 50%;
     --risco-alto: 25 95% 53%;
-    --risco-critico: 0 84% 50%;
-    --risco-saudavel: 152 69% 40%;
+    --risco-critico: 0 84% 60%;
+    --risco-saudavel: 142 71% 45%;
     --risco-rispido: 45 93% 47%;
     --risco-abuso-leve: 38 92% 50%;
     --risco-abuso-consistente: 25 95% 53%;
     --risco-ameaca: 10 90% 50%;
-    --risco-escalada: 0 84% 50%;
-    --ampara-shadow-lg: 0 8px 36px -6px hsl(280 60% 48% / 0.25);
+    --risco-escalada: 0 84% 60%;
+
+    /* Critical soft background */
+    --critical-soft: 0 86% 97%;    /* #FEE2E2 */
   }
 
-  /* Admin theme: neutral gray buttons & accents */
+  /* Admin theme */
   .admin-theme {
     --primary: 220 15% 30%;
     --primary-foreground: 0 0% 98%;
@@ -103,42 +104,42 @@ html, body, #root {
   }
 
   .dark {
-    --background: 210 20% 7%;
-    --foreground: 210 10% 95%;
+    --background: 240 10% 6%;
+    --foreground: 240 6% 95%;
 
-    --card: 210 18% 10%;
-    --card-foreground: 210 10% 95%;
+    --card: 240 10% 9%;
+    --card-foreground: 240 6% 95%;
 
-    --popover: 210 18% 10%;
-    --popover-foreground: 210 10% 95%;
+    --popover: 240 10% 9%;
+    --popover-foreground: 240 6% 95%;
 
-    --primary: 280 55% 60%;
+    --primary: 263 60% 60%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 280 15% 15%;
-    --secondary-foreground: 280 50% 70%;
+    --secondary: 263 15% 15%;
+    --secondary-foreground: 263 50% 70%;
 
-    --muted: 210 15% 18%;
-    --muted-foreground: 210 10% 60%;
+    --muted: 240 10% 16%;
+    --muted-foreground: 220 8% 60%;
 
-    --accent: 280 15% 18%;
-    --accent-foreground: 280 50% 70%;
+    --accent: 263 15% 18%;
+    --accent-foreground: 263 50% 70%;
 
     --destructive: 0 63% 31%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 210 15% 20%;
-    --input: 210 15% 20%;
-    --ring: 280 55% 60%;
+    --border: 240 10% 18%;
+    --input: 240 10% 18%;
+    --ring: 263 60% 60%;
 
-    --sidebar-background: 210 6% 10%;
-    --sidebar-foreground: 210 5% 96%;
-    --sidebar-primary: 280 55% 55%;
+    --sidebar-background: 240 10% 8%;
+    --sidebar-foreground: 240 5% 96%;
+    --sidebar-primary: 263 60% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 4% 16%;
-    --sidebar-accent-foreground: 210 5% 96%;
-    --sidebar-border: 210 4% 16%;
-    --sidebar-ring: 280 60% 48%;
+    --sidebar-accent: 240 8% 14%;
+    --sidebar-accent-foreground: 240 5% 96%;
+    --sidebar-border: 240 8% 14%;
+    --sidebar-ring: 263 60% 50%;
   }
 }
 
@@ -149,39 +150,50 @@ html, body, #root {
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   h1, h2, h3, h4 {
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Plus Jakarta Sans', sans-serif;
     font-weight: 600;
+    line-height: 1.3;
   }
 
+  h1 { font-size: 1.75rem; }   /* 28px */
+  h2 { font-size: 1.375rem; }  /* 22px */
+  h3 { font-size: 1.125rem; font-weight: 500; }  /* 18px */
+
   @media (max-width: 767px) {
-    h1 {
-      font-size: 1.25rem;
-    }
-    h2 {
-      font-size: 1.1rem;
-    }
-    h3, h4 {
-      font-size: 0.95rem;
-    }
+    h1 { font-size: 1.5rem; }
+    h2 { font-size: 1.25rem; }
+    h3 { font-size: 1rem; }
   }
 }
 
 @layer components {
   /* ---- Card ---- */
   .ampara-card {
-    @apply bg-card rounded-2xl p-3 md:p-8 border border-border/60 relative overflow-hidden;
-    box-shadow: 0 1px 3px 0 hsl(320 40% 30% / 0.04), 0 4px 16px -4px hsl(280 40% 30% / 0.06);
+    @apply bg-card rounded-2xl p-4 md:p-6 border border-border relative overflow-hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.04);
     transition: box-shadow 0.25s ease, transform 0.25s ease;
+  }
+
+  .ampara-card:hover {
+    box-shadow: 0 6px 20px rgba(0,0,0,0.06);
+  }
+
+  .ampara-card:active {
+    transform: scale(0.995);
   }
 
   /* ---- Premium card with gradient top accent ---- */
   .ampara-card-accent {
-    @apply bg-card rounded-2xl border border-border/60 overflow-hidden;
-    box-shadow: 0 1px 3px 0 hsl(320 40% 30% / 0.04), 0 4px 16px -4px hsl(280 40% 30% / 0.06);
+    @apply bg-card rounded-2xl border border-border overflow-hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.04);
   }
   .ampara-card-accent::before {
     content: "";
@@ -192,7 +204,7 @@ html, body, #root {
 
   /* ---- Hero banner (dark gradient) ---- */
   .ampara-hero-banner {
-    background: var(--ampara-hero-bg);
+    background: linear-gradient(135deg, hsl(240, 20%, 8%), hsl(263, 25%, 12%), hsl(263, 20%, 14%));
     position: relative;
     overflow: hidden;
     @apply rounded-2xl p-5 md:p-8;
@@ -201,7 +213,7 @@ html, body, #root {
     content: "";
     position: absolute;
     inset: 0;
-    background: var(--ampara-hero-glow);
+    background: radial-gradient(ellipse at 80% 20%, hsl(263 50% 40% / 0.18), transparent 60%);
     pointer-events: none;
   }
 
@@ -215,17 +227,13 @@ html, body, #root {
   }
 
   .ampara-panel-bg {
-    background: var(--ampara-panel-bg);
+    background: linear-gradient(160deg, hsl(240, 20%, 8%), hsl(263, 20%, 12%));
   }
 
-  /* Sidebar gradient override */
-  [data-sidebar="sidebar"] {
-    background: var(--sidebar-bg-gradient) !important;
-  }
-
-  /* Sidebar active item gradient */
+  /* Sidebar active item */
   .ampara-sidebar-active {
-    background: linear-gradient(135deg, hsla(280, 60%, 50%, 0.1), hsla(320, 70%, 55%, 0.07)) !important;
+    background: hsl(263, 70%, 50%, 0.08) !important;
+    color: hsl(263, 70%, 50%) !important;
   }
 
   /* ---- Icon circle (gradient background with white icon) ---- */
@@ -239,7 +247,7 @@ html, body, #root {
     background: var(--ampara-gradient-icon);
   }
 
-  /* ---- Numbered badge (small purple circle) ---- */
+  /* ---- Numbered badge ---- */
   .ampara-badge-number {
     @apply inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold text-primary-foreground;
     background: hsl(var(--ampara-purple));
@@ -247,39 +255,49 @@ html, body, #root {
 
   /* ---- Input ---- */
   .ampara-input {
-    @apply w-full rounded-xl border border-input bg-background px-4 py-2.5 text-sm transition-all duration-200;
-    @apply focus:outline-none focus:ring-2 focus:ring-ring/40 focus:border-primary;
+    @apply w-full rounded-xl border border-input bg-background px-4 py-3 text-sm transition-all duration-200;
+    @apply focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-primary;
     @apply placeholder:text-muted-foreground;
   }
 
   /* ---- Primary button (gradient pill) ---- */
   .ampara-btn-primary {
-    @apply w-full rounded-full py-2.5 px-8 font-semibold text-primary-foreground transition-all duration-200 text-base;
+    @apply w-full rounded-full py-3 px-8 font-semibold text-primary-foreground transition-all duration-200 text-base;
     background: var(--ampara-gradient);
     box-shadow: var(--ampara-shadow);
+    height: 48px;
   }
 
   .ampara-btn-primary:hover {
     opacity: 0.92;
     box-shadow: var(--ampara-shadow-lg);
+    transform: translateY(-1px);
   }
 
   .ampara-btn-primary:active {
     opacity: 0.88;
+    transform: scale(0.98);
   }
 
   .ampara-btn-primary:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+    transform: none;
   }
 
   /* ---- Secondary button (outlined pill) ---- */
   .ampara-btn-secondary {
     @apply w-full rounded-full py-3 px-8 font-semibold text-primary bg-transparent border-2 border-primary transition-all duration-200 text-base;
+    height: 48px;
   }
 
   .ampara-btn-secondary:hover {
-    @apply bg-secondary;
+    @apply bg-primary/5;
+    transform: translateY(-1px);
+  }
+
+  .ampara-btn-secondary:active {
+    transform: scale(0.98);
   }
 
   .ampara-btn-secondary:disabled {
@@ -295,14 +313,14 @@ html, body, #root {
     @apply text-muted-foreground text-center mt-2 max-w-xl mx-auto;
   }
 
-  /* ---- Feature card (icon-based) ---- */
+  /* ---- Feature card ---- */
   .ampara-feature-card {
     @apply bg-card rounded-2xl p-6 border border-border text-center transition-all duration-200;
-    box-shadow: 0 2px 12px -2px hsl(320 15% 50% / 0.06);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.04);
   }
 
   .ampara-feature-card:hover {
-    box-shadow: var(--ampara-shadow);
+    box-shadow: 0 6px 24px rgba(0,0,0,0.08);
     transform: translateY(-2px);
   }
 
@@ -311,19 +329,19 @@ html, body, #root {
     @apply relative bg-card rounded-2xl p-6 border-l-4 border-primary italic text-foreground/80;
   }
 
-  /* ---- KPI card with decorative circle ---- */
+  /* ---- KPI card ---- */
   .ampara-card-kpi {
-    @apply bg-card rounded-2xl p-5 border border-border/40 relative overflow-hidden;
-    box-shadow: 0 2px 8px -2px hsl(320 20% 30% / 0.06);
+    @apply bg-card rounded-2xl p-5 border border-border relative overflow-hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.04);
     transition: box-shadow 0.25s ease, transform 0.25s ease;
   }
   .ampara-card-kpi:hover {
-    box-shadow: var(--ampara-shadow);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.06);
     transform: translateY(-1px);
   }
   .ampara-card-kpi .kpi-circle {
     @apply absolute -top-3 -right-3 w-20 h-20 rounded-full flex items-center justify-center;
-    background: hsl(var(--ampara-purple) / 0.08);
+    background: hsl(var(--ampara-purple) / 0.06);
   }
   .ampara-card-kpi .kpi-circle svg {
     @apply translate-x-[-4px] translate-y-[4px];
@@ -332,31 +350,48 @@ html, body, #root {
   /* ---- Tag / chip ---- */
   .ampara-tag {
     @apply inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium;
-    @apply bg-primary/10 text-primary;
+    @apply bg-primary/8 text-primary;
   }
 
-  /* ---- Decorative blob for cards ---- */
-  .ampara-blob-decor::before {
-    content: "";
-    position: absolute;
-    top: -20px;
-    right: -20px;
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    background: hsl(var(--ampara-magenta) / 0.06);
-    pointer-events: none;
+  /* ---- Alert boxes ---- */
+  .ampara-alert-info {
+    @apply rounded-xl border p-4;
+    background: hsl(263, 40%, 97%);
+    border-color: hsl(263, 30%, 90%);
   }
-  .ampara-blob-decor::after {
-    content: "";
-    position: absolute;
-    bottom: -12px;
-    left: -12px;
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    background: hsl(var(--ampara-purple) / 0.04);
-    pointer-events: none;
+
+  .ampara-alert-warning {
+    @apply rounded-xl border p-4;
+    background: hsl(45, 100%, 96%);
+    border-color: hsl(45, 80%, 85%);
+  }
+
+  .ampara-alert-danger {
+    @apply rounded-xl border p-4;
+    background: hsl(0, 86%, 97%);
+    border-color: hsl(0, 70%, 90%);
+  }
+
+  /* ---- Risk badges ---- */
+  .ampara-risk-badge {
+    @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium;
+  }
+  .ampara-risk-critico {
+    background: hsl(0, 86%, 97%);
+    color: hsl(0, 72%, 51%);
+    box-shadow: 0 0 8px hsl(0 84% 60% / 0.15);
+  }
+  .ampara-risk-alto {
+    background: hsl(25, 100%, 96%);
+    color: hsl(25, 95%, 45%);
+  }
+  .ampara-risk-moderado {
+    background: hsl(45, 100%, 96%);
+    color: hsl(38, 92%, 40%);
+  }
+  .ampara-risk-sem-risco {
+    background: hsl(142, 60%, 96%);
+    color: hsl(142, 71%, 35%);
   }
 }
 
@@ -369,22 +404,16 @@ html, body, #root {
 /* Dashboard map tooltip */
 .dashboard-map-tooltip .mapboxgl-popup-content {
   padding: 8px 12px;
-  border-radius: 8px;
+  border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-  border: 1px solid hsl(220 13% 91%);
+  border: 1px solid hsl(240 10% 94%);
 }
 .dashboard-map-tooltip .mapboxgl-popup-tip {
   border-top-color: hsl(0 0% 100%);
 }
 
-/* Sound wave animation for monitoring ear icon */
+/* Sound wave animation */
 @keyframes sound-wave {
-  0% {
-    transform: scale(1);
-    opacity: 0.6;
-  }
-  100% {
-    transform: scale(1.8);
-    opacity: 0;
-  }
+  0% { transform: scale(1); opacity: 0.6; }
+  100% { transform: scale(1.8); opacity: 0; }
 }
