@@ -17,7 +17,7 @@ export default function Topbar() {
     <header className="h-14 border-b border-border flex items-center justify-between px-4 shrink-0 sticky top-0 z-40 bg-card/80 backdrop-blur-md">
       {/* Logo mobile */}
       <div className="relative md:hidden">
-        <div className="h-8 w-8 rounded-full overflow-hidden shrink-0 ring-1 ring-border">
+        <div className="h-10 w-10 rounded-full overflow-hidden shrink-0 ring-1 ring-border">
           <img src={amparaLogo} alt="AMPARA" className="w-full h-full object-cover" />
         </div>
       </div>
