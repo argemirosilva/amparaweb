@@ -150,18 +150,24 @@ export default function WaveformPlayer({ storagePath, sessionToken, markers = []
       style={{ background: "var(--ampara-panel-bg)" }}
     >
       <div className="flex items-center gap-3">
-        {/* Play button */}
+        {/* Play / Stop button */}
         <button
           onClick={toggle}
           disabled={loading}
-          className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center shrink-0 hover:bg-white/20 transition-all disabled:opacity-40 border border-white/10"
+          className={[
+            "w-12 h-12 rounded-full flex items-center justify-center shrink-0 transition-all duration-200 disabled:opacity-40",
+            playing
+              ? "text-white shadow-[0_4px_14px_rgba(109,40,217,0.25)] active:scale-95"
+              : "bg-[#F6F0FF] border border-primary/[0.18] text-primary shadow-[0_4px_12px_rgba(109,40,217,0.10)] hover:shadow-[0_4px_16px_rgba(109,40,217,0.18)] active:scale-95",
+          ].join(" ")}
+          style={playing ? { background: "linear-gradient(135deg, #6D28D9, #D946EF)" } : undefined}
         >
           {loading ? (
-            <Loader2 className="w-5 h-5 text-white animate-spin" />
+            <Loader2 className="w-5 h-5 animate-spin" />
           ) : playing ? (
-            <Pause className="w-5 h-5 text-white" />
+            <Pause className="w-5 h-5" fill="currentColor" />
           ) : (
-            <Play className="w-5 h-5 text-white ml-0.5" />
+            <Play className="w-5 h-5 ml-0.5" fill="currentColor" />
           )}
         </button>
 
