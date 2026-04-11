@@ -236,8 +236,7 @@ serve(async (req) => {
       ext = detected;
     }
 
-    // Normalize non-standard extensions
-    if (ext === "webm") ext = "ogg";
+    // Normalize non-standard extensions (keep webm as-is, Agreggar supports it)
     if (ext === "m4a" || ext === "mp4") ext = "ogg";
 
     // 4. Transcribe via Agreggar API
