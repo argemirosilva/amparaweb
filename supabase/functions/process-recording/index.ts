@@ -123,6 +123,7 @@ async function transcribeAudio(audioBytes: Uint8Array, ext: string): Promise<str
 
 // Dynamic prompt from shared utility
 import { buildAnalysisPrompt, normalizeAnalysisOutput } from "../_shared/buildAnalysisPrompt.ts";
+import { convertWebmToOgg } from "../_shared/webmToOgg.ts";
 
 async function analyzeTranscription(transcricao: string, supabase: any): Promise<{
   resumo: string;
