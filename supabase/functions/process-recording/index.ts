@@ -240,6 +240,22 @@ serve(async (req) => {
     // Normalize non-standard extensions (keep webm as-is, Agreggar supports it)
     if (ext === "m4a" || ext === "mp4") ext = "ogg";
 
+    // Convert WebM → OGG (Agreggar does NOT accept WebM)
+    if (ext === "webm") {
+      console.log("[FORMAT] Converting WebM → OGG Opus...");
+      try {
+        audioBytes = convertWebmToOgg(audioBytes);
+        ext = "ogg";
+        console.log(`[FORMAT] Conversion OK, ${audioBytes.length} bytes`);
+      } catch (convErr) {
+        console.error("[FORMAT] WebM→OGG conversion failed:", convErr);
+        await supabase
+          .from("gravacoes")
+          .update({ status: "erro", erro_processamento: `Erro conversão WebM→OGG: ${convErr.message}` })
+          .eq("id", gravacao_id);
+        return json({ error: "Erro na conversão de formato" }, 500);
+      }
+    }
     // 4. Transcribe via Agreggar API
     console.log(`Starting transcription via Agreggar (format=${ext})...`);
     let transcricao: string;
