@@ -53,6 +53,7 @@ export default function MacroReportCard({
   windowDays?: number;
   onActiveChange?: (active: boolean) => void;
 }) {
+  const navigate = useNavigate();
   const [report, setReport] = useState<MacroReport | null>(null);
   const [loading, setLoading] = useState(false);
   const [loaded, setLoaded] = useState(false);
