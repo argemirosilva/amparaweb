@@ -235,7 +235,7 @@ export default function MacroReportCard({
               )}
             </Button>
           </div>
-          <p className="text-xs text-foreground/90 leading-relaxed">{panorama}</p>
+          <PanoramaWithCitations text={panorama} navigate={navigate} />
         </div>
       )}
 
