@@ -523,6 +523,7 @@ async function computeAggregates(supabase: any, userId: string, windowDays: numb
     distribuicao_fases_ciclo: fasesCiclo,
     transicoes_detectadas: transicoes,
     encurtamento_ciclo: encurtamento,
+    gravacoes_resumos,
     window_start: start.toISOString(),
     window_end: now.toISOString(),
   };
