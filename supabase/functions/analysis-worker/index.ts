@@ -460,6 +460,16 @@ async function computeAggregates(supabase: any, userId: string, windowDays: numb
     fasesCiclo[r.cycle_phase] = (fasesCiclo[r.cycle_phase] || 0) + 1;
     if (oj?.ciclo_violencia?.transicao_detectada) transicoes++;
     if (oj?.ciclo_violencia?.encurtamento_ciclo) encurtamento = true;
+
+    // Collect per-recording summary for panorama citations
+    if (r.recording_id) {
+      gravacoes_resumos.push({
+        id: r.recording_id,
+        data: new Date(r.created_at).toLocaleDateString("pt-BR"),
+        risco: r.risk_level,
+        resumo: (oj?.resumo_contexto || "").slice(0, 120),
+      });
+    }
   }
 
   // Process legacy analyses (not already covered by micro)
