@@ -434,6 +434,9 @@ async function computeAggregates(supabase: any, userId: string, windowDays: numb
   let transicoes = 0, encurtamento = false;
   let totalAnalyzed = 0;
 
+  // Build per-recording summaries for AI to reference
+  const gravacoes_resumos: { id: string; data: string; risco: string; resumo: string }[] = [];
+
   // Process new micro results
   for (const r of (microResults || [])) {
     totalAnalyzed++;
