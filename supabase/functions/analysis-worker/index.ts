@@ -434,6 +434,9 @@ async function computeAggregates(supabase: any, userId: string, windowDays: numb
   let transicoes = 0, encurtamento = false;
   let totalAnalyzed = 0;
 
+  // Build per-recording summaries for AI to reference
+  const gravacoes_resumos: { id: string; data: string; risco: string; resumo: string }[] = [];
+
   // Process new micro results
   for (const r of (microResults || [])) {
     totalAnalyzed++;
@@ -457,6 +460,16 @@ async function computeAggregates(supabase: any, userId: string, windowDays: numb
     fasesCiclo[r.cycle_phase] = (fasesCiclo[r.cycle_phase] || 0) + 1;
     if (oj?.ciclo_violencia?.transicao_detectada) transicoes++;
     if (oj?.ciclo_violencia?.encurtamento_ciclo) encurtamento = true;
+
+    // Collect per-recording summary for panorama citations
+    if (r.recording_id) {
+      gravacoes_resumos.push({
+        id: r.recording_id,
+        data: new Date(r.created_at).toLocaleDateString("pt-BR"),
+        risco: r.risk_level,
+        resumo: (oj?.resumo_contexto || "").slice(0, 120),
+      });
+    }
   }
 
   // Process legacy analyses (not already covered by micro)
@@ -476,6 +489,16 @@ async function computeAggregates(supabase: any, userId: string, windowDays: numb
     }
     const nivel = la.nivel_risco || "sem_risco";
     niveisRisco[nivel] = (niveisRisco[nivel] || 0) + 1;
+
+    // Legacy recording summary
+    if (la.gravacao_id) {
+      gravacoes_resumos.push({
+        id: la.gravacao_id,
+        data: new Date(la.created_at).toLocaleDateString("pt-BR"),
+        risco: nivel,
+        resumo: (la.resumo || "").slice(0, 120),
+      });
+    }
   }
 
   // Also include aggressor's frequent insults
@@ -500,6 +523,7 @@ async function computeAggregates(supabase: any, userId: string, windowDays: numb
     distribuicao_fases_ciclo: fasesCiclo,
     transicoes_detectadas: transicoes,
     encurtamento_ciclo: encurtamento,
+    gravacoes_resumos,
     window_start: start.toISOString(),
     window_end: now.toISOString(),
   };

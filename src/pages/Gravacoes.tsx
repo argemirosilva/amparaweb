@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
 import WhatsAppImportWizard from "@/components/whatsapp/WhatsAppImportWizard";
 import { useIsMobile } from "@/hooks/use-mobile";
 import PullToRefresh from "@/components/ui/pull-to-refresh";
@@ -198,12 +199,13 @@ function getRetentionCountdown(createdAt: string, retencaoDias: number): string 
 export default function GravacoesPage() {
   const { sessionToken } = useAuth();
   const isMobile = useIsMobile();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [gravacoes, setGravacoes] = useState<Gravacao[]>([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [filterRisco, setFilterRisco] = useState<string>("");
-  const [expanded, setExpanded] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<string | null>(searchParams.get("id"));
   const [retencaoDias, setRetencaoDias] = useState<number>(7);
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -213,7 +215,15 @@ export default function GravacoesPage() {
   const [whatsAppOpen, setWhatsAppOpen] = useState(false);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
-  
+
+  // Clean up ?id= search param after initial use
+  useEffect(() => {
+    if (searchParams.has("id")) {
+      searchParams.delete("id");
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const perPage = 15;
 
   useEffect(() => {
