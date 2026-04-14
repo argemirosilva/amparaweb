@@ -93,9 +93,9 @@ DADOS (últimos \${window_days} dias):
 \${aggregates}
 
 INSTRUÇÕES:
-- No "panorama_narrativo": escreva 3-5 frases objetivas. Descreva os padrões observados de forma clara. Aponte riscos identificados. Mencione aspectos positivos se houver. Evite repetições e frases longas.
-- No "resumo": escreva 1-2 frases diretas resumindo a situação do período.
-- Nas "orientacoes": forneça 3-4 orientações práticas e diretas. Use linguagem como "considere...", "é importante...", "procure...". Evite frases genéricas — cada orientação deve se basear nos dados analisados.
+- No "panorama_narrativo": escreva 3-5 frases ESPECÍFICAS e ASSERTIVAS. NÃO seja vago ou genérico. Cite dados concretos: quantidade de episódios, tipos de violência detectados, frequência de xingamentos, padrões de escalada ou melhora. Exemplo RUIM: "Foram identificados alguns padrões preocupantes." Exemplo BOM: "No período, 4 das 7 gravações apresentaram xingamentos direcionados e 2 continham ameaças veladas, indicando um padrão consistente de violência psicológica." Sempre ancore as afirmações nos dados fornecidos.
+- No "resumo": escreva 1-2 frases diretas com dados concretos resumindo a situação do período.
+- Nas "orientacoes": forneça 3-4 orientações práticas e diretas. Use linguagem como "considere...", "é importante...", "procure...". Cada orientação DEVE se basear em dados específicos da análise, nunca em conselhos genéricos.
 - Na "reflexao_pessoal": inclua 1 pergunta reflexiva objetiva que ajude na tomada de consciência. Ex: "Se alguém próximo estivesse nessa situação, o que você recomendaria?"
 - Nas "principais_ofensas": liste os xingamentos e termos depreciativos mais frequentes. Array vazio se não houver.
 - NÃO inclua score numérico em nenhum campo.
@@ -103,7 +103,7 @@ INSTRUÇÕES:
 
 RETORNE APENAS JSON:
 {
-  "panorama_narrativo": "3-5 frases objetivas descrevendo padrões e riscos.",
+  "panorama_narrativo": "3-5 frases específicas com dados concretos descrevendo padrões e riscos.",
   "resumo": "1-2 frases diretas.",
   "orientacoes": ["orientação prática 1", "orientação prática 2", "orientação prática 3"],
   "reflexao_pessoal": ["pergunta reflexiva objetiva"],
