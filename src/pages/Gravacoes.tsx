@@ -215,7 +215,15 @@ export default function GravacoesPage() {
   const [whatsAppOpen, setWhatsAppOpen] = useState(false);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
-  
+
+  // Clean up ?id= search param after initial use
+  useEffect(() => {
+    if (searchParams.has("id")) {
+      searchParams.delete("id");
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const perPage = 15;
 
   useEffect(() => {
