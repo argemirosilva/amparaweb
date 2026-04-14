@@ -489,6 +489,16 @@ async function computeAggregates(supabase: any, userId: string, windowDays: numb
     }
     const nivel = la.nivel_risco || "sem_risco";
     niveisRisco[nivel] = (niveisRisco[nivel] || 0) + 1;
+
+    // Legacy recording summary
+    if (la.gravacao_id) {
+      gravacoes_resumos.push({
+        id: la.gravacao_id,
+        data: new Date(la.created_at).toLocaleDateString("pt-BR"),
+        risco: nivel,
+        resumo: (la.resumo || "").slice(0, 120),
+      });
+    }
   }
 
   // Also include aggressor's frequent insults
