@@ -44,6 +44,52 @@ const ALERTA_CONFIG: Record<string, { color: string; bg: string; border: string;
   critico: { color: "text-red-700", bg: "bg-red-50", border: "border-red-200", label: "Crítico" },
 };
 
+/** Parses [GR:uuid] markers in panorama text and renders clickable links */
+function PanoramaWithCitations({ text, navigate }: { text: string; navigate: (path: string) => void }) {
+  const parts = useMemo(() => {
+    const GR_REGEX = /\[GR:([a-f0-9-]{36})\]/gi;
+    const result: { type: "text" | "link"; value: string; id?: string }[] = [];
+    let lastIndex = 0;
+    let match: RegExpExecArray | null;
+
+    while ((match = GR_REGEX.exec(text)) !== null) {
+      if (match.index > lastIndex) {
+        result.push({ type: "text", value: text.slice(lastIndex, match.index) });
+      }
+      result.push({ type: "link", value: match[0], id: match[1] });
+      lastIndex = GR_REGEX.lastIndex;
+    }
+    if (lastIndex < text.length) {
+      result.push({ type: "text", value: text.slice(lastIndex) });
+    }
+    return result;
+  }, [text]);
+
+  if (parts.every((p) => p.type === "text")) {
+    return <p className="text-xs text-foreground/90 leading-relaxed">{text}</p>;
+  }
+
+  return (
+    <p className="text-xs text-foreground/90 leading-relaxed">
+      {parts.map((part, i) =>
+        part.type === "link" ? (
+          <button
+            key={i}
+            onClick={() => navigate(`/gravacoes?id=${part.id}`)}
+            className="inline-flex items-center gap-0.5 text-primary hover:text-primary/80 underline underline-offset-2 decoration-primary/30 hover:decoration-primary/60 transition-colors font-medium"
+            title="Abrir gravação"
+          >
+            <Play className="w-2.5 h-2.5 inline shrink-0" />
+            ouvir
+          </button>
+        ) : (
+          <span key={i}>{part.value}</span>
+        )
+      )}
+    </p>
+  );
+}
+
 export default function MacroReportCard({
   sessionToken,
   windowDays = 7,
