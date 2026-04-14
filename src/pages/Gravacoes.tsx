@@ -199,12 +199,13 @@ function getRetentionCountdown(createdAt: string, retencaoDias: number): string 
 export default function GravacoesPage() {
   const { sessionToken } = useAuth();
   const isMobile = useIsMobile();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [gravacoes, setGravacoes] = useState<Gravacao[]>([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [filterRisco, setFilterRisco] = useState<string>("");
-  const [expanded, setExpanded] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<string | null>(searchParams.get("id"));
   const [retencaoDias, setRetencaoDias] = useState<number>(7);
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
