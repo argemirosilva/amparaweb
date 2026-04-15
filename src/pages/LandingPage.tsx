@@ -13,7 +13,7 @@ import {
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import amparaLogo from "@/assets/ampara-logo-transparent.png";
-import heroWoman from "@/assets/hero-woman.png";
+import heroWoman from "@/assets/login-illustration.png";
 import partnerFacimus from "@/assets/partner-facimus.png";
 import partnerHpe from "@/assets/partner-hpe.svg";
 import partnerOrizon from "@/assets/orizon-tech-logo.png";
