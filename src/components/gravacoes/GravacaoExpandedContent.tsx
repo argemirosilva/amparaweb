@@ -5,7 +5,13 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-import { FileText, Trash2, MessageCircle, RotateCcw, Download } from "lucide-react";
+import { FileText, Trash2, MessageCircle, RotateCcw, Download, Volume2, FileWarning, ChevronDown } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -380,18 +386,39 @@ function SupportShortcut({ gravacao }: { gravacao: Gravacao }) {
   const navigate = useNavigate();
   const label = `Gravação ${new Date(gravacao.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })} ${new Date(gravacao.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`;
 
+  const baseParams = `resource_type=recording&resource_id=${gravacao.id}&resource_label=${encodeURIComponent(label)}`;
+
+  const options = [
+    { icon: Volume2, label: "Problema com o áudio", category: "playback", preMessage: "Estou com problema na reprodução do áudio desta gravação." },
+    { icon: FileText, label: "Problema com a transcrição", category: "transcription_question", preMessage: "A transcrição desta gravação apresenta problemas." },
+    { icon: FileWarning, label: "Problema com download", category: "app_issue", preMessage: "Não consigo baixar o arquivo desta gravação." },
+  ];
+
   return (
-    <Button
-      variant="ghost"
-      size="sm"
-      className="text-xs gap-1 text-muted-foreground hover:text-primary"
-      onClick={(e) => {
-        e.stopPropagation();
-        navigate(`/support/new?category=recording_question&resource_type=recording&resource_id=${gravacao.id}&resource_label=${encodeURIComponent(label)}`);
-      }}
-    >
-      <MessageCircle className="w-3.5 h-3.5" />
-      Pedir suporte
-    </Button>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-xs gap-1 text-muted-foreground hover:text-primary"
+        >
+          <MessageCircle className="w-3.5 h-3.5" />
+          Pedir suporte
+          <ChevronDown className="w-3 h-3" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+        {options.map((opt) => (
+          <DropdownMenuItem
+            key={opt.category}
+            className="gap-2 text-xs cursor-pointer"
+            onClick={() => navigate(`/support/new?category=${opt.category}&${baseParams}&pre_message=${encodeURIComponent(opt.preMessage)}`)}
+          >
+            <opt.icon className="w-3.5 h-3.5" />
+            {opt.label}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
