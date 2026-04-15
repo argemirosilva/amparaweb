@@ -1,7 +1,9 @@
-import { useState, useEffect } from "react";
-import { Save, RotateCcw, BrainCircuit, Zap, FileText, BarChart3 } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { Save, RotateCcw, Zap, FileText, BarChart3, Eye, Pencil, WrapText, Type, Hash, AlignLeft, Copy, Check } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -18,31 +20,39 @@ async function callAdminApi(action: string, sessionToken: string, params: Record
 interface PromptConfig {
   key: string;
   label: string;
+  shortLabel: string;
   description: string;
   icon: React.ElementType;
   placeholder: string;
+  color: string;
 }
 
 const PROMPTS: PromptConfig[] = [
   {
     key: "ia_prompt_triagem",
     label: "Triagem Rápida",
+    shortLabel: "Triagem",
     description: "Prompt leve e rápido para classificar risco (seguro/moderado/alto/critico) e extrair contexto de emergência. Usa modelo Flash-Lite para máxima velocidade.",
     icon: Zap,
-    placeholder: `Analise a transcrição abaixo e classifique o nível de risco de violência doméstica.\nRetorne APENAS JSON:\n{"resultado":"seguro|moderado|alto|critico","motivo":"justificativa curta","contexto_emergencia":{"ameaca_morte":false,"agressao_fisica":false,"agressao_em_curso":false,"ameaca_agressao_fisica":false,"pedido_socorro":false,"mencao_arma":false,"descricao_curta":""}}\n\nRegras para resultado:\n- "seguro": silêncio, assunto cotidiano\n- "moderado": tensão verbal, sem ameaça direta\n- "alto": ameaças, gritos intensos, agressão verbal\n- "critico": violência iminente, socorro, menção a armas\n\ncontexto_emergencia: flags booleanos + descricao_curta (1 frase para notificações)`,
+    color: "text-yellow-500",
+    placeholder: "Prompt de classificação rápida de risco...",
   },
   {
     key: "ia_prompt_analise",
     label: "Análise MICRO (Individual)",
+    shortLabel: "MICRO",
     description: "Prompt completo para análise individual de cada gravação/conversa. Identifica tipos de violência, táticas manipulativas, ciclo de violência e gera orientações.",
     icon: FileText,
+    color: "text-blue-500",
     placeholder: "Deixe vazio para usar o prompt dinâmico padrão (construído a partir da tabela Tipos de Alerta)",
   },
   {
     key: "ia_prompt_macro",
     label: "Análise MACRO (Relatório Agregado)",
+    shortLabel: "MACRO",
     description: "Prompt para gerar o relatório consolidado ('Como estou?'). Recebe dados agregados de múltiplas análises e produz panorama narrativo, orientações e reflexões.",
     icon: BarChart3,
+    color: "text-emerald-500",
     placeholder: "Deixe vazio para usar o prompt padrão do sistema",
   },
 ];
@@ -53,12 +63,143 @@ interface Setting {
   valor: string;
 }
 
+/* ── Prompt stats helper ── */
+function usePromptStats(text: string) {
+  return useMemo(() => {
+    if (!text) return { chars: 0, words: 0, lines: 0, sections: 0 };
+    const chars = text.length;
+    const words = text.split(/\s+/).filter(Boolean).length;
+    const lines = text.split("\n").length;
+    const sections = text.split(/\n\n+/).filter((s) => s.trim()).length;
+    return { chars, words, lines, sections };
+  }, [text]);
+}
+
+/* ── Section highlight for preview ── */
+function PromptPreview({ text }: { text: string }) {
+  if (!text) return <p className="text-sm text-muted-foreground italic py-8 text-center">Prompt vazio - usando prompt padrão do sistema</p>;
+
+  const sections = text.split(/\n\n+/);
+  return (
+    <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
+      {sections.map((section, i) => {
+        const trimmed = section.trim();
+        if (!trimmed) return null;
+
+        // Detect if it's a JSON block
+        const isJson = trimmed.startsWith("{") || trimmed.startsWith("[");
+        // Detect if it's a header-like line (all caps or ends with :)
+        const firstLine = trimmed.split("\n")[0];
+        const isHeader = /^[A-ZÁÉÍÓÚÃÕÇ\s()/:]+:?$/.test(firstLine.trim()) || firstLine.trim().endsWith(":");
+
+        if (isJson) {
+          return (
+            <div key={i} className="rounded-md border border-border bg-muted/30 p-3">
+              <Badge variant="outline" className="mb-2 text-[10px]">JSON Schema</Badge>
+              <pre className="text-xs font-mono text-foreground/80 whitespace-pre-wrap break-words">{trimmed}</pre>
+            </div>
+          );
+        }
+
+        return (
+          <div key={i} className="rounded-md border border-border/50 p-3">
+            {isHeader && (
+              <div className="text-[10px] font-semibold text-primary/70 uppercase tracking-wider mb-1">
+                Seção {i + 1}
+              </div>
+            )}
+            <div className="text-xs text-foreground/90 whitespace-pre-wrap leading-relaxed">{trimmed}</div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ── Tab panel sub-component (hooks safe) ── */
+function PromptTabPanel({
+  config, setting, value, modified, mode, saving, copied,
+  onEdit, onUndo, onSave, onCopy, onSetMode,
+}: {
+  config: PromptConfig; setting?: Setting; value: string; modified: boolean;
+  mode: "edit" | "preview"; saving: boolean; copied: boolean;
+  onEdit: (v: string) => void; onUndo: () => void; onSave: () => void;
+  onCopy: () => void; onSetMode: (m: "edit" | "preview") => void;
+}) {
+  const Icon = config.icon;
+  const stats = usePromptStats(value);
+
+  return (
+    <div className="rounded-lg border border-border bg-card/50 overflow-hidden">
+      <div className="px-4 py-3 bg-muted/30 flex items-center gap-2 border-b border-border/50">
+        <Icon className={`w-4 h-4 ${config.color}`} />
+        <h3 className="text-sm font-semibold text-foreground flex-1">{config.label}</h3>
+        <div className="flex items-center gap-1">
+          <button onClick={() => onSetMode("edit")} className={`p-1.5 rounded transition-colors ${mode === "edit" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground"}`} title="Editar">
+            <Pencil className="w-3.5 h-3.5" />
+          </button>
+          <button onClick={() => onSetMode("preview")} className={`p-1.5 rounded transition-colors ${mode === "preview" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground"}`} title="Visualizar">
+            <Eye className="w-3.5 h-3.5" />
+          </button>
+          <button onClick={onCopy} className="p-1.5 rounded text-muted-foreground hover:text-foreground transition-colors" title="Copiar prompt">
+            {copied ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
+          </button>
+        </div>
+      </div>
+
+      <div className="px-4 pt-3">
+        <p className="text-xs text-muted-foreground">{config.description}</p>
+      </div>
+
+      <div className="p-4">
+        {mode === "edit" ? (
+          <textarea
+            className="w-full min-h-[45vh] text-xs font-mono rounded-md border border-border px-3 py-2 bg-background text-foreground resize-y outline-none focus:ring-1 focus:ring-primary/40 leading-relaxed"
+            placeholder={config.placeholder}
+            value={value}
+            onChange={(e) => onEdit(e.target.value)}
+            spellCheck={false}
+          />
+        ) : (
+          <PromptPreview text={value} />
+        )}
+      </div>
+
+      <div className="px-4 py-2.5 bg-muted/20 border-t border-border/50 flex items-center gap-3 flex-wrap">
+        <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+          <span className="flex items-center gap-1"><Hash className="w-3 h-3" />{stats.chars.toLocaleString()} chars</span>
+          <span className="flex items-center gap-1"><Type className="w-3 h-3" />{stats.words} palavras</span>
+          <span className="flex items-center gap-1"><WrapText className="w-3 h-3" />{stats.lines} linhas</span>
+          <span className="flex items-center gap-1"><AlignLeft className="w-3 h-3" />{stats.sections} seções</span>
+        </div>
+        <div className="flex items-center gap-2 ml-auto">
+          {value.trim() === "" && <span className="text-[10px] text-muted-foreground italic">Usando prompt padrão</span>}
+          {modified && (
+            <>
+              <button onClick={onUndo} className="flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-medium text-muted-foreground hover:bg-muted transition-colors">
+                <RotateCcw className="w-3 h-3" /> Desfazer
+              </button>
+              <button onClick={onSave} disabled={saving} className="flex items-center gap-1 px-3 py-1 rounded text-[11px] font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50">
+                <Save className="w-3 h-3" /> Salvar
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Main component ── */
 export default function AdminPromptsIA() {
   const { sessionToken } = useAuth();
   const [settings, setSettings] = useState<Setting[]>([]);
   const [edited, setEdited] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState(PROMPTS[0].key);
+  const [viewMode, setViewMode] = useState<Record<string, "edit" | "preview">>({});
+  const [copied, setCopied] = useState(false);
 
   async function load() {
     if (!sessionToken) return;
@@ -90,6 +231,10 @@ export default function AdminPromptsIA() {
     return edited[s.id] !== undefined && edited[s.id] !== s.valor;
   }
 
+  function getMode(key: string): "edit" | "preview" {
+    return viewMode[key] || "edit";
+  }
+
   async function handleSave(key: string) {
     const s = getSetting(key);
     if (!s || !sessionToken) return;
@@ -102,56 +247,60 @@ export default function AdminPromptsIA() {
     else toast.error(data.error || "Erro ao salvar");
   }
 
+  async function handleCopy(key: string) {
+    const value = getValue(key);
+    if (!value) return;
+    await navigator.clipboard.writeText(value);
+    setCopied(true);
+    toast.success("Prompt copiado");
+    setTimeout(() => setCopied(false), 2000);
+  }
+
   if (loading) return <p className="text-sm text-muted-foreground py-4">Carregando prompts...</p>;
 
   return (
-    <div className="space-y-5">
-      {PROMPTS.map((p) => {
-        const Icon = p.icon;
-        const s = getSetting(p.key);
-        const value = getValue(p.key);
-        const modified = isModified(p.key);
+    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <TabsList className="w-full grid grid-cols-3 mb-4">
+        {PROMPTS.map((p) => {
+          const Icon = p.icon;
+          const modified = isModified(p.key);
+          return (
+            <TabsTrigger key={p.key} value={p.key} className="flex items-center gap-1.5 text-xs relative">
+              <Icon className={`w-3.5 h-3.5 ${p.color}`} />
+              <span className="hidden sm:inline">{p.shortLabel}</span>
+              <span className="sm:hidden">{p.shortLabel}</span>
+              {modified && (
+                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-primary" />
+              )}
+            </TabsTrigger>
+          );
+        })}
+      </TabsList>
 
-        return (
-          <div key={p.key} className="rounded-lg border border-border bg-card/50 overflow-hidden">
-            <div className="px-4 py-3 bg-muted/30 flex items-center gap-2">
-              <Icon className="w-4 h-4 text-primary" />
-              <h3 className="text-sm font-semibold text-foreground">{p.label}</h3>
-            </div>
-            <div className="p-4 space-y-3">
-              <p className="text-xs text-muted-foreground">{p.description}</p>
-              <textarea
-                className="w-full min-h-[140px] text-xs font-mono rounded-md border border-border px-3 py-2 bg-background text-foreground resize-y outline-none focus:ring-1 focus:ring-primary/40"
-                placeholder={p.placeholder}
-                value={value}
-                onChange={(e) => s && setEdited((prev) => ({ ...prev, [s.id]: e.target.value }))}
-              />
-              <div className="flex items-center gap-2">
-                {modified && (
-                  <>
-                    <button
-                      onClick={() => s && setEdited((prev) => { const c = { ...prev }; delete c[s.id]; return c; })}
-                      className="flex items-center gap-1 px-3 py-1.5 rounded text-xs font-medium text-muted-foreground hover:bg-muted transition-colors"
-                    >
-                      <RotateCcw className="w-3.5 h-3.5" /> Desfazer
-                    </button>
-                    <button
-                      onClick={() => handleSave(p.key)}
-                      disabled={saving === p.key}
-                      className="flex items-center gap-1 px-3 py-1.5 rounded text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
-                    >
-                      <Save className="w-3.5 h-3.5" /> Salvar
-                    </button>
-                  </>
-                )}
-                {value.trim() === "" && (
-                  <span className="text-xs text-muted-foreground italic ml-auto">Usando prompt padrão do sistema</span>
-                )}
-              </div>
-            </div>
-          </div>
-        );
-      })}
-    </div>
+      {PROMPTS.map((p) => (
+        <TabsContent key={p.key} value={p.key} className="mt-0">
+          <PromptTabPanel
+            config={p}
+            setting={getSetting(p.key)}
+            value={getValue(p.key)}
+            modified={isModified(p.key)}
+            mode={getMode(p.key)}
+            saving={saving === p.key}
+            copied={copied}
+            onEdit={(val) => {
+              const s = getSetting(p.key);
+              if (s) setEdited((prev) => ({ ...prev, [s.id]: val }));
+            }}
+            onUndo={() => {
+              const s = getSetting(p.key);
+              if (s) setEdited((prev) => { const c = { ...prev }; delete c[s.id]; return c; });
+            }}
+            onSave={() => handleSave(p.key)}
+            onCopy={() => handleCopy(p.key)}
+            onSetMode={(m) => setViewMode((prev) => ({ ...prev, [p.key]: m }))}
+          />
+        </TabsContent>
+      ))}
+    </Tabs>
   );
 }
