@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMapbox } from "@/hooks/useMapbox";
-import { X, MapPin, Smartphone, RefreshCw, TrendingUp, TrendingDown, Minus, Mic, Clock } from "lucide-react";
+import { X, MapPin, Smartphone, RefreshCw, TrendingUp, TrendingDown, Minus, Mic, Clock, Search } from "lucide-react";
 
 const fontStyle = { fontFamily: "Inter, Roboto, sans-serif" };
 
