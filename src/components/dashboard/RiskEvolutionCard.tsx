@@ -242,7 +242,7 @@ export default function RiskEvolutionCard() {
               )}
             </>
           ) : (
-            <p className="text-sm text-muted-foreground">Nenhuma avaliação disponível.</p>
+            <p className="text-sm text-muted-foreground">Ainda não tenho dados para avaliar seu risco.</p>
           )}
       </div>
     </div>

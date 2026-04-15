@@ -418,3 +418,9 @@ html, body, #root {
   0% { transform: scale(1); opacity: 0.6; }
   100% { transform: scale(1.8); opacity: 0; }
 }
+
+/* Ampara breathing animation */
+@keyframes ampara-breathe {
+  0%, 100% { transform: scale(1); opacity: 0.4; }
+  50% { transform: scale(1.15); opacity: 0; }
+}
