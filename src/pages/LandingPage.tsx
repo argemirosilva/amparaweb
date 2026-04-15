@@ -230,19 +230,17 @@ export default function LandingPage() {
       </header>
 
       {/* ══════ HERO ══════ */}
-      <section className="relative overflow-hidden min-h-[420px] md:min-h-[520px] bg-background">
+      <section className="relative overflow-hidden min-h-[420px] md:min-h-[520px] bg-background" style={{ paddingBottom: 0 }}>
 
         {/* Floating hero image - desktop */}
         <img
           src={heroWoman}
           alt=""
           aria-hidden="true"
-          className="hidden md:block absolute right-0 bottom-0 h-[90%] w-auto object-contain pointer-events-none select-none opacity-[0.85]"
+          className="hidden md:block absolute right-0 bottom-0 w-[55%] h-auto object-contain object-right-bottom pointer-events-none select-none opacity-[0.85]"
           style={{
-            maskImage: 'linear-gradient(to left, transparent 0%, black 18%, black 65%, transparent 100%), linear-gradient(to top, transparent 0%, black 15%, black 100%)',
-            WebkitMaskImage: 'linear-gradient(to left, transparent 0%, black 18%, black 65%, transparent 100%), linear-gradient(to top, transparent 0%, black 15%, black 100%)',
-            maskComposite: 'intersect',
-            WebkitMaskComposite: 'source-in',
+            maskImage: 'linear-gradient(to left, transparent 0%, black 20%, black 70%, transparent 100%)',
+            WebkitMaskImage: 'linear-gradient(to left, transparent 0%, black 20%, black 70%, transparent 100%)',
           }}
         />
 
