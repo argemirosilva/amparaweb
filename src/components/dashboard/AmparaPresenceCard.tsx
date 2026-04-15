@@ -35,16 +35,17 @@ export default function AmparaPresenceCard() {
 
   return (
     <div className="flex items-center gap-3 px-1 py-2">
-      {/* Ampara avatar with breathing animation */}
+      {/* Ampara presence orb */}
       <div className="relative shrink-0">
         <div
-          className={`w-11 h-11 rounded-full overflow-hidden ring-2 transition-all duration-1000 ${
+          className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-1000 ${
             isActive
-              ? "ring-primary/30 shadow-[0_0_12px_hsl(263_70%_50%/0.15)]"
-              : "ring-border"
+              ? "shadow-[0_0_16px_hsl(263_70%_50%/0.2)]"
+              : ""
           }`}
+          style={{ background: "var(--ampara-gradient)" }}
         >
-          <img src={amparaLogo} alt="Ampara" className="w-full h-full object-cover" />
+          <span className="text-primary-foreground text-sm font-bold">A</span>
         </div>
         {/* Breathing pulse ring */}
         {isActive && (
