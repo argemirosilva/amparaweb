@@ -133,11 +133,23 @@ const tooltipStyle = {
 interface AlertMarker {
   id: string; lat: number; lng: number; status: string;
   protocolo: string | null; criado_em: string; userName: string;
+  bairro: string; cidade: string; uf: string;
 }
 
 interface DeviceMarker {
   id: string; lat: number; lng: number; status: string;
   userName: string; bateria: number | null; lastPing: string | null; isMonitoring: boolean;
+  bairro: string; cidade: string; uf: string;
+}
+
+interface BairroCluster {
+  key: string; bairro: string; cidade: string; uf: string;
+  lat: number; lng: number; count: number; online: number; monitoring: number; hasAlert: boolean;
+}
+
+interface AlertCluster {
+  key: string; bairro: string; cidade: string; uf: string;
+  lat: number; lng: number; count: number;
 }
 
 interface UfStats { usuarios: number; online: number; alertas: number; monitorando: number; gravacoes: number; horasGravacao: number; }
