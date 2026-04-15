@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMapbox } from "@/hooks/useMapbox";
 import { X, MapPin, Smartphone, RefreshCw, TrendingUp, TrendingDown, Minus, Mic, Clock } from "lucide-react";
@@ -48,11 +48,18 @@ interface DeviceItem {
   lastPing: string | null;
   isMonitoring: boolean;
   deviceInfo: string | null;
+  bairro: string;
+  cidade: string;
+  uf: string;
+}
+
+interface BairroCluster {
+  key: string; bairro: string; cidade: string; uf: string;
+  lat: number; lng: number; count: number; online: number; monitoring: number;
 }
 
 type SelectedItem =
-  | { type: "uf"; uf: string; stats: UfStats }
-  | { type: "device"; data: DeviceItem };
+  | { type: "uf"; uf: string; stats: UfStats };
 
 const cardStyle = { background: "hsl(0 0% 100%)", borderColor: "hsl(220 13% 91%)" };
 const titleStyle = { color: "hsl(220 13% 18%)" };
@@ -108,7 +115,7 @@ export default function DashboardMapCard() {
     const midpoint = new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString();
 
     const [{ data: users }, { data: deviceData }, { data: alertData }, { data: locations }, { data: eventosData }, { data: gravacoesData }] = await Promise.all([
-      supabase.from("usuarios").select("id, nome_completo, endereco_uf, endereco_lat, endereco_lon, status"),
+      supabase.from("usuarios").select("id, nome_completo, endereco_uf, endereco_cidade, endereco_bairro, endereco_lat, endereco_lon, status"),
       supabase.from("device_status").select("*").order("updated_at", { ascending: false }),
       supabase.from("alertas_panico").select("*").gte("criado_em", since).order("criado_em", { ascending: false }).limit(200),
       supabase.from("localizacoes").select("user_id, latitude, longitude, created_at").gte("created_at", since).order("created_at", { ascending: false }).limit(200),
@@ -116,9 +123,9 @@ export default function DashboardMapCard() {
       supabase.from("gravacoes").select("user_id, created_at, duracao_segundos").gte("created_at", since),
     ]);
 
-    const userMap: Record<string, { nome: string; uf: string; lat: number | null; lng: number | null }> = {};
+    const userMap: Record<string, { nome: string; uf: string; cidade: string; bairro: string; lat: number | null; lng: number | null }> = {};
     (users || []).forEach((u) => {
-      userMap[u.id] = { nome: u.nome_completo, uf: u.endereco_uf || "", lat: u.endereco_lat, lng: u.endereco_lon };
+      userMap[u.id] = { nome: u.nome_completo, uf: u.endereco_uf || "", cidade: u.endereco_cidade || "", bairro: u.endereco_bairro || "", lat: u.endereco_lat, lng: u.endereco_lon };
     });
 
     // UF stats
@@ -223,6 +230,7 @@ export default function DashboardMapCard() {
           id: d.id, lat: loc?.lat || user?.lat || 0, lng: loc?.lng || user?.lng || 0,
           status: d.status, userName: user?.nome || "-", bateria: d.bateria_percentual,
           lastPing: d.last_ping_at, isMonitoring: d.is_monitoring, deviceInfo: d.dispositivo_info,
+          bairro: user?.bairro || "", cidade: user?.cidade || "", uf: user?.uf || "",
         };
       }).filter(Boolean) as DeviceItem[]
     );
@@ -446,21 +454,49 @@ export default function DashboardMapCard() {
     }
   }, [geojson, stats, ufTrends, recTrends, mapLoaded, totalEventos]);
 
-  // Markers
+  // Build bairro clusters
+  const bairroClusters = useMemo((): BairroCluster[] => {
+    const groups: Record<string, DeviceItem[]> = {};
+    devices.forEach((d) => {
+      const key = d.bairro && d.cidade && d.uf
+        ? `${d.bairro}|${d.cidade}|${d.uf}`
+        : d.cidade && d.uf
+          ? `_cidade|${d.cidade}|${d.uf}`
+          : `_individual|${d.id}`;
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(d);
+    });
+    return Object.entries(groups).map(([key, devs]) => {
+      const avgLat = Math.round((devs.reduce((s, d) => s + d.lat, 0) / devs.length) * 1000) / 1000;
+      const avgLng = Math.round((devs.reduce((s, d) => s + d.lng, 0) / devs.length) * 1000) / 1000;
+      const first = devs[0];
+      return {
+        key, bairro: first.bairro, cidade: first.cidade, uf: first.uf,
+        lat: avgLat, lng: avgLng, count: devs.length,
+        online: devs.filter(d => d.status === "online").length,
+        monitoring: devs.filter(d => d.isMonitoring).length,
+      };
+    });
+  }, [devices]);
+
+  // Markers (bairro clusters)
   useEffect(() => {
     const map = mapRef.current; const mbgl = mapboxglInstance;
     if (!map || !mbgl || !mapLoaded) return;
     markersRef.current.forEach((m) => m.remove()); markersRef.current = [];
 
-    devices.forEach((d) => {
-      const isOnline = d.status === "online";
+    bairroClusters.forEach((c) => {
+      const size = Math.min(12 + c.count * 3, 36);
+      const bgColor = c.online > c.count / 2 ? "hsl(142,71%,35%)" : "hsl(220,9%,60%)";
       const el = document.createElement("div");
-      el.style.cssText = `width:8px;height:8px;border-radius:50%;background:${isOnline ? "hsl(142,71%,35%)" : "hsl(220,9%,60%)"};border:1px solid white;box-shadow:0 0 2px rgba(0,0,0,0.15);cursor:pointer`;
-      el.addEventListener("click", (e) => { e.stopPropagation(); setSelected({ type: "device", data: d }); });
-      const marker = new mbgl.Marker({ element: el }).setLngLat([d.lng, d.lat]).addTo(map);
+      el.style.cssText = `width:${size}px;height:${size}px;border-radius:50%;background:${bgColor};border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.2);display:flex;align-items:center;justify-content:center;color:white;font-family:Inter,sans-serif;font-size:${size > 16 ? '10' : '0'}px;font-weight:700`;
+      if (c.count > 1 && size > 16) el.textContent = String(c.count);
+      const label = c.bairro || c.cidade || "Região";
+      el.title = `${label}${c.cidade && c.bairro ? ` - ${c.cidade}` : ""} - ${c.count} usuária${c.count > 1 ? "s" : ""}`;
+      const marker = new mbgl.Marker({ element: el }).setLngLat([c.lng, c.lat]).addTo(map);
       markersRef.current.push(marker);
     });
-  }, [devices, mapLoaded, mapboxglInstance]);
+  }, [bairroClusters, mapLoaded, mapboxglInstance]);
 
   return (
     <div className="rounded-md border relative overflow-hidden" style={cardStyle}>
@@ -527,21 +563,19 @@ export default function DashboardMapCard() {
         </div>
       </div>
 
-      {/* Detail drawer */}
-      {selected && (
+      {/* Detail drawer - UF only */}
+      {selected && selected.type === "uf" && (
         <div
           className="absolute bottom-0 left-0 right-0 z-20 border-t px-4 py-4 animate-in slide-in-from-bottom-4 duration-200"
           style={{ background: "hsl(0 0% 100%)", borderColor: "hsl(220 13% 91%)" }}
         >
           <div className="flex items-start justify-between mb-3">
             <div className="flex items-center gap-2">
-              {selected.type === "uf" && <MapPin className="w-4 h-4" style={{ color: "hsl(207 89% 48%)" }} />}
-              {selected.type === "device" && <Smartphone className="w-4 h-4" style={{ color: "hsl(142 71% 35%)" }} />}
+              <MapPin className="w-4 h-4" style={{ color: "hsl(207 89% 48%)" }} />
               <span className="text-sm font-semibold" style={titleStyle}>
-                {selected.type === "uf" && `${UF_TO_STATE_NAME[selected.uf] || selected.uf} (${selected.uf})`}
-                {selected.type === "device" && selected.data.userName}
+                {`${UF_TO_STATE_NAME[selected.uf] || selected.uf} (${selected.uf})`}
               </span>
-              {selected.type === "uf" && recTrends[selected.uf] && recTrends[selected.uf].trend !== "stable" && (
+              {recTrends[selected.uf] && recTrends[selected.uf].trend !== "stable" && (
                 <span className="flex items-center gap-1 text-xs font-bold" style={{ color: recTrends[selected.uf].trend === "up" ? "#16a34a" : "#dc2626" }}>
                   {recTrends[selected.uf].trend === "up" ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
                   {recTrends[selected.uf].pct}%
@@ -553,56 +587,34 @@ export default function DashboardMapCard() {
             </button>
           </div>
 
-          {selected.type === "uf" && (
-            <>
-              <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 mb-3">
-                {[
-                  { label: "Gravações", value: selected.stats.gravacoes, color: "hsl(207 89% 48%)", icon: "🎙" },
-                  { label: "Horas áudio", value: `${selected.stats.horasGravacao}h`, color: "hsl(262 60% 50%)", icon: "⏱" },
-                  { label: "Monitoradas", value: selected.stats.usuarios, color: "hsl(220 13% 18%)", icon: "" },
-                  { label: "Eventos", value: selected.stats.eventos, color: "hsl(45 93% 47%)", icon: "" },
-                  { label: "Emergências", value: selected.stats.emergencias, color: "hsl(0 72% 51%)", icon: "" },
-                  { label: "Online", value: selected.stats.online, color: "hsl(142 71% 35%)", icon: "" },
-                ].map((item) => (
-                  <div key={item.label} className="rounded-md border px-3 py-2" style={{ borderColor: "hsl(220 13% 91%)" }}>
-                    <p className="text-[10px] mb-0.5" style={subtitleStyle}>{item.icon} {item.label}</p>
-                    <p className="text-lg font-bold" style={{ color: item.color }}>{item.value}</p>
-                  </div>
-                ))}
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 mb-3">
+            {[
+              { label: "Gravações", value: selected.stats.gravacoes, color: "hsl(207 89% 48%)", icon: "🎙" },
+              { label: "Horas áudio", value: `${selected.stats.horasGravacao}h`, color: "hsl(262 60% 50%)", icon: "⏱" },
+              { label: "Monitoradas", value: selected.stats.usuarios, color: "hsl(220 13% 18%)", icon: "" },
+              { label: "Eventos", value: selected.stats.eventos, color: "hsl(45 93% 47%)", icon: "" },
+              { label: "Emergências", value: selected.stats.emergencias, color: "hsl(0 72% 51%)", icon: "" },
+              { label: "Online", value: selected.stats.online, color: "hsl(142 71% 35%)", icon: "" },
+            ].map((item) => (
+              <div key={item.label} className="rounded-md border px-3 py-2" style={{ borderColor: "hsl(220 13% 91%)" }}>
+                <p className="text-[10px] mb-0.5" style={subtitleStyle}>{item.icon} {item.label}</p>
+                <p className="text-lg font-bold" style={{ color: item.color }}>{item.value}</p>
               </div>
-              {selected.stats.eventos > 0 && (
-                <div className="flex items-center gap-3 text-[10px]" style={subtitleStyle}>
-                  <span className="font-semibold uppercase tracking-wider">Gravidade:</span>
-                  {[
-                    { label: "Baixo", value: selected.stats.baixo, bg: "#4ade80" },
-                    { label: "Médio", value: selected.stats.medio, bg: "#facc15" },
-                    { label: "Alto", value: selected.stats.alto, bg: "#f97316" },
-                    { label: "Crítico", value: selected.stats.critico, bg: "#dc2626" },
-                  ].map((s) => (
-                    <span key={s.label} className="flex items-center gap-1">
-                      <span className="inline-block w-2 h-2 rounded-sm" style={{ background: s.bg }} />
-                      {s.label}: <b style={titleStyle}>{s.value}</b>
-                    </span>
-                  ))}
-                </div>
-              )}
-            </>
-          )}
-
-          {selected.type === "device" && (
-            <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+            ))}
+          </div>
+          {selected.stats.eventos > 0 && (
+            <div className="flex items-center gap-3 text-[10px]" style={subtitleStyle}>
+              <span className="font-semibold uppercase tracking-wider">Gravidade:</span>
               {[
-                { label: "Usuária", value: selected.data.userName },
-                { label: "Status", value: selected.data.status === "online" ? "🟢 Online" : "⚫ Offline" },
-                { label: "Monitorando", value: selected.data.isMonitoring ? "Sim" : "Não" },
-                { label: "Bateria", value: selected.data.bateria != null ? `${selected.data.bateria}%` : "-" },
-                { label: "Último ping", value: selected.data.lastPing ? new Date(selected.data.lastPing).toLocaleString("pt-BR") : "-" },
-                { label: "Dispositivo", value: selected.data.deviceInfo || "-" },
-              ].map((f) => (
-                <div key={f.label}>
-                  <p className="text-[10px] font-medium" style={subtitleStyle}>{f.label}</p>
-                  <p className="text-xs font-medium" style={titleStyle}>{f.value}</p>
-                </div>
+                { label: "Baixo", value: selected.stats.baixo, bg: "#4ade80" },
+                { label: "Médio", value: selected.stats.medio, bg: "#facc15" },
+                { label: "Alto", value: selected.stats.alto, bg: "#f97316" },
+                { label: "Crítico", value: selected.stats.critico, bg: "#dc2626" },
+              ].map((s) => (
+                <span key={s.label} className="flex items-center gap-1">
+                  <span className="inline-block w-2 h-2 rounded-sm" style={{ background: s.bg }} />
+                  {s.label}: <b style={titleStyle}>{s.value}</b>
+                </span>
               ))}
             </div>
           )}

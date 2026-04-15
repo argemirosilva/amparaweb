@@ -133,11 +133,23 @@ const tooltipStyle = {
 interface AlertMarker {
   id: string; lat: number; lng: number; status: string;
   protocolo: string | null; criado_em: string; userName: string;
+  bairro: string; cidade: string; uf: string;
 }
 
 interface DeviceMarker {
   id: string; lat: number; lng: number; status: string;
   userName: string; bateria: number | null; lastPing: string | null; isMonitoring: boolean;
+  bairro: string; cidade: string; uf: string;
+}
+
+interface BairroCluster {
+  key: string; bairro: string; cidade: string; uf: string;
+  lat: number; lng: number; count: number; online: number; monitoring: number; hasAlert: boolean;
+}
+
+interface AlertCluster {
+  key: string; bairro: string; cidade: string; uf: string;
+  lat: number; lng: number; count: number;
 }
 
 interface UfStats { usuarios: number; online: number; alertas: number; monitorando: number; gravacoes: number; horasGravacao: number; }
@@ -243,7 +255,7 @@ export default function AdminMapa() {
     const [
       { data: users }, { data: deviceData }, { data: alertData }, { data: locations },
     ] = await Promise.all([
-      supabase.from("usuarios").select("id, nome_completo, endereco_uf, endereco_cidade, endereco_lat, endereco_lon, status"),
+      supabase.from("usuarios").select("id, nome_completo, endereco_uf, endereco_cidade, endereco_bairro, endereco_lat, endereco_lon, status"),
       supabase.from("device_status").select("*").order("updated_at", { ascending: false }),
       supabase.from("alertas_panico").select("*").eq("status", "ativo").order("criado_em", { ascending: false }).limit(50),
       supabase.from("localizacoes").select("user_id, latitude, longitude, created_at").gte("created_at", since).order("created_at", { ascending: false }).limit(200),
@@ -253,8 +265,8 @@ export default function AdminMapa() {
       supabase.from("gravacoes").select("user_id, created_at, duracao_segundos").gte("created_at", since).range(from, to)
     );
 
-    const userMap: Record<string, { nome: string; uf: string; cidade: string; lat: number | null; lng: number | null }> = {};
-    (users || []).forEach((u) => { userMap[u.id] = { nome: u.nome_completo, uf: u.endereco_uf || "", cidade: u.endereco_cidade || "", lat: u.endereco_lat, lng: u.endereco_lon }; });
+    const userMap: Record<string, { nome: string; uf: string; cidade: string; bairro: string; lat: number | null; lng: number | null }> = {};
+    (users || []).forEach((u) => { userMap[u.id] = { nome: u.nome_completo, uf: u.endereco_uf || "", cidade: u.endereco_cidade || "", bairro: u.endereco_bairro || "", lat: u.endereco_lat, lng: u.endereco_lon }; });
 
     const ufStats: StatsMap = {};
     const munStats: Record<string, StatsMap> = {};
@@ -329,6 +341,7 @@ export default function AdminMapa() {
       return {
         id: a.id, lat, lng, status: a.status,
         protocolo: a.protocolo, criado_em: a.criado_em, userName: user?.nome || "-",
+        bairro: user?.bairro || "", cidade: user?.cidade || "", uf: user?.uf || "",
       };
     }).filter(Boolean) as AlertMarker[];
     setAlerts(alertMarkers);
@@ -431,6 +444,9 @@ export default function AdminMapa() {
           bateria: device?.bateria_percentual ?? null,
           lastPing: device?.last_ping_at ?? null,
           isMonitoring: device?.is_monitoring ?? false,
+          bairro: u.endereco_bairro || "",
+          cidade: u.endereco_cidade || "",
+          uf: u.endereco_uf || "",
         };
       }).filter(Boolean) as DeviceMarker[];
     setDevices(deviceMarkers);
@@ -706,34 +722,103 @@ export default function AdminMapa() {
     map.setLayoutProperty("state-labels-layer", "text-field", ["case", [">", ["get", lKey], 0], ["concat", ["get", "uf_code"], "\n", ["to-string", ["get", lKey]], lIcon], ["get", "uf_code"]]);
   }, [stats, ufTrends, recTrends, mapLoaded, geojson, rankingMode, ufRiskStats, ufPanicoStats]);
 
-  // Markers
+  // Build bairro clusters
+  const bairroClusters = useMemo((): BairroCluster[] => {
+    const groups: Record<string, { devices: DeviceMarker[] }> = {};
+    devices.forEach((d) => {
+      const key = d.bairro && d.cidade && d.uf
+        ? `${d.bairro}|${d.cidade}|${d.uf}`
+        : d.cidade && d.uf
+          ? `_cidade|${d.cidade}|${d.uf}`
+          : `_individual|${d.id}`;
+      if (!groups[key]) groups[key] = { devices: [] };
+      groups[key].devices.push(d);
+    });
+    // Check which bairros have active alerts
+    const alertBairroKeys = new Set<string>();
+    alerts.filter(a => a.status === "ativo").forEach(a => {
+      const key = a.bairro && a.cidade && a.uf
+        ? `${a.bairro}|${a.cidade}|${a.uf}`
+        : a.cidade && a.uf
+          ? `_cidade|${a.cidade}|${a.uf}`
+          : "";
+      if (key) alertBairroKeys.add(key);
+    });
+    return Object.entries(groups).map(([key, { devices: devs }]) => {
+      const avgLat = devs.reduce((s, d) => s + d.lat, 0) / devs.length;
+      const avgLng = devs.reduce((s, d) => s + d.lng, 0) / devs.length;
+      // Round to 3 decimal places (~110m) for privacy
+      const roundedLat = Math.round(avgLat * 1000) / 1000;
+      const roundedLng = Math.round(avgLng * 1000) / 1000;
+      const first = devs[0];
+      return {
+        key, bairro: first.bairro, cidade: first.cidade, uf: first.uf,
+        lat: roundedLat, lng: roundedLng,
+        count: devs.length,
+        online: devs.filter(d => d.status === "online").length,
+        monitoring: devs.filter(d => d.isMonitoring).length,
+        hasAlert: alertBairroKeys.has(key),
+      };
+    });
+  }, [devices, alerts]);
+
+  // Build alert clusters by bairro
+  const alertClusters = useMemo((): AlertCluster[] => {
+    const groups: Record<string, AlertMarker[]> = {};
+    alerts.filter(a => a.status === "ativo").forEach(a => {
+      const key = a.bairro && a.cidade && a.uf
+        ? `${a.bairro}|${a.cidade}|${a.uf}`
+        : a.cidade && a.uf
+          ? `_cidade|${a.cidade}|${a.uf}`
+          : `_individual|${a.id}`;
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(a);
+    });
+    return Object.entries(groups).map(([key, als]) => {
+      const avgLat = Math.round((als.reduce((s, a) => s + a.lat, 0) / als.length) * 1000) / 1000;
+      const avgLng = Math.round((als.reduce((s, a) => s + a.lng, 0) / als.length) * 1000) / 1000;
+      const first = als[0];
+      return { key, bairro: first.bairro, cidade: first.cidade, uf: first.uf, lat: avgLat, lng: avgLng, count: als.length };
+    });
+  }, [alerts]);
+
+  // Markers (bairro clusters)
   useEffect(() => {
     const map = mapRef.current; const mbgl = mapboxglInstance;
     if (!map || !mbgl || !mapLoaded) return;
     markersRef.current.forEach((m) => m.remove()); markersRef.current = [];
 
     if (showAlerts) {
-      alerts.forEach((a) => {
+      alertClusters.forEach((c) => {
+        const size = Math.min(24 + c.count * 4, 40);
         const el = document.createElement("div");
-        el.style.cssText = "width:28px;height:28px;border-radius:50%;background:hsl(0,72%,51%);border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3);cursor:pointer;display:flex;align-items:center;justify-content:center;animation:pulse 2s infinite";
-        el.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
-        const popup = new mbgl.Popup({ offset: 15, maxWidth: "220px" }).setHTML(`<div style="font-family:Inter,sans-serif;font-size:11px;line-height:1.5"><strong style="color:hsl(0,72%,51%)">⚠ Alerta Ativo</strong><div style="margin-top:4px"><span style="color:hsl(220,9%,46%)">Usuária:</span> ${a.userName}</div>${a.protocolo ? `<div><span style="color:hsl(220,9%,46%)">Protocolo:</span> ${a.protocolo}</div>` : ""}<div><span style="color:hsl(220,9%,46%)">Horário:</span> ${new Date(a.criado_em).toLocaleString("pt-BR")}</div></div>`);
-        const marker = new mbgl.Marker({ element: el }).setLngLat([a.lng, a.lat]).setPopup(popup).addTo(map);
+        el.style.cssText = `width:${size}px;height:${size}px;border-radius:50%;background:hsl(0,72%,51%);border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;animation:pulse 2s infinite;color:white;font-family:Inter,sans-serif;font-size:${c.count > 1 ? '11' : '0'}px;font-weight:700`;
+        if (c.count > 1) el.textContent = String(c.count);
+        else el.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
+        const label = c.bairro || c.cidade || "Região";
+        const popup = new mbgl.Popup({ offset: 15, maxWidth: "220px" }).setHTML(
+          `<div style="font-family:Inter,sans-serif;font-size:11px;line-height:1.5"><strong style="color:hsl(0,72%,51%)">⚠ ${c.count} alerta${c.count > 1 ? "s" : ""} ativo${c.count > 1 ? "s" : ""}</strong><div style="margin-top:4px;color:hsl(220,9%,46%)">${label}${c.cidade && c.bairro ? ` - ${c.cidade}` : ""}</div></div>`
+        );
+        const marker = new mbgl.Marker({ element: el }).setLngLat([c.lng, c.lat]).setPopup(popup).addTo(map);
         markersRef.current.push(marker);
       });
     }
 
     if (showDevices) {
-      devices.forEach((d) => {
-        const isOnline = d.status === "online";
+      bairroClusters.forEach((c) => {
+        const size = Math.min(12 + c.count * 3, 36);
+        const bgColor = c.hasAlert ? "hsl(0,72%,51%)" : c.online > c.count / 2 ? "hsl(142,71%,35%)" : "hsl(220,9%,60%)";
         const el = document.createElement("div");
-        el.style.cssText = `width:8px;height:8px;border-radius:50%;background:${isOnline ? "hsl(142,71%,35%)" : "hsl(220,9%,60%)"};border:1px solid white;box-shadow:0 0 2px rgba(0,0,0,0.15);cursor:pointer`;
-        const popup = new mbgl.Popup({ offset: 12, maxWidth: "220px" }).setHTML(`<div style="font-family:Inter,sans-serif;font-size:11px;line-height:1.5"><strong>${d.userName}</strong><div style="margin-top:4px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${isOnline ? "hsl(142,71%,35%)" : "hsl(220,9%,60%)"};margin-right:4px"></span>${isOnline ? "Online" : "Offline"}${d.isMonitoring ? ' · <span style="color:hsl(224,76%,33%)">Monitorando</span>' : ""}</div>${d.bateria != null ? `<div><span style="color:hsl(220,9%,46%)">Bateria:</span> ${d.bateria}%</div>` : ""}${d.lastPing ? `<div><span style="color:hsl(220,9%,46%)">Último ping:</span> ${new Date(d.lastPing).toLocaleString("pt-BR")}</div>` : ""}</div>`);
-        const marker = new mbgl.Marker({ element: el }).setLngLat([d.lng, d.lat]).setPopup(popup).addTo(map);
+        el.style.cssText = `width:${size}px;height:${size}px;border-radius:50%;background:${bgColor};border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.2);display:flex;align-items:center;justify-content:center;color:white;font-family:Inter,sans-serif;font-size:${size > 16 ? '10' : '0'}px;font-weight:700${c.hasAlert ? ";animation:pulse 2s infinite" : ""}`;
+        if (c.count > 1 && size > 16) el.textContent = String(c.count);
+        const label = c.bairro || c.cidade || "Região";
+        const tooltipText = `${label}${c.cidade && c.bairro ? ` - ${c.cidade}` : ""} - ${c.count} usuária${c.count > 1 ? "s" : ""}`;
+        el.title = tooltipText;
+        const marker = new mbgl.Marker({ element: el }).setLngLat([c.lng, c.lat]).addTo(map);
         markersRef.current.push(marker);
       });
     }
-  }, [alerts, devices, showAlerts, showDevices, mapLoaded, mapboxglInstance]);
+  }, [alertClusters, bairroClusters, showAlerts, showDevices, mapLoaded, mapboxglInstance]);
 
   // Fly to UF
   useEffect(() => {
