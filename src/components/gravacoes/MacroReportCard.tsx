@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
 import { callWebApi } from "@/services/webApiService";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +7,12 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   FileBarChart,
   Loader2,
@@ -21,10 +26,17 @@ import {
   Heart,
   Volume2,
   VolumeX,
-  Play,
+  FileText,
   Info,
   ChevronDown,
 } from "lucide-react";
+
+interface GravacaoResumo {
+  id: string;
+  data: string;
+  risco: string;
+  resumo: string;
+}
 
 interface MacroReport {
   id: string;
@@ -41,6 +53,7 @@ interface MacroReport {
   };
   aggregates_json: {
     total_gravacoes_analisadas?: number;
+    gravacoes_resumos?: GravacaoResumo[];
   };
 }
 
@@ -51,8 +64,15 @@ const ALERTA_CONFIG: Record<string, { color: string; bg: string; border: string;
   critico: { color: "text-red-700", bg: "bg-red-50", border: "border-red-200", label: "Crítico" },
 };
 
+const RISCO_BADGE: Record<string, string> = {
+  critico: "bg-red-100 text-red-700 border-red-200",
+  alto: "bg-orange-100 text-orange-700 border-orange-200",
+  moderado: "bg-amber-100 text-amber-700 border-amber-200",
+  baixo: "bg-emerald-100 text-emerald-700 border-emerald-200",
+};
+
 /** Parses [GR:uuid] markers in panorama text and renders clickable links */
-function PanoramaWithCitations({ text, navigate }: { text: string; navigate: (path: string) => void }) {
+function PanoramaWithCitations({ text, onClickExemplo }: { text: string; onClickExemplo: (id: string) => void }) {
   const parts = useMemo(() => {
     const GR_REGEX = /\[GR:([a-f0-9-]{36})\]/gi;
     const result: { type: "text" | "link"; value: string; id?: string }[] = [];
@@ -82,12 +102,12 @@ function PanoramaWithCitations({ text, navigate }: { text: string; navigate: (pa
         part.type === "link" ? (
           <button
             key={i}
-            onClick={() => navigate(`/gravacoes?id=${part.id}`)}
+            onClick={() => onClickExemplo(part.id!)}
             className="inline-flex items-center gap-0.5 text-primary hover:text-primary/80 underline underline-offset-2 decoration-primary/30 hover:decoration-primary/60 transition-colors font-medium"
-            title="Abrir gravação"
+            title="Ver transcrição"
           >
-            <Play className="w-2.5 h-2.5 inline shrink-0" />
-            ouvir
+            <FileText className="w-2.5 h-2.5 inline shrink-0" />
+            exemplo
           </button>
         ) : (
           <span key={i}>{part.value}</span>
@@ -106,12 +126,13 @@ export default function MacroReportCard({
   windowDays?: number;
   onActiveChange?: (active: boolean) => void;
 }) {
-  const navigate = useNavigate();
   const [report, setReport] = useState<MacroReport | null>(null);
   const [loading, setLoading] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showExemplos, setShowExemplos] = useState(false);
+  const [highlightId, setHighlightId] = useState<string | null>(null);
   const [ttsState, setTtsState] = useState<"idle" | "loading" | "playing">("idle");
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -325,7 +346,7 @@ export default function MacroReportCard({
               )}
             </Button>
           </div>
-          <PanoramaWithCitations text={panorama} navigate={navigate} />
+          <PanoramaWithCitations text={panorama} onClickExemplo={(id) => { setHighlightId(id); setShowExemplos(true); }} />
         </div>
       )}
 
