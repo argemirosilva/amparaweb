@@ -41,12 +41,19 @@ export default function LoginPage() {
   return (
     <div className="min-h-[100dvh] flex flex-col md:flex-row bg-background">
       {/* Left panel — branding */}
-      <div className="hidden md:flex md:w-[45%] lg:w-[50%] relative flex-col items-center justify-center p-12 overflow-hidden bg-gradient-to-br from-primary/5 via-background to-ampara-magenta/5">
+      <div className="hidden md:flex md:w-[45%] lg:w-[50%] relative flex-col items-center justify-end p-12 overflow-hidden bg-gradient-to-br from-primary/5 via-background to-ampara-magenta/5">
         {/* Subtle decorative elements */}
         <div className="absolute top-20 right-[15%] w-64 h-64 rounded-full bg-primary/[0.04] blur-3xl" />
         <div className="absolute bottom-20 left-[10%] w-48 h-48 rounded-full bg-ampara-magenta/[0.04] blur-3xl" />
 
-        <div className="relative z-10 flex flex-col items-center text-center max-w-sm">
+        {/* Illustration */}
+        <img
+          src={loginIllustration}
+          alt=""
+          className="absolute bottom-0 right-0 h-[75%] w-auto object-contain object-right-bottom pointer-events-none select-none opacity-90"
+        />
+
+        <div className="relative z-10 flex flex-col items-center text-center max-w-sm mb-8">
           <img src={amparaLogo} alt="AMPARA" className="w-48 h-auto object-contain mb-6" />
           <p className="text-xs font-semibold uppercase tracking-[0.3em] mb-10 text-primary/50 font-display">
             Portal da Mulher
