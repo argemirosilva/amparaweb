@@ -36,6 +36,16 @@ interface MacroReport {
   };
   aggregates_json: {
     total_gravacoes_analisadas?: number;
+    distribuicao_sentimentos?: Record<string, number>;
+    tipos_violencia_detectados?: { nome: string; contagem: number }[];
+    padroes_recorrentes?: { nome: string; contagem: number }[];
+    xingamentos_frequentes?: { nome: string; contagem: number }[];
+    niveis_risco_gravacoes?: Record<string, number>;
+    distribuicao_fases_ciclo?: Record<string, number>;
+    alertas_panico?: number;
+    transicoes_detectadas?: number;
+    encurtamento_ciclo?: boolean;
+    gravacoes_resumos?: { id: string; data: string; risco: string; resumo: string }[];
   };
 }
 
