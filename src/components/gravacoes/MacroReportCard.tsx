@@ -17,6 +17,8 @@ import {
   Volume2,
   VolumeX,
   Play,
+  ChevronDown,
+  Database,
 } from "lucide-react";
 
 interface MacroReport {
@@ -34,6 +36,16 @@ interface MacroReport {
   };
   aggregates_json: {
     total_gravacoes_analisadas?: number;
+    distribuicao_sentimentos?: Record<string, number>;
+    tipos_violencia_detectados?: { nome: string; contagem: number }[];
+    padroes_recorrentes?: { nome: string; contagem: number }[];
+    xingamentos_frequentes?: { nome: string; contagem: number }[];
+    niveis_risco_gravacoes?: Record<string, number>;
+    distribuicao_fases_ciclo?: Record<string, number>;
+    alertas_panico?: number;
+    transicoes_detectadas?: number;
+    encurtamento_ciclo?: boolean;
+    gravacoes_resumos?: { id: string; data: string; risco: string; resumo: string }[];
   };
 }
 
@@ -43,6 +55,101 @@ const ALERTA_CONFIG: Record<string, { color: string; bg: string; border: string;
   alto: { color: "text-orange-700", bg: "bg-orange-50", border: "border-orange-200", label: "Alto" },
   critico: { color: "text-red-700", bg: "bg-red-50", border: "border-red-200", label: "Crítico" },
 };
+
+const RISCO_LABEL: Record<string, string> = {
+  sem_risco: "Sem risco", moderado: "Moderado", alto: "Alto", critico: "Crítico",
+};
+
+const SENTIMENTO_LABEL: Record<string, string> = {
+  positivo: "Positivo", negativo: "Negativo", neutro: "Neutro", misto: "Misto",
+};
+
+/** Shows the aggregated data that the AI used to generate the report */
+function AggregatesDetail({ agg, navigate }: { agg: MacroReport["aggregates_json"]; navigate: (path: string) => void }) {
+  return (
+    <div className="px-3 pb-3 space-y-2.5 border-t border-border/30 pt-2">
+      {agg.niveis_risco_gravacoes && Object.keys(agg.niveis_risco_gravacoes).length > 0 && (
+        <div>
+          <p className="text-[10px] font-medium text-muted-foreground mb-1">Distribuição de risco</p>
+          <div className="flex flex-wrap gap-1">
+            {Object.entries(agg.niveis_risco_gravacoes).map(([k, v]) => (
+              <Badge key={k} variant="outline" className="text-[10px]">{RISCO_LABEL[k] || k}: {v}</Badge>
+            ))}
+          </div>
+        </div>
+      )}
+      {agg.distribuicao_sentimentos && Object.keys(agg.distribuicao_sentimentos).length > 0 && (
+        <div>
+          <p className="text-[10px] font-medium text-muted-foreground mb-1">Sentimentos detectados</p>
+          <div className="flex flex-wrap gap-1">
+            {Object.entries(agg.distribuicao_sentimentos).map(([k, v]) => (
+              <Badge key={k} variant="outline" className="text-[10px]">{SENTIMENTO_LABEL[k] || k}: {v}</Badge>
+            ))}
+          </div>
+        </div>
+      )}
+      {agg.tipos_violencia_detectados && agg.tipos_violencia_detectados.length > 0 && (
+        <div>
+          <p className="text-[10px] font-medium text-muted-foreground mb-1">Tipos de violência</p>
+          <div className="flex flex-wrap gap-1">
+            {agg.tipos_violencia_detectados.map((t) => (
+              <Badge key={t.nome} variant="outline" className="text-[10px] bg-destructive/5 text-destructive/80 border-destructive/15">
+                {t.nome.replace("violencia_", "").replace(/_/g, " ")}: {t.contagem}x
+              </Badge>
+            ))}
+          </div>
+        </div>
+      )}
+      {agg.padroes_recorrentes && agg.padroes_recorrentes.length > 0 && (
+        <div>
+          <p className="text-[10px] font-medium text-muted-foreground mb-1">Padrões recorrentes</p>
+          <div className="flex flex-wrap gap-1">
+            {agg.padroes_recorrentes.slice(0, 6).map((p) => (
+              <Badge key={p.nome} variant="outline" className="text-[10px]">{p.nome}: {p.contagem}x</Badge>
+            ))}
+          </div>
+        </div>
+      )}
+      {agg.distribuicao_fases_ciclo && Object.keys(agg.distribuicao_fases_ciclo).length > 0 && (
+        <div>
+          <p className="text-[10px] font-medium text-muted-foreground mb-1">Fases do ciclo de violência</p>
+          <div className="flex flex-wrap gap-1">
+            {Object.entries(agg.distribuicao_fases_ciclo).map(([k, v]) => (
+              <Badge key={k} variant="outline" className="text-[10px]">{k.replace(/_/g, " ")}: {v}</Badge>
+            ))}
+          </div>
+        </div>
+      )}
+      <div className="flex flex-wrap gap-2 text-[10px] text-muted-foreground">
+        {(agg.alertas_panico ?? 0) > 0 && <span>🚨 {agg.alertas_panico} alertas de pânico</span>}
+        {(agg.transicoes_detectadas ?? 0) > 0 && <span>🔄 {agg.transicoes_detectadas} transições de ciclo</span>}
+        {agg.encurtamento_ciclo && <span>⚠️ Encurtamento de ciclo detectado</span>}
+      </div>
+      {agg.gravacoes_resumos && agg.gravacoes_resumos.length > 0 && (
+        <div>
+          <p className="text-[10px] font-medium text-muted-foreground mb-1">
+            Gravações analisadas ({agg.gravacoes_resumos.length})
+          </p>
+          <div className="space-y-1 max-h-32 overflow-y-auto">
+            {agg.gravacoes_resumos.map((g) => (
+              <button
+                key={g.id}
+                onClick={() => navigate(`/gravacoes?id=${g.id}`)}
+                className="w-full text-left flex items-center gap-2 px-2 py-1 rounded hover:bg-muted/40 transition-colors group"
+              >
+                <Play className="w-2.5 h-2.5 text-primary/60 group-hover:text-primary shrink-0" />
+                <span className="text-[10px] text-foreground/80 truncate flex-1">{g.resumo || "Sem resumo"}</span>
+                <Badge variant="outline" className="text-[9px] shrink-0">
+                  {g.data} · {RISCO_LABEL[g.risco] || g.risco}
+                </Badge>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 /** Parses [GR:uuid] markers in panorama text and renders clickable links */
 function PanoramaWithCitations({ text, navigate }: { text: string; navigate: (path: string) => void }) {
@@ -107,6 +214,7 @@ export default function MacroReportCard({
   const [error, setError] = useState<string | null>(null);
   const [ttsState, setTtsState] = useState<"idle" | "loading" | "playing">("idle");
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [showData, setShowData] = useState(false);
 
   const fetchReport = useCallback(async () => {
     setLoading(true);
@@ -360,6 +468,21 @@ export default function MacroReportCard({
           ))}
         </div>
       )}
+
+      {/* Dados da análise (collapsible) */}
+      <div className="rounded-lg border border-border/50 overflow-hidden">
+        <button
+          onClick={() => setShowData(!showData)}
+          className="w-full flex items-center justify-between px-3 py-2 hover:bg-muted/30 transition-colors"
+        >
+          <div className="flex items-center gap-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+            <Database className="w-3 h-3" />
+            Dados da análise
+          </div>
+          <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground transition-transform ${showData ? "rotate-180" : ""}`} />
+        </button>
+        {showData && <AggregatesDetail agg={report.aggregates_json} navigate={navigate} />}
+      </div>
 
       {error && (
         <p className="text-xs text-destructive flex items-center gap-1">
