@@ -115,7 +115,7 @@ export default function DashboardMapCard() {
     const midpoint = new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString();
 
     const [{ data: users }, { data: deviceData }, { data: alertData }, { data: locations }, { data: eventosData }, { data: gravacoesData }] = await Promise.all([
-      supabase.from("usuarios").select("id, nome_completo, endereco_uf, endereco_lat, endereco_lon, status"),
+      supabase.from("usuarios").select("id, nome_completo, endereco_uf, endereco_cidade, endereco_bairro, endereco_lat, endereco_lon, status"),
       supabase.from("device_status").select("*").order("updated_at", { ascending: false }),
       supabase.from("alertas_panico").select("*").gte("criado_em", since).order("criado_em", { ascending: false }).limit(200),
       supabase.from("localizacoes").select("user_id, latitude, longitude, created_at").gte("created_at", since).order("created_at", { ascending: false }).limit(200),
@@ -123,9 +123,9 @@ export default function DashboardMapCard() {
       supabase.from("gravacoes").select("user_id, created_at, duracao_segundos").gte("created_at", since),
     ]);
 
-    const userMap: Record<string, { nome: string; uf: string; lat: number | null; lng: number | null }> = {};
+    const userMap: Record<string, { nome: string; uf: string; cidade: string; bairro: string; lat: number | null; lng: number | null }> = {};
     (users || []).forEach((u) => {
-      userMap[u.id] = { nome: u.nome_completo, uf: u.endereco_uf || "", lat: u.endereco_lat, lng: u.endereco_lon };
+      userMap[u.id] = { nome: u.nome_completo, uf: u.endereco_uf || "", cidade: u.endereco_cidade || "", bairro: u.endereco_bairro || "", lat: u.endereco_lat, lng: u.endereco_lon };
     });
 
     // UF stats
