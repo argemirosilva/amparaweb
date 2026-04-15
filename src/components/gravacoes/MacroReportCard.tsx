@@ -268,7 +268,7 @@ export default function MacroReportCard({
       <Collapsible>
         <CollapsibleTrigger className="flex items-center gap-1.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors group w-full">
           <Info className="w-3 h-3 shrink-0" />
-          <span className="underline underline-offset-2 decoration-muted-foreground/30">Como este resumo é feito?</span>
+          <span className="underline underline-offset-2 decoration-muted-foreground/30 text-xs text-[#c00c78] font-normal">Como este resumo é feito?</span>
           <ChevronDown className="w-3 h-3 ml-auto transition-transform group-data-[state=open]:rotate-180" />
         </CollapsibleTrigger>
         <CollapsibleContent>
