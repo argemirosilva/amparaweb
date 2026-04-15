@@ -35,29 +35,6 @@ export default function AmparaPresenceCard() {
 
   return (
     <div className="flex items-center gap-3 px-1 py-2">
-      {/* Ampara presence orb */}
-      <div className="relative shrink-0">
-        <div
-          className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-1000 ${
-            isActive
-              ? "shadow-[0_0_16px_hsl(263_70%_50%/0.2)]"
-              : ""
-          }`}
-          style={{ background: "var(--ampara-gradient)" }}
-        >
-          <span className="text-primary-foreground text-sm font-bold">A</span>
-        </div>
-        {/* Breathing pulse ring */}
-        {isActive && (
-          <span className="absolute inset-0 rounded-full animate-[ampara-breathe_3s_ease-in-out_infinite] border-2 border-primary/20 pointer-events-none" />
-        )}
-        {/* Online dot */}
-        <span
-          className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-card transition-colors ${
-            online ? "bg-emerald-500" : "bg-muted-foreground/40"
-          }`}
-        />
-      </div>
 
       {/* Text */}
       <div className="min-w-0 flex-1">
