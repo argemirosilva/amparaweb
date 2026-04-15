@@ -8,6 +8,30 @@ const fontStyle = { fontFamily: "Inter, Roboto, sans-serif" };
 const BRAZIL_GEOJSON_URL =
   "https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/brazil-states.geojson";
 
+// Approximate centroids for Brazilian states (privacy: never use exact user coordinates)
+const UF_CENTROID: Record<string, [number, number]> = {
+  AC: [-8.77, -70.55], AL: [-9.57, -36.78], AP: [1.41, -51.77], AM: [-3.47, -65.10],
+  BA: [-12.96, -41.70], CE: [-5.20, -39.53], DF: [-15.83, -47.86], ES: [-19.19, -40.34],
+  GO: [-15.98, -49.86], MA: [-5.42, -45.44], MT: [-12.64, -55.42], MS: [-20.51, -54.54],
+  MG: [-18.10, -44.38], PA: [-3.79, -52.48], PB: [-7.28, -36.72], PR: [-24.89, -51.55],
+  PE: [-8.38, -37.86], PI: [-6.60, -42.28], RJ: [-22.25, -42.66], RN: [-5.81, -36.59],
+  RS: [-30.17, -53.50], RO: [-10.83, -63.34], RR: [1.99, -61.33], SC: [-27.45, -50.95],
+  SP: [-22.19, -48.79], SE: [-10.57, -37.45], TO: [-10.25, -48.25],
+};
+
+const CITY_CENTROID: Record<string, [number, number]> = {
+  "Porto Velho-RO": [-8.76, -63.90], "Ji-Paraná-RO": [-10.88, -61.95], "Ariquemes-RO": [-9.91, -63.04],
+  "São Paulo-SP": [-23.55, -46.63], "Rio de Janeiro-RJ": [-22.91, -43.17], "Belo Horizonte-MG": [-19.92, -43.94],
+  "Salvador-BA": [-12.97, -38.51], "Brasília-DF": [-15.79, -47.88], "Fortaleza-CE": [-3.72, -38.53],
+  "Curitiba-PR": [-25.43, -49.27], "Recife-PE": [-8.05, -34.87], "Porto Alegre-RS": [-30.03, -51.23],
+  "Manaus-AM": [-3.12, -60.02], "Belém-PA": [-1.46, -48.50], "Goiânia-GO": [-16.69, -49.25],
+  "Florianópolis-SC": [-27.60, -48.55], "Natal-RN": [-5.79, -35.21], "João Pessoa-PB": [-7.12, -34.84],
+  "Maceió-AL": [-9.67, -35.74], "Campo Grande-MS": [-20.44, -54.65], "Cuiabá-MT": [-15.60, -56.10],
+  "Palmas-TO": [-10.18, -48.33], "São Luís-MA": [-2.53, -44.28], "Teresina-PI": [-5.09, -42.80],
+  "Aracaju-SE": [-10.91, -37.07], "Vitória-ES": [-20.32, -40.34], "Macapá-AP": [0.03, -51.07],
+  "Boa Vista-RR": [2.82, -60.67], "Rio Branco-AC": [-9.97, -67.81],
+};
+
 const STATE_NAME_TO_UF: Record<string, string> = {
   Acre: "AC", Alagoas: "AL", Amapá: "AP", Amazonas: "AM", Bahia: "BA",
   Ceará: "CE", "Distrito Federal": "DF", "Espírito Santo": "ES", Goiás: "GO",
@@ -114,18 +138,17 @@ export default function DashboardMapCard() {
     const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
     const midpoint = new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString();
 
-    const [{ data: users }, { data: deviceData }, { data: alertData }, { data: locations }, { data: eventosData }, { data: gravacoesData }] = await Promise.all([
-      supabase.from("usuarios").select("id, nome_completo, endereco_uf, endereco_cidade, endereco_bairro, endereco_lat, endereco_lon, status"),
+    const [{ data: users }, { data: deviceData }, { data: alertData }, { data: eventosData }, { data: gravacoesData }] = await Promise.all([
+      supabase.from("usuarios").select("id, nome_completo, endereco_uf, endereco_cidade, endereco_bairro, status"),
       supabase.from("device_status").select("*").order("updated_at", { ascending: false }),
       supabase.from("alertas_panico").select("*").gte("criado_em", since).order("criado_em", { ascending: false }).limit(200),
-      supabase.from("localizacoes").select("user_id, latitude, longitude, created_at").gte("created_at", since).order("created_at", { ascending: false }).limit(200),
       supabase.from("gravacoes_analises").select("user_id, created_at, nivel_risco").gte("created_at", since),
       supabase.from("gravacoes").select("user_id, created_at, duracao_segundos").gte("created_at", since),
     ]);
 
-    const userMap: Record<string, { nome: string; uf: string; cidade: string; bairro: string; lat: number | null; lng: number | null }> = {};
+    const userMap: Record<string, { nome: string; uf: string; cidade: string; bairro: string }> = {};
     (users || []).forEach((u) => {
-      userMap[u.id] = { nome: u.nome_completo, uf: u.endereco_uf || "", cidade: u.endereco_cidade || "", bairro: u.endereco_bairro || "", lat: u.endereco_lat, lng: u.endereco_lon };
+      userMap[u.id] = { nome: u.nome_completo, uf: u.endereco_uf || "", cidade: u.endereco_cidade || "", bairro: u.endereco_bairro || "" };
     });
 
     // UF stats
@@ -219,18 +242,22 @@ export default function DashboardMapCard() {
     });
     setRecTrends(rTrends);
 
-    // Device items
-    const userLastLoc: Record<string, { lat: number; lng: number }> = {};
-    (locations || []).forEach((l) => { if (!userLastLoc[l.user_id]) userLastLoc[l.user_id] = { lat: l.latitude, lng: l.longitude }; });
+    // Device items — privacy: use only city/UF centroids, never exact coordinates
     setDevices(
       Object.entries(latestDeviceByUser).map(([userId, d]: [string, any]) => {
-        const loc = userLastLoc[userId]; const user = userMap[userId];
-        if (!loc && !user?.lat) return null;
+        const user = userMap[userId];
+        if (!user?.uf) return null;
+        const cityKey = user.cidade && user.uf ? `${user.cidade}-${user.uf}` : null;
+        const cityCenter = cityKey ? CITY_CENTROID[cityKey] : null;
+        const ufCenter = UF_CENTROID[user.uf];
+        const lat = cityCenter?.[0] ?? ufCenter?.[0];
+        const lng = cityCenter?.[1] ?? ufCenter?.[1];
+        if (lat == null || lng == null) return null;
         return {
-          id: d.id, lat: loc?.lat || user?.lat || 0, lng: loc?.lng || user?.lng || 0,
-          status: d.status, userName: user?.nome || "-", bateria: d.bateria_percentual,
-          lastPing: d.last_ping_at, isMonitoring: d.is_monitoring, deviceInfo: d.dispositivo_info,
-          bairro: user?.bairro || "", cidade: user?.cidade || "", uf: user?.uf || "",
+          id: d.id, lat, lng,
+          status: d.status, userName: "-", bateria: null,
+          lastPing: null, isMonitoring: d.is_monitoring, deviceInfo: null,
+          bairro: user.bairro || "", cidade: user.cidade || "", uf: user.uf || "",
         };
       }).filter(Boolean) as DeviceItem[]
     );
