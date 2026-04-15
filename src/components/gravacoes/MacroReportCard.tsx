@@ -264,6 +264,39 @@ export default function MacroReportCard({
         </Button>
       </div>
 
+      {/* Como funciona */}
+      <Collapsible>
+        <CollapsibleTrigger className="flex items-center gap-1.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors group w-full">
+          <Info className="w-3 h-3 shrink-0" />
+          <span className="underline underline-offset-2 decoration-muted-foreground/30">Como este resumo é feito?</span>
+          <ChevronDown className="w-3 h-3 ml-auto transition-transform group-data-[state=open]:rotate-180" />
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <div className="rounded-lg bg-muted/30 border border-border/50 p-3 mt-1.5 space-y-2">
+            <p className="text-xs text-foreground/80 leading-relaxed">
+              Este resumo é criado automaticamente a partir das suas gravações dos últimos <strong>{report.window_days} dias</strong>. Veja como funciona:
+            </p>
+            <ol className="space-y-1.5 text-xs text-foreground/75 leading-relaxed list-decimal list-inside">
+              <li>
+                <strong>Escuta e transcrição</strong> - cada áudio que você envia é transformado em texto.
+              </li>
+              <li>
+                <strong>Análise individual</strong> - o texto de cada gravação é analisado separadamente para identificar o que foi dito, o tom da conversa e possíveis sinais de risco.
+              </li>
+              <li>
+                <strong>Visão do conjunto</strong> - todas as análises individuais são reunidas para montar um panorama geral do período, identificando padrões que se repetem.
+              </li>
+              <li>
+                <strong>Orientações</strong> - com base nos padrões encontrados, são sugeridas ações práticas e específicas para a sua situação.
+              </li>
+            </ol>
+            <p className="text-[10px] text-muted-foreground leading-relaxed italic">
+              Foram analisadas {report.aggregates_json.total_gravacoes_analisadas || 0} gravações para gerar este resumo. Você pode clicar nos links "ouvir" no texto acima para conferir diretamente os áudios citados.
+            </p>
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
+
       {/* Panorama */}
       {panorama && (
         <div className="rounded-lg bg-muted/30 border border-border/50 p-3 space-y-1.5">
