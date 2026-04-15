@@ -48,11 +48,18 @@ interface DeviceItem {
   lastPing: string | null;
   isMonitoring: boolean;
   deviceInfo: string | null;
+  bairro: string;
+  cidade: string;
+  uf: string;
+}
+
+interface BairroCluster {
+  key: string; bairro: string; cidade: string; uf: string;
+  lat: number; lng: number; count: number; online: number; monitoring: number;
 }
 
 type SelectedItem =
-  | { type: "uf"; uf: string; stats: UfStats }
-  | { type: "device"; data: DeviceItem };
+  | { type: "uf"; uf: string; stats: UfStats };
 
 const cardStyle = { background: "hsl(0 0% 100%)", borderColor: "hsl(220 13% 91%)" };
 const titleStyle = { color: "hsl(220 13% 18%)" };
