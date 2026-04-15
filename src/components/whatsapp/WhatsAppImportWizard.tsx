@@ -301,10 +301,10 @@ export default function WhatsAppImportWizard({ open, onOpenChange, onImportCompl
               <div className="w-14 h-14 mx-auto rounded-2xl bg-[#25D366]/10 flex items-center justify-center">
                 <MessageCircle className="w-7 h-7 text-[#25D366]" />
               </div>
-              <h3 className="text-lg font-bold text-foreground">Analisar conversa do WhatsApp</h3>
-            <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-                Cole o texto, envie o <code className="text-xs bg-muted px-1 rounded">.txt</code> ou tire prints da conversa.
-              </p>
+               <h3 className="text-lg font-bold text-foreground">Analisar conversa</h3>
+             <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+                 Cole o texto, envie o <code className="text-xs bg-muted px-1 rounded">.txt</code> ou envie prints de qualquer app de mensagens.
+               </p>
             </div>
 
             <Textarea
@@ -383,21 +383,21 @@ export default function WhatsAppImportWizard({ open, onOpenChange, onImportCompl
               </p>
               <div className="text-xs text-muted-foreground space-y-2">
                 <div>
-                  <p className="font-medium text-foreground mb-1">📄 Opção 1: Exportar conversa</p>
-                  <ol className="space-y-0.5 pl-4 list-decimal">
-                    <li>Abra a conversa no WhatsApp</li>
-                    <li>3 pontinhos → <strong>Mais</strong> → <strong>Exportar conversa</strong></li>
-                    <li>Escolha <strong>"Sem mídia"</strong></li>
-                    <li>Cole o texto ou envie o .txt</li>
-                  </ol>
-                </div>
-                <div>
-                  <p className="font-medium text-foreground mb-1">📸 Opção 2: Screenshots</p>
-                  <ol className="space-y-0.5 pl-4 list-decimal">
-                    <li>Tire prints da conversa no WhatsApp</li>
-                    <li>Toque em <strong>"Enviar prints"</strong> acima</li>
-                    <li>Extraímos o texto automaticamente com IA</li>
-                  </ol>
+                   <p className="font-medium text-foreground mb-1">📄 Opção 1: Exportar conversa (WhatsApp)</p>
+                   <ol className="space-y-0.5 pl-4 list-decimal">
+                     <li>Abra a conversa no WhatsApp</li>
+                     <li>3 pontinhos → <strong>Mais</strong> → <strong>Exportar conversa</strong></li>
+                     <li>Escolha <strong>"Sem mídia"</strong></li>
+                     <li>Cole o texto ou envie o .txt</li>
+                   </ol>
+                 </div>
+                 <div>
+                   <p className="font-medium text-foreground mb-1">📸 Opção 2: Screenshots (qualquer app)</p>
+                   <ol className="space-y-0.5 pl-4 list-decimal">
+                     <li>Tire prints da conversa (WhatsApp, Instagram, Telegram, SMS…)</li>
+                     <li>Toque em <strong>"Enviar prints"</strong> acima</li>
+                     <li>Extraímos o texto automaticamente com IA</li>
+                   </ol>
                 </div>
               </div>
             </div>
@@ -616,7 +616,7 @@ export default function WhatsAppImportWizard({ open, onOpenChange, onImportCompl
       <Drawer open={open} onOpenChange={(o) => { if (!o) handleClose(); else onOpenChange(o); }}>
         <DrawerContent className="max-h-[95vh]">
           <DrawerHeader className="sr-only">
-            <DrawerTitle>Importar conversa do WhatsApp</DrawerTitle>
+            <DrawerTitle>Importar conversa</DrawerTitle>
           </DrawerHeader>
           {content}
         </DrawerContent>
@@ -628,7 +628,7 @@ export default function WhatsAppImportWizard({ open, onOpenChange, onImportCompl
     <Dialog open={open} onOpenChange={(o) => { if (!o) handleClose(); else onOpenChange(o); }}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-hidden p-0">
         <DialogHeader className="sr-only">
-          <DialogTitle>Importar conversa do WhatsApp</DialogTitle>
+          <DialogTitle>Importar conversa</DialogTitle>
         </DialogHeader>
         {content}
       </DialogContent>
