@@ -485,10 +485,10 @@ export default function GravacoesPage() {
                         {g.nivel_risco && RISCO_COLORS[g.nivel_risco] && (
                           <div className="absolute right-0 top-0 bottom-0 pointer-events-none overflow-hidden rounded-r-xl" style={{ width: "80px" }}>
                             <div
-                              className="absolute -right-6 top-1/2 -translate-y-1/2 w-28 h-28 rounded-full"
+                              className="absolute -right-6 top-4 w-28 h-28 rounded-full"
                               style={{ background: `radial-gradient(circle, ${RISCO_COLORS[g.nivel_risco]}18 0%, ${RISCO_COLORS[g.nivel_risco]}08 40%, transparent 70%)` }}
                             />
-                            <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+                            <div className="absolute right-3 top-3 flex items-center gap-1.5">
                               <span className="text-[10px] font-medium text-muted-foreground/70 leading-none">
                                 {RISCO_LABELS[g.nivel_risco] || g.nivel_risco}
                               </span>
