@@ -430,6 +430,40 @@ export default function MacroReportCard({
           <AlertTriangle className="w-3 h-3" />{error}
         </p>
       )}
+
+      {/* Modal de transcrições */}
+      <Dialog open={showExemplos} onOpenChange={setShowExemplos}>
+        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-sm">Transcrições usadas na análise</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 mt-2">
+            {(report?.aggregates_json.gravacoes_resumos || []).length === 0 && (
+              <p className="text-xs text-muted-foreground text-center py-4">Nenhuma transcrição disponível.</p>
+            )}
+            {(report?.aggregates_json.gravacoes_resumos || []).map((g) => {
+              const riscoClass = RISCO_BADGE[g.risco] || RISCO_BADGE.baixo;
+              const isHighlighted = g.id === highlightId;
+              return (
+                <div
+                  key={g.id}
+                  className={`rounded-lg border p-3 space-y-1.5 transition-colors ${isHighlighted ? "border-primary bg-primary/5" : "border-border"}`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-muted-foreground">
+                      {new Date(g.data).toLocaleDateString("pt-BR")}
+                    </span>
+                    <Badge variant="outline" className={`text-[10px] ${riscoClass}`}>
+                      {g.risco}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-foreground/85 leading-relaxed">{g.resumo}</p>
+                </div>
+              );
+            })}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
