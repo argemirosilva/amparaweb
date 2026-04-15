@@ -1,32 +1,27 @@
 
 
-# Expandir OCR para aceitar prints de qualquer mensageiro
+# Integrar a imagem hero de forma orgânica na página
 
-## Situação atual
-O wizard já suporta screenshots, mas o prompt do OCR (edge function `whatsapp-ocr`) está rigidamente focado em WhatsApp - exige formato "DD/MM/AAAA HH:MM - Nome: mensagem" e ignora elementos que não sejam desse formato.
+## Problema
+A imagem da mulher está dentro de um bloco retangular isolado, criando uma sensação de "caixa colada" no hero - não conversa com o fundo.
 
-## Estratégia proposta
+## Solução
+Remover os containers rígidos e posicionar a imagem como elemento decorativo flutuante, sem bordas ou limites visíveis, integrada ao fundo da seção.
 
-### 1. Generalizar o prompt do OCR
-Atualizar o system prompt da edge function `whatsapp-ocr` para:
-- Aceitar prints de **qualquer aplicativo de mensagens** (WhatsApp, Instagram, Telegram, SMS, iMessage, etc.)
-- Manter o formato de saída padronizado (DD/MM/AAAA HH:MM - Nome: mensagem) independente da origem
-- Quando a data não estiver visível, usar placeholder
-- Identificar automaticamente o tipo de app pelo visual do screenshot
+### Mudanças no Hero (`src/pages/LandingPage.tsx`)
 
-### 2. Atualizar labels no wizard (UI)
-No componente `WhatsAppImportWizard.tsx`:
-- Trocar "Screenshots do WhatsApp" por "Screenshots de conversas"
-- Ajustar textos auxiliares para indicar que aceita prints de qualquer app de mensagens
-- Manter o botão de upload de imagens como está (já funciona)
+1. **Desktop**: Trocar o `div` container da imagem por posicionamento absoluto. A imagem ficará no lado direito do hero, sem container visível, com fade suave nas bordas usando um CSS mask/gradient para dissolver os limites:
+   - `position: absolute; right: 0; bottom: 0`
+   - `mask-image: linear-gradient(to left, transparent 0%, black 15%, black 70%, transparent 100%)`
+   - Opacidade reduzida (~85%) para parecer parte do fundo
 
-### 3. Nenhuma mudança no pipeline de análise
-O texto extraído pelo OCR já alimenta o mesmo fluxo `importWhatsApp` → `analysis-worker`. Como a saída do OCR será padronizada no mesmo formato, o restante da pipeline continua funcionando sem alteração.
+2. **Mobile**: Manter a imagem com crop do topo, mas aplicar o mesmo mask-image vertical para suavizar o corte inferior.
 
-## Arquivos alterados
-- `supabase/functions/whatsapp-ocr/index.ts` - Generalizar o system prompt
-- `src/components/whatsapp/WhatsAppImportWizard.tsx` - Atualizar labels da UI
+3. **Remover o grid 2-col**: O hero passa a ser single-column com o texto à esquerda e a imagem como background decorativo no lado direito - sem divisão rígida de colunas.
 
-## Escopo mínimo
-Duas edições pontuais: prompt do OCR e textos do wizard. Sem mudança estrutural.
+## Arquivo alterado
+- `src/pages/LandingPage.tsx` - Hero section (linhas ~233-278)
+
+## Resultado
+A imagem se dissolve organicamente no fundo branco, sem bordas ou containers demarcados - parte da composição visual, não um bloco separado.
 
