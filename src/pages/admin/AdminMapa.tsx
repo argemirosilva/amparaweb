@@ -808,6 +808,21 @@ export default function AdminMapa() {
     });
   }, [alerts]);
 
+  // Filter clusters based on city/bairro selection
+  const filteredBairroClusters = useMemo(() => {
+    let filtered = bairroClusters;
+    if (filterCidade) filtered = filtered.filter(c => c.cidade === filterCidade);
+    if (filterBairro) filtered = filtered.filter(c => c.bairro === filterBairro);
+    return filtered;
+  }, [bairroClusters, filterCidade, filterBairro]);
+
+  const filteredAlertClusters = useMemo(() => {
+    let filtered = alertClusters;
+    if (filterCidade) filtered = filtered.filter(c => c.cidade === filterCidade);
+    if (filterBairro) filtered = filtered.filter(c => c.bairro === filterBairro);
+    return filtered;
+  }, [alertClusters, filterCidade, filterBairro]);
+
   // Markers (bairro clusters)
   useEffect(() => {
     const map = mapRef.current; const mbgl = mapboxglInstance;
@@ -815,7 +830,7 @@ export default function AdminMapa() {
     markersRef.current.forEach((m) => m.remove()); markersRef.current = [];
 
     if (showAlerts) {
-      alertClusters.forEach((c) => {
+      filteredAlertClusters.forEach((c) => {
         const size = Math.min(24 + c.count * 4, 40);
         const el = document.createElement("div");
         el.style.cssText = `width:${size}px;height:${size}px;border-radius:50%;background:hsl(0,72%,51%);border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;animation:pulse 2s infinite;color:white;font-family:Inter,sans-serif;font-size:${c.count > 1 ? '11' : '0'}px;font-weight:700`;
@@ -831,7 +846,7 @@ export default function AdminMapa() {
     }
 
     if (showDevices) {
-      bairroClusters.forEach((c) => {
+      filteredBairroClusters.forEach((c) => {
         const size = Math.min(12 + c.count * 3, 36);
         const bgColor = c.hasAlert ? "hsl(0,72%,51%)" : c.online > c.count / 2 ? "hsl(142,71%,35%)" : "hsl(220,9%,60%)";
         const el = document.createElement("div");
@@ -844,7 +859,7 @@ export default function AdminMapa() {
         markersRef.current.push(marker);
       });
     }
-  }, [alertClusters, bairroClusters, showAlerts, showDevices, mapLoaded, mapboxglInstance]);
+  }, [filteredAlertClusters, filteredBairroClusters, showAlerts, showDevices, mapLoaded, mapboxglInstance]);
 
   // Fly to UF
   useEffect(() => {
