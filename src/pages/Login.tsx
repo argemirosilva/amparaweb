@@ -50,7 +50,7 @@ export default function LoginPage() {
         <img
           src={loginIllustration}
           alt=""
-          className="absolute bottom-0 right-0 h-[75%] w-auto object-contain object-right-bottom pointer-events-none select-none opacity-90"
+          className="absolute -bottom-4 -right-8 h-[70%] w-auto object-contain object-right-bottom pointer-events-none select-none opacity-40"
         />
 
         <div className="relative z-10 flex flex-col items-center text-center max-w-sm mb-8">
