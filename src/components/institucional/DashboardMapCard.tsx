@@ -510,13 +510,57 @@ export default function DashboardMapCard() {
     });
   }, [devices]);
 
-  // Markers (bairro clusters)
+  // Derived filter lists
+  const availableCidades = useMemo(() => {
+    const set = new Set<string>();
+    devices.forEach(d => { if (d.cidade) set.add(d.cidade); });
+    return Array.from(set).sort();
+  }, [devices]);
+
+  const availableBairros = useMemo(() => {
+    if (!filterCidade) return [];
+    const set = new Set<string>();
+    devices.forEach(d => { if (d.cidade === filterCidade && d.bairro) set.add(d.bairro); });
+    return Array.from(set).sort();
+  }, [filterCidade, devices]);
+
+  // Filter clusters
+  const filteredBairroClusters = useMemo(() => {
+    let filtered = bairroClusters;
+    if (filterCidade) filtered = filtered.filter(c => c.cidade === filterCidade);
+    if (filterBairro) filtered = filtered.filter(c => c.bairro === filterBairro);
+    return filtered;
+  }, [bairroClusters, filterCidade, filterBairro]);
+
+  // FlyTo on filter change
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapLoaded) return;
+    if (filterBairro && filterCidade) {
+      const cluster = filteredBairroClusters.find(c => c.bairro === filterBairro && c.cidade === filterCidade);
+      if (cluster) map.flyTo({ center: [cluster.lng, cluster.lat], zoom: 13, duration: 1200 });
+    } else if (filterCidade) {
+      const allUfs = [...new Set(devices.filter(d => d.cidade === filterCidade).map(d => d.uf))];
+      const uf = allUfs[0] || "";
+      const cityKey = `${filterCidade}-${uf}`;
+      const center = CITY_CENTROID[cityKey];
+      if (center) map.flyTo({ center: [center[1], center[0]], zoom: 11, duration: 1200 });
+      else {
+        const cluster = bairroClusters.find(c => c.cidade === filterCidade);
+        if (cluster) map.flyTo({ center: [cluster.lng, cluster.lat], zoom: 11, duration: 1200 });
+      }
+    } else {
+      map.fitBounds([[-73.5, -33.7], [-34.8, 5.3]], { padding: 20, duration: 1200 });
+    }
+  }, [filterCidade, filterBairro, mapLoaded, filteredBairroClusters, bairroClusters, devices]);
+
+  // Markers (filtered bairro clusters)
   useEffect(() => {
     const map = mapRef.current; const mbgl = mapboxglInstance;
     if (!map || !mbgl || !mapLoaded) return;
     markersRef.current.forEach((m) => m.remove()); markersRef.current = [];
 
-    bairroClusters.forEach((c) => {
+    filteredBairroClusters.forEach((c) => {
       const size = Math.min(12 + c.count * 3, 36);
       const bgColor = c.online > c.count / 2 ? "hsl(142,71%,35%)" : "hsl(220,9%,60%)";
       const el = document.createElement("div");
@@ -527,7 +571,7 @@ export default function DashboardMapCard() {
       const marker = new mbgl.Marker({ element: el }).setLngLat([c.lng, c.lat]).addTo(map);
       markersRef.current.push(marker);
     });
-  }, [bairroClusters, mapLoaded, mapboxglInstance]);
+  }, [filteredBairroClusters, mapLoaded, mapboxglInstance]);
 
   return (
     <div className="rounded-md border relative overflow-hidden" style={cardStyle}>
