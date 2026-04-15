@@ -444,6 +444,9 @@ export default function AdminMapa() {
           bateria: device?.bateria_percentual ?? null,
           lastPing: device?.last_ping_at ?? null,
           isMonitoring: device?.is_monitoring ?? false,
+          bairro: u.endereco_bairro || "",
+          cidade: u.endereco_cidade || "",
+          uf: u.endereco_uf || "",
         };
       }).filter(Boolean) as DeviceMarker[];
     setDevices(deviceMarkers);
