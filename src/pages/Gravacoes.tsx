@@ -482,7 +482,7 @@ export default function GravacoesPage() {
                         }`}
                       >
                         {/* Organic risk indicator on right side */}
-                        {g.nivel_risco && g.nivel_risco !== "sem_risco" && (
+                        {g.nivel_risco && RISCO_COLORS[g.nivel_risco] && (
                           <div className="absolute right-0 top-0 bottom-0 pointer-events-none overflow-hidden rounded-r-xl" style={{ width: "80px" }}>
                             <div
                               className="absolute -right-6 top-1/2 -translate-y-1/2 w-28 h-28 rounded-full"
