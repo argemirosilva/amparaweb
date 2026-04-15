@@ -401,14 +401,14 @@ export default function MacroReportCard({
             Sobre as palavras usadas
           </div>
           <p className="text-xs text-foreground/85 leading-relaxed">
-            Identifiquei que palavras como{" "}
+            Palavras como{" "}
             {output.principais_ofensas.map((o, i) => (
               <span key={i}>
                 <strong className="text-destructive/80">"{o}"</strong>
                 {i < output.principais_ofensas!.length - 2 ? ", " : i === output.principais_ofensas!.length - 2 ? " e " : ""}
               </span>
             ))}{" "}
-            apareceram com frequência. Essas palavras não definem quem você é. Ninguém merece ser tratada assim, e reconhecer esse padrão já é um passo importante.
+            se repetem nas gravações. Quando a gente ouve isso tantas vezes, pode acabar acreditando - mas essas palavras falam sobre quem as disse, não sobre você. Perceber essa repetição já muda alguma coisa.
           </p>
         </div>
       )}
