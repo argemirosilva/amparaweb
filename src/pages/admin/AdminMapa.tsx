@@ -236,8 +236,29 @@ export default function AdminMapa() {
   const totalGravacoes = Object.values(stats).reduce((a, s) => a + s.gravacoes, 0);
   const totalHorasGrav = Math.round(Object.values(stats).reduce((a, s) => a + s.horasGravacao, 0) * 10) / 10;
 
+  // Derived: available cities and bairros for current UF
+  const availableCidades = useMemo(() => {
+    if (!selectedUf) return [];
+    const set = new Set<string>();
+    devices.forEach(d => { if (d.uf === selectedUf && d.cidade) set.add(d.cidade); });
+    alerts.forEach(a => { if (a.uf === selectedUf && a.cidade) set.add(a.cidade); });
+    return Array.from(set).sort();
+  }, [selectedUf, devices, alerts]);
 
-  // Load GeoJSON
+  const availableBairros = useMemo(() => {
+    if (!selectedUf || !filterCidade) return [];
+    const set = new Set<string>();
+    devices.forEach(d => { if (d.uf === selectedUf && d.cidade === filterCidade && d.bairro) set.add(d.bairro); });
+    alerts.forEach(a => { if (a.uf === selectedUf && a.cidade === filterCidade && a.bairro) set.add(a.bairro); });
+    return Array.from(set).sort();
+  }, [selectedUf, filterCidade, devices, alerts]);
+
+  // Clear filters when UF changes
+  useEffect(() => {
+    setFilterCidade(""); setFilterBairro(""); setCidadeSearch(""); setBairroSearch("");
+  }, [selectedUf]);
+
+
   useEffect(() => {
     fetch(BRAZIL_GEOJSON_URL)
       .then((r) => r.json())
