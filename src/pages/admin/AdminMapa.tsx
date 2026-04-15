@@ -1159,7 +1159,7 @@ export default function AdminMapa() {
                             )}
                             {s.alertas > 0 && rankingMode === "gravacoes" && <span className="font-bold" style={{ color: "hsl(0 72% 51%)" }}>{s.alertas} ⚠</span>}
                           </div>
-                        </div>
+                        </button>
                       ))}
                   </div>
                 </>
