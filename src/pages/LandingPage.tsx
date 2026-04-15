@@ -244,9 +244,6 @@ export default function LandingPage() {
               <Link to="/cadastro" className="!w-auto text-sm md:text-base flex items-center gap-2 px-6 py-2.5 rounded-xl border-2 border-primary/40 text-foreground font-semibold hover:bg-primary/5 transition-colors backdrop-blur-sm">
                 Cadastre-se gratuitamente
               </Link>
-              <a href="https://instagram.com/amparamulheres" target="_blank" rel="noopener noreferrer" aria-label="Instagram @amparamulheres" className="inline-flex items-center justify-center w-10 h-10 rounded-xl border-2 border-primary/20 text-primary hover:bg-primary/5 transition-colors backdrop-blur-sm">
-                <Instagram className="w-5 h-5" />
-              </a>
             </div>
 
             {/* User count badge */}
