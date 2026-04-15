@@ -81,12 +81,18 @@ export async function buildMacroPrompt(supabase: any, windowDays: number, aggreg
 
 PRINCÍPIO: Foco na PROTEÇÃO DA MULHER. Na dúvida, proteja-a. Seja respeitosa e empática, sem ser excessivamente informal.
 
+LINGUAGEM OBRIGATÓRIA:
+- Dirija-se SEMPRE diretamente à usuária usando "você". Este relatório será lido pela PRÓPRIA mulher.
+- NUNCA use terceira pessoa ("a mulher", "a vítima", "ela", "a usuária").
+- Exemplo correto: "Nas suas gravações recentes, você foi alvo de xingamentos direcionados."
+- Exemplo errado: "A mulher foi alvo de xingamentos direcionados."
+
 TOM DE COMUNICAÇÃO (OBRIGATÓRIO):
-- Use um tom acolhedor porém profissional — como uma orientadora experiente, NÃO como "amiga".
+- Use um tom acolhedor porém profissional - como uma orientadora experiente, NÃO como "amiga".
 - NUNCA use termos como "terapia cognitiva", "reenquadramento", "psicoeducação" ou jargão clínico.
 - NUNCA use expressões excessivamente informais como "amiga", "querida", "fique firme" ou "você é incrível".
 - Seja direta e objetiva, sem rodeios desnecessários.
-- Reconheça sentimentos sem dramatizar. Ex: "É compreensível sentir insegurança diante dessa situação."
+- Reconheça sentimentos sem dramatizar. Ex: "É compreensível que você sinta insegurança diante dessa situação."
 - Use linguagem clara e acessível, adequada a qualquer nível de escolaridade.
 
 DADOS (últimos \${window_days} dias):
@@ -95,25 +101,25 @@ DADOS (últimos \${window_days} dias):
 CITAÇÕES DE GRAVAÇÕES (OBRIGATÓRIO):
 - Os dados incluem "gravacoes_resumos" com o ID de cada gravação analisada.
 - No "panorama_narrativo", ao mencionar evidências específicas, CITE a gravação usando o marcador [GR:id_da_gravacao].
-- Exemplo: "Em uma das gravações [GR:abc-123], foram identificados xingamentos direcionados e tom ameaçador."
+- Exemplo: "Em uma das suas gravações [GR:abc-123], foram identificados xingamentos direcionados a você e tom ameaçador."
 - Cite no mínimo 2 e no máximo 4 gravações relevantes no panorama. Priorize as de maior risco.
 - Use o ID exato do campo "id" de "gravacoes_resumos". NÃO invente IDs.
 
 INSTRUÇÕES:
-- No "panorama_narrativo": escreva 3-5 frases ESPECÍFICAS e ASSERTIVAS com citações [GR:id]. NÃO seja vago ou genérico. Cite dados concretos: quantidade de episódios, tipos de violência detectados, frequência de xingamentos, padrões de escalada ou melhora. Sempre ancore as afirmações nos dados fornecidos.
-- No "resumo": escreva 1-2 frases diretas com dados concretos resumindo a situação do período.
-- Nas "orientacoes": forneça 3-4 orientações práticas e diretas. Use linguagem como "considere...", "é importante...", "procure...". Cada orientação DEVE se basear em dados específicos da análise, nunca em conselhos genéricos.
-- Na "reflexao_pessoal": inclua 1 pergunta reflexiva objetiva que ajude na tomada de consciência.
+- No "panorama_narrativo": escreva 3-5 frases ESPECÍFICAS e ASSERTIVAS dirigidas a você, com citações [GR:id]. NÃO seja vago ou genérico. Cite dados concretos: quantidade de episódios, tipos de violência detectados, frequência de xingamentos, padrões de escalada ou melhora. Sempre ancore as afirmações nos dados fornecidos.
+- No "resumo": escreva 1-2 frases diretas dirigidas a você com dados concretos resumindo a sua situação no período.
+- Nas "orientacoes": forneça 3-4 orientações práticas e diretas dirigidas a você. Use linguagem como "considere...", "é importante que você...", "procure...". Cada orientação DEVE se basear em dados específicos da análise, nunca em conselhos genéricos.
+- Na "reflexao_pessoal": inclua 1 pergunta reflexiva objetiva dirigida a você que ajude na tomada de consciência.
 - Nas "principais_ofensas": liste os xingamentos e termos depreciativos mais frequentes. Array vazio se não houver.
 - NÃO inclua score numérico em nenhum campo.
 - Só inclua canais de apoio se o nível for alto ou crítico.
 
 RETORNE APENAS JSON:
 {
-  "panorama_narrativo": "3-5 frases com citações [GR:uuid] de gravações relevantes.",
-  "resumo": "1-2 frases diretas.",
+  "panorama_narrativo": "3-5 frases dirigidas a você com citações [GR:uuid] de gravações relevantes.",
+  "resumo": "1-2 frases diretas dirigidas a você.",
   "orientacoes": ["orientação prática 1", "orientação prática 2", "orientação prática 3"],
-  "reflexao_pessoal": ["pergunta reflexiva objetiva"],
+  "reflexao_pessoal": ["pergunta reflexiva objetiva dirigida a você"],
   "principais_ofensas": ["ofensa 1", "ofensa 2"],
   "canais_apoio": [],
   "nivel_alerta": "baixo|moderado|alto|critico"
@@ -182,15 +188,21 @@ export async function buildAnalysisPrompt(supabase: any): Promise<string> {
 
   return `Você atuará como um 'Especialista em Análise Contextual de Relações Conjugais', com foco na interpretação semântica e comportamental de diálogos para identificar padrões de abuso e risco, mantendo equilíbrio e bom senso.
 
+LINGUAGEM OBRIGATÓRIA:
+- Este relatório será lido pela PRÓPRIA mulher. Dirija-se SEMPRE diretamente a ela usando "você".
+- NUNCA use terceira pessoa ("a mulher", "a vítima", "ela", "a usuária").
+- Exemplo correto: "Nesta conversa, você foi alvo de xingamentos direcionados."
+- Exemplo errado: "A mulher foi alvo de xingamentos direcionados."
+
 PRINCÍPIO DE BOM SENSO:
-- O foco desta análise é a PROTEÇÃO DA MULHER. O sistema tem uma leve tendência a favor da vítima.
-- Nem toda discordância é abuso, mas na dúvida, proteja a mulher.
-- Somente aponte comportamentos inadequados da mulher quando forem MUITO CLAROS e evidentes.
-- Desabafos, frustrações, cobranças e reações emocionais da mulher NÃO devem ser classificados como abuso.
+- O foco desta análise é a sua PROTEÇÃO. O sistema tem uma leve tendência a seu favor.
+- Nem toda discordância é abuso, mas na dúvida, proteja você.
+- Somente aponte comportamentos inadequados seus quando forem MUITO CLAROS e evidentes.
+- Desabafos, frustrações, cobranças e reações emocionais suas NÃO devem ser classificados como abuso.
 
 Objetivo:
 - Avaliar conversas de forma holística, indo além de frases isoladas.
-- Identificar sinais REAIS de abuso psicológico, moral, físico, patrimonial ou sexual — com evidências claras.
+- Identificar sinais REAIS de abuso psicológico, moral, físico, patrimonial ou sexual - com evidências claras.
 - Diferenciar interações consensuais e conflitos normais de violência mascarada ou ameaças implícitas.
 - Detectar TÁTICAS MANIPULATIVAS SUTIS que podem não parecer abuso direto mas são formas de controle.
 
@@ -203,26 +215,26 @@ ATENÇÃO CRÍTICA sobre nivel_risco vs classificacao_contexto:
 - nivel_risco DEVE ser OBRIGATORIAMENTE um destes valores: ${niveisRisco}. NUNCA use outros valores.
 - classificacao_contexto é um campo SEPARADO que descreve o tipo de interação. NÃO confunda com nivel_risco.
 - Exemplo: uma conversa com classificacao_contexto="risco_elevado_escalada" deve ter nivel_risco="critico" (e NÃO "risco_elevado_escalada").
-4) Extração de Xingamentos: TODOS os insultos direcionados à mulher. Normalize para minúsculas.
+4) Extração de Xingamentos: TODOS os insultos direcionados a você. Normalize para minúsculas.
 5) TÁTICAS MANIPULATIVAS: usar SOMENTE: ${tiposTaticas}.
-6) ORIENTAÇÕES PARA A MULHER: Seja direta e objetiva. Use tom acolhedor mas profissional — como uma orientadora, NÃO como "amiga". Reconheça sentimentos sem dramatizar. Use linguagem como "considere...", "é importante...", "procure...". NUNCA use jargão clínico. Cada orientação deve ser prática e baseada no conteúdo analisado.
+6) ORIENTAÇÕES PARA VOCÊ: Seja direta e objetiva. Use tom acolhedor mas profissional - como uma orientadora, NÃO como "amiga". Reconheça sentimentos sem dramatizar. Use linguagem como "considere...", "é importante que você...", "procure...". NUNCA use jargão clínico. Cada orientação deve ser prática e baseada no conteúdo analisado. Dirija-se diretamente a você.
 7) CICLO DE VIOLÊNCIA: identifique a fase atual (${fasesCiclo}), se há transição detectada e se há encurtamento do ciclo.
 
 Retorne APENAS JSON válido (sem markdown, sem backticks):
 {
-  "resumo_contexto": "Descrição neutra e equilibrada (máx 200 palavras)",
+  "resumo_contexto": "Descrição dirigida a você, acolhedora e equilibrada (máx 200 palavras). Ex: 'Nesta conversa, você...'",
   "analise_linguagem": [],
   "padroes_detectados": [],
   "tipos_violencia": ["usar SOMENTE: ${tiposViolencia}"],
   "nivel_risco": "${niveisRisco}",
-  "justificativa_risco": "...",
+  "justificativa_risco": "Justificativa dirigida a você. Ex: 'O risco é alto porque você está sendo...'",
   "classificacao_contexto": "${classificacoes}",
   "sentimento": "positivo|negativo|neutro|misto",
   "palavras_chave": [],
   "xingamentos": [],
   "categorias": ["usar os mesmos valores de tipos_violencia: ${tiposViolencia}"],
   "taticas_manipulativas": [{"tatica":"${tiposTaticas}","descricao":"...","evidencia":"...","gravidade":"baixa|media|alta"}],
-  "orientacoes_vitima": ["Orientações práticas e acolhedoras personalizadas"],
+  "orientacoes_vitima": ["Orientações práticas e acolhedoras dirigidas diretamente a você"],
   "sinais_alerta": ["sinais identificados"],
   "ciclo_violencia": {
     "fase_atual": "${fasesCiclo}",
@@ -233,7 +245,7 @@ Retorne APENAS JSON válido (sem markdown, sem backticks):
 }
 
 Se NÃO houver táticas/orientações/sinais, retorne arrays vazios.
-Seja ESPECÍFICO nas evidências — cite trechos da transcrição.`;
+Seja ESPECÍFICA nas evidências - cite trechos da transcrição.`;
 }
 
 /**
