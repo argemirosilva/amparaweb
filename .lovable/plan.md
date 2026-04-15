@@ -1,27 +1,33 @@
 
 
-# Integrar a imagem hero de forma orgânica na página
+# Trocar "ouvir" por "exemplo" com modal de transcrições
 
 ## Problema
-A imagem da mulher está dentro de um bloco retangular isolado, criando uma sensação de "caixa colada" no hero - não conversa com o fundo.
+Os links `[GR:uuid]` no panorama macro mostram "ouvir" e navegam para a página de gravações. O pedido é: mostrar "exemplo" e, ao clicar, abrir um modal com a lista de transcrições usadas na análise.
 
-## Solução
-Remover os containers rígidos e posicionar a imagem como elemento decorativo flutuante, sem bordas ou limites visíveis, integrada ao fundo da seção.
+## Dados disponíveis
+O `aggregates_json` já contém `gravacoes_resumos` - um array com `{id, data, risco, resumo}` de cada gravação usada. Basta expor esse dado no componente.
 
-### Mudanças no Hero (`src/pages/LandingPage.tsx`)
+## Mudanças em `src/components/gravacoes/MacroReportCard.tsx`
 
-1. **Desktop**: Trocar o `div` container da imagem por posicionamento absoluto. A imagem ficará no lado direito do hero, sem container visível, com fade suave nas bordas usando um CSS mask/gradient para dissolver os limites:
-   - `position: absolute; right: 0; bottom: 0`
-   - `mask-image: linear-gradient(to left, transparent 0%, black 15%, black 70%, transparent 100%)`
-   - Opacidade reduzida (~85%) para parecer parte do fundo
+### 1. Atualizar interface e estado
+- Expandir `aggregates_json` no tipo `MacroReport` para incluir `gravacoes_resumos?: { id: string; data: string; risco: string; resumo: string }[]`
+- Adicionar estado `showExemplos` (boolean) para controlar o modal
 
-2. **Mobile**: Manter a imagem com crop do topo, mas aplicar o mesmo mask-image vertical para suavizar o corte inferior.
+### 2. Alterar `PanoramaWithCitations`
+- Trocar o texto "ouvir" por "exemplo"
+- Trocar o ícone `Play` por um ícone contextual (ex: `FileText`)
+- Ao clicar, em vez de navegar, abrir o modal passando o ID clicado para scroll/destaque
 
-3. **Remover o grid 2-col**: O hero passa a ser single-column com o texto à esquerda e a imagem como background decorativo no lado direito - sem divisão rígida de colunas.
+### 3. Criar modal de transcrições
+- Usar o componente `Dialog` existente
+- Listar todas as `gravacoes_resumos` do `aggregates_json`
+- Cada item mostra: data, nível de risco (badge colorido) e o resumo do texto
+- Destacar o item correspondente ao link clicado (scroll automático)
 
 ## Arquivo alterado
-- `src/pages/LandingPage.tsx` - Hero section (linhas ~233-278)
+- `src/components/gravacoes/MacroReportCard.tsx`
 
-## Resultado
-A imagem se dissolve organicamente no fundo branco, sem bordas ou containers demarcados - parte da composição visual, não um bloco separado.
+## Escopo
+Uma edição pontual - sem mudanças no backend, os dados já existem no payload.
 
