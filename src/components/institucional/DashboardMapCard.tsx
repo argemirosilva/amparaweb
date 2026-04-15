@@ -230,6 +230,7 @@ export default function DashboardMapCard() {
           id: d.id, lat: loc?.lat || user?.lat || 0, lng: loc?.lng || user?.lng || 0,
           status: d.status, userName: user?.nome || "-", bateria: d.bateria_percentual,
           lastPing: d.last_ping_at, isMonitoring: d.is_monitoring, deviceInfo: d.dispositivo_info,
+          bairro: user?.bairro || "", cidade: user?.cidade || "", uf: user?.uf || "",
         };
       }).filter(Boolean) as DeviceItem[]
     );
