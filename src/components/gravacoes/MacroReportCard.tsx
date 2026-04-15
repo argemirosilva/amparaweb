@@ -277,24 +277,24 @@ export default function MacroReportCard({
         <CollapsibleContent>
           <div className="rounded-lg bg-muted/30 border border-border/50 p-3 mt-1.5 space-y-2">
             <p className="text-xs text-foreground/80 leading-relaxed">
-              Este resumo é criado automaticamente a partir das suas gravações dos últimos <strong>{report.window_days} dias</strong>. Veja como funciona:
+              Eu preparei este resumo a partir das suas gravações dos últimos <strong>{report.window_days} dias</strong>. Veja como faço:
             </p>
             <ol className="space-y-1.5 text-xs text-foreground/75 leading-relaxed list-decimal list-inside">
               <li>
-                <strong>Escuta e transcrição</strong> - cada áudio que você envia é transformado em texto.
+                <strong>Escuto e transcrevo</strong> - cada áudio que você envia é transformado em texto.
               </li>
               <li>
-                <strong>Análise individual</strong> - o texto de cada gravação é analisado separadamente para identificar o que foi dito, o tom da conversa e possíveis sinais de risco.
+                <strong>Analiso individualmente</strong> - leio cada gravação para identificar o que foi dito, o tom da conversa e possíveis sinais de risco.
               </li>
               <li>
-                <strong>Visão do conjunto</strong> - todas as análises individuais são reunidas para montar um panorama geral do período, identificando padrões que se repetem.
+                <strong>Olho o conjunto</strong> - reúno todas as análises para montar um panorama geral do período, identificando padrões que se repetem.
               </li>
               <li>
-                <strong>Orientações</strong> - com base nos padrões encontrados, são sugeridas ações práticas e específicas para a sua situação.
+                <strong>Oriento você</strong> - com base nos padrões encontrados, sugiro ações práticas e específicas para a sua situação.
               </li>
             </ol>
             <p className="text-[10px] text-muted-foreground leading-relaxed italic">
-              Foram analisadas {report.aggregates_json.total_gravacoes_analisadas || 0} gravações para gerar este resumo. Você pode clicar nos links "ouvir" no texto acima para conferir diretamente os áudios citados.
+              Analisei {report.aggregates_json.total_gravacoes_analisadas || 0} gravações para montar este resumo. Você pode clicar nos links "ouvir" no texto para conferir os áudios citados.
             </p>
           </div>
         </CollapsibleContent>
