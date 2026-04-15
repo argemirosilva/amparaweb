@@ -56,9 +56,9 @@ function HalftoneOverlay({ opacity = 0.03 }: { opacity?: number }) {
 /* ── Section wrapper with organic background ── */
 function OrganicSection({ id, children, className = "", variant = "light" }: { id?: string; children: React.ReactNode; className?: string; variant?: "light" | "warm" | "cool" | "white" }) {
   const bgMap = {
-    light: "bg-gradient-to-br from-[hsl(280,20%,97%)] via-[hsl(320,15%,96%)] to-[hsl(280,10%,95%)]",
-    warm: "bg-gradient-to-br from-[hsl(320,25%,96%)] via-[hsl(280,20%,97%)] to-[hsl(320,15%,95%)]",
-    cool: "bg-gradient-to-br from-[hsl(260,20%,97%)] via-[hsl(200,20%,96%)] to-[hsl(260,15%,97%)]",
+    light: "bg-background",
+    warm: "bg-muted/30",
+    cool: "bg-muted/20",
     white: "bg-background",
   };
 
@@ -229,26 +229,8 @@ export default function LandingPage() {
         </div>
       </header>
 
-      {/* ══════ HERO - organic feminine gradient ══════ */}
-      <section className="relative overflow-hidden min-h-[420px] md:min-h-[520px]">
-        {/* Organic gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[hsl(280,30%,96%)] via-[hsl(320,25%,94%)] to-[hsl(280,20%,93%)]" />
-
-        {/* Organic blobs */}
-        <OrgBlob className="-top-20 right-[10%] w-[500px] h-[500px] opacity-[0.06]" color="hsl(320,70%,50%)" />
-        <OrgBlob className="bottom-[-100px] left-[-100px] w-[400px] h-[400px] opacity-[0.05]" color="hsl(280,60%,48%)" style={{ borderRadius: "40% 60% 55% 45% / 55% 40% 60% 45%" }} />
-        <OrgBlob className="top-[20%] right-[-50px] w-[200px] h-[200px] opacity-[0.04]" color="hsl(320,60%,55%)" style={{ borderRadius: "55% 45% 50% 50% / 45% 55% 45% 55%" }} />
-
-        {/* Halftone */}
-        <HalftoneOverlay opacity={0.025} />
-
-        {/* Floating ring circles */}
-        <div className="absolute top-16 right-[20%] w-32 h-32 rounded-full border opacity-[0.06]" style={{ borderColor: "hsl(320,70%,50%)" }} />
-        <div className="absolute bottom-20 left-[15%] w-20 h-20 rounded-full border opacity-[0.08]" style={{ borderColor: "hsl(280,60%,48%)" }} />
-
-        {/* Sparkles */}
-        <div className="absolute top-12 right-[30%] w-1.5 h-1.5 rounded-full opacity-25 animate-pulse" style={{ background: "hsl(320,70%,60%)" }} />
-        <div className="absolute bottom-16 right-[45%] w-1 h-1 rounded-full opacity-20 animate-pulse" style={{ background: "hsl(280,60%,55%)", animationDelay: "0.7s" }} />
+      {/* ══════ HERO ══════ */}
+      <section className="relative overflow-hidden min-h-[420px] md:min-h-[520px] bg-background">
 
         <div className="max-w-7xl mx-auto px-4 py-12 md:py-20 grid md:grid-cols-2 gap-8 items-center relative z-10">
           <div className="space-y-5">
