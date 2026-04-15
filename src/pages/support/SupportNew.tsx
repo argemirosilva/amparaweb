@@ -40,13 +40,14 @@ export default function SupportNew() {
   const preResourceType = searchParams.get("resource_type") || "";
   const preResourceId = searchParams.get("resource_id") || "";
   const preResourceLabel = searchParams.get("resource_label") || "";
+  const preMessage = searchParams.get("pre_message") || "";
 
   // Stage: "form" | "otp"
   const [stage, setStage] = useState<"form" | "otp">("form");
 
   // Form state
   const [category, setCategory] = useState(preCategory || "app_issue");
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState(preMessage);
   const [linkResource, setLinkResource] = useState(!!preResourceId);
   const [resourceType, setResourceType] = useState(preResourceType || "recording");
   const [resourceId, setResourceId] = useState(preResourceId);
