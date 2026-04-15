@@ -374,6 +374,21 @@ export default function MacroReportCard({
         </div>
       )}
 
+      {/* Dados da análise (collapsible) */}
+      <div className="rounded-lg border border-border/50 overflow-hidden">
+        <button
+          onClick={() => setShowData(!showData)}
+          className="w-full flex items-center justify-between px-3 py-2 hover:bg-muted/30 transition-colors"
+        >
+          <div className="flex items-center gap-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+            <Database className="w-3 h-3" />
+            Dados da análise
+          </div>
+          <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground transition-transform ${showData ? "rotate-180" : ""}`} />
+        </button>
+        {showData && <AggregatesDetail agg={report.aggregates_json} navigate={navigate} />}
+      </div>
+
       {error && (
         <p className="text-xs text-destructive flex items-center gap-1">
           <AlertTriangle className="w-3 h-3" />{error}
