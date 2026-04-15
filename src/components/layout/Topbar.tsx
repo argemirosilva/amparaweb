@@ -30,7 +30,7 @@ export default function Topbar() {
         className="group flex items-center gap-2.5"
       >
         <span className="text-sm font-medium text-foreground hidden sm:inline">
-          Olá, {usuario?.nome_completo?.split(" ")[0] || "usuária"}
+          {usuario?.nome_completo?.split(" ")[0] || "Você"}
         </span>
         <Avatar className="w-8 h-8 ring-1 ring-border group-hover:ring-primary/30 transition-all">
           <AvatarImage src={usuario?.avatar_url || undefined} alt={usuario?.nome_completo} />

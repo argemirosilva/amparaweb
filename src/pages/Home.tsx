@@ -3,7 +3,8 @@ import MonitoringStatusCard from "@/components/dashboard/MonitoringStatusCard";
 import DeviceStatusCard from "@/components/dashboard/DeviceStatusCard";
 import AudioRecorderCard from "@/components/dashboard/AudioRecorderCard";
 import RiskEvolutionCard from "@/components/dashboard/RiskEvolutionCard";
-import { UserSearch, ChevronRight, Mic } from "lucide-react";
+import AmparaPresenceCard from "@/components/dashboard/AmparaPresenceCard";
+import { UserSearch, ChevronRight } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function HomePage() {
@@ -13,6 +14,9 @@ export default function HomePage() {
   return (
     <div className="animate-fade-in min-h-full max-w-4xl pb-6">
       <div className="space-y-4 px-1">
+        {/* Ampara presence — contextual greeting */}
+        <AmparaPresenceCard />
+
         {/* Risk evolution — hero card */}
         <RiskEvolutionCard />
 

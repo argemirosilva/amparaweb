@@ -122,26 +122,26 @@ export default function MonitoringStatusCard() {
         </div>
         <div className="min-w-0">
           <p className="text-sm font-medium text-foreground">
-            {state?.type === "monitoring" || state?.type === "monitoring_no_window" ? "Monitorando" : "Monitoramento"}
+            {state?.type === "monitoring" || state?.type === "monitoring_no_window" ? "Estou monitorando" : "Monitoramento"}
           </p>
           {state?.type === "monitoring" && (
             <p className="text-xs font-medium text-blue-600">
-              até {state.fim}
+              Ficarei atenta até {state.fim}
             </p>
           )}
           {state?.type === "next_today" && (
             <p className="text-xs font-medium text-blue-600">
-              Próximo período hoje às {state.inicio}
+              Volto a escutar hoje às {state.inicio}
             </p>
           )}
           {state?.type === "next_other_day" && (
             <p className="text-xs font-medium text-blue-600">
-              Próximo período {state.dayLabel} às {state.inicio}
+              Próxima escuta {state.dayLabel} às {state.inicio}
             </p>
           )}
           {state?.type === "no_schedule" && (
             <p className="text-xs font-medium text-muted-foreground">
-              Nenhum período agendado
+              Nenhum horário configurado ainda
             </p>
           )}
         </div>
