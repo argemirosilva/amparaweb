@@ -1,0 +1,1 @@
+DELETE FROM public.gravacoes_analises WHERE user_id = '1edfc5e3-f28d-4f42-b491-105945fa7e13';
