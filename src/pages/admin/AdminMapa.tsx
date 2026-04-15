@@ -182,6 +182,10 @@ export default function AdminMapa() {
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
   const [period, setPeriodState] = useState<string>(() => localStorage.getItem("admin_dash_period") || "30d");
   const setPeriod = (p: string) => { localStorage.setItem("admin_dash_period", p); setPeriodState(p); };
+  const [filterCidade, setFilterCidade] = useState("");
+  const [filterBairro, setFilterBairro] = useState("");
+  const [cidadeSearch, setCidadeSearch] = useState("");
+  const [bairroSearch, setBairroSearch] = useState("");
 
   // Helper: convert period to { since, periodDays, periodHours }
   const getPeriodRange = useCallback((p: string) => {
