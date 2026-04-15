@@ -1,30 +1,38 @@
 
 
-## Plan: Atalho de suporte com sub-categorias de problema na gravacao
+## Plano: Mudar o tom da analise de IA para falar diretamente com a usuaria
 
-### Situacao atual
-Ja existe um componente `SupportShortcut` no `GravacaoExpandedContent.tsx` que redireciona para `/support/new` com query params pre-preenchidos (category, resource_type, resource_id, resource_label). A pagina `SupportNew` ja aceita esses params e pre-preenche o formulario.
+### Problema
+Os prompts MICRO e MACRO falam da mulher na terceira pessoa ("a mulher", "a vitima", "identificados xingamentos direcionados"). Quem le é a propria mulher, entao o texto precisa se dirigir a ela diretamente ("voce", "na sua gravacao foram identificados...").
 
 ### O que mudar
 
-**1. Transformar o botao "Pedir suporte" em um menu com 3 opcoes**
+**Arquivo:** `supabase/functions/_shared/buildAnalysisPrompt.ts`
 
-No `SupportShortcut`, substituir o botao simples por um Popover ou DropdownMenu com as opcoes:
-- "Problema com o audio" - navega com `category=playback`
-- "Problema com a transcricao" - navega com `category=transcription_question`
-- "Problema com download" - navega com `category=app_issue` e mensagem pre-preenchida sobre download
+**1. Prompt MICRO (buildAnalysisPrompt) - 3 ajustes:**
+- No campo `resumo_contexto`: mudar de "Descricao neutra" para instrucao de escrever em segunda pessoa, dirigindo-se a usuaria ("Nesta conversa, voce...")
+- No campo `orientacoes_vitima`: ja usa "considere/procure" mas adicionar instrucao explicita: "Dirija-se diretamente a usuaria usando 'voce'. NUNCA use terceira pessoa como 'a mulher', 'a vitima' ou 'ela'."
+- No campo `justificativa_risco`: mesma regra de segunda pessoa
 
-Cada opcao redireciona para `/support/new` com a categoria correta ja selecionada, o resource_id da gravacao e o label.
+**2. Prompt MACRO (buildMacroPrompt) - 3 ajustes:**
+- No `panorama_narrativo`: instrucao para usar segunda pessoa ("Nas suas gravacoes recentes, voce...")
+- No `resumo`: dirigir-se a usuaria
+- Nas `orientacoes`: ja usa tom adequado, reforcar a segunda pessoa
 
-**2. Adicionar mensagem contextual pre-preenchida**
-
-Alem da categoria, passar um param `pre_message` com texto contextual (ex: "Estou com dificuldade para baixar esta gravacao") para facilitar o preenchimento pela usuaria.
-
-**3. Ajustar SupportNew para aceitar pre_message**
-
-Ler o param `pre_message` dos search params e pre-preencher o campo de mensagem.
+**3. Regra global adicionada aos dois prompts:**
+Adicionar no inicio das instrucoes:
+```
+LINGUAGEM OBRIGATORIA:
+- Dirija-se SEMPRE diretamente a usuaria usando "voce".
+- NUNCA use terceira pessoa ("a mulher", "a vitima", "ela").
+- Exemplo correto: "Nesta conversa, voce foi alvo de xingamentos."
+- Exemplo errado: "A mulher foi alvo de xingamentos."
+```
 
 ### Arquivos editados
-- `src/components/gravacoes/GravacaoExpandedContent.tsx` - Transformar SupportShortcut em menu com 3 opcoes
-- `src/pages/support/SupportNew.tsx` - Aceitar param `pre_message` para pre-preencher mensagem
+- `supabase/functions/_shared/buildAnalysisPrompt.ts` - Ajustar os 3 prompts (triagem, MICRO, MACRO)
+- Deploy das edge functions que usam esse shared: `analysis-worker`, `process-recording`, `run-batch-analysis`, `segment-triage`
+
+### Nota
+Apos o deploy, as novas analises ja sairao em segunda pessoa. As analises existentes manterao o texto antigo ate serem reprocessadas.
 
