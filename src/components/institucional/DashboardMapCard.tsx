@@ -243,18 +243,22 @@ export default function DashboardMapCard() {
     });
     setRecTrends(rTrends);
 
-    // Device items
-    const userLastLoc: Record<string, { lat: number; lng: number }> = {};
-    (locations || []).forEach((l) => { if (!userLastLoc[l.user_id]) userLastLoc[l.user_id] = { lat: l.latitude, lng: l.longitude }; });
+    // Device items — privacy: use only city/UF centroids, never exact coordinates
     setDevices(
       Object.entries(latestDeviceByUser).map(([userId, d]: [string, any]) => {
-        const loc = userLastLoc[userId]; const user = userMap[userId];
-        if (!loc && !user?.lat) return null;
+        const user = userMap[userId];
+        if (!user?.uf) return null;
+        const cityKey = user.cidade && user.uf ? `${user.cidade}-${user.uf}` : null;
+        const cityCenter = cityKey ? CITY_CENTROID[cityKey] : null;
+        const ufCenter = UF_CENTROID[user.uf];
+        const lat = cityCenter?.[0] ?? ufCenter?.[0];
+        const lng = cityCenter?.[1] ?? ufCenter?.[1];
+        if (lat == null || lng == null) return null;
         return {
-          id: d.id, lat: loc?.lat || user?.lat || 0, lng: loc?.lng || user?.lng || 0,
-          status: d.status, userName: user?.nome || "-", bateria: d.bateria_percentual,
-          lastPing: d.last_ping_at, isMonitoring: d.is_monitoring, deviceInfo: d.dispositivo_info,
-          bairro: user?.bairro || "", cidade: user?.cidade || "", uf: user?.uf || "",
+          id: d.id, lat, lng,
+          status: d.status, userName: "-", bateria: null,
+          lastPing: null, isMonitoring: d.is_monitoring, deviceInfo: null,
+          bairro: user.bairro || "", cidade: user.cidade || "", uf: user.uf || "",
         };
       }).filter(Boolean) as DeviceItem[]
     );
