@@ -111,6 +111,10 @@ export default function DashboardMapCard() {
   const [loading, setLoading] = useState(false);
   const [ufTrends, setUfTrends] = useState<Record<string, "up" | "down" | "stable">>({});
   const [recTrends, setRecTrends] = useState<Record<string, RecTrend>>({});
+  const [filterCidade, setFilterCidade] = useState("");
+  const [filterBairro, setFilterBairro] = useState("");
+  const [cidadeSearch, setCidadeSearch] = useState("");
+  const [bairroSearch, setBairroSearch] = useState("");
 
   const totalOnline = Object.values(stats).reduce((a, s) => a + s.online, 0);
   const totalMonitorando = Object.values(stats).reduce((a, s) => a + s.monitorando, 0);
