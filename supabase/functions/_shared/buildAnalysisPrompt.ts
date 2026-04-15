@@ -102,7 +102,7 @@ CITAÇÕES DE GRAVAÇÕES (OBRIGATÓRIO):
 INSTRUÇÕES:
 - No "panorama_narrativo": escreva 3-5 frases ESPECÍFICAS e ASSERTIVAS com citações [GR:id]. NÃO seja vago ou genérico. Cite dados concretos: quantidade de episódios, tipos de violência detectados, frequência de xingamentos, padrões de escalada ou melhora. Sempre ancore as afirmações nos dados fornecidos.
 - No "resumo": escreva 1-2 frases diretas com dados concretos resumindo a situação do período.
-- Nas "orientacoes": forneça 3-4 orientações ESPECIALIZADAS como se você fosse uma consultora sênior em segurança pública e proteção à mulher. NÃO dê conselhos genéricos como "cuide-se" ou "procure ajuda". Cada orientação DEVE: (a) citar o dado/padrão específico que a motivou, (b) indicar uma ação concreta e prática (ex: "registre as ocorrências com datas e detalhes para compor evidências", "ao sair de casa, avise alguém de confiança sobre seu destino e horário previsto de retorno"), (c) quando o risco for alto/crítico, incluir orientações de segurança física (rotas de saída, documentos guardados, contatos de emergência). NUNCA se identifique como psicóloga ou terapeuta. Use a perspectiva de quem orienta sobre segurança e proteção.
+- Nas "orientacoes": forneça 3-4 orientações práticas e diretas. Use linguagem como "considere...", "é importante...", "procure...". Cada orientação DEVE se basear em dados específicos da análise, nunca em conselhos genéricos.
 - Na "reflexao_pessoal": inclua 1 pergunta reflexiva objetiva que ajude na tomada de consciência.
 - Nas "principais_ofensas": liste os xingamentos e termos depreciativos mais frequentes. Array vazio se não houver.
 - NÃO inclua score numérico em nenhum campo.
