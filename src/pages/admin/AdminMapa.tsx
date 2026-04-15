@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useMapbox } from "@/hooks/useMapbox";
-import { MapPin, AlertTriangle, Smartphone, Users, RefreshCw, BarChart3, Mic, Clock, ChevronDown } from "lucide-react";
+import { MapPin, AlertTriangle, Smartphone, Users, RefreshCw, BarChart3, Mic, Clock, ChevronDown, Search, X } from "lucide-react";
 import GovKpiCard from "@/components/institucional/GovKpiCard";
 import GovStatusBadge from "@/components/institucional/GovStatusBadge";
 import WordCloudCard from "@/components/institucional/WordCloudCard";
