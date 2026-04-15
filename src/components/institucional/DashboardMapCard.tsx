@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMapbox } from "@/hooks/useMapbox";
 import { X, MapPin, Smartphone, RefreshCw, TrendingUp, TrendingDown, Minus, Mic, Clock } from "lucide-react";
