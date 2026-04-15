@@ -232,8 +232,36 @@ export default function LandingPage() {
       {/* ══════ HERO ══════ */}
       <section className="relative overflow-hidden min-h-[420px] md:min-h-[520px] bg-background">
 
-        <div className="max-w-7xl mx-auto px-4 py-12 md:py-20 grid md:grid-cols-2 gap-8 items-center relative z-10">
-          <div className="space-y-5">
+        {/* Floating hero image - desktop */}
+        <img
+          src={heroWoman}
+          alt=""
+          aria-hidden="true"
+          className="hidden md:block absolute right-0 bottom-0 h-[90%] w-auto object-contain pointer-events-none select-none opacity-[0.85]"
+          style={{
+            maskImage: 'linear-gradient(to left, transparent 0%, black 18%, black 65%, transparent 100%), linear-gradient(to top, transparent 0%, black 15%, black 100%)',
+            WebkitMaskImage: 'linear-gradient(to left, transparent 0%, black 18%, black 65%, transparent 100%), linear-gradient(to top, transparent 0%, black 15%, black 100%)',
+            maskComposite: 'intersect',
+            WebkitMaskComposite: 'source-in',
+          }}
+        />
+
+        {/* Floating hero image - mobile */}
+        <img
+          src={heroWoman}
+          alt=""
+          aria-hidden="true"
+          className="block md:hidden absolute right-0 bottom-0 h-[200px] w-auto object-contain pointer-events-none select-none opacity-70"
+          style={{
+            maskImage: 'linear-gradient(to top, transparent 0%, black 25%, black 100%), linear-gradient(to left, transparent 0%, black 20%, black 100%)',
+            WebkitMaskImage: 'linear-gradient(to top, transparent 0%, black 25%, black 100%), linear-gradient(to left, transparent 0%, black 20%, black 100%)',
+            maskComposite: 'intersect',
+            WebkitMaskComposite: 'source-in',
+          }}
+        />
+
+        <div className="max-w-7xl mx-auto px-4 py-12 md:py-20 relative z-10">
+          <div className="max-w-lg space-y-5">
             <h1 className="text-xl md:text-2xl lg:text-3xl font-bold leading-tight text-foreground tracking-tight">
               Proteção inteligente para mulheres
             </h1>
@@ -266,14 +294,6 @@ export default function LandingPage() {
                 </button>
               </form>
             </div>
-          </div>
-          {/* Hero image */}
-          <div className="hidden md:flex justify-center">
-            <img src={heroWoman} alt="Mulher protegida pela Ampara" className="max-h-[420px] w-auto object-contain drop-shadow-2xl" />
-          </div>
-          {/* Mobile hero */}
-          <div className="flex md:hidden justify-center overflow-hidden max-h-[140px]">
-            <img src={heroWoman} alt="Mulher protegida pela Ampara" className="w-auto h-[280px] object-cover object-top drop-shadow-2xl" />
           </div>
         </div>
       </section>
