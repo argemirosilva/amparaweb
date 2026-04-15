@@ -146,9 +146,9 @@ export default function DashboardMapCard() {
       supabase.from("gravacoes").select("user_id, created_at, duracao_segundos").gte("created_at", since),
     ]);
 
-    const userMap: Record<string, { nome: string; uf: string; cidade: string; bairro: string; lat: number | null; lng: number | null }> = {};
+    const userMap: Record<string, { nome: string; uf: string; cidade: string; bairro: string }> = {};
     (users || []).forEach((u) => {
-      userMap[u.id] = { nome: u.nome_completo, uf: u.endereco_uf || "", cidade: u.endereco_cidade || "", bairro: u.endereco_bairro || "", lat: u.endereco_lat, lng: u.endereco_lon };
+      userMap[u.id] = { nome: u.nome_completo, uf: u.endereco_uf || "", cidade: u.endereco_cidade || "", bairro: u.endereco_bairro || "" };
     });
 
     // UF stats
