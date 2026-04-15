@@ -204,7 +204,7 @@ export default function MacroReportCard({
           <FileBarChart className="w-5 h-5 text-muted-foreground" />
         </div>
         <p className="text-xs text-muted-foreground text-center leading-relaxed">
-          Nenhum resumo disponível para este período.
+          Ainda não tenho dados suficientes para montar seu resumo.
         </p>
         <Button
           variant="outline"
@@ -235,6 +235,9 @@ export default function MacroReportCard({
       {/* Header bar */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
+          <Badge variant="outline" className="text-[10px] font-medium text-primary/70 border-primary/20 flex items-center gap-1.5">
+            ✦ Análise da Ampara
+          </Badge>
           <Badge variant="outline" className="text-[10px] font-medium text-muted-foreground flex items-center gap-1.5">
             <span className={`w-2 h-2 rounded-full shrink-0 ${
               (output.nivel_alerta || "baixo") === "baixo" ? "bg-emerald-500" :
