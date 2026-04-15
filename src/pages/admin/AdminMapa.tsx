@@ -341,6 +341,7 @@ export default function AdminMapa() {
       return {
         id: a.id, lat, lng, status: a.status,
         protocolo: a.protocolo, criado_em: a.criado_em, userName: user?.nome || "-",
+        bairro: user?.bairro || "", cidade: user?.cidade || "", uf: user?.uf || "",
       };
     }).filter(Boolean) as AlertMarker[];
     setAlerts(alertMarkers);
