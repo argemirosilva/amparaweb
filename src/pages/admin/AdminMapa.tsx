@@ -433,8 +433,9 @@ export default function AdminMapa() {
         const cityKey = u.endereco_cidade && u.endereco_uf ? `${u.endereco_cidade}-${u.endereco_uf}` : null;
         const cityCenter = cityKey ? CITY_CENTROID[cityKey] : null;
         const ufCenter = u.endereco_uf ? UF_CENTROID[u.endereco_uf] : null;
-        const lat = loc?.lat ?? u.endereco_lat ?? cityCenter?.[0] ?? ufCenter?.[0];
-        const lng = loc?.lng ?? u.endereco_lon ?? cityCenter?.[1] ?? ufCenter?.[1];
+        // Privacy: never use exact GPS or address coordinates — only city/UF centroids
+        const lat = cityCenter?.[0] ?? ufCenter?.[0];
+        const lng = cityCenter?.[1] ?? ufCenter?.[1];
         if (lat == null || lng == null) return null;
         return {
           id: device?.id || u.id,
