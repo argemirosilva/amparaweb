@@ -119,6 +119,7 @@ export default function MacroReportCard({
   const [error, setError] = useState<string | null>(null);
   const [ttsState, setTtsState] = useState<"idle" | "loading" | "playing">("idle");
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [showData, setShowData] = useState(false);
 
   const fetchReport = useCallback(async () => {
     setLoading(true);
