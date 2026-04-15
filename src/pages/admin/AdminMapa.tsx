@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useMapbox } from "@/hooks/useMapbox";
-import { MapPin, AlertTriangle, Smartphone, Users, RefreshCw, BarChart3, Mic, Clock, ChevronDown } from "lucide-react";
+import { MapPin, AlertTriangle, Smartphone, Users, RefreshCw, BarChart3, Mic, Clock, ChevronDown, Search, X } from "lucide-react";
 import GovKpiCard from "@/components/institucional/GovKpiCard";
 import GovStatusBadge from "@/components/institucional/GovStatusBadge";
 import WordCloudCard from "@/components/institucional/WordCloudCard";
@@ -182,6 +182,10 @@ export default function AdminMapa() {
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
   const [period, setPeriodState] = useState<string>(() => localStorage.getItem("admin_dash_period") || "30d");
   const setPeriod = (p: string) => { localStorage.setItem("admin_dash_period", p); setPeriodState(p); };
+  const [filterCidade, setFilterCidade] = useState("");
+  const [filterBairro, setFilterBairro] = useState("");
+  const [cidadeSearch, setCidadeSearch] = useState("");
+  const [bairroSearch, setBairroSearch] = useState("");
 
   // Helper: convert period to { since, periodDays, periodHours }
   const getPeriodRange = useCallback((p: string) => {
@@ -232,8 +236,29 @@ export default function AdminMapa() {
   const totalGravacoes = Object.values(stats).reduce((a, s) => a + s.gravacoes, 0);
   const totalHorasGrav = Math.round(Object.values(stats).reduce((a, s) => a + s.horasGravacao, 0) * 10) / 10;
 
+  // Derived: available cities and bairros for current UF
+  const availableCidades = useMemo(() => {
+    if (!selectedUf) return [];
+    const set = new Set<string>();
+    devices.forEach(d => { if (d.uf === selectedUf && d.cidade) set.add(d.cidade); });
+    alerts.forEach(a => { if (a.uf === selectedUf && a.cidade) set.add(a.cidade); });
+    return Array.from(set).sort();
+  }, [selectedUf, devices, alerts]);
 
-  // Load GeoJSON
+  const availableBairros = useMemo(() => {
+    if (!selectedUf || !filterCidade) return [];
+    const set = new Set<string>();
+    devices.forEach(d => { if (d.uf === selectedUf && d.cidade === filterCidade && d.bairro) set.add(d.bairro); });
+    alerts.forEach(a => { if (a.uf === selectedUf && a.cidade === filterCidade && a.bairro) set.add(a.bairro); });
+    return Array.from(set).sort();
+  }, [selectedUf, filterCidade, devices, alerts]);
+
+  // Clear filters when UF changes
+  useEffect(() => {
+    setFilterCidade(""); setFilterBairro(""); setCidadeSearch(""); setBairroSearch("");
+  }, [selectedUf]);
+
+
   useEffect(() => {
     fetch(BRAZIL_GEOJSON_URL)
       .then((r) => r.json())
@@ -783,6 +808,21 @@ export default function AdminMapa() {
     });
   }, [alerts]);
 
+  // Filter clusters based on city/bairro selection
+  const filteredBairroClusters = useMemo(() => {
+    let filtered = bairroClusters;
+    if (filterCidade) filtered = filtered.filter(c => c.cidade === filterCidade);
+    if (filterBairro) filtered = filtered.filter(c => c.bairro === filterBairro);
+    return filtered;
+  }, [bairroClusters, filterCidade, filterBairro]);
+
+  const filteredAlertClusters = useMemo(() => {
+    let filtered = alertClusters;
+    if (filterCidade) filtered = filtered.filter(c => c.cidade === filterCidade);
+    if (filterBairro) filtered = filtered.filter(c => c.bairro === filterBairro);
+    return filtered;
+  }, [alertClusters, filterCidade, filterBairro]);
+
   // Markers (bairro clusters)
   useEffect(() => {
     const map = mapRef.current; const mbgl = mapboxglInstance;
@@ -790,7 +830,7 @@ export default function AdminMapa() {
     markersRef.current.forEach((m) => m.remove()); markersRef.current = [];
 
     if (showAlerts) {
-      alertClusters.forEach((c) => {
+      filteredAlertClusters.forEach((c) => {
         const size = Math.min(24 + c.count * 4, 40);
         const el = document.createElement("div");
         el.style.cssText = `width:${size}px;height:${size}px;border-radius:50%;background:hsl(0,72%,51%);border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;animation:pulse 2s infinite;color:white;font-family:Inter,sans-serif;font-size:${c.count > 1 ? '11' : '0'}px;font-weight:700`;
@@ -806,7 +846,7 @@ export default function AdminMapa() {
     }
 
     if (showDevices) {
-      bairroClusters.forEach((c) => {
+      filteredBairroClusters.forEach((c) => {
         const size = Math.min(12 + c.count * 3, 36);
         const bgColor = c.hasAlert ? "hsl(0,72%,51%)" : c.online > c.count / 2 ? "hsl(142,71%,35%)" : "hsl(220,9%,60%)";
         const el = document.createElement("div");
@@ -819,7 +859,7 @@ export default function AdminMapa() {
         markersRef.current.push(marker);
       });
     }
-  }, [alertClusters, bairroClusters, showAlerts, showDevices, mapLoaded, mapboxglInstance]);
+  }, [filteredAlertClusters, filteredBairroClusters, showAlerts, showDevices, mapLoaded, mapboxglInstance]);
 
   // Fly to UF
   useEffect(() => {
@@ -836,6 +876,24 @@ export default function AdminMapa() {
       map.fitBounds([[-73.5, -33.7], [-34.8, 5.3]], { padding: 30, duration: 1200 });
     }
   }, [selectedUf, mapLoaded, geojson]);
+
+  // FlyTo city/bairro when filter changes
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapLoaded || !selectedUf) return;
+    if (filterBairro && filterCidade) {
+      const cluster = filteredBairroClusters.find(c => c.bairro === filterBairro && c.cidade === filterCidade);
+      if (cluster) map.flyTo({ center: [cluster.lng, cluster.lat], zoom: 13, duration: 1200 });
+    } else if (filterCidade) {
+      const cityKey = `${filterCidade}-${selectedUf}`;
+      const center = CITY_CENTROID[cityKey];
+      if (center) map.flyTo({ center: [center[1], center[0]], zoom: 11, duration: 1200 });
+      else {
+        const cluster = bairroClusters.find(c => c.cidade === filterCidade && c.uf === selectedUf);
+        if (cluster) map.flyTo({ center: [cluster.lng, cluster.lat], zoom: 11, duration: 1200 });
+      }
+    }
+  }, [filterCidade, filterBairro, selectedUf, mapLoaded, filteredBairroClusters, bairroClusters]);
 
   const topUfs = Object.entries(stats)
     .filter(([, s]) => s.gravacoes > 0 || s.usuarios > 0)
@@ -1001,6 +1059,71 @@ export default function AdminMapa() {
               ) : (
                 <p className="text-xs py-3 text-center rounded-lg mb-4" style={{ ...subtitleStyle, background: "hsl(210 17% 96%)" }}>Sem dados para este estado</p>
                )}
+              {/* City/Bairro filter */}
+              <div className="mt-4 mb-3 space-y-2">
+                <div className="relative">
+                  <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5" style={subtitleStyle} />
+                  <input
+                    type="text"
+                    placeholder="Buscar cidade…"
+                    value={filterCidade || cidadeSearch}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setCidadeSearch(v);
+                      if (!v) { setFilterCidade(""); setFilterBairro(""); setBairroSearch(""); }
+                    }}
+                    list="admin-mapa-cidades"
+                    className="w-full pl-7 pr-7 py-1.5 text-xs rounded-md border outline-none transition-colors focus:border-blue-400"
+                    style={{ borderColor: filterCidade ? "hsl(207 89% 42%)" : "hsl(220 13% 91%)", background: "hsl(0 0% 100%)" }}
+                    onBlur={() => {
+                      const match = availableCidades.find(c => c.toLowerCase() === (cidadeSearch || "").toLowerCase());
+                      if (match) { setFilterCidade(match); setCidadeSearch(""); setFilterBairro(""); setBairroSearch(""); }
+                    }}
+                  />
+                  <datalist id="admin-mapa-cidades">
+                    {availableCidades.filter(c => !cidadeSearch || c.toLowerCase().includes(cidadeSearch.toLowerCase())).map(c => (
+                      <option key={c} value={c} />
+                    ))}
+                  </datalist>
+                  {filterCidade && (
+                    <button onClick={() => { setFilterCidade(""); setCidadeSearch(""); setFilterBairro(""); setBairroSearch(""); }} className="absolute right-1.5 top-1/2 -translate-y-1/2 p-0.5 rounded hover:bg-gray-100">
+                      <X className="w-3 h-3" style={subtitleStyle} />
+                    </button>
+                  )}
+                </div>
+                {filterCidade && availableBairros.length > 0 && (
+                  <div className="relative">
+                    <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5" style={subtitleStyle} />
+                    <input
+                      type="text"
+                      placeholder="Buscar bairro…"
+                      value={filterBairro || bairroSearch}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        setBairroSearch(v);
+                        if (!v) setFilterBairro("");
+                      }}
+                      list="admin-mapa-bairros"
+                      className="w-full pl-7 pr-7 py-1.5 text-xs rounded-md border outline-none transition-colors focus:border-blue-400"
+                      style={{ borderColor: filterBairro ? "hsl(207 89% 42%)" : "hsl(220 13% 91%)", background: "hsl(0 0% 100%)" }}
+                      onBlur={() => {
+                        const match = availableBairros.find(b => b.toLowerCase() === (bairroSearch || "").toLowerCase());
+                        if (match) { setFilterBairro(match); setBairroSearch(""); }
+                      }}
+                    />
+                    <datalist id="admin-mapa-bairros">
+                      {availableBairros.filter(b => !bairroSearch || b.toLowerCase().includes(bairroSearch.toLowerCase())).map(b => (
+                        <option key={b} value={b} />
+                      ))}
+                    </datalist>
+                    {filterBairro && (
+                      <button onClick={() => { setFilterBairro(""); setBairroSearch(""); }} className="absolute right-1.5 top-1/2 -translate-y-1/2 p-0.5 rounded hover:bg-gray-100">
+                        <X className="w-3 h-3" style={subtitleStyle} />
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
               {/* Ranking por município */}
               {selectedUf && municipioStats[selectedUf] && Object.keys(municipioStats[selectedUf]).length > 0 && (
                 <>
@@ -1008,13 +1131,14 @@ export default function AdminMapa() {
                   <RankingModeSelector />
                   <div className="space-y-1">
                     {Object.entries(municipioStats[selectedUf])
+                      .filter(([cidade]) => !filterCidade || cidade === filterCidade)
                       .sort(([cidA], [cidB]) => {
                         if (rankingMode === "risco") return ((munRiskStats[selectedUf]?.[cidB]?.altoCritico || 0) - (munRiskStats[selectedUf]?.[cidA]?.altoCritico || 0));
                         if (rankingMode === "panico") return ((munPanicoStats[selectedUf]?.[cidB] || 0) - (munPanicoStats[selectedUf]?.[cidA] || 0));
                         return municipioStats[selectedUf][cidB].gravacoes - municipioStats[selectedUf][cidA].gravacoes;
                       })
                       .map(([cidade, s]) => (
-                        <div key={cidade} className="flex items-center justify-between px-2 py-2 rounded-lg text-xs" style={{ background: "hsl(210 17% 96%)" }}>
+                        <button key={cidade} onClick={() => { if (filterCidade === cidade) { setFilterCidade(""); setCidadeSearch(""); } else { setFilterCidade(cidade); setCidadeSearch(""); setFilterBairro(""); setBairroSearch(""); } }} className="w-full flex items-center justify-between px-2 py-2 rounded-lg text-xs hover:bg-gray-100 transition-colors text-left" style={{ background: filterCidade === cidade ? "hsl(207 89% 95%)" : "hsl(210 17% 96%)", borderLeft: filterCidade === cidade ? "3px solid hsl(207 89% 42%)" : "3px solid transparent" }}>
                           <span className="font-medium truncate mr-2" style={titleStyle}>{cidade}</span>
                           <div className="flex items-center gap-2 flex-shrink-0">
                             {rankingMode === "gravacoes" && (
@@ -1035,7 +1159,7 @@ export default function AdminMapa() {
                             )}
                             {s.alertas > 0 && rankingMode === "gravacoes" && <span className="font-bold" style={{ color: "hsl(0 72% 51%)" }}>{s.alertas} ⚠</span>}
                           </div>
-                        </div>
+                        </button>
                       ))}
                   </div>
                 </>
