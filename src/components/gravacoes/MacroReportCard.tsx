@@ -333,7 +333,7 @@ export default function MacroReportCard({
               variant="ghost"
               size="sm"
               className="h-6 w-6 p-0 shrink-0"
-              onClick={() => playPanorama(panorama)}
+              onClick={() => playPanorama(panorama.replace(/\[GR:[a-f0-9-]{36}\]/gi, ""))}
               disabled={ttsState === "loading"}
               title={ttsState === "playing" ? "Parar áudio" : "Ouvir panorama"}
             >
