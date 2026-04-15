@@ -1131,13 +1131,14 @@ export default function AdminMapa() {
                   <RankingModeSelector />
                   <div className="space-y-1">
                     {Object.entries(municipioStats[selectedUf])
+                      .filter(([cidade]) => !filterCidade || cidade === filterCidade)
                       .sort(([cidA], [cidB]) => {
                         if (rankingMode === "risco") return ((munRiskStats[selectedUf]?.[cidB]?.altoCritico || 0) - (munRiskStats[selectedUf]?.[cidA]?.altoCritico || 0));
                         if (rankingMode === "panico") return ((munPanicoStats[selectedUf]?.[cidB] || 0) - (munPanicoStats[selectedUf]?.[cidA] || 0));
                         return municipioStats[selectedUf][cidB].gravacoes - municipioStats[selectedUf][cidA].gravacoes;
                       })
                       .map(([cidade, s]) => (
-                        <div key={cidade} className="flex items-center justify-between px-2 py-2 rounded-lg text-xs" style={{ background: "hsl(210 17% 96%)" }}>
+                        <button key={cidade} onClick={() => { if (filterCidade === cidade) { setFilterCidade(""); setCidadeSearch(""); } else { setFilterCidade(cidade); setCidadeSearch(""); setFilterBairro(""); setBairroSearch(""); } }} className="w-full flex items-center justify-between px-2 py-2 rounded-lg text-xs hover:bg-gray-100 transition-colors text-left" style={{ background: filterCidade === cidade ? "hsl(207 89% 95%)" : "hsl(210 17% 96%)", borderLeft: filterCidade === cidade ? "3px solid hsl(207 89% 42%)" : "3px solid transparent" }}>
                           <span className="font-medium truncate mr-2" style={titleStyle}>{cidade}</span>
                           <div className="flex items-center gap-2 flex-shrink-0">
                             {rankingMode === "gravacoes" && (
