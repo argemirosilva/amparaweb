@@ -142,7 +142,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="ampara-btn-primary"
+                className="w-full rounded-full py-3 px-8 font-semibold text-sm transition-all duration-200 bg-primary/80 hover:bg-primary/90 active:scale-[0.98] text-primary-foreground disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : "Acessar"}
               </button>
