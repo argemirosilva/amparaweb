@@ -355,6 +355,7 @@ export default function GravacaoExpandedContent({
             {downloading ? "Baixando…" : "Baixar"}
           </Button>
         )}
+        <SupportShortcut gravacao={gravacao} />
         <span className="text-[10px] text-muted-foreground ml-auto">
           ID: {gravacao.id.slice(0, 8)}
         </span>
