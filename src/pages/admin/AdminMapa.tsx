@@ -877,6 +877,24 @@ export default function AdminMapa() {
     }
   }, [selectedUf, mapLoaded, geojson]);
 
+  // FlyTo city/bairro when filter changes
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapLoaded || !selectedUf) return;
+    if (filterBairro && filterCidade) {
+      const cluster = filteredBairroClusters.find(c => c.bairro === filterBairro && c.cidade === filterCidade);
+      if (cluster) map.flyTo({ center: [cluster.lng, cluster.lat], zoom: 13, duration: 1200 });
+    } else if (filterCidade) {
+      const cityKey = `${filterCidade}-${selectedUf}`;
+      const center = CITY_CENTROID[cityKey];
+      if (center) map.flyTo({ center: [center[1], center[0]], zoom: 11, duration: 1200 });
+      else {
+        const cluster = bairroClusters.find(c => c.cidade === filterCidade && c.uf === selectedUf);
+        if (cluster) map.flyTo({ center: [cluster.lng, cluster.lat], zoom: 11, duration: 1200 });
+      }
+    }
+  }, [filterCidade, filterBairro, selectedUf, mapLoaded, filteredBairroClusters, bairroClusters]);
+
   const topUfs = Object.entries(stats)
     .filter(([, s]) => s.gravacoes > 0 || s.usuarios > 0)
     .sort(([ufA, a], [ufB, b]) => {
