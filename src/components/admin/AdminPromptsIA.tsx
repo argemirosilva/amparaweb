@@ -116,6 +116,80 @@ function PromptPreview({ text }: { text: string }) {
   );
 }
 
+/* ── Tab panel sub-component (hooks safe) ── */
+function PromptTabPanel({
+  config, setting, value, modified, mode, saving, copied,
+  onEdit, onUndo, onSave, onCopy, onSetMode,
+}: {
+  config: PromptConfig; setting?: Setting; value: string; modified: boolean;
+  mode: "edit" | "preview"; saving: boolean; copied: boolean;
+  onEdit: (v: string) => void; onUndo: () => void; onSave: () => void;
+  onCopy: () => void; onSetMode: (m: "edit" | "preview") => void;
+}) {
+  const Icon = config.icon;
+  const stats = usePromptStats(value);
+
+  return (
+    <div className="rounded-lg border border-border bg-card/50 overflow-hidden">
+      <div className="px-4 py-3 bg-muted/30 flex items-center gap-2 border-b border-border/50">
+        <Icon className={`w-4 h-4 ${config.color}`} />
+        <h3 className="text-sm font-semibold text-foreground flex-1">{config.label}</h3>
+        <div className="flex items-center gap-1">
+          <button onClick={() => onSetMode("edit")} className={`p-1.5 rounded transition-colors ${mode === "edit" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground"}`} title="Editar">
+            <Pencil className="w-3.5 h-3.5" />
+          </button>
+          <button onClick={() => onSetMode("preview")} className={`p-1.5 rounded transition-colors ${mode === "preview" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground"}`} title="Visualizar">
+            <Eye className="w-3.5 h-3.5" />
+          </button>
+          <button onClick={onCopy} className="p-1.5 rounded text-muted-foreground hover:text-foreground transition-colors" title="Copiar prompt">
+            {copied ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
+          </button>
+        </div>
+      </div>
+
+      <div className="px-4 pt-3">
+        <p className="text-xs text-muted-foreground">{config.description}</p>
+      </div>
+
+      <div className="p-4">
+        {mode === "edit" ? (
+          <textarea
+            className="w-full min-h-[45vh] text-xs font-mono rounded-md border border-border px-3 py-2 bg-background text-foreground resize-y outline-none focus:ring-1 focus:ring-primary/40 leading-relaxed"
+            placeholder={config.placeholder}
+            value={value}
+            onChange={(e) => onEdit(e.target.value)}
+            spellCheck={false}
+          />
+        ) : (
+          <PromptPreview text={value} />
+        )}
+      </div>
+
+      <div className="px-4 py-2.5 bg-muted/20 border-t border-border/50 flex items-center gap-3 flex-wrap">
+        <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+          <span className="flex items-center gap-1"><Hash className="w-3 h-3" />{stats.chars.toLocaleString()} chars</span>
+          <span className="flex items-center gap-1"><Type className="w-3 h-3" />{stats.words} palavras</span>
+          <span className="flex items-center gap-1"><WrapText className="w-3 h-3" />{stats.lines} linhas</span>
+          <span className="flex items-center gap-1"><AlignLeft className="w-3 h-3" />{stats.sections} seções</span>
+        </div>
+        <div className="flex items-center gap-2 ml-auto">
+          {value.trim() === "" && <span className="text-[10px] text-muted-foreground italic">Usando prompt padrão</span>}
+          {modified && (
+            <>
+              <button onClick={onUndo} className="flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-medium text-muted-foreground hover:bg-muted transition-colors">
+                <RotateCcw className="w-3 h-3" /> Desfazer
+              </button>
+              <button onClick={onSave} disabled={saving} className="flex items-center gap-1 px-3 py-1 rounded text-[11px] font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50">
+                <Save className="w-3 h-3" /> Salvar
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ── Main component ── */
 export default function AdminPromptsIA() {
   const { sessionToken } = useAuth();
