@@ -203,103 +203,30 @@ export default function AdminPromptsIA() {
         })}
       </TabsList>
 
-      {PROMPTS.map((p) => {
-        const Icon = p.icon;
-        const s = getSetting(p.key);
-        const value = getValue(p.key);
-        const modified = isModified(p.key);
-        const mode = getMode(p.key);
-        const stats = usePromptStats(value);
-
-        return (
-          <TabsContent key={p.key} value={p.key} className="mt-0">
-            <div className="rounded-lg border border-border bg-card/50 overflow-hidden">
-              {/* Header */}
-              <div className="px-4 py-3 bg-muted/30 flex items-center gap-2 border-b border-border/50">
-                <Icon className={`w-4 h-4 ${p.color}`} />
-                <h3 className="text-sm font-semibold text-foreground flex-1">{p.label}</h3>
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => setViewMode((prev) => ({ ...prev, [p.key]: "edit" }))}
-                    className={`p-1.5 rounded transition-colors ${mode === "edit" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground"}`}
-                    title="Editar"
-                  >
-                    <Pencil className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    onClick={() => setViewMode((prev) => ({ ...prev, [p.key]: "preview" }))}
-                    className={`p-1.5 rounded transition-colors ${mode === "preview" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground"}`}
-                    title="Visualizar"
-                  >
-                    <Eye className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    onClick={() => handleCopy(p.key)}
-                    className="p-1.5 rounded text-muted-foreground hover:text-foreground transition-colors"
-                    title="Copiar prompt"
-                  >
-                    {copied ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
-                  </button>
-                </div>
-              </div>
-
-              {/* Description */}
-              <div className="px-4 pt-3">
-                <p className="text-xs text-muted-foreground">{p.description}</p>
-              </div>
-
-              {/* Content */}
-              <div className="p-4">
-                {mode === "edit" ? (
-                  <textarea
-                    className="w-full min-h-[45vh] text-xs font-mono rounded-md border border-border px-3 py-2 bg-background text-foreground resize-y outline-none focus:ring-1 focus:ring-primary/40 leading-relaxed"
-                    placeholder={p.placeholder}
-                    value={value}
-                    onChange={(e) => s && setEdited((prev) => ({ ...prev, [s.id]: e.target.value }))}
-                    spellCheck={false}
-                  />
-                ) : (
-                  <PromptPreview text={value} />
-                )}
-              </div>
-
-              {/* Footer toolbar */}
-              <div className="px-4 py-2.5 bg-muted/20 border-t border-border/50 flex items-center gap-3 flex-wrap">
-                {/* Stats */}
-                <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
-                  <span className="flex items-center gap-1"><Hash className="w-3 h-3" />{stats.chars.toLocaleString()} chars</span>
-                  <span className="flex items-center gap-1"><Type className="w-3 h-3" />{stats.words} palavras</span>
-                  <span className="flex items-center gap-1"><WrapText className="w-3 h-3" />{stats.lines} linhas</span>
-                  <span className="flex items-center gap-1"><AlignLeft className="w-3 h-3" />{stats.sections} seções</span>
-                </div>
-
-                <div className="flex items-center gap-2 ml-auto">
-                  {value.trim() === "" && (
-                    <span className="text-[10px] text-muted-foreground italic">Usando prompt padrão</span>
-                  )}
-                  {modified && (
-                    <>
-                      <button
-                        onClick={() => s && setEdited((prev) => { const c = { ...prev }; delete c[s.id]; return c; })}
-                        className="flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-medium text-muted-foreground hover:bg-muted transition-colors"
-                      >
-                        <RotateCcw className="w-3 h-3" /> Desfazer
-                      </button>
-                      <button
-                        onClick={() => handleSave(p.key)}
-                        disabled={saving === p.key}
-                        className="flex items-center gap-1 px-3 py-1 rounded text-[11px] font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
-                      >
-                        <Save className="w-3 h-3" /> Salvar
-                      </button>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-          </TabsContent>
-        );
-      })}
+      {PROMPTS.map((p) => (
+        <TabsContent key={p.key} value={p.key} className="mt-0">
+          <PromptTabPanel
+            config={p}
+            setting={getSetting(p.key)}
+            value={getValue(p.key)}
+            modified={isModified(p.key)}
+            mode={getMode(p.key)}
+            saving={saving === p.key}
+            copied={copied}
+            onEdit={(val) => {
+              const s = getSetting(p.key);
+              if (s) setEdited((prev) => ({ ...prev, [s.id]: val }));
+            }}
+            onUndo={() => {
+              const s = getSetting(p.key);
+              if (s) setEdited((prev) => { const c = { ...prev }; delete c[s.id]; return c; });
+            }}
+            onSave={() => handleSave(p.key)}
+            onCopy={() => handleCopy(p.key)}
+            onSetMode={(m) => setViewMode((prev) => ({ ...prev, [p.key]: m }))}
+          />
+        </TabsContent>
+      ))}
     </Tabs>
   );
 }
