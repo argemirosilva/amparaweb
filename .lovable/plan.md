@@ -1,46 +1,36 @@
 
 
-# Agrupar marcadores por bairro nos mapas admin
+# Adicionar filtros de busca por Cidade e Bairro no AdminMapa
 
-## Contexto
-Agrupar por bairro é o equilíbrio ideal: protege a privacidade das vítimas (sem coordenadas exatas) e mantém granularidade operacional útil para gestão. Os dados de `endereco_bairro`, `endereco_cidade` e coordenadas de endereço cadastrado já existem na tabela `usuarios`.
+## Problema
+Atualmente o mapa admin permite navegar apenas por UF (clicando nos estados). Não há campo de busca para localizar diretamente uma cidade ou bairro.
 
-## Como funciona
+## Solução
+Adicionar dois campos de busca/seleção na sidebar do mapa: um para Cidade e outro para Bairro. Ao selecionar uma cidade, o mapa centraliza nela e filtra os dados. Ao selecionar um bairro dentro da cidade, refina ainda mais.
 
-Cada usuária será agrupada pela combinação `bairro + cidade + UF`. O marcador será posicionado na **média das coordenadas de endereço cadastrado** das usuárias daquele bairro (não GPS em tempo real). Isso dá uma posição aproximada do bairro sem revelar nenhum endereço individual.
+## Alterações em `src/pages/admin/AdminMapa.tsx`
 
-Para bairros com apenas 1 usuária, as coordenadas serão arredondadas (3 casas decimais, ~110m de imprecisão) para não expor o endereço exato.
+### 1. Novos estados
+- `filterCidade` e `filterBairro` (strings, inicialmente vazias)
+- Listas derivadas: `availableCidades` (extraídas dos dados de `devices` e `alerts` agrupados por UF selecionada) e `availableBairros` (filtrados pela cidade selecionada)
 
-## Alterações
+### 2. Campos de busca na sidebar
+- Acima do ranking por município (quando uma UF está selecionada), adicionar:
+  - **Combobox Cidade**: input de texto com autocomplete, filtrando a lista de cidades disponíveis naquela UF. Ao selecionar, seta `filterCidade`, limpa `filterBairro`.
+  - **Combobox Bairro**: aparece quando uma cidade está selecionada. Input com autocomplete filtrando bairros daquela cidade.
+- Usar inputs simples com datalist (sem dependências extras) para manter o padrão leve do componente.
 
-### 1. AdminMapa (`src/pages/admin/AdminMapa.tsx`)
+### 3. Filtragem visual
+- Quando `filterCidade` está setada: filtrar `bairroClusters` e `alertClusters` para mostrar apenas os da cidade selecionada. O mapa faz flyTo para a região da cidade.
+- Quando `filterBairro` está setado: filtrar ainda mais para o bairro específico. Zoom maior.
+- O ranking por município também filtra para destacar a cidade/bairro selecionado.
 
-**Marcadores de dispositivos (linhas 726-735):**
-- Agrupar `devices` por `bairro + cidade + uf`
-- Calcular centroide do bairro (média lat/lon dos endereços cadastrados, arredondada)
-- Renderizar um marcador circular por bairro com contagem dentro (ex: "3")
-- Tamanho proporcional: `min(12 + count * 3, 36)px`
-- Cor: verde se maioria online, cinza se maioria offline, vermelho pulsante se há alerta ativo no bairro
-- Sem popup com dados individuais - apenas tooltip com "Bairro X - N usuárias"
+### 4. Navegação
+- Limpar filtros ao mudar de UF ou voltar para Brasil.
+- Botão "Limpar filtro" ao lado dos campos quando há filtro ativo.
 
-**Marcadores de alertas (linhas 715-724):**
-- Agrupar alertas por bairro da usuária
-- Remover nome da usuária do popup
-- Mostrar apenas "N alertas ativos - Bairro X"
-
-**Dados necessários:** Já temos `endereco_bairro`, `endereco_cidade`, `endereco_lat`, `endereco_lon` na query existente de usuários. Será necessário incluir esses campos na estrutura `devices`.
-
-### 2. DashboardMapCard (`src/components/institucional/DashboardMapCard.tsx`)
-
-- Mesma lógica de agrupamento por bairro
-- Remover o bloco de detalhes individuais (linhas 592-608) que mostra nome, bateria, ping
-- Substituir por informações agregadas do bairro
-
-### 3. Privacidade extra
-
-- Coordenadas arredondadas a 3 casas decimais (~110m)
-- Bairros com 1 usuária: mostrar apenas o marcador sem tooltip identificável (só "1 usuária")
-- Nunca exibir nome, bateria, último ping ou dispositivo
+### 5. DashboardMapCard
+- Mesma lógica aplicada no `src/components/institucional/DashboardMapCard.tsx` - campos de busca cidade/bairro na sidebar.
 
 ## Arquivos alterados
 - `src/pages/admin/AdminMapa.tsx`
