@@ -451,7 +451,23 @@ export default function MacroReportCard({
                 >
                   <div className="flex items-center gap-2">
                     <span className="text-[10px] text-muted-foreground">
-                      {new Date(g.data).toLocaleDateString("pt-BR")}
+                      {(() => {
+                        const d = g.data;
+                        if (!d) return "—";
+                        const dmy = d.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+                        if (dmy) {
+                          let y = parseInt(dmy[3]); if (y < 100) y += 2000;
+                          const dt = new Date(Date.UTC(y, parseInt(dmy[2]) - 1, parseInt(dmy[1])));
+                          return isNaN(dt.getTime()) ? d : dt.toLocaleDateString("pt-BR");
+                        }
+                        const iso = d.match(/^(\d{4})-(\d{2})-(\d{2})/);
+                        if (iso) {
+                          const dt = new Date(Date.UTC(+iso[1], +iso[2] - 1, +iso[3]));
+                          return isNaN(dt.getTime()) ? d : dt.toLocaleDateString("pt-BR");
+                        }
+                        const fallback = new Date(d);
+                        return isNaN(fallback.getTime()) ? d : fallback.toLocaleDateString("pt-BR");
+                      })()}
                     </span>
                     <Badge variant="outline" className={`text-[10px] ${riscoClass}`}>
                       {g.risco}
