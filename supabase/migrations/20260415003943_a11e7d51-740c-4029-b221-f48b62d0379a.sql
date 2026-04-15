@@ -1,0 +1,1 @@
+DELETE FROM gravacoes_analises WHERE gravacao_id IN ('79994b9e-c105-40ca-806e-fc5f81c24abd','97530a9f-a476-4c94-9412-c5e8f775e0b6','1ed050ab-e459-43a1-8c8c-83600e3ac73e','24ac8da8-e609-4657-a2ce-a23df5d00088');

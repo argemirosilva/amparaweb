@@ -1,0 +1,1 @@
+UPDATE admin_settings SET valor = '', updated_at = now() WHERE chave = 'ia_prompt_analise';
