@@ -4,6 +4,11 @@ import { callWebApi } from "@/services/webApiService";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
   FileBarChart,
   Loader2,
   RefreshCw,
@@ -17,6 +22,8 @@ import {
   Volume2,
   VolumeX,
   Play,
+  Info,
+  ChevronDown,
 } from "lucide-react";
 
 interface MacroReport {
