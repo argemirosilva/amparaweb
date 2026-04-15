@@ -1059,6 +1059,71 @@ export default function AdminMapa() {
               ) : (
                 <p className="text-xs py-3 text-center rounded-lg mb-4" style={{ ...subtitleStyle, background: "hsl(210 17% 96%)" }}>Sem dados para este estado</p>
                )}
+              {/* City/Bairro filter */}
+              <div className="mt-4 mb-3 space-y-2">
+                <div className="relative">
+                  <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5" style={subtitleStyle} />
+                  <input
+                    type="text"
+                    placeholder="Buscar cidade…"
+                    value={filterCidade || cidadeSearch}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setCidadeSearch(v);
+                      if (!v) { setFilterCidade(""); setFilterBairro(""); setBairroSearch(""); }
+                    }}
+                    list="admin-mapa-cidades"
+                    className="w-full pl-7 pr-7 py-1.5 text-xs rounded-md border outline-none transition-colors focus:border-blue-400"
+                    style={{ borderColor: filterCidade ? "hsl(207 89% 42%)" : "hsl(220 13% 91%)", background: "hsl(0 0% 100%)" }}
+                    onBlur={() => {
+                      const match = availableCidades.find(c => c.toLowerCase() === (cidadeSearch || "").toLowerCase());
+                      if (match) { setFilterCidade(match); setCidadeSearch(""); setFilterBairro(""); setBairroSearch(""); }
+                    }}
+                  />
+                  <datalist id="admin-mapa-cidades">
+                    {availableCidades.filter(c => !cidadeSearch || c.toLowerCase().includes(cidadeSearch.toLowerCase())).map(c => (
+                      <option key={c} value={c} />
+                    ))}
+                  </datalist>
+                  {filterCidade && (
+                    <button onClick={() => { setFilterCidade(""); setCidadeSearch(""); setFilterBairro(""); setBairroSearch(""); }} className="absolute right-1.5 top-1/2 -translate-y-1/2 p-0.5 rounded hover:bg-gray-100">
+                      <X className="w-3 h-3" style={subtitleStyle} />
+                    </button>
+                  )}
+                </div>
+                {filterCidade && availableBairros.length > 0 && (
+                  <div className="relative">
+                    <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5" style={subtitleStyle} />
+                    <input
+                      type="text"
+                      placeholder="Buscar bairro…"
+                      value={filterBairro || bairroSearch}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        setBairroSearch(v);
+                        if (!v) setFilterBairro("");
+                      }}
+                      list="admin-mapa-bairros"
+                      className="w-full pl-7 pr-7 py-1.5 text-xs rounded-md border outline-none transition-colors focus:border-blue-400"
+                      style={{ borderColor: filterBairro ? "hsl(207 89% 42%)" : "hsl(220 13% 91%)", background: "hsl(0 0% 100%)" }}
+                      onBlur={() => {
+                        const match = availableBairros.find(b => b.toLowerCase() === (bairroSearch || "").toLowerCase());
+                        if (match) { setFilterBairro(match); setBairroSearch(""); }
+                      }}
+                    />
+                    <datalist id="admin-mapa-bairros">
+                      {availableBairros.filter(b => !bairroSearch || b.toLowerCase().includes(bairroSearch.toLowerCase())).map(b => (
+                        <option key={b} value={b} />
+                      ))}
+                    </datalist>
+                    {filterBairro && (
+                      <button onClick={() => { setFilterBairro(""); setBairroSearch(""); }} className="absolute right-1.5 top-1/2 -translate-y-1/2 p-0.5 rounded hover:bg-gray-100">
+                        <X className="w-3 h-3" style={subtitleStyle} />
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
               {/* Ranking por município */}
               {selectedUf && municipioStats[selectedUf] && Object.keys(municipioStats[selectedUf]).length > 0 && (
                 <>
