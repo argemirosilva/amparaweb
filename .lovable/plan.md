@@ -1,74 +1,30 @@
 
 
-# Plano: Enriquecer Triagem com Contexto de Ameaca
+## Plan: Atalho de suporte com sub-categorias de problema na gravacao
 
-## Problema atual
+### Situacao atual
+Ja existe um componente `SupportShortcut` no `GravacaoExpandedContent.tsx` que redireciona para `/support/new` com query params pre-preenchidos (category, resource_type, resource_id, resource_label). A pagina `SupportNew` ja aceita esses params e pre-preenche o formulario.
 
-A triagem retorna apenas `nivel_risco` (sem_risco/moderado/alto/critico) e `motivo` (texto curto). Quando o sistema dispara WhatsApp ou liga para COPOM, nao tem como informar **o que especificamente aconteceu** -- se foi ameaca de morte, agressao fisica em curso, etc.
+### O que mudar
 
-## Proposta
+**1. Transformar o botao "Pedir suporte" em um menu com 3 opcoes**
 
-Expandir o JSON de retorno da IA de triagem para incluir **flags contextuais** que descrevem a situacao concreta. Esses flags sao salvos no banco e passados adiante para WhatsApp e COPOM.
+No `SupportShortcut`, substituir o botao simples por um Popover ou DropdownMenu com as opcoes:
+- "Problema com o audio" - navega com `category=playback`
+- "Problema com a transcricao" - navega com `category=transcription_question`
+- "Problema com download" - navega com `category=app_issue` e mensagem pre-preenchida sobre download
 
-### Novo formato do JSON de triagem
+Cada opcao redireciona para `/support/new` com a categoria correta ja selecionada, o resource_id da gravacao e o label.
 
-```json
-{
-  "nivel_risco": "critico",
-  "motivo": "Ameaca de morte com mencao a faca",
-  "contexto_emergencia": {
-    "ameaca_morte": true,
-    "agressao_fisica": false,
-    "agressao_em_curso": false,
-    "ameaca_agressao_fisica": true,
-    "pedido_socorro": false,
-    "mencao_arma": true,
-    "descricao_curta": "Agressor ameacou matar vitima com faca"
-  }
-}
-```
+**2. Adicionar mensagem contextual pre-preenchida**
 
-Os campos booleanos sao rapidos de processar e o `descricao_curta` e uma frase humana para usar nas notificacoes.
+Alem da categoria, passar um param `pre_message` com texto contextual (ex: "Estou com dificuldade para baixar esta gravacao") para facilitar o preenchimento pela usuaria.
 
-## Alteracoes
+**3. Ajustar SupportNew para aceitar pre_message**
 
-### 1. Prompt de triagem (buildAnalysisPrompt.ts)
+Ler o param `pre_message` dos search params e pre-preencher o campo de mensagem.
 
-Atualizar o prompt padrao para solicitar o objeto `contexto_emergencia` no JSON de retorno, alem do `nivel_risco` e `motivo` ja existentes.
-
-### 2. Coluna no banco (migration)
-
-Adicionar coluna `triage_contexto` (JSONB, nullable) na tabela `gravacoes_segmentos` para persistir os flags.
-
-### 3. segment-triage/index.ts
-
-- `classifyRisk` passa a retornar um objeto `{ nivel_risco, motivo, contexto_emergencia }` em vez de apenas string.
-- Salvar `triage_contexto` junto com `triage_risco` e `triage_transcricao`.
-- Passar `contexto_emergencia` para `fireWhatsApp` e `fireCopomCall`.
-
-### 4. send-whatsapp/index.ts
-
-- Receber campo opcional `contexto` no body.
-- Usar `contexto.descricao_curta` como parametro adicional no template WhatsApp (se o template suportar), ou incluir no parametro existente de endereco/tipo.
-- Salvar contexto no audit log.
-
-### 5. copom-outbound-call/index.ts
-
-- Receber campo opcional `contexto` no body.
-- Incluir `descricao_curta` no payload de contexto da ligacao para que o operador saiba o que aconteceu.
-
-### 6. Admin UI (AdminPromptsIA.tsx)
-
-- Atualizar o placeholder do prompt de triagem para refletir o novo formato JSON esperado.
-
-## Arquivos modificados
-
-| Arquivo | Alteracao |
-|---------|----------|
-| Migration SQL | ADD COLUMN `triage_contexto` JSONB |
-| `_shared/buildAnalysisPrompt.ts` | Novo prompt padrao com contexto_emergencia |
-| `segment-triage/index.ts` | Parse e persistencia do contexto |
-| `send-whatsapp/index.ts` | Receber e usar contexto nas msgs |
-| `copom-outbound-call/index.ts` | Receber e usar contexto na ligacao |
-| `AdminPromptsIA.tsx` | Placeholder atualizado |
+### Arquivos editados
+- `src/components/gravacoes/GravacaoExpandedContent.tsx` - Transformar SupportShortcut em menu com 3 opcoes
+- `src/pages/support/SupportNew.tsx` - Aceitar param `pre_message` para pre-preencher mensagem
 
