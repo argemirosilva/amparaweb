@@ -17,6 +17,8 @@ import {
   Volume2,
   VolumeX,
   Play,
+  ChevronDown,
+  Database,
 } from "lucide-react";
 
 interface MacroReport {
