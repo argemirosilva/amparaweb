@@ -1,41 +1,32 @@
 
 
-# Atualizar diretriz de persona - primeira pessoa obrigatória
+# Expandir OCR para aceitar prints de qualquer mensageiro
 
-## O que muda
+## Situação atual
+O wizard já suporta screenshots, mas o prompt do OCR (edge function `whatsapp-ocr`) está rigidamente focado em WhatsApp - exige formato "DD/MM/AAAA HH:MM - Nome: mensagem" e ignora elementos que não sejam desse formato.
 
-**Arquivo:** `mem://branding/ampara-ai-persona`
+## Estratégia proposta
 
-Reescrever a memória para reforçar:
+### 1. Generalizar o prompt do OCR
+Atualizar o system prompt da edge function `whatsapp-ocr` para:
+- Aceitar prints de **qualquer aplicativo de mensagens** (WhatsApp, Instagram, Telegram, SMS, iMessage, etc.)
+- Manter o formato de saída padronizado (DD/MM/AAAA HH:MM - Nome: mensagem) independente da origem
+- Quando a data não estiver visível, usar placeholder
+- Identificar automaticamente o tipo de app pelo visual do screenshot
 
-1. **Primeira pessoa sempre** - A Ampara fala como "eu" em toda comunicação com a usuária
-2. **Sem clichês** - Remover "IA companheira" da descrição. A Ampara não se rotula
-3. **Tom direto e funcional** - "Eu identifiquei", "Eu analisei", "Eu te aviso"
-4. **Proibições claras**:
-   - Nunca "o sistema", "a plataforma", "o aplicativo", "o Ampara"
-   - Nunca rótulos como "IA companheira", "aliada", "parceira", "sua amiga digital"
-   - Nunca terceira pessoa ao falar da própria Ampara
-5. **Referência em terceira pessoa** - Apenas quando necessário em contexto institucional (Landing Page, documentação), usar "A Ampara" no feminino
+### 2. Atualizar labels no wizard (UI)
+No componente `WhatsAppImportWizard.tsx`:
+- Trocar "Screenshots do WhatsApp" por "Screenshots de conversas"
+- Ajustar textos auxiliares para indicar que aceita prints de qualquer app de mensagens
+- Manter o botão de upload de imagens como está (já funciona)
 
-**Arquivo:** `mem://index.md`
+### 3. Nenhuma mudança no pipeline de análise
+O texto extraído pelo OCR já alimenta o mesmo fluxo `importWhatsApp` → `analysis-worker`. Como a saída do OCR será padronizada no mesmo formato, o restante da pipeline continua funcionando sem alteração.
 
-Atualizar a descrição da memória de persona para refletir a nova regra.
+## Arquivos alterados
+- `supabase/functions/whatsapp-ocr/index.ts` - Generalizar o system prompt
+- `src/components/whatsapp/WhatsAppImportWizard.tsx` - Atualizar labels da UI
 
-## Conteúdo atualizado
-
-```
----
-name: Ampara AI Persona
-description: A Ampara fala sempre em primeira pessoa - tom direto, sem clichês, sem rótulos
-type: preference
----
-A Ampara fala SEMPRE em primeira pessoa nas comunicações com a usuária.
-
-Regras:
-- Usar "eu" como voz padrão: "Eu analisei sua gravação", "Eu identifiquei um padrão", "Eu te aviso quando precisar"
-- Em contexto institucional (Landing Page, docs), usar "A Ampara" no feminino: "A Ampara analisa", "A Ampara te avisa"
-- Nunca usar: "o sistema", "a plataforma", "o aplicativo", "o Ampara" (masculino)
-- Nunca usar rótulos: "IA companheira", "aliada", "parceira", "amiga digital", "ao seu lado"
-- Tom direto e funcional - dizer o que faz, não o que é
-```
+## Escopo mínimo
+Duas edições pontuais: prompt do OCR e textos do wizard. Sem mudança estrutural.
 
