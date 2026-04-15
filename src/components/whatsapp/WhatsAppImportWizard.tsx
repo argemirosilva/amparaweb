@@ -280,12 +280,6 @@ export default function WhatsAppImportWizard({ open, onOpenChange, onImportCompl
 
   const content = (
     <div className="p-4 md:p-6 space-y-4 max-h-[80vh] overflow-y-auto">
-      {/* Close button */}
-      <div className="flex justify-end">
-        <Button variant="ghost" size="icon" onClick={handleClose} className="h-8 w-8">
-          <X className="w-4 h-4" />
-        </Button>
-      </div>
 
       <AnimatePresence mode="wait">
         {/* ── STEP 1: Paste / Upload ── */}
