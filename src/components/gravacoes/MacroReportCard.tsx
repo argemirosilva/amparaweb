@@ -398,19 +398,18 @@ export default function MacroReportCard({
         <div className="rounded-lg bg-destructive/[0.03] border border-destructive/10 p-3 space-y-2">
           <div className="flex items-center gap-1.5 text-[10px] font-semibold text-destructive/70 uppercase tracking-wider">
             <MessageCircleWarning className="w-3 h-3" />
-            OFENSAS MAIS FREQUENTES
+            Sobre as palavras usadas
           </div>
-          <div className="flex flex-wrap gap-1.5">
+          <p className="text-xs text-foreground/85 leading-relaxed">
+            Identifiquei que palavras como{" "}
             {output.principais_ofensas.map((o, i) => (
-              <Badge
-                key={i}
-                variant="outline"
-                className="text-[10px] bg-destructive/5 text-destructive/80 border-destructive/15"
-              >
-                {o}
-              </Badge>
-            ))}
-          </div>
+              <span key={i}>
+                <strong className="text-destructive/80">"{o}"</strong>
+                {i < output.principais_ofensas!.length - 2 ? ", " : i === output.principais_ofensas!.length - 2 ? " e " : ""}
+              </span>
+            ))}{" "}
+            apareceram com frequência. Essas palavras não definem quem você é. Ninguém merece ser tratada assim, e reconhecer esse padrão já é um passo importante.
+          </p>
         </div>
       )}
 
