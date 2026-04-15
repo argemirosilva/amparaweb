@@ -415,12 +415,19 @@ export default function MacroReportCard({
 
       {/* Canais de apoio */}
       {output.canais_apoio && output.canais_apoio.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
-          {output.canais_apoio.map((c, i) => (
-            <Badge key={i} variant="outline" className="text-[10px] bg-primary/5 border-primary/20">
-              <Phone className="w-2.5 h-2.5 mr-1" />{c}
-            </Badge>
-          ))}
+        <div className="rounded-lg bg-primary/[0.03] border border-primary/10 p-3 space-y-2">
+          <div className="flex items-center gap-1.5 text-[10px] font-semibold text-primary/70 uppercase tracking-wider">
+            <Phone className="w-3 h-3" />
+            Onde buscar apoio
+          </div>
+          <ul className="space-y-1.5">
+            {output.canais_apoio.map((c, i) => (
+              <li key={i} className="text-xs text-foreground/85 leading-relaxed flex items-start gap-2">
+                <Phone className="w-3 h-3 text-primary/50 mt-0.5 shrink-0" />
+                {c}
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 
