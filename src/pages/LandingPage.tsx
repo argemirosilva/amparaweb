@@ -79,8 +79,8 @@ const NAV_LINKS = [
 ];
 
 const FEATURES = [
-  { icon: TrendingUp, title: "Seu Nível de Segurança", desc: "Veja como está sua situação nos últimos dias. O sistema te avisa se algo mudar." },
-  { icon: Smartphone, title: "Saber se seu celular está protegido", desc: "Confira se seu celular está conectado e funcionando direitinho com o AMPARA." },
+  { icon: TrendingUp, title: "Seu Nível de Segurança", desc: "Veja como está sua situação nos últimos dias. Eu te aviso se algo mudar." },
+  { icon: Smartphone, title: "Saber se seu celular está protegido", desc: "Confira se seu celular está conectado e funcionando direitinho com a Ampara." },
   { icon: Mic, title: "Grava o que acontece ao redor", desc: "O celular grava o som ao redor de forma discreta, pra você ter provas se precisar." },
   { icon: FileUp, title: "Guarda provas com segurança", desc: "Salva fotos, áudios e documentos num lugar seguro, só você tem acesso." },
   { icon: MapPin, title: "Compartilha onde você está", desc: "Suas pessoas de confiança podem ver onde você está em tempo real, se precisar." },
@@ -97,20 +97,20 @@ const STEPS = [
 ];
 
 const TESTIMONIALS = [
-  { name: "Maria S.", initials: "MS", text: "O AMPARA me deu a coragem que eu precisava para dar o primeiro passo. Saber que alguém está monitorando minha segurança muda tudo.", stars: 5 },
+  { name: "Maria S.", initials: "MS", text: "A Ampara me deu a coragem que eu precisava para dar o primeiro passo. Saber que alguém está monitorando minha segurança muda tudo.", stars: 5 },
   { name: "Ana L.", initials: "AL", text: "As gravações automáticas foram fundamentais no meu processo. A tecnologia realmente protege e ampara quem mais precisa.", stars: 5 },
   { name: "Juliana R.", initials: "JR", text: "O compartilhamento de localização com meus guardiões me dá tranquilidade para seguir minha rotina. Recomendo para todas.", stars: 5 },
 ];
 
 const FAQ_ITEMS = [
-  { q: "Como funciona o monitoramento em tempo real?", a: "O AMPARA utiliza inteligência artificial para monitorar continuamente o ambiente sonoro através do microfone do seu celular, de forma totalmente discreta - sem que ninguém perceba. O sistema analisa os áudios captados em busca de padrões que possam indicar situações de violência, como gritos, ameaças verbais e xingamentos. Quando algo suspeito é identificado, um alerta é gerado automaticamente. Você define os horários de monitoramento e pode ativá-lo ou desativá-lo a qualquer momento." },
-  { q: "Meus dados estão seguros?", a: "Sua segurança digital é nossa prioridade máxima. Utilizamos criptografia de ponta a ponta em todas as transmissões, e os dados são armazenados em servidores seguros com criptografia em repouso. Nenhuma informação é compartilhada com terceiros sem o seu consentimento explícito. Gravações que não apresentam risco são automaticamente excluídas conforme o período de retenção que você configurar. Seguimos integralmente a LGPD (Lei Geral de Proteção de Dados) e você pode solicitar a exclusão dos seus dados a qualquer momento." },
-  { q: "Quem pode ver minhas informações?", a: "Apenas você tem acesso completo às suas informações. Os guardiões que você cadastrar só recebem notificações e localização em situações de emergência - eles não têm acesso às suas gravações ou análises. Nossa equipe de suporte técnico só pode acessar dados específicos mediante sua solicitação e consentimento explícito por código de verificação, e cada acesso fica registrado em um log de auditoria completo." },
-  { q: "O AMPARA é gratuito?", a: "Sim, o AMPARA é 100% gratuito para todas as mulheres. Não há nenhuma cobrança - nem no cadastro, nem no uso de qualquer funcionalidade. Nosso compromisso é com a proteção de todas as mulheres." },
-  { q: "Como funciona a gravação de áudio?", a: "Quando o monitoramento está ativo, o aplicativo grava o áudio ambiente em segundo plano no seu dispositivo, mesmo com a tela bloqueada. Os áudios são enviados automaticamente para nossos servidores, onde a inteligência artificial transcreve o conteúdo e analisa padrões de linguagem, tom de voz e presença de palavras ofensivas. A análise gera um relatório com nível de risco, sentimento predominante e categorias de violência identificadas. Gravações sem risco são excluídas automaticamente após o período que você definir nas configurações." },
-  { q: "Posso desativar o monitoramento a qualquer momento?", a: "Sim, você tem total controle sobre o aplicativo. Pode ativar e desativar o monitoramento a qualquer momento pelas configurações. Também é possível definir horários específicos para cada dia da semana - por exemplo, ativar apenas durante a noite ou nos finais de semana. O AMPARA nunca grava sem que o monitoramento esteja ativo. Sua autonomia e privacidade são respeitadas em todas as etapas." },
-  { q: "O que são guardiões?", a: "Guardiões são pessoas de sua máxima confiança - como familiares, amigos ou vizinhos - que você cadastra no aplicativo para receber alertas em situações de emergência. Quando você aciona o botão de pânico, seus guardiões são notificados imediatamente via WhatsApp com sua localização em tempo real. Você pode cadastrar até 5 guardiões, escolhendo o nome, telefone e o tipo de vínculo. Pode adicioná-los ou removê-los a qualquer momento." },
-  { q: "Como acionar ajuda em caso de emergência?", a: "Em situações de emergência, você pode acionar o botão de pânico dentro do aplicativo. Ao ativar, o sistema notifica automaticamente todos os seus guardiões via WhatsApp, compartilhando sua localização em tempo real. Também é possível configurar o acionamento de autoridades competentes. Além disso, você pode ligar diretamente para o Ligue 180 (Central de Atendimento à Mulher) ou o 190 (Polícia Militar) a partir do próprio aplicativo. O AMPARA também possui uma senha de coação - se alguém forçar você a abrir o app, essa senha simula uma tela normal enquanto envia um alerta silencioso." },
+  { q: "Como funciona o monitoramento em tempo real?", a: "A Ampara utiliza inteligência artificial para monitorar continuamente o ambiente sonoro através do microfone do seu celular, de forma totalmente discreta - sem que ninguém perceba. Eu analiso os áudios captados em busca de padrões que possam indicar situações de violência, como gritos, ameaças verbais e xingamentos. Quando algo suspeito é identificado, um alerta é gerado automaticamente. Você define os horários de monitoramento e pode ativá-lo ou desativá-lo a qualquer momento." },
+  { q: "Meus dados estão seguros?", a: "Sua segurança digital é prioridade máxima. Utilizo criptografia de ponta a ponta em todas as transmissões, e os dados são armazenados em servidores seguros com criptografia em repouso. Nenhuma informação é compartilhada com terceiros sem o seu consentimento explícito. Gravações que não apresentam risco são automaticamente excluídas conforme o período de retenção que você configurar. Sigo integralmente a LGPD (Lei Geral de Proteção de Dados) e você pode solicitar a exclusão dos seus dados a qualquer momento." },
+  { q: "Quem pode ver minhas informações?", a: "Apenas você tem acesso completo às suas informações. Os guardiões que você cadastrar só recebem notificações e localização em situações de emergência - eles não têm acesso às suas gravações ou análises. A equipe de suporte técnico só pode acessar dados específicos mediante sua solicitação e consentimento explícito por código de verificação, e cada acesso fica registrado em um log de auditoria completo." },
+  { q: "A Ampara é gratuita?", a: "Sim, a Ampara é 100% gratuita para todas as mulheres. Não há nenhuma cobrança - nem no cadastro, nem no uso de qualquer funcionalidade. O compromisso é com a proteção de todas as mulheres." },
+  { q: "Como funciona a gravação de áudio?", a: "Quando o monitoramento está ativo, eu gravo o áudio ambiente em segundo plano no seu dispositivo, mesmo com a tela bloqueada. Os áudios são enviados automaticamente para os servidores, onde a inteligência artificial transcreve o conteúdo e analisa padrões de linguagem, tom de voz e presença de palavras ofensivas. A análise gera um relatório com nível de risco, sentimento predominante e categorias de violência identificadas. Gravações sem risco são excluídas automaticamente após o período que você definir nas configurações." },
+  { q: "Posso desativar o monitoramento a qualquer momento?", a: "Sim, você tem total controle. Pode ativar e desativar o monitoramento a qualquer momento pelas configurações. Também é possível definir horários específicos para cada dia da semana - por exemplo, ativar apenas durante a noite ou nos finais de semana. Eu nunca gravo sem que o monitoramento esteja ativo. Sua autonomia e privacidade são respeitadas em todas as etapas." },
+  { q: "O que são guardiões?", a: "Guardiões são pessoas de sua máxima confiança - como familiares, amigos ou vizinhos - que você cadastra para receber alertas em situações de emergência. Quando você aciona o botão de pânico, seus guardiões são notificados imediatamente via WhatsApp com sua localização em tempo real. Você pode cadastrar até 5 guardiões, escolhendo o nome, telefone e o tipo de vínculo. Pode adicioná-los ou removê-los a qualquer momento." },
+  { q: "Como acionar ajuda em caso de emergência?", a: "Em situações de emergência, você pode acionar o botão de pânico. Ao ativar, eu notifico automaticamente todos os seus guardiões via WhatsApp, compartilhando sua localização em tempo real. Também é possível configurar o acionamento de autoridades competentes. Além disso, você pode ligar diretamente para o Ligue 180 (Central de Atendimento à Mulher) ou o 190 (Polícia Militar). A Ampara também possui uma senha de coação - se alguém forçar você a abrir o app, essa senha simula uma tela normal enquanto eu envio um alerta silencioso." },
 ];
 
 const FLOW_TRIGGERS = [
@@ -123,7 +123,7 @@ const FLOW_PIPELINE = [
   { icon: Upload, title: "Envio ao Servidor", desc: "Áudios e dados são enviados e analisados por inteligência artificial" },
   { icon: Activity, title: "Orientação Personalizada", desc: "Você recebe análises sobre sua situação com dicas de segurança e reflexões sobre a relação" },
   { icon: MessageCircle, title: "Alerta aos Guardiões", desc: "Se configurado, seus guardiões recebem notificação via WhatsApp com sua localização", configurable: true },
-  { icon: Phone, title: "Chamada de Emergência", desc: "Se habilitado, o sistema liga automaticamente para 190 (Polícia) e 180 (Delegacia da Mulher)", configurable: true },
+  { icon: Phone, title: "Chamada de Emergência", desc: "Se habilitado, a Ampara liga automaticamente para 190 (Polícia) e 180 (Delegacia da Mulher)", configurable: true },
 ];
 
 /* ── Organic card component ── */
@@ -256,7 +256,7 @@ export default function LandingPage() {
               Proteção inteligente para mulheres
             </h1>
             <p className="text-base md:text-lg text-muted-foreground max-w-lg leading-relaxed">
-              Você não está sozinha. O AMPARA te protege, acompanha sua situação e te orienta sobre seus direitos - tudo pelo celular, de graça e em total sigilo.
+              Você não está sozinha. Eu te protejo, acompanho sua situação e te oriento sobre seus direitos - tudo pelo celular, de graça e em total sigilo.
             </p>
             <div className="flex flex-wrap gap-3 pt-2">
               <Link to="/cadastro" className="!w-auto text-sm md:text-base flex items-center gap-2 px-6 py-2.5 rounded-xl border-2 border-primary/40 text-foreground font-semibold hover:bg-primary/5 transition-colors backdrop-blur-sm">
@@ -298,11 +298,11 @@ export default function LandingPage() {
           </div>
           {/* Hero image */}
           <div className="hidden md:flex justify-center">
-            <img src={heroWoman} alt="Mulher protegida pela plataforma AMPARA" className="max-h-[420px] w-auto object-contain drop-shadow-2xl" />
+            <img src={heroWoman} alt="Mulher protegida pela Ampara" className="max-h-[420px] w-auto object-contain drop-shadow-2xl" />
           </div>
           {/* Mobile hero */}
           <div className="flex md:hidden justify-center overflow-hidden max-h-[140px]">
-            <img src={heroWoman} alt="Mulher protegida pela plataforma AMPARA" className="w-auto h-[280px] object-cover object-top drop-shadow-2xl" />
+            <img src={heroWoman} alt="Mulher protegida pela Ampara" className="w-auto h-[280px] object-cover object-top drop-shadow-2xl" />
           </div>
         </div>
       </section>
@@ -320,14 +320,14 @@ export default function LandingPage() {
           <p className="text-[10px] font-semibold uppercase tracking-[0.2em] mb-3" style={{ color: "hsl(var(--ampara-magenta))" }}>Sobre</p>
           <h2 className="text-2xl md:text-4xl font-bold text-foreground max-w-2xl">Proteção integral com tecnologia e acolhimento</h2>
           <p className="text-muted-foreground mt-3 max-w-2xl text-sm md:text-base leading-relaxed">
-            O AMPARA é como ter uma rede de apoio no seu bolso. Ele cuida da sua segurança, guarda provas quando você precisar e te mostra o caminho para buscar ajuda.
+            Eu cuido da sua segurança, guardo provas quando você precisar e te mostro o caminho para buscar ajuda. É como ter uma rede de apoio no seu bolso.
           </p>
 
           <div className="grid md:grid-cols-3 gap-6 mt-12">
             {[
               { icon: Heart, title: "Missão", text: "Oferecer proteção integral e suporte contínuo para mulheres em situação de risco, utilizando tecnologia acessível e humanizada." },
               { icon: Eye, title: "Visão", text: "Ser referência nacional em proteção feminina, integrando tecnologia, redes de apoio e políticas públicas para um futuro mais seguro." },
-              { icon: Users, title: "Propósito", text: "Acreditamos que toda mulher merece viver sem medo. O AMPARA é a ponte entre a vulnerabilidade e a segurança plena." },
+              { icon: Users, title: "Propósito", text: "Toda mulher merece viver sem medo. A Ampara existe para ser a ponte entre a vulnerabilidade e a segurança plena." },
             ].map((c) => (
               <OrgCard key={c.title}>
                 <OrgIcon icon={c.icon} />
@@ -346,16 +346,16 @@ export default function LandingPage() {
 
         <div className="max-w-6xl mx-auto px-4 relative z-10">
           <p className="text-[10px] font-semibold uppercase tracking-[0.2em] mb-3" style={{ color: "hsl(var(--ampara-magenta))" }}>Ecossistema</p>
-          <h2 className="text-2xl md:text-4xl font-bold text-foreground max-w-2xl">O que o AMPARA faz por você</h2>
+          <h2 className="text-2xl md:text-4xl font-bold text-foreground max-w-2xl">O que a Ampara faz por você</h2>
           <p className="text-muted-foreground mt-3 max-w-2xl text-sm md:text-base leading-relaxed">
             São 3 formas de te ajudar, tudo no seu celular, sem custo e com total sigilo.
           </p>
 
           <div className="grid md:grid-cols-3 gap-6 mt-12">
             {[
-              { icon: Shield, title: "Te protege", desc: "Como ter alguém de confiança sempre por perto. O sistema avisa suas pessoas de confiança quando você precisa de ajuda.", items: ["Botão de pânico que avisa seus guardiões na hora", "Compartilha sua localização com quem você confia", "Senha secreta pra situações de perigo"] },
-              { icon: Activity, title: "Te acompanha", desc: "Como um diário que guarda tudo pra você. Grava áudios, analisa riscos e cria relatórios que podem ser usados como prova.", items: ["Grava o som ao redor sem ninguém perceber", "Analisa automaticamente o que foi dito", "Gera relatórios que servem como prova"] },
-              { icon: BookOpen, title: "Te orienta", desc: "Como uma amiga que sabe onde buscar ajuda. Mostra seus direitos, números de emergência e caminhos para sair da situação.", items: ["Ligue 180 e 190 direto pelo aplicativo", "Informações sobre seus direitos e a Lei Maria da Penha", "Suporte humano pra te ouvir e te ajudar"] },
+              { icon: Shield, title: "Te protejo", desc: "Eu aviso suas pessoas de confiança quando você precisa de ajuda.", items: ["Botão de pânico que avisa seus guardiões na hora", "Compartilho sua localização com quem você confia", "Senha secreta pra situações de perigo"] },
+              { icon: Activity, title: "Te acompanho", desc: "Eu gravo áudios, analiso riscos e crio relatórios que podem ser usados como prova.", items: ["Gravo o som ao redor sem ninguém perceber", "Analiso automaticamente o que foi dito", "Gero relatórios que servem como prova"] },
+              { icon: BookOpen, title: "Te oriento", desc: "Eu te mostro seus direitos, números de emergência e caminhos para sair da situação.", items: ["Ligue 180 e 190 direto pelo aplicativo", "Informações sobre seus direitos e a Lei Maria da Penha", "Suporte humano pra te ouvir e te ajudar"] },
             ].map((p) => (
               <OrgCard key={p.title} className="flex flex-col">
                 <OrgIcon icon={p.icon} size="lg" />
@@ -387,7 +387,7 @@ export default function LandingPage() {
             Pela primeira vez na história, dados reais sobre violência doméstica
           </h2>
           <p className="text-muted-foreground mt-3 max-w-2xl text-sm md:text-base leading-relaxed">
-            Até hoje, ninguém sabia de verdade o que acontece dentro de casa. O AMPARA muda isso - sem nunca expor quem você é.
+            Até hoje, ninguém sabia de verdade o que acontece dentro de casa. A Ampara muda isso - sem nunca expor quem você é.
           </p>
 
           <div className="grid md:grid-cols-2 gap-6 mt-12">
@@ -436,7 +436,7 @@ export default function LandingPage() {
           <p className="text-[10px] font-semibold uppercase tracking-[0.2em] mb-3" style={{ color: "hsl(var(--ampara-magenta))" }}>Funcionalidades</p>
           <h2 className="text-2xl md:text-4xl font-bold text-foreground max-w-2xl">Tudo o que você precisa para se proteger</h2>
           <p className="text-muted-foreground mt-3 max-w-2xl text-sm md:text-base">
-            Ferramentas integradas de monitoramento, análise e suporte em uma única plataforma.
+            Ferramentas integradas de monitoramento, análise e suporte - tudo num só lugar.
           </p>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 mt-12">
@@ -458,7 +458,7 @@ export default function LandingPage() {
 
         <div className="max-w-6xl mx-auto px-4 relative z-10">
           <p className="text-[10px] font-semibold uppercase tracking-[0.2em] mb-3" style={{ color: "hsl(var(--ampara-magenta))" }}>Fluxo de Proteção</p>
-          <h2 className="text-2xl md:text-4xl font-bold text-foreground max-w-2xl">Como o AMPARA te protege na prática</h2>
+          <h2 className="text-2xl md:text-4xl font-bold text-foreground max-w-2xl">Como a Ampara te protege na prática</h2>
           <p className="text-muted-foreground mt-3 max-w-2xl text-sm md:text-base leading-relaxed">
             Do monitoramento ao acionamento de autoridades - cada etapa funciona automaticamente para sua segurança.
           </p>
@@ -640,7 +640,7 @@ export default function LandingPage() {
         <div className="max-w-3xl mx-auto px-4 relative z-10">
           <p className="text-[10px] font-semibold uppercase tracking-[0.2em] mb-3" style={{ color: "hsl(var(--ampara-magenta))" }}>FAQ</p>
           <h2 className="text-2xl md:text-4xl font-bold text-foreground max-w-2xl">Perguntas frequentes</h2>
-          <p className="text-muted-foreground mt-3 text-sm md:text-base">Tire suas dúvidas sobre a plataforma.</p>
+          <p className="text-muted-foreground mt-3 text-sm md:text-base">Tire suas dúvidas sobre a Ampara.</p>
 
           <Accordion type="single" collapsible className="mt-8 space-y-2">
             {FAQ_ITEMS.map((item, i) => (
@@ -670,7 +670,7 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto px-4 relative z-10">
           <div className="grid md:grid-cols-2 gap-10 items-center">
             <div className="space-y-5">
-              <h2 className="text-2xl md:text-4xl font-bold text-primary-foreground">Faça parte da rede AMPARA</h2>
+              <h2 className="text-2xl md:text-4xl font-bold text-primary-foreground">Venha conhecer a Ampara</h2>
               <p className="text-primary-foreground/80 text-sm md:text-base leading-relaxed">
                 Proteja-se com tecnologia, acolhimento e informação. Ao se cadastrar, você terá acesso a:
               </p>
