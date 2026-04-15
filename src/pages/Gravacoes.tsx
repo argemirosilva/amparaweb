@@ -521,7 +521,7 @@ export default function GravacoesPage() {
                             setExpanded(isExpanded ? null : g.id);
                           }}
                           className="w-full px-3 py-2.5 text-left hover:bg-muted/30 transition-colors"
-                          style={g.nivel_risco && g.nivel_risco !== "sem_risco" ? { paddingRight: "52px" } : undefined}
+                          style={g.nivel_risco && RISCO_COLORS[g.nivel_risco] ? { paddingRight: "52px" } : undefined}
                         >
                           <div className="flex items-center gap-2">
                             {!selectMode && (
