@@ -46,11 +46,11 @@ export default function LoginPage() {
         <div className="absolute top-20 right-[15%] w-64 h-64 rounded-full bg-primary/[0.04] blur-3xl" />
         <div className="absolute bottom-20 left-[10%] w-48 h-48 rounded-full bg-ampara-magenta/[0.04] blur-3xl" />
 
-        {/* Illustration — flipped horizontally, full height */}
+        {/* Illustration — flipped horizontally, full panel */}
         <img
           src={loginIllustration}
           alt=""
-          className="absolute inset-0 w-full h-full object-contain object-right-bottom pointer-events-none select-none opacity-30"
+          className="absolute bottom-0 left-0 h-full w-full object-cover object-left-bottom pointer-events-none select-none opacity-20"
           style={{ transform: "scaleX(-1)" }}
         />
 
