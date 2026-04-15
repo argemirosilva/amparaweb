@@ -3,6 +3,7 @@ import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Eye, EyeOff, Loader2, Shield } from "lucide-react";
 import amparaLogo from "@/assets/ampara-logo-login.png";
+import loginIllustration from "@/assets/login-illustration.png";
 
 export default function LoginPage() {
   const navigate = useNavigate();
