@@ -570,22 +570,73 @@ async function handleConsulta(supabase: any, auth: AuthResult, body: any) {
 
 async function handleListConsultas(supabase: any, auth: AuthResult, body: any) {
   const page = body.page || 1;
-  const limit = Math.min(body.limit || 20, 50);
+  const limit = Math.min(body.limit || 100, 200);
   const offset = (page - 1) * limit;
 
   let query = supabase
     .from("tribunal_consultas")
-    .select("id, modo_saida, status, created_at, usuario_id, agressor_id, prompt_version, model, tenant_id", { count: "exact" })
+    .select("id, modo_saida, status, created_at, usuario_id, agressor_id, prompt_version, model, tenant_id, analysis_object, output_json", { count: "exact" })
     .order("created_at", { ascending: false })
     .range(offset, offset + limit - 1);
 
   if (auth.tenantId) query = query.eq("tenant_id", auth.tenantId);
   if (body.modo_saida) query = query.eq("modo_saida", body.modo_saida);
 
+  // Filtros de período
+  if (body.data_inicio) query = query.gte("created_at", body.data_inicio);
+  if (body.data_fim) query = query.lte("created_at", body.data_fim);
+
   const { data, count, error } = await query;
   if (error) return json({ error: error.message }, 500);
 
-  return json({ success: true, consultas: data || [], total: count || 0, page, limit });
+  // Enriquece com nomes (vítima/agressor) e nivel_risco para suportar filtro/busca no frontend
+  const rows = data || [];
+  const userIds = Array.from(new Set(rows.map((r: any) => r.usuario_id).filter(Boolean)));
+  const agressorIds = Array.from(new Set(rows.map((r: any) => r.agressor_id).filter(Boolean)));
+
+  const [usersRes, agressoresRes] = await Promise.all([
+    userIds.length
+      ? supabase.from("usuarios").select("id, nome_completo, endereco_cidade, endereco_uf").in("id", userIds)
+      : Promise.resolve({ data: [] }),
+    agressorIds.length
+      ? supabase.from("agressores").select("id, nome, primary_city_uf, risk_level").in("id", agressorIds)
+      : Promise.resolve({ data: [] }),
+  ]);
+
+  const usersMap = new Map((usersRes.data || []).map((u: any) => [u.id, u]));
+  const agressoresMap = new Map((agressoresRes.data || []).map((a: any) => [a.id, a]));
+
+  const enriched = rows.map((r: any) => {
+    const u = r.usuario_id ? usersMap.get(r.usuario_id) : null;
+    const a = r.agressor_id ? agressoresMap.get(r.agressor_id) : null;
+
+    // Tenta extrair nivel_risco da análise (output_json analítico ou analysis_object)
+    let nivelRisco: string | null = null;
+    const ao = r.analysis_object || {};
+    const oj = r.output_json || {};
+    if (r.modo_saida === "todos" && oj?.analitico?.nivel_risco) {
+      nivelRisco = oj.analitico.nivel_risco;
+    } else if (r.modo_saida === "analitico" && oj?.nivel_risco) {
+      nivelRisco = oj.nivel_risco;
+    } else if (ao?.dados_ampara_registros?.agressor?.risk_level) {
+      nivelRisco = ao.dados_ampara_registros.agressor.risk_level;
+    } else if (a?.risk_level) {
+      nivelRisco = a.risk_level;
+    }
+
+    // Remove campos pesados antes de devolver
+    const { analysis_object: _ao, output_json: _oj, ...rest } = r;
+    return {
+      ...rest,
+      vitima_nome: u?.nome_completo || null,
+      vitima_cidade_uf: u ? `${u.endereco_cidade || ""}${u.endereco_uf ? "/" + u.endereco_uf : ""}` : null,
+      agressor_nome: a?.nome || null,
+      agressor_cidade_uf: a?.primary_city_uf || null,
+      nivel_risco: nivelRisco,
+    };
+  });
+
+  return json({ success: true, consultas: enriched, total: count || 0, page, limit });
 }
 
 async function handleGetConsulta(supabase: any, auth: AuthResult, body: any) {

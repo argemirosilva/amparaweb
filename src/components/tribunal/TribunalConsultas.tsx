@@ -1,15 +1,16 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
-import { RefreshCw, Eye, FileJson, FileText, BookOpen, Copy, Download, User, UserX, Calendar, Hash, Database, AlertTriangle } from "lucide-react";
+import { RefreshCw, Eye, FileJson, FileText, BookOpen, Copy, Download, User, UserX, Calendar, Hash, Database, AlertTriangle, Search, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import TribunalAnaliticoView from "./TribunalAnaliticoView";
@@ -20,6 +21,13 @@ const MODO_LABELS: Record<string, string> = {
   despacho: "Despacho",
   parecer: "Parecer Técnico",
   todos: "Análise Completa",
+};
+
+const NIVEL_BADGE: Record<string, { label: string; cls: string }> = {
+  critico: { label: "Crítico", cls: "bg-red-600 text-white hover:bg-red-600" },
+  alto: { label: "Alto", cls: "bg-orange-500 text-white hover:bg-orange-500" },
+  moderado: { label: "Moderado", cls: "bg-yellow-500 text-white hover:bg-yellow-500" },
+  sem_risco: { label: "Sem risco", cls: "bg-emerald-600 text-white hover:bg-emerald-600" },
 };
 
 const MODO_ICONS: Record<string, any> = {
@@ -34,16 +42,28 @@ export default function TribunalConsultas() {
   const { toast } = useToast();
   const [consultas, setConsultas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filtroModo, setFiltroModo] = useState<string>("todos_filtro");
+  const [filtroNivel, setFiltroNivel] = useState<string>("todos");
+  const [filtroPeriodo, setFiltroPeriodo] = useState<string>("30d");
+  const [busca, setBusca] = useState<string>("");
   const [selected, setSelected] = useState<any>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [loadingDetail, setLoadingDetail] = useState(false);
 
+  const periodoToRange = (p: string): { ini?: string; fim?: string } => {
+    const now = new Date();
+    if (p === "todos") return {};
+    const dias = p === "7d" ? 7 : p === "30d" ? 30 : p === "90d" ? 90 : 365;
+    const ini = new Date(now.getTime() - dias * 24 * 60 * 60 * 1000);
+    return { ini: ini.toISOString() };
+  };
+
   const fetchConsultas = async () => {
     setLoading(true);
     try {
-      const body: any = { action: "listConsultas", session_token: sessionToken, limit: 50 };
-      if (filtroModo !== "todos_filtro") body.modo_saida = filtroModo;
+      const { ini, fim } = periodoToRange(filtroPeriodo);
+      const body: any = { action: "listConsultas", session_token: sessionToken, limit: 100 };
+      if (ini) body.data_inicio = ini;
+      if (fim) body.data_fim = fim;
 
       const { data } = await supabase.functions.invoke("tribunal-api", { body });
       setConsultas(data?.consultas || []);
@@ -117,7 +137,26 @@ export default function TribunalConsultas() {
     };
   };
 
-  useEffect(() => { fetchConsultas(); }, [filtroModo]);
+  useEffect(() => { fetchConsultas(); }, [filtroPeriodo]);
+
+  // Filtro client-side por nível e busca textual
+  const consultasFiltradas = useMemo(() => {
+    const term = busca.trim().toLowerCase();
+    return consultas.filter((c) => {
+      if (filtroNivel !== "todos" && c.nivel_risco !== filtroNivel) return false;
+      if (term) {
+        const blob = [
+          c.vitima_nome,
+          c.vitima_cidade_uf,
+          c.agressor_nome,
+          c.agressor_cidade_uf,
+          c.id,
+        ].filter(Boolean).join(" ").toLowerCase();
+        if (!blob.includes(term)) return false;
+      }
+      return true;
+    });
+  }, [consultas, filtroNivel, busca]);
 
   // Determina se a consulta selecionada possui as 3 análises (modo "todos") ou apenas uma
   const isCompleta = selected?.modo_saida === "todos" && selected?.output_json;
@@ -155,45 +194,94 @@ export default function TribunalConsultas() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-3">
-        <Select value={filtroModo} onValueChange={setFiltroModo}>
-          <SelectTrigger className="w-48 bg-white">
-            <SelectValue placeholder="Filtrar modo" />
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative flex-1 min-w-[220px] max-w-md">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            placeholder="Buscar por vítima, agressor, cidade..."
+            className="pl-8 pr-8 bg-white"
+          />
+          {busca && (
+            <button
+              type="button"
+              onClick={() => setBusca("")}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+        <Select value={filtroPeriodo} onValueChange={setFiltroPeriodo}>
+          <SelectTrigger className="w-40 bg-white">
+            <SelectValue placeholder="Período" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="todos_filtro">Todos os modos</SelectItem>
-            <SelectItem value="todos">Análise Completa</SelectItem>
-            <SelectItem value="analitico">Analítico</SelectItem>
-            <SelectItem value="despacho">Despacho</SelectItem>
-            <SelectItem value="parecer">Parecer Técnico</SelectItem>
+            <SelectItem value="7d">Últimos 7 dias</SelectItem>
+            <SelectItem value="30d">Últimos 30 dias</SelectItem>
+            <SelectItem value="90d">Últimos 90 dias</SelectItem>
+            <SelectItem value="365d">Último ano</SelectItem>
+            <SelectItem value="todos">Todo o período</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={filtroNivel} onValueChange={setFiltroNivel}>
+          <SelectTrigger className="w-40 bg-white">
+            <SelectValue placeholder="Criticidade" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Todas criticidades</SelectItem>
+            <SelectItem value="critico">Crítico</SelectItem>
+            <SelectItem value="alto">Alto</SelectItem>
+            <SelectItem value="moderado">Moderado</SelectItem>
+            <SelectItem value="sem_risco">Sem risco</SelectItem>
           </SelectContent>
         </Select>
         <Button variant="outline" size="sm" onClick={fetchConsultas} disabled={loading}>
           <RefreshCw className={`w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}`} />
           Atualizar
         </Button>
-        <span className="text-sm text-muted-foreground ml-auto">{consultas.length} consultas</span>
+        <span className="text-sm text-muted-foreground ml-auto">
+          {consultasFiltradas.length} {consultasFiltradas.length === 1 ? "consulta" : "consultas"}
+        </span>
       </div>
 
-      {consultas.length === 0 && !loading && (
+      {consultasFiltradas.length === 0 && !loading && (
         <Card><CardContent className="py-12 text-center text-muted-foreground">Nenhuma consulta encontrada</CardContent></Card>
       )}
 
       <div className="space-y-2">
-        {consultas.map((c) => {
+        {consultasFiltradas.map((c) => {
           const Icon = MODO_ICONS[c.modo_saida] || FileText;
+          const nivel = c.nivel_risco ? NIVEL_BADGE[c.nivel_risco] : null;
           return (
             <Card key={c.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => fetchDetail(c.id)}>
               <CardContent className="flex items-center gap-4 py-3 px-4">
                 <Icon className="w-5 h-5 text-muted-foreground shrink-0" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <Badge variant={c.status === "success" ? "default" : "destructive"} className="text-xs">
+                    <span className="text-sm font-medium text-foreground truncate">
+                      {c.vitima_nome || "Vítima não identificada"}
+                      {c.agressor_nome && (
+                        <span className="text-muted-foreground font-normal"> · {c.agressor_nome}</span>
+                      )}
+                    </span>
+                    {nivel && (
+                      <Badge className={`text-[10px] ${nivel.cls}`}>{nivel.label}</Badge>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap mt-0.5">
+                    <Badge variant={c.status === "success" ? "outline" : "destructive"} className="text-[10px]">
                       {MODO_LABELS[c.modo_saida] || c.modo_saida}
                     </Badge>
                     <span className="text-xs text-muted-foreground">
                       {new Date(c.created_at).toLocaleString("pt-BR")}
                     </span>
+                    {(c.vitima_cidade_uf || c.agressor_cidade_uf) && (
+                      <span className="text-xs text-muted-foreground">
+                        · {c.vitima_cidade_uf || c.agressor_cidade_uf}
+                      </span>
+                    )}
                   </div>
                 </div>
                 <Eye className="w-4 h-4 text-muted-foreground shrink-0" />
