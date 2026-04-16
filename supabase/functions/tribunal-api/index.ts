@@ -37,6 +37,8 @@ interface AuthResult {
   apiKeyId: string | null;
   userId: string | null;
   via: "api_key" | "session";
+  isMagistrado?: boolean;
+  scope?: "nacional" | "tenant";
 }
 
 async function authenticateRequest(
@@ -57,7 +59,7 @@ async function authenticateRequest(
     if (!keyRow) return json({ error: "API key inválida ou inativa" }, 401);
     if (keyRow.expires_at && new Date(keyRow.expires_at) < new Date())
       return json({ error: "API key expirada" }, 401);
-    return { tenantId: keyRow.tenant_id, apiKeyId: keyRow.id, userId: null, via: "api_key" };
+    return { tenantId: keyRow.tenant_id, apiKeyId: keyRow.id, userId: null, via: "api_key", scope: "tenant" };
   }
 
   // 2. Try session_token in body
@@ -73,7 +75,7 @@ async function authenticateRequest(
     if (!session || new Date(session.expires_at) < new Date())
       return json({ error: "Sessão inválida ou expirada" }, 401);
 
-    // Check admin role
+    // Check role: admin OR magistrado
     const { data: roles } = await supabase
       .from("user_roles")
       .select("role")
@@ -82,8 +84,18 @@ async function authenticateRequest(
     const isAdmin = roleNames.some((r: string) =>
       ["super_administrador", "administrador"].includes(r),
     );
-    if (!isAdmin) return json({ error: "Acesso negado" }, 403);
-    return { tenantId: null, apiKeyId: null, userId: session.user_id, via: "session" };
+    const isMagistrado = roleNames.includes("magistrado");
+    if (!isAdmin && !isMagistrado) return json({ error: "Acesso negado" }, 403);
+
+    // Magistrado e Admin têm escopo nacional
+    return {
+      tenantId: null,
+      apiKeyId: null,
+      userId: session.user_id,
+      via: "session",
+      isMagistrado,
+      scope: "nacional",
+    };
   }
 
   return json({ error: "Autenticação necessária (X-Tribunal-Key ou session_token)" }, 401);
