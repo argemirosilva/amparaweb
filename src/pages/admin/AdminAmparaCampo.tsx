@@ -4,8 +4,12 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { callCampoApi } from "@/services/campoService";
-import { Shield, FileText, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { callCampoApi, type VitimaResultado } from "@/services/campoService";
+import { Shield, FileText, Search, Loader2, ArrowRight, ExternalLink } from "lucide-react";
+import { toast } from "sonner";
 
 interface LogRow {
   id: string;
