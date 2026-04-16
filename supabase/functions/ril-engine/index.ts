@@ -129,13 +129,21 @@ async function computeForUser(
     .eq("latest", true)
     .maybeSingle();
 
-  // 3) Pânico recente (últimas 24h)
+  // 3) Pânico recente (últimas 24h) — para flag panicked
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
   const { data: recentPanic } = await supabase
     .from("alertas_panico")
     .select("id, criado_em")
     .eq("user_id", userId)
     .gte("criado_em", since)
+    .limit(1);
+
+  // 3b) Pânico em qualquer momento (para bootstrap histórico)
+  const { data: anyPanic } = await supabase
+    .from("alertas_panico")
+    .select("id, criado_em")
+    .eq("user_id", userId)
+    .order("criado_em", { ascending: false })
     .limit(1);
 
   // 4) Snapshots anteriores (tendência + recorrência)
