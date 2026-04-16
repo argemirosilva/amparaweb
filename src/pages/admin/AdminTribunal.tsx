@@ -12,8 +12,8 @@ export default function AdminTribunal() {
     <div className="space-y-6">
       <AdminPageHeader
         icon={Scale}
-        breadcrumb="Tribunal"
-        title="AMPARA Tribunal"
+        breadcrumb="Judiciário"
+        title="AMPARA Judiciário"
         description="Motor de análise multi-saída para o sistema judiciário"
       />
 
