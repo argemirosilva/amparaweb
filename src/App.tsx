@@ -56,6 +56,10 @@ import SupportTicketDetail from "./pages/support/SupportTicketDetail";
 import SupportAudit from "./pages/support/SupportAudit";
 import Fonar from "./pages/Fonar";
 import FonarHistorico from "./pages/FonarHistorico";
+import CampoBusca from "./pages/campo/CampoBusca";
+import CampoVitima from "./pages/campo/CampoVitima";
+import CampoRegistrar from "./pages/campo/CampoRegistrar";
+import AdminAmparaCampo from "./pages/admin/AdminAmparaCampo";
 
 const queryClient = new QueryClient();
 
