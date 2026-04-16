@@ -13,8 +13,14 @@ const TECNICO_PATHS = [
   "/admin", "/admin/relatorios",
   "/admin/usuarios", "/admin/suporte", "/admin/orgaos",
   "/admin/auditoria", "/admin/configuracoes", "/admin/inteligencia-risco",
+  "/admin/ampara-campo",
 ];
-const OPERACIONAL_PATHS = ["/admin", "/admin/relatorios", "/admin/inteligencia-risco"];
+const OPERACIONAL_PATHS = [
+  "/admin",
+  "/admin/relatorios",
+  "/admin/inteligencia-risco",
+  "/admin/ampara-campo",
+];
 const SUPORTE_PATHS = ["/admin/suporte", "/admin/curadoria"];
 const SUPER_ADMIN_ONLY_PATHS = ["/admin/integracoes", "/admin/doc-api"];
 const ADMIN_LEVEL_PATHS = ["/admin/curadoria", "/admin/tribunal", "/admin/inteligencia-risco"];
@@ -26,12 +32,12 @@ const sidebarItems = [
   { label: "Suporte", path: "/admin/suporte", icon: Headset },
   { label: "Curadoria IA", path: "/admin/curadoria", icon: BrainCircuit },
   { label: "Judiciário", path: "/admin/tribunal", icon: Scale },
-  { label: "AMPARA Campo", path: "/admin/ampara-campo", icon: Shield },
+  { label: "Força de Segurança", path: "/admin/ampara-campo", icon: Shield },
   { label: "Entidades", path: "/admin/orgaos", icon: Building2 },
   { label: "Auditoria", path: "/admin/auditoria", icon: ClipboardCheck },
   { label: "Relatórios", path: "/admin/relatorios", icon: FileText },
   { label: "Configurações", path: "/admin/configuracoes", icon: Settings },
-  
+
   { label: "Integrações", path: "/admin/integracoes", icon: Plug },
   { label: "Doc API", path: "/admin/doc-api", icon: FileCode2 },
 ];
