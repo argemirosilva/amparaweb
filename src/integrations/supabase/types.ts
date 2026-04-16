@@ -621,6 +621,45 @@ export type Database = {
           },
         ]
       }
+      campo_access_logs: {
+        Row: {
+          agente_identificacao: string | null
+          agente_orgao: string | null
+          created_at: string
+          found: boolean
+          id: string
+          ip_address: string | null
+          query_type: string
+          query_value_hash: string | null
+          user_agent: string | null
+          vitima_id: string | null
+        }
+        Insert: {
+          agente_identificacao?: string | null
+          agente_orgao?: string | null
+          created_at?: string
+          found?: boolean
+          id?: string
+          ip_address?: string | null
+          query_type: string
+          query_value_hash?: string | null
+          user_agent?: string | null
+          vitima_id?: string | null
+        }
+        Update: {
+          agente_identificacao?: string | null
+          agente_orgao?: string | null
+          created_at?: string
+          found?: boolean
+          id?: string
+          ip_address?: string | null
+          query_type?: string
+          query_value_hash?: string | null
+          user_agent?: string | null
+          vitima_id?: string | null
+        }
+        Relationships: []
+      }
       compartilhamento_gps: {
         Row: {
           alerta_id: string | null
@@ -1406,6 +1445,66 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      ocorrencias_campo: {
+        Row: {
+          agente_identificacao: string | null
+          agente_orgao: string | null
+          comportamento_requerido: string | null
+          contexto: string[] | null
+          created_at: string
+          estado_vitima: string | null
+          id: string
+          ip_address: string | null
+          latitude: number | null
+          longitude: number | null
+          nivel_risco_snapshot: string | null
+          observacao: string | null
+          protocolo_externo: string | null
+          situacao: string
+          tags_snapshot: string[] | null
+          user_agent: string | null
+          vitima_id: string
+        }
+        Insert: {
+          agente_identificacao?: string | null
+          agente_orgao?: string | null
+          comportamento_requerido?: string | null
+          contexto?: string[] | null
+          created_at?: string
+          estado_vitima?: string | null
+          id?: string
+          ip_address?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          nivel_risco_snapshot?: string | null
+          observacao?: string | null
+          protocolo_externo?: string | null
+          situacao: string
+          tags_snapshot?: string[] | null
+          user_agent?: string | null
+          vitima_id: string
+        }
+        Update: {
+          agente_identificacao?: string | null
+          agente_orgao?: string | null
+          comportamento_requerido?: string | null
+          contexto?: string[] | null
+          created_at?: string
+          estado_vitima?: string | null
+          id?: string
+          ip_address?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          nivel_risco_snapshot?: string | null
+          observacao?: string | null
+          protocolo_externo?: string | null
+          situacao?: string
+          tags_snapshot?: string[] | null
+          user_agent?: string | null
+          vitima_id?: string
+        }
+        Relationships: []
       }
       palavras_triagem: {
         Row: {
