@@ -288,20 +288,36 @@ async function computeForUser(
 // --- Indicadores agregados (Government Insights) ---
 async function computeGovernmentMetrics(
   supabase: ReturnType<typeof createClient>,
-  windowDays = 30,
+  windowDays: number | "all" = 30,
 ) {
   const periodEnd = new Date();
-  const periodStart = new Date(
-    periodEnd.getTime() - windowDays * 24 * 60 * 60 * 1000,
-  );
+  // windowDays === "all" → desde 1970 (toda a base)
+  const periodStart = windowDays === "all"
+    ? new Date(0)
+    : new Date(periodEnd.getTime() - windowDays * 24 * 60 * 60 * 1000);
 
-  const { data: snaps } = await supabase
+  let query = supabase
     .from("risk_context_snapshots")
     .select(
       "risco_ampara, risco_fonar, divergencia_entre_modelos, tendencia_risco, fatores_criticos_ativos, fatores_reincidentes, nivel_prioridade_intervencao, computed_at, user_id",
     )
-    .gte("computed_at", periodStart.toISOString())
     .lte("computed_at", periodEnd.toISOString());
+
+  if (windowDays !== "all") {
+    query = query.gte("computed_at", periodStart.toISOString());
+  }
+  // Paginação para ultrapassar limite default de 1000 do PostgREST
+  const PAGE = 1000;
+  let from = 0;
+  let snaps: any[] = [];
+  while (true) {
+    const { data, error } = await query.range(from, from + PAGE - 1);
+    if (error) throw error;
+    if (!data || data.length === 0) break;
+    snaps = snaps.concat(data);
+    if (data.length < PAGE) break;
+    from += PAGE;
+  }
 
   const total = snaps?.length ?? 0;
   const K_MIN = 5;
