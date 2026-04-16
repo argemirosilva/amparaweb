@@ -4,7 +4,7 @@ import { useAdminRole } from "@/hooks/useAdminRole";
 import ProtectedAdminRoute from "./ProtectedAdminRoute";
 import {
   LayoutDashboard, Users, Building2, ClipboardCheck, FileText, Settings,
-  LogOut, Menu, X, Plug, AudioLines, Headset, BrainCircuit, FileCode2, Scale, Brain,
+  LogOut, Menu, X, Plug, AudioLines, Headset, BrainCircuit, FileCode2, Scale, Brain, Shield,
 } from "lucide-react";
 import amparaLogo from "@/assets/ampara-circle-logo.png";
 import { useState } from "react";
@@ -26,6 +26,7 @@ const sidebarItems = [
   { label: "Suporte", path: "/admin/suporte", icon: Headset },
   { label: "Curadoria IA", path: "/admin/curadoria", icon: BrainCircuit },
   { label: "Judiciário", path: "/admin/tribunal", icon: Scale },
+  { label: "AMPARA Campo", path: "/admin/ampara-campo", icon: Shield },
   { label: "Entidades", path: "/admin/orgaos", icon: Building2 },
   { label: "Auditoria", path: "/admin/auditoria", icon: ClipboardCheck },
   { label: "Relatórios", path: "/admin/relatorios", icon: FileText },
