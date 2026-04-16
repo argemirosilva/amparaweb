@@ -689,7 +689,7 @@ async function handleListPrompts(supabase: any) {
 }
 
 async function handleSavePrompt(supabase: any, auth: AuthResult, body: any) {
-  if (auth.via !== "session") return json({ error: "Apenas admin pode gerenciar prompts" }, 403);
+  if (auth.via !== "session" || auth.isMagistrado) return json({ error: "Apenas admin pode gerenciar prompts" }, 403);
   const { tipo, conteudo } = body;
   if (!tipo || !conteudo) return json({ error: "tipo e conteudo obrigatórios" }, 400);
   if (!["base", "analitico", "despacho", "parecer"].includes(tipo))
@@ -730,7 +730,7 @@ async function handleSavePrompt(supabase: any, auth: AuthResult, body: any) {
 }
 
 async function handleActivatePrompt(supabase: any, auth: AuthResult, body: any) {
-  if (auth.via !== "session") return json({ error: "Apenas admin" }, 403);
+  if (auth.via !== "session" || auth.isMagistrado) return json({ error: "Apenas admin" }, 403);
   if (!body.prompt_id) return json({ error: "prompt_id obrigatório" }, 400);
 
   const { data: prompt } = await supabase
@@ -758,7 +758,7 @@ async function handleActivatePrompt(supabase: any, auth: AuthResult, body: any) 
 // ── API Key management ──
 
 async function handleCreateApiKey(supabase: any, auth: AuthResult, body: any) {
-  if (auth.via !== "session") return json({ error: "Apenas admin" }, 403);
+  if (auth.via !== "session" || auth.isMagistrado) return json({ error: "Apenas admin" }, 403);
   if (!body.tenant_id || !body.label) return json({ error: "tenant_id e label obrigatórios" }, 400);
 
   // Generate key
@@ -794,7 +794,7 @@ async function handleListApiKeys(supabase: any) {
 }
 
 async function handleToggleApiKey(supabase: any, auth: AuthResult, body: any) {
-  if (auth.via !== "session") return json({ error: "Apenas admin" }, 403);
+  if (auth.via !== "session" || auth.isMagistrado) return json({ error: "Apenas admin" }, 403);
   if (!body.key_id) return json({ error: "key_id obrigatório" }, 400);
 
   const { data: key } = await supabase
