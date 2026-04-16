@@ -2168,6 +2168,8 @@ export type Database = {
           compartilhar_gps_risco_alto: boolean
           configuracao_alertas: Json
           cor_raca: string | null
+          cpf_hash: string | null
+          cpf_last4: string | null
           created_at: string
           data_nascimento: string | null
           email: string
@@ -2210,6 +2212,8 @@ export type Database = {
           compartilhar_gps_risco_alto?: boolean
           configuracao_alertas?: Json
           cor_raca?: string | null
+          cpf_hash?: string | null
+          cpf_last4?: string | null
           created_at?: string
           data_nascimento?: string | null
           email: string
@@ -2252,6 +2256,8 @@ export type Database = {
           compartilhar_gps_risco_alto?: boolean
           configuracao_alertas?: Json
           cor_raca?: string | null
+          cpf_hash?: string | null
+          cpf_last4?: string | null
           created_at?: string
           data_nascimento?: string | null
           email?: string
