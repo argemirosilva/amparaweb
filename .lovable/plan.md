@@ -1,155 +1,138 @@
 
 
-## Módulo FONAR Dinâmico — Camada Observadora Independente
+## Plano: Controle Hierárquico de Usuários por Entidade (revisado)
 
-Vou implementar o **FONAR (Formulário Nacional de Avaliação de Risco)** como módulo desacoplado, em paralelo ao motor existente, sem tocar em uma única linha do core de análise.
+### Premissas confirmadas
+1. **Magistrado** → acesso nacional sempre (ignora escopo geográfico)
+2. **Suporte** → acesso global sempre (ignora escopo)
+3. **Admin de Entidade** pode criar operadores restritos a cidades específicas (subdivisão geográfica por usuário)
 
-### Princípio arquitetural
+### Hierarquia
 
 ```text
-CORE AMPARA (intocado)
+Super Admin / Administrador          → acesso TOTAL (sem filtro)
+Suporte                              → acesso GLOBAL (sem filtro)
+Magistrado                           → acesso NACIONAL (sem filtro geo)
+        │
+Entidade (tenant)                    → escopo: nacional | estadual | municipal
+   │                                   + telas_permitidas (lista de módulos)
    │
-   ├─ analysis_micro_results (insert)
-   ├─ analysis_macro_reports (insert)
-   └─ alertas_panico (insert)
-            │
-            ▼
-      [DB Triggers AFTER INSERT]
-            │
-            ▼
-      fonar_signals (fila própria)
-            │
-            ▼
-      Edge Function: fonar-worker
-            │
-            ├─ classifica relevância
-            ├─ cria fonar_review_suggestions
-            └─ recalcula fonar_risk_assessment
-            │
-            ▼
-       UI: bloco "Meu FONAR" (Home)
+   ├─ Admin da Entidade (admin_tenant) → herda escopo da entidade
+   │                                     vê todas telas da entidade
+   │
+   └─ Operador                         → escopo ⊆ escopo da entidade
+                                         telas ⊆ telas da entidade
+                                         pode ter cidade específica
 ```
 
-O core continua publicando seus dados normalmente. O FONAR observa **a posteriori** via triggers leves. Se o worker falhar, o core não percebe.
+### Mudanças no banco
 
-### 1. Banco de dados (migration nova, isolada)
+**`tenants`** (adicionar):
+- `escopo_geografico` text: `'nacional' | 'estadual' | 'municipal'` (default `'municipal'`)
+- `acesso_nacional` boolean (default false, true se escopo=nacional)
 
-Tabelas com prefixo `fonar_`, todas com RLS própria. Zero alteração em tabelas existentes.
+**`user_roles`** (adicionar):
+- `telas_permitidas` jsonb default `'[]'` (subset das telas da entidade)
+- `escopo_uf` text (opcional, restringe operador a UF específica dentro da entidade)
+- `escopo_cidade` text (opcional, restringe operador a cidade específica)
+- Trigger validador: telas/escopo do usuário ⊆ telas/escopo da entidade
 
-| Tabela | Função |
-|---|---|
-| `fonar_submissions` | submissão atual da usuária (questionário preenchido) |
-| `fonar_versions` | histórico versionado de cada revisão |
-| `fonar_signals` | eventos consumidos da AMPARA (fila) |
-| `fonar_review_suggestions` | sugestões geradas para a usuária revisar |
-| `fonar_risk_assessments` | risco_fonar calculado (paralelo ao risco_ampara) |
-| `fonar_logs` | auditoria interna do módulo |
-| `fonar_settings` | feature flag global `FONAR_ENABLED` |
+### Lógica de filtro geográfico (backend)
 
-**Triggers leves** em `analysis_micro_results`, `analysis_macro_reports` e `alertas_panico`: apenas `INSERT INTO fonar_signals` em bloco try/exception (qualquer erro é silenciado para não afetar o core).
+Helper `getUserScope(sessionToken)` retorna:
+```ts
+{ scope: 'nacional'|'estadual'|'municipal', uf?, cidade? }
+```
 
-### 2. Feature flag (modo SAFE)
+**Regras de bypass (acesso total, sem filtro):**
+- role = `super_administrador` ou `administrador`
+- role = `suporte`
+- role = `magistrado`
 
-`fonar_settings.enabled = true/false`. Quando `false`:
-- Triggers fazem `RETURN NEW` imediato sem inserir signal
-- Worker retorna 200 vazio
-- UI esconde o bloco "Meu FONAR"
-- Rollback é apenas um UPDATE
+**Demais roles** (admin_tenant, operador):
+- nacional → sem filtro
+- estadual → `WHERE endereco_uf = scope.uf`
+- municipal → `WHERE endereco_uf = scope.uf AND endereco_cidade = scope.cidade`
 
-### 3. Edge Functions novas
+Aplicar em: `campo-api` (buscarVitima, consultarIndicadores), `admin-api` (listagens de vítimas/dashboards), `tribunal-api` (mas magistrado é nacional, então não filtra).
 
-| Função | Responsabilidade |
-|---|---|
-| `fonar-api` | CRUD do questionário, listar sugestões, aceitar/ignorar revisão |
-| `fonar-worker` | consome `fonar_signals` queued, classifica relevância (baixa/média/alta/crítica), gera `fonar_review_suggestions`, recalcula `fonar_risk_assessments` |
+### Mudanças na UI
 
-Worker roda via cron (a cada 1min) ou invocação manual. **Nunca chamado pelo core.**
+**`/admin/orgaos`** (criação/edição de Entidade):
+- Novo campo "Escopo de dados": Nacional / Estadual / Municipal
+- Se Nacional → marca `acesso_nacional=true` automaticamente, esconde UF/cidade
+- Se Estadual → exige UF, esconde cidade
+- Se Municipal → exige UF + cidade
+- Mantém seletor de telas permitidas
 
-### 4. Eventos consumidos
+**`/admin/usuarios`**:
+- Filtro automático: admin_tenant vê apenas usuários da própria entidade
+- Ao criar **operador**:
+  - Multi-select de telas (restrito às da entidade)
+  - Campos opcionais "UF específica" e "Cidade específica" (restritos ao escopo da entidade — ex: entidade estadual RO permite cidade=Porto Velho, Vilhena, etc.)
+- Ao criar **admin_tenant**:
+  - Apenas vínculo com entidade (herda tudo)
+- Magistrado e Suporte: sem campos de escopo
 
-- `analise_micro_detectada` → trigger em `analysis_micro_results`
-- `analise_macro_detectada` → trigger em `analysis_macro_reports`
-- `evento_critico_identificado` / `mudanca_de_padrao` → derivado do `risk_level` e `cycle_phase`
-- `acionamento_panico` → trigger em `alertas_panico`
+### Backend (admin-api)
 
-Todos com namespace próprio (`fonar_*`) nos signals.
+Atualizar/criar actions:
+- `createUser` / `updateUser`: validar admin_tenant só mexe na própria entidade; telas/escopo do operador ⊆ entidade
+- `listUsers`: admin_tenant filtra por `tenant_id`
+- `createTenant` / `updateTenant`: aceitar `escopo_geografico` e `acesso_nacional`
 
-### 5. UI (zero impacto no existente)
+### Frontend (hooks/protecao)
 
-**Home (`src/pages/Home.tsx`)** — adicionar **um único bloco** após `MonitoringStatusCard`:
+**`useAdminRole`**:
+- Adicionar `escopoUf`, `escopoCidade`, `escopoGeografico`, `acessoNacional`
+- Calcular `telasEfetivas = intersect(tenant.telas, user_role.telas)` para operador
+- Para admin_tenant: telasEfetivas = tenant.telas
+- Para magistrado/suporte/super: telasEfetivas = todas
+
+**`ProtectedAdminRoute`**:
+- Usar `telasEfetivas` em vez de só `telasPermitidas` da entidade
+
+### Aplicação de escopo geográfico
+
+Endpoints alvo (com guard de bypass para super/admin/suporte/magistrado):
+- `campo-api: buscarVitima` — filtra `usuarios.endereco_uf/cidade`
+- `campo-api: consultarIndicadores` — valida vítima dentro do escopo (404 se fora)
+- `admin-api: listagens de vítimas, dashboards` — `WHERE` por escopo
+
+### Diagrama final
 
 ```text
-┌─────────────────────────────────────┐
-│ Meu FONAR              [revisar →]  │
-│                                     │
-│ ┌──────────────┬──────────────────┐ │
-│ │ Risco AMPARA │ Risco FONAR      │ │
-│ │ Alto • 72    │ Moderado • 48    │ │
-│ │ (motor IA)   │ (autoavaliação)  │ │
-│ └──────────────┴──────────────────┘ │
-│                                     │
-│ ⚠ 2 sugestões de revisão pendentes  │
-└─────────────────────────────────────┘
+┌─────────────────────────────────────────────────────┐
+│ super_admin / administrador → acesso total         │
+│ suporte → acesso global                            │
+│ magistrado → acesso nacional                       │
+└─────────────────────────────────────────────────────┘
+                        │
+              ┌─────────┴──────────┐
+              ▼                    ▼
+        Entidade Estadual    Entidade Nacional
+        (uf=RO)              (acesso_nacional)
+              │
+        ┌─────┴──────┐
+        ▼            ▼
+   Admin_Tenant   Operador
+   vê RO inteiro  vê RO ou RO+Porto Velho
+                  (subdivisão opcional)
 ```
 
-Card unificado com **duas colunas distintas e rotuladas**, deixando claro que são avaliações independentes.
-
-**Novas rotas** (não substituem nenhuma):
-- `/fonar` — wizard guiado de preenchimento (passo a passo)
-- `/fonar/revisar/:suggestionId` — revisão pontual disparada por sugestão
-- `/fonar/historico` — histórico de versões
-
-**Componentes novos** em `src/components/fonar/`:
-- `FonarWizard.tsx` — passos sequenciais com salvamento progressivo
-- `FonarHomeBlock.tsx` — card da Home
-- `FonarRiskComparison.tsx` — duas colunas de risco
-- `FonarSuggestionCard.tsx` — sugestão individual
-
-### 6. Notificações independentes
-
-Canal próprio: lista de sugestões dentro do bloco "Meu FONAR". **Não usa toast crítico**, **não compete com alertas de pânico**, **não dispara WhatsApp**. Apenas badge de contagem no card.
-
-### 7. Garantias de não-interferência
-
-- ✅ Nenhuma edge function existente é editada
-- ✅ Nenhuma tabela existente recebe coluna nova
-- ✅ Triggers usam `EXCEPTION WHEN OTHERS THEN RETURN NEW` (silenciam falhas)
-- ✅ Feature flag desliga tudo em 1 update SQL
-- ✅ Bloco UI só renderiza se `FONAR_ENABLED=true`
-- ✅ `risco_fonar` nunca é misturado com `risco_ampara` no core
-
-### 8. Wizard FONAR (passos)
-
-Baseado no formulário oficial brasileiro de avaliação de risco em violência doméstica:
-1. Identificação básica
-2. Histórico de violência (física, psicológica, sexual, patrimonial, moral)
-3. Ameaças e armas
-4. Ciclo e frequência
-5. Filhos e dependentes
-6. Rede de apoio
-7. Contexto socioeconômico
-8. Revisão final → gera versão imutável
-
-### Arquivos a criar
+### Arquivos a alterar
 
 **Migration:**
-- 1 migration SQL com 7 tabelas + 3 triggers + RLS + seed do flag
+- 1 migration: colunas em `tenants` + `user_roles` + trigger validador
 
-**Edge Functions:**
-- `supabase/functions/fonar-api/index.ts`
-- `supabase/functions/fonar-worker/index.ts`
+**Backend:**
+- `supabase/functions/admin-api/index.ts` — createUser/updateUser/listUsers/createTenant
+- `supabase/functions/campo-api/index.ts` — guard geográfico em buscarVitima/consultarIndicadores
+- `supabase/functions/_shared/scope.ts` (novo) — helper `getUserScope` reutilizável
 
 **Frontend:**
-- `src/pages/Fonar.tsx` (wizard)
-- `src/pages/FonarHistorico.tsx`
-- `src/components/fonar/FonarHomeBlock.tsx`
-- `src/components/fonar/FonarWizard.tsx`
-- `src/components/fonar/FonarRiskComparison.tsx`
-- `src/components/fonar/FonarSuggestionCard.tsx`
-- `src/services/fonarService.ts`
-- `src/hooks/useFonar.ts`
-
-**Edições mínimas (apenas adição):**
-- `src/App.tsx` — 3 rotas novas
-- `src/pages/Home.tsx` — 1 import + 1 componente no final do grid
+- `src/hooks/useAdminRole.ts` — escopo + telasEfetivas
+- `src/components/institucional/ProtectedAdminRoute.tsx` — usar telasEfetivas
+- `src/pages/admin/AdminOrgaos.tsx` — campo escopo geográfico
+- `src/pages/admin/AdminUsuarios.tsx` — filtro por tenant + campos de escopo do operador
 
