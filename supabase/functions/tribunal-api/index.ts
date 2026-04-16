@@ -456,7 +456,7 @@ async function handleConsulta(supabase: any, auth: AuthResult, body: any) {
   const amparaData = await gatherAmparaData(supabase, usuario?.id || null, agressor?.id || null);
 
   // Build analysis object
-  const analysisObject = buildAnalysisObject(amparaData, body.dados_processo, agressor, usuario);
+  const analysisObject = buildAnalysisObject(amparaData, body.dados_processo, agressor, usuario, body);
 
   // Build AMPARA summary for display
   const amparaSummary = buildAmparaSummary(amparaData);
