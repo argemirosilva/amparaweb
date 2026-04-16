@@ -381,9 +381,44 @@ serve(async (req) => {
       return json({ setting: data });
     }
 
+    // ========== LIST USERS (com filtro automático para admin_tenant) ==========
+    if (action === "listUsers") {
+      // Apenas para admin_tenant: força filtrar pelo próprio tenant
+      const forceTenant = callerIsTenantAdmin && !callerIsGlobal ? callerTenantId : null;
+      const { tenant_id: filterTenantId, search, status, offset = 0, limit = 50 } = params;
+      const effectiveTenant = forceTenant || filterTenantId || null;
+
+      let userIdsByTenant: string[] | null = null;
+      if (effectiveTenant) {
+        const { data: roleRows } = await supabase
+          .from("user_roles")
+          .select("user_id")
+          .eq("tenant_id", effectiveTenant);
+        userIdsByTenant = (roleRows || []).map((r: any) => r.user_id);
+        if (userIdsByTenant.length === 0) return json({ users: [], total: 0 });
+      }
+
+      let q = supabase
+        .from("usuarios")
+        .select("id, nome_completo, email, status, ultimo_acesso, created_at", { count: "exact" })
+        .order("created_at", { ascending: false })
+        .range(offset, offset + limit - 1);
+
+      if (search?.trim()) {
+        q = q.or(`nome_completo.ilike.%${search.trim()}%,email.ilike.%${search.trim()}%`);
+      }
+      if (status && ["ativo","pendente","inativo","bloqueado"].includes(status)) {
+        q = q.eq("status", status);
+      }
+      if (userIdsByTenant) q = q.in("id", userIdsByTenant);
+
+      const { data: users, count } = await q;
+      return json({ users: users || [], total: count || 0 });
+    }
+
     // ========== UPDATE USER ==========
     if (action === "updateUser") {
-      const { user_id: targetUserId, nome_completo, email, status, tenant_id, role } = params;
+      const { user_id: targetUserId, nome_completo, email, status, tenant_id, role, telas_permitidas, escopo_uf, escopo_cidade } = params;
 
       if (!targetUserId) return json({ error: "ID do usuário não informado" }, 400);
       if (!nome_completo?.trim()) return json({ error: "Nome é obrigatório" }, 400);
@@ -392,6 +427,24 @@ serve(async (req) => {
       const emailClean = email.trim().toLowerCase();
       const validStatuses = ["ativo", "pendente", "inativo", "bloqueado"];
       const finalStatus = validStatuses.includes(status) ? status : "pendente";
+
+      // Tenant admin: só pode editar usuários da própria entidade
+      if (callerIsTenantAdmin && !callerIsGlobal) {
+        const { data: targetRoles } = await supabase
+          .from("user_roles")
+          .select("role, tenant_id")
+          .eq("user_id", targetUserId);
+        const targetTenant = (targetRoles || []).find((r: any) => r.tenant_id)?.tenant_id;
+        if (targetTenant !== callerTenantId) {
+          return json({ error: "Você só pode editar usuários da sua própria entidade" }, 403);
+        }
+        if (role && role !== "operador") {
+          return json({ error: "Você só pode atribuir o papel operacional" }, 403);
+        }
+        if (tenant_id && tenant_id !== callerTenantId) {
+          return json({ error: "Você não pode mover usuários para outra entidade" }, 403);
+        }
+      }
 
       // Check if email is taken by another user
       const { data: existing } = await supabase
@@ -420,17 +473,14 @@ serve(async (req) => {
         return json({ error: "Erro ao atualizar: " + updateError.message }, 500);
       }
 
-      // Restrict 'super_administrador' and 'administrador' role assignment to existing super_administrador/administrador
-      if (role === "super_administrador" || role === "administrador") {
-        const { data: callerRoles } = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", userId);
-        const isCallerAdmin = (callerRoles || []).some((r: any) => r.role === "super_administrador" || r.role === "administrador");
-        if (!isCallerAdmin) {
-          return json({ error: "Somente administradores podem atribuir esse nível" }, 403);
-        }
+      // Restrict high roles
+      if ((role === "super_administrador" || role === "administrador") && !callerIsGlobal) {
+        return json({ error: "Somente administradores podem atribuir esse nível" }, 403);
       }
+
+      const telasArr: string[] = Array.isArray(telas_permitidas)
+        ? telas_permitidas.filter((p: any) => typeof p === "string" && p.startsWith("/admin"))
+        : [];
 
       // Update role / tenant association
       await supabase.from("user_roles").delete().eq("user_id", targetUserId);
@@ -439,6 +489,9 @@ serve(async (req) => {
           user_id: targetUserId,
           role: role,
           tenant_id: tenant_id || null,
+          telas_permitidas: telasArr,
+          escopo_uf: escopo_uf || null,
+          escopo_cidade: escopo_cidade || null,
         });
       }
 
@@ -447,7 +500,7 @@ serve(async (req) => {
         user_id: userId,
         action_type: "admin_update_user",
         success: true,
-        details: { updated_user_id: targetUserId, email: emailClean, status: finalStatus, tenant_id },
+        details: { updated_user_id: targetUserId, email: emailClean, status: finalStatus, tenant_id, telas_permitidas: telasArr, escopo_uf, escopo_cidade },
       });
 
       return json({ success: true });
