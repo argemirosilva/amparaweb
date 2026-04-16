@@ -288,22 +288,38 @@ async function computeForUser(
 // --- Indicadores agregados (Government Insights) ---
 async function computeGovernmentMetrics(
   supabase: ReturnType<typeof createClient>,
-  windowDays = 30,
+  windowDays: number | "all" = 30,
 ) {
   const periodEnd = new Date();
-  const periodStart = new Date(
-    periodEnd.getTime() - windowDays * 24 * 60 * 60 * 1000,
-  );
+  // windowDays === "all" → desde 1970 (toda a base)
+  const periodStart = windowDays === "all"
+    ? new Date(0)
+    : new Date(periodEnd.getTime() - windowDays * 24 * 60 * 60 * 1000);
 
-  const { data: snaps } = await supabase
+  let query = supabase
     .from("risk_context_snapshots")
     .select(
       "risco_ampara, risco_fonar, divergencia_entre_modelos, tendencia_risco, fatores_criticos_ativos, fatores_reincidentes, nivel_prioridade_intervencao, computed_at, user_id",
     )
-    .gte("computed_at", periodStart.toISOString())
     .lte("computed_at", periodEnd.toISOString());
 
-  const total = snaps?.length ?? 0;
+  if (windowDays !== "all") {
+    query = query.gte("computed_at", periodStart.toISOString());
+  }
+  // Paginação para ultrapassar limite default de 1000 do PostgREST
+  const PAGE = 1000;
+  let from = 0;
+  let snaps: any[] = [];
+  while (true) {
+    const { data, error } = await query.range(from, from + PAGE - 1);
+    if (error) throw error;
+    if (!data || data.length === 0) break;
+    snaps = snaps.concat(data);
+    if (data.length < PAGE) break;
+    from += PAGE;
+  }
+
+  const total = snaps.length;
   const K_MIN = 5;
 
   if (total < K_MIN) {
@@ -312,9 +328,10 @@ async function computeGovernmentMetrics(
       period_start: periodStart.toISOString(),
       period_end: periodEnd.toISOString(),
       scope_type: "nacional",
+      scope_value: windowDays === "all" ? "all" : `${windowDays}d`,
       total_amostras: total,
       k_anonymity_min: K_MIN,
-      payload_extra: { suprimido_por_k_anonymity: true },
+      payload_extra: { suprimido_por_k_anonymity: true, window: windowDays },
     });
     return { total, suppressed: true };
   }
@@ -327,7 +344,7 @@ async function computeGovernmentMetrics(
   let recorrentes = 0;
   const usersComSnapshot = new Set<string>();
 
-  for (const s of snaps!) {
+  for (const s of snaps) {
     usersComSnapshot.add(s.user_id as string);
     const fonScore = normFonar(s.risco_fonar as string);
     if (fonScore === 1) distribuicao.moderado++;
@@ -357,7 +374,7 @@ async function computeGovernmentMetrics(
     : 0;
 
   // Subnotificação: alto risco AMPARA mas fonar não atualizado
-  const subnotificacao = snaps!.filter((s) =>
+  const subnotificacao = snaps.filter((s) =>
     normAmpara(s.risco_ampara as string) >= 2 &&
     normFonar(s.risco_fonar as string) === 0
   ).length / total;
@@ -366,6 +383,7 @@ async function computeGovernmentMetrics(
     period_start: periodStart.toISOString(),
     period_end: periodEnd.toISOString(),
     scope_type: "nacional",
+    scope_value: windowDays === "all" ? "all" : `${windowDays}d`,
     total_amostras: total,
     k_anonymity_min: K_MIN,
     distribuicao_risco: distribuicao,
@@ -376,6 +394,7 @@ async function computeGovernmentMetrics(
     taxa_atualizacao_fonar: taxaAtualizacaoFonar,
     correlacao_ampara_fonar: { convergencia: convergencias, divergencia: divergencias },
     indicador_subnotificacao: subnotificacao,
+    payload_extra: { window: windowDays === "all" ? "all" : windowDays },
   };
 
   await supabase.from("ril_government_metrics").insert(metric);
@@ -423,6 +442,15 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Helper: lê window do query string ou body (aceita "all" ou número de dias)
+    function parseWindow(raw: string | null | undefined): number | "all" {
+      if (!raw) return 30;
+      if (raw === "all") return "all";
+      const n = parseInt(raw, 10);
+      return Number.isFinite(n) && n > 0 ? n : 30;
+    }
+    const windowParam = parseWindow(url.searchParams.get("window"));
+
     if (action === "consolidate") {
       // Cron: processa usuárias com eventos pendentes nas últimas 6h
       const since = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
@@ -446,18 +474,26 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Recalcular indicadores agregados
-      const metrics = await computeGovernmentMetrics(supabase, 30);
+      // Recalcular indicadores agregados em TODAS as janelas suportadas
+      const windows: Array<number | "all"> = [30, 90, 120, 365, 1095, "all"];
+      const metricsAll: Record<string, unknown> = {};
+      for (const w of windows) {
+        try {
+          metricsAll[String(w)] = await computeGovernmentMetrics(supabase, w);
+        } catch (e) {
+          console.error("metrics failed for window", w, e);
+        }
+      }
 
       return new Response(
-        JSON.stringify({ ok: true, processed: results.length, metrics }),
+        JSON.stringify({ ok: true, processed: results.length, metrics: metricsAll }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
     if (action === "metrics") {
-      const m = await computeGovernmentMetrics(supabase, 30);
-      return new Response(JSON.stringify({ ok: true, ...m }), {
+      const m = await computeGovernmentMetrics(supabase, windowParam);
+      return new Response(JSON.stringify({ ok: true, window: windowParam, ...m }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
