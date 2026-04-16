@@ -327,87 +327,136 @@ async function callAI(prompt: string, dados: string): Promise<string> {
 
 // ── Handlers ──
 
-async function handleConsulta(supabase: any, auth: AuthResult, body: any) {
-  const modo = body.modo_saida || "analitico";
-  if (!["analitico", "despacho", "parecer"].includes(modo))
-    return json({ error: "modo_saida inválido. Use: analitico, despacho, parecer" }, 400);
+async function generateOneMode(supabase: any, modo: string, analysisObject: any, prompt: string): Promise<{ modo: string; outputJson: any; outputText: string | null; error?: string }> {
+  const dadosStr = JSON.stringify(analysisObject, null, 2);
+  try {
+    const aiOutput = await callAI(prompt, dadosStr);
+    if (modo === "analitico") {
+      let cleaned = aiOutput.trim();
+      if (cleaned.startsWith("```")) cleaned = cleaned.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "");
+      try {
+        return { modo, outputJson: JSON.parse(cleaned), outputText: null };
+      } catch {
+        return { modo, outputJson: { raw: aiOutput }, outputText: null };
+      }
+    }
+    return { modo, outputJson: {}, outputText: aiOutput };
+  } catch (e: any) {
+    return { modo, outputJson: {}, outputText: null, error: e.message };
+  }
+}
 
+function buildAmparaSummary(amparaData: any) {
+  const micro = amparaData.micro_analyses || [];
+  const macro = amparaData.macro_reports || [];
+  const risk = amparaData.risk_assessments || [];
+  const recs = amparaData.recordings_summary || [];
+  const ext = amparaData.external_data || [];
+
+  return {
+    total_analises_micro: micro.length,
+    analises_micro: micro.slice(0, 10).map((m: any) => ({
+      risco: m.risk_level,
+      contexto: m.context_classification,
+      fase_ciclo: m.cycle_phase,
+      data: m.created_at,
+    })),
+    total_relatorios_macro: macro.length,
+    relatorios_macro: macro.slice(0, 3).map((m: any) => ({
+      janela_dias: m.window_days,
+      status: m.status,
+      data: m.created_at,
+      resumo: m.output_json?.resumo || m.output_json?.summary || null,
+    })),
+    total_avaliacoes_risco: risk.length,
+    avaliacoes_risco: risk.slice(0, 3).map((r: any) => ({
+      score: r.risk_score,
+      nivel: r.risk_level,
+      tendencia: r.trend,
+      percentual_tendencia: r.trend_percentage,
+      resumo_tecnico: r.resumo_tecnico,
+      data: r.computed_at,
+    })),
+    total_gravacoes: recs.length,
+    total_dados_externos: ext.length,
+    dados_externos: ext.slice(0, 5).map((e: any) => ({
+      tipo: e.tipo_dado,
+      numero: e.numero_referencia,
+      resumo: e.resumo,
+      data: e.data_referencia || e.created_at,
+    })),
+  };
+}
+
+async function handleConsulta(supabase: any, auth: AuthResult, body: any) {
   // Find victim & aggressor
   const usuario = await findUsuario(supabase, body.dados_vitima);
   const agressor = await findAgressor(supabase, body.dados_agressor);
 
-  // Gather AMPARA data if requested
-  const incluirAmpara = body.incluir_dados_ampara !== false;
-  const amparaData = incluirAmpara
-    ? await gatherAmparaData(supabase, usuario?.id || null, agressor?.id || null)
-    : { micro_analyses: [], macro_reports: [], risk_assessments: [], recordings_summary: [], external_data: [] };
-
-  // Store external data
-  if (body.dados_processo) {
-    // Will be linked to consulta after creation
-  }
+  // Gather AMPARA data (always include)
+  const amparaData = await gatherAmparaData(supabase, usuario?.id || null, agressor?.id || null);
 
   // Build analysis object
   const analysisObject = buildAnalysisObject(amparaData, body.dados_processo, agressor, usuario);
 
-  // Build prompt and call AI
-  const { prompt, version } = await buildPrompt(supabase, modo);
-  const dadosStr = JSON.stringify(analysisObject, null, 2);
+  // Build AMPARA summary for display
+  const amparaSummary = buildAmparaSummary(amparaData);
 
-  let aiOutput: string;
-  try {
-    aiOutput = await callAI(prompt, dadosStr);
-  } catch (e: any) {
-    // Save failed consulta
+  // Build prompts for all 3 modes in parallel
+  const [promptAnalitico, promptDespacho, promptParecer] = await Promise.all([
+    buildPrompt(supabase, "analitico"),
+    buildPrompt(supabase, "despacho"),
+    buildPrompt(supabase, "parecer"),
+  ]);
+
+  // Generate all 3 analyses in parallel
+  const [resAnalitico, resDespacho, resParecer] = await Promise.all([
+    generateOneMode(supabase, "analitico", analysisObject, promptAnalitico.prompt),
+    generateOneMode(supabase, "despacho", analysisObject, promptDespacho.prompt),
+    generateOneMode(supabase, "parecer", analysisObject, promptParecer.prompt),
+  ]);
+
+  const allResults = [resAnalitico, resDespacho, resParecer];
+  const hasAnySuccess = allResults.some(r => !r.error);
+
+  if (!hasAnySuccess) {
     await supabase.from("tribunal_consultas").insert({
       tenant_id: auth.tenantId,
       api_key_id: auth.apiKeyId,
-      modo_saida: modo,
+      modo_saida: "todos",
       analysis_object: analysisObject,
       status: "error",
-      error_message: e.message,
+      error_message: allResults.map(r => `${r.modo}: ${r.error}`).join("; "),
       usuario_id: usuario?.id || null,
       agressor_id: agressor?.id || null,
       model: "google/gemini-2.5-pro",
-      prompt_version: version,
+      prompt_version: `${promptAnalitico.version}|${promptDespacho.version}|${promptParecer.version}`,
       created_by: auth.userId,
     });
-    return json({ error: e.message }, 500);
+    return json({ error: resAnalitico.error || "Erro ao gerar análises" }, 500);
   }
 
-  // Parse output based on mode
-  let outputJson: any = {};
-  let outputText: string | null = null;
-
-  if (modo === "analitico") {
-    try {
-      // Clean markdown fences
-      let cleaned = aiOutput.trim();
-      if (cleaned.startsWith("```")) {
-        cleaned = cleaned.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "");
-      }
-      outputJson = JSON.parse(cleaned);
-    } catch {
-      outputJson = { raw: aiOutput };
-    }
-  } else {
-    outputText = aiOutput;
-  }
-
-  // Save consulta
+  // Save consulta with all outputs
   const { data: consulta, error: insertError } = await supabase
     .from("tribunal_consultas")
     .insert({
       tenant_id: auth.tenantId,
       api_key_id: auth.apiKeyId,
-      modo_saida: modo,
+      modo_saida: "todos",
       analysis_object: analysisObject,
-      output_json: outputJson,
-      output_text: outputText,
+      output_json: {
+        analitico: resAnalitico.error ? { error: resAnalitico.error } : resAnalitico.outputJson,
+        despacho: resDespacho.error ? { error: resDespacho.error } : null,
+        parecer: resParecer.error ? { error: resParecer.error } : null,
+      },
+      output_text: JSON.stringify({
+        despacho: resDespacho.outputText,
+        parecer: resParecer.outputText,
+      }),
       usuario_id: usuario?.id || null,
       agressor_id: agressor?.id || null,
       model: "google/gemini-2.5-pro",
-      prompt_version: version,
+      prompt_version: `${promptAnalitico.version}|${promptDespacho.version}|${promptParecer.version}`,
       status: "success",
       created_by: auth.userId,
     })
@@ -434,22 +483,18 @@ async function handleConsulta(supabase: any, auth: AuthResult, body: any) {
     });
   }
 
-  // Return response based on mode
-  const response: any = {
+  return json({
     success: true,
     consulta_id: consulta?.id,
-    modo_saida: modo,
     vitima_vinculada: !!usuario,
     agressor_vinculado: !!agressor,
-  };
-
-  if (modo === "analitico") {
-    response.analise = outputJson;
-  } else {
-    response.texto = outputText;
-  }
-
-  return json(response);
+    ampara_summary: amparaSummary,
+    resultados: {
+      analitico: resAnalitico.error ? { error: resAnalitico.error } : { analise: resAnalitico.outputJson },
+      despacho: resDespacho.error ? { error: resDespacho.error } : { texto: resDespacho.outputText },
+      parecer: resParecer.error ? { error: resParecer.error } : { texto: resParecer.outputText },
+    },
+  });
 }
 
 async function handleListConsultas(supabase: any, auth: AuthResult, body: any) {
