@@ -52,6 +52,7 @@ interface PerfilData {
   cor_raca: string | null;
   escolaridade: string | null;
   profissao: string | null;
+  cpf_last4: string | null;
 }
 
 interface GuardiaoData {
@@ -128,6 +129,7 @@ export default function PerfilPage() {
   const [loading, setLoading] = useState(true);
   const [editingPerfil, setEditingPerfil] = useState(false);
   const [perfilForm, setPerfilForm] = useState<Partial<PerfilData>>({});
+  const [cpfInput, setCpfInput] = useState("");
   const [enderecoForm, setEnderecoForm] = useState<EnderecoFields>(emptyEndereco);
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -201,9 +203,11 @@ export default function PerfilPage() {
 
   const savePerfil = async () => {
     setSaving(true);
-    await api("updateMe", { ...perfilForm, ...enderecoForm,
+    const payload: any = { ...perfilForm, ...enderecoForm,
       endereco_fixo: `${enderecoForm.endereco_logradouro}, ${enderecoForm.endereco_numero} - ${enderecoForm.endereco_bairro}, ${enderecoForm.endereco_cidade}/${enderecoForm.endereco_uf}`,
-    });
+    };
+    if (cpfInput.replace(/\D/g, "").length === 11) payload.cpf = cpfInput;
+    await api("updateMe", payload);
     await loadData();
     setEditingPerfil(false);
     setSaving(false);
@@ -378,6 +382,7 @@ export default function PerfilPage() {
               escolaridade: perfil?.escolaridade || "",
               profissao: perfil?.profissao || "",
             });
+            setCpfInput("");
             setEnderecoForm({
               endereco_cep: perfil?.endereco_cep || "",
               endereco_logradouro: perfil?.endereco_logradouro || "",
@@ -398,6 +403,7 @@ export default function PerfilPage() {
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div><p className="text-muted-foreground">Telefone</p><p className="text-foreground">{perfil?.telefone || "-"}</p></div>
               <div><p className="text-muted-foreground">Nascimento</p><p className="text-foreground">{perfil?.data_nascimento || "-"}</p></div>
+              <div><p className="text-muted-foreground">CPF</p><p className="text-foreground">{perfil?.cpf_last4 ? `***.***.*${perfil.cpf_last4.slice(0,2)}-${perfil.cpf_last4.slice(2)}` : "-"}</p></div>
             </div>
 
             {perfilExpanded && (
@@ -431,6 +437,18 @@ export default function PerfilPage() {
               onChange={e => setPerfilForm({ ...perfilForm, telefone: e.target.value })} />
             <input type="date" className="ampara-input" value={perfilForm.data_nascimento || ""}
               onChange={e => setPerfilForm({ ...perfilForm, data_nascimento: e.target.value })} />
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1.5">CPF</label>
+              <input type="text" className="ampara-input" placeholder={perfil?.cpf_last4 ? `***.***.*${perfil.cpf_last4.slice(0,2)}-${perfil.cpf_last4.slice(2)} (informar completo para alterar)` : "000.000.000-00"} value={cpfInput}
+                onChange={e => {
+                  const digits = e.target.value.replace(/\D/g, "").slice(0, 11);
+                  let formatted = digits;
+                  if (digits.length > 9) formatted = `${digits.slice(0,3)}.${digits.slice(3,6)}.${digits.slice(6,9)}-${digits.slice(9)}`;
+                  else if (digits.length > 6) formatted = `${digits.slice(0,3)}.${digits.slice(3,6)}.${digits.slice(6)}`;
+                  else if (digits.length > 3) formatted = `${digits.slice(0,3)}.${digits.slice(3)}`;
+                  setCpfInput(formatted);
+                }} maxLength={14} />
+            </div>
             <div>
               <label className="block text-sm font-medium text-foreground mb-1.5">Cor / Raça</label>
               <select className="ampara-input" value={perfilForm.cor_raca || ""}
