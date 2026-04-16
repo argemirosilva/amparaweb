@@ -110,8 +110,13 @@ serve(async (req) => {
 
     if (!session_token) return json({ error: "Sessão não informada" }, 401);
 
-    const userId = await authenticateAdmin(supabase, session_token);
-    if (!userId) return json({ error: "Acesso negado. Permissão de administrador necessária." }, 403);
+    const auth = await authenticateAdmin(supabase, session_token);
+    if (!auth) return json({ error: "Acesso negado. Permissão de administrador necessária." }, 403);
+    const userId = auth.userId;
+    const callerRoles = auth.roles;
+    const callerTenantId = auth.tenantId;
+    const callerIsGlobal = isGlobalAdmin(callerRoles);
+    const callerIsTenantAdmin = isTenantAdmin(callerRoles);
 
     // ========== CREATE USER (Admin invite) ==========
     if (action === "createUser") {
