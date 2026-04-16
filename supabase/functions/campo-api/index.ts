@@ -370,7 +370,7 @@ Deno.serve(async (req) => {
         });
       }
 
-      const resultados = await buscarVitima(query);
+      const resultados = await buscarVitima(query, effectiveScope);
       const tipo = onlyDigits(query).length === 11 ? "busca_cpf" : onlyDigits(query).length >= 10 ? "busca_telefone" : "busca_nome";
 
       await logAccess({
