@@ -156,7 +156,9 @@ async function computeForUser(
     .order("computed_at", { ascending: false })
     .limit(5);
 
-  const amparaLevel = (lastMicro?.risk_level ?? "sem_risco") as string;
+  // Mapeia nível AMPARA: prioriza micro novo, senão legacy gravacoes_analises
+  const legacyLevel = (legacyAnalise?.nivel_risco ?? "sem_risco") as string;
+  const amparaLevel = (lastMicro?.risk_level ?? legacyLevel) as string;
   const fonarLevel = (lastFonar?.risk_level ?? "sem_risco") as string;
   const ampN = normAmpara(amparaLevel);
   const fonN = normFonar(fonarLevel);
