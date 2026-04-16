@@ -4,7 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { ChevronDown, Copy, Check, Rocket, GitBranch, AlertTriangle, Lightbulb } from "lucide-react";
+import { ChevronDown, Copy, Check, Rocket, GitBranch, AlertTriangle, Lightbulb, Key } from "lucide-react";
+import TribunalApiKeys from "@/components/tribunal/TribunalApiKeys";
 
 const BASE_URL = "https://uogenwcycqykfsuongrl.supabase.co/functions/v1/mobile-api";
 const API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVvZ2Vud2N5Y3F5a2ZzdW9uZ3JsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA4Mjg2NjIsImV4cCI6MjA4NjQwNDY2Mn0.hncTs6DDS-sbb8sT_QBOBf1mTcTu0e_Pc5yXo4tHZwE";
@@ -1106,6 +1107,18 @@ export default function DocApiPage() {
             </div>
           );
         })}
+
+        {/* Tribunal API Keys */}
+        <div className="border-t border-border pt-6 mt-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Key className="w-5 h-5 text-primary" />
+            <h2 className="text-lg font-semibold text-foreground">API Keys - AMPARA Tribunal</h2>
+          </div>
+          <p className="text-sm text-muted-foreground mb-4">
+            Gerencie as chaves de API para integração com sistemas judiciais externos.
+          </p>
+          <TribunalApiKeys />
+        </div>
 
         {/* Footer */}
         <div className="border-t border-border pt-4">
