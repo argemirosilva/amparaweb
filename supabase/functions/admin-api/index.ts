@@ -63,7 +63,7 @@ function anonymizeJson(obj: any): any {
   return obj;
 }
 
-async function authenticateAdmin(supabase: any, sessionToken: string): Promise<string | null> {
+async function authenticateAdmin(supabase: any, sessionToken: string): Promise<{ userId: string; roles: string[]; tenantId: string | null } | null> {
   if (!sessionToken) return null;
   const tokenHash = await hashToken(sessionToken);
   const { data: session } = await supabase
@@ -74,16 +74,28 @@ async function authenticateAdmin(supabase: any, sessionToken: string): Promise<s
     .maybeSingle();
   if (!session || new Date(session.expires_at) < new Date()) return null;
 
-  const { data: roles } = await supabase
+  const { data: roleRows } = await supabase
     .from("user_roles")
-    .select("role")
+    .select("role, tenant_id")
     .eq("user_id", session.user_id);
 
-  const hasAdmin = (roles || []).some(
-    (r: any) => r.role === "super_administrador" || r.role === "administrador" || r.role === "admin_master" || r.role === "admin_tenant"
+  const roles = (roleRows || []).map((r: any) => r.role);
+  const hasAdmin = roles.some((r: string) =>
+    r === "super_administrador" || r === "administrador" || r === "admin_master" || r === "admin_tenant"
   );
   if (!hasAdmin) return null;
-  return session.user_id;
+  const tenantId = (roleRows || []).find((r: any) => r.tenant_id)?.tenant_id || null;
+  return { userId: session.user_id, roles, tenantId };
+}
+
+const GLOBAL_ROLES = new Set(["super_administrador", "administrador"]);
+const TENANT_SCOPED_ROLES = new Set(["admin_tenant"]);
+
+function isGlobalAdmin(roles: string[]): boolean {
+  return roles.some((r) => GLOBAL_ROLES.has(r));
+}
+function isTenantAdmin(roles: string[]): boolean {
+  return roles.some((r) => TENANT_SCOPED_ROLES.has(r));
 }
 
 serve(async (req) => {
