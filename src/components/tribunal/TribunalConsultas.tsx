@@ -195,9 +195,6 @@ export default function TribunalConsultas() {
                       {new Date(c.created_at).toLocaleString("pt-BR")}
                     </span>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-0.5 truncate">
-                    ID: {c.id.substring(0, 8)}... | Modelo: {c.model || "—"} | Prompt: {c.prompt_version || "—"}
-                  </p>
                 </div>
                 <Eye className="w-4 h-4 text-muted-foreground shrink-0" />
               </CardContent>
