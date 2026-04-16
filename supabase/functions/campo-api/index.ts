@@ -15,6 +15,8 @@ const supabase = createClient(SUPABASE_URL, SERVICE_ROLE, {
   auth: { persistSession: false },
 });
 
+import { getUserScope, applyScopeToUsuariosQuery, isVitimaInScope } from "../_shared/scope.ts";
+
 // ================== Helpers ==================
 
 async function sha256Hex(input: string): Promise<string> {
