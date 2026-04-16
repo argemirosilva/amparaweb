@@ -10,6 +10,7 @@ import {
   LogOut,
   Search,
   Headset,
+  Shield,
 } from "lucide-react";
 import {
   Sidebar,
