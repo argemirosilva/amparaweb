@@ -142,7 +142,7 @@ export default function AdminLogin() {
                   background: "hsl(210 17% 98%)",
                   color: "hsl(220 13% 18%)",
                 }}
-                placeholder="admin@orgao.gov.br"
+                placeholder="admin@entidade.gov.br"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 maxLength={255}

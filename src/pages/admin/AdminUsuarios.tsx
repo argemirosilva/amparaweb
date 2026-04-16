@@ -205,7 +205,7 @@ export default function AdminUsuarios() {
 
     if (!createForm.nome_completo.trim()) { setCreateError("Nome é obrigatório"); return; }
     if (!createForm.email.trim()) { setCreateError("Email é obrigatório"); return; }
-    if (!createForm.tenant_id) { setCreateError("Selecione um órgão"); return; }
+    if (!createForm.tenant_id) { setCreateError("Selecione uma entidade"); return; }
 
     setCreateLoading(true);
     try {
@@ -299,7 +299,7 @@ export default function AdminUsuarios() {
               onChange={(e) => { setTenantFilter(e.target.value); setPage(0); }}
               className="text-xs rounded border border-border px-2 py-1.5 bg-background text-foreground outline-none cursor-pointer"
             >
-              <option value="todos">Todos os órgãos</option>
+              <option value="todos">Todas as entidades</option>
               {tenants.map((t) => (
                 <option key={t.id} value={t.id}>{t.sigla} - {t.nome}</option>
               ))}
@@ -312,7 +312,7 @@ export default function AdminUsuarios() {
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-muted/50">
-              {["Nome", "Email", "Órgão", "Papel", "Status", "Último login", "Ações"].map((h) => (
+              {["Nome", "Email", "Entidade", "Papel", "Status", "Último login", "Ações"].map((h) => (
                 <th key={h} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground">
                   {h}
                 </th>
@@ -477,14 +477,14 @@ export default function AdminUsuarios() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium mb-1" style={{ color: "hsl(220 9% 46%)" }}>Órgão</label>
+                  <label className="block text-xs font-medium mb-1" style={{ color: "hsl(220 9% 46%)" }}>Entidade</label>
                   <select
                     value={editForm.tenant_id}
                     onChange={(e) => setEditForm((f) => ({ ...f, tenant_id: e.target.value }))}
                     className="w-full px-3 py-2 rounded-md border text-sm outline-none cursor-pointer"
                     style={{ borderColor: "hsl(220 13% 87%)", color: "hsl(220 13% 18%)" }}
                   >
-                    <option value="">Sem órgão</option>
+                    <option value="">Sem entidade</option>
                     {tenants.map((t) => (
                       <option key={t.id} value={t.id}>{t.sigla} - {t.nome}</option>
                     ))}
@@ -579,7 +579,7 @@ export default function AdminUsuarios() {
                   {[
                     { label: "Nome", value: drawerUser.nome_completo },
                     { label: "Email", value: drawerUser.email },
-                    { label: "Órgão", value: drawerUser.orgao || "-" },
+                    { label: "Entidade", value: drawerUser.orgao || "-" },
                     { label: "Status", value: drawerUser.status },
                     { label: "Cadastro", value: new Date(drawerUser.created_at).toLocaleDateString("pt-BR") },
                     { label: "Último acesso", value: drawerUser.ultimo_acesso ? new Date(drawerUser.ultimo_acesso).toLocaleDateString("pt-BR") : "-" },
@@ -848,20 +848,20 @@ export default function AdminUsuarios() {
                     onChange={(e) => setCreateForm((f) => ({ ...f, email: e.target.value }))}
                     className="w-full px-3 py-2 rounded-md border text-sm outline-none focus:ring-1"
                     style={{ borderColor: "hsl(220 13% 87%)", color: "hsl(220 13% 18%)" }}
-                    placeholder="email@orgao.gov.br"
+                    placeholder="email@entidade.gov.br"
                     maxLength={255}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium mb-1" style={{ color: "hsl(220 9% 46%)" }}>Órgão *</label>
+                  <label className="block text-xs font-medium mb-1" style={{ color: "hsl(220 9% 46%)" }}>Entidade *</label>
                   <select
                     value={createForm.tenant_id}
                     onChange={(e) => setCreateForm((f) => ({ ...f, tenant_id: e.target.value }))}
                     className="w-full px-3 py-2 rounded-md border text-sm outline-none cursor-pointer"
                     style={{ borderColor: "hsl(220 13% 87%)", color: "hsl(220 13% 18%)" }}
                   >
-                    <option value="">Selecione o órgão</option>
+                    <option value="">Selecione a entidade</option>
                     {tenants.map((t) => (
                       <option key={t.id} value={t.id}>{t.sigla} - {t.nome}</option>
                     ))}
@@ -880,7 +880,7 @@ export default function AdminUsuarios() {
                     {isAdministrador && <option value="administrador">Administrador</option>}
                     <option value="admin_master">Técnico</option>
                     <option value="operador">Operacional</option>
-                    <option value="admin_tenant">Administrador do Órgão</option>
+                    <option value="admin_tenant">Administrador da Entidade</option>
                     <option value="suporte">Suporte</option>
                     <option value="magistrado">Magistrado (acesso nacional ao Tribunal)</option>
                   </select>
