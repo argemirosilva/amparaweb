@@ -19,16 +19,40 @@ Deno.serve(async (req) => {
   const url = new URL(req.url);
   const action = url.searchParams.get("action") ?? "dashboard";
 
+  // Helper: parse window param (número de dias ou "all")
+  function parseWindow(raw: string | null): { days: number | "all"; label: string } {
+    if (!raw || raw === "30") return { days: 30, label: "30d" };
+    if (raw === "all") return { days: "all", label: "all" };
+    const n = parseInt(raw, 10);
+    if (Number.isFinite(n) && n > 0) return { days: n, label: `${n}d` };
+    return { days: 30, label: "30d" };
+  }
+
   try {
     if (action === "dashboard") {
-      // KPIs nacionais agregados (últimas métricas computadas)
-      const { data: latestMetric } = await supabase
+      const { days, label } = parseWindow(url.searchParams.get("window"));
+
+      // Tenta buscar métrica já computada para essa janela; se não houver, dispara cálculo on-demand
+      let { data: latestMetric } = await supabase
         .from("ril_government_metrics")
         .select("*")
         .eq("scope_type", "nacional")
+        .eq("scope_value", label)
         .order("computed_at", { ascending: false })
         .limit(1)
         .maybeSingle();
+
+      if (!latestMetric) {
+        // Compatibilidade: usa qualquer métrica nacional já gravada (legado sem scope_value)
+        const { data: legacy } = await supabase
+          .from("ril_government_metrics")
+          .select("*")
+          .eq("scope_type", "nacional")
+          .order("computed_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        latestMetric = legacy ?? null;
+      }
 
       // Snapshots recentes (k-anonimizados: sem user_id)
       const { data: recentSnaps } = await supabase
@@ -47,19 +71,31 @@ Deno.serve(async (req) => {
         .order("created_at", { ascending: false })
         .limit(50);
 
-      // Série temporal de últimos 30 dias agregada por dia
-      const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-        .toISOString();
-      const { data: timeline } = await supabase
-        .from("risk_context_snapshots")
-        .select("computed_at, risco_fonar, nivel_prioridade_intervencao")
-        .gte("computed_at", since);
+      // Série temporal da janela solicitada agregada por dia (paginada)
+      const since = days === "all"
+        ? new Date(0).toISOString()
+        : new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+
+      const PAGE = 1000;
+      let from = 0;
+      const timeline: Array<{ computed_at: string; risco_fonar: string; nivel_prioridade_intervencao: string }> = [];
+      while (true) {
+        const { data: chunk } = await supabase
+          .from("risk_context_snapshots")
+          .select("computed_at, risco_fonar, nivel_prioridade_intervencao")
+          .gte("computed_at", since)
+          .range(from, from + PAGE - 1);
+        if (!chunk || chunk.length === 0) break;
+        timeline.push(...chunk as any);
+        if (chunk.length < PAGE) break;
+        from += PAGE;
+      }
 
       const dayMap = new Map<
         string,
         { total: number; urgente: number; grave: number }
       >();
-      for (const s of timeline ?? []) {
+      for (const s of timeline) {
         const day = (s.computed_at as string).slice(0, 10);
         const cur = dayMap.get(day) ?? { total: 0, urgente: 0, grave: 0 };
         cur.total++;
@@ -74,6 +110,7 @@ Deno.serve(async (req) => {
       return new Response(
         JSON.stringify({
           ok: true,
+          window: label,
           metrics: latestMetric,
           serie_temporal: serie,
           critical_events: criticalEvents ?? [],
