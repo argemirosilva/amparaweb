@@ -810,6 +810,10 @@ async function handleSyncConfig(
     return errorResponse(sessionError || "Sessão inválida", 401);
   }
 
+  // Check minimum app version (optional - legacy apps without versao_app pass through)
+  const syncVersionBlock = await checkMinAppVersion(supabase, body.versao_app as string | undefined);
+  if (syncVersionBlock) return syncVersionBlock;
+
   const userId = (sessionUser as Record<string, unknown>).id as string;
 
   // Fetch full user data including status and configuracao_alertas
