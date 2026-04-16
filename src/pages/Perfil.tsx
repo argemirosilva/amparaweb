@@ -203,9 +203,11 @@ export default function PerfilPage() {
 
   const savePerfil = async () => {
     setSaving(true);
-    await api("updateMe", { ...perfilForm, ...enderecoForm,
+    const payload: any = { ...perfilForm, ...enderecoForm,
       endereco_fixo: `${enderecoForm.endereco_logradouro}, ${enderecoForm.endereco_numero} - ${enderecoForm.endereco_bairro}, ${enderecoForm.endereco_cidade}/${enderecoForm.endereco_uf}`,
-    });
+    };
+    if (cpfInput.replace(/\D/g, "").length === 11) payload.cpf = cpfInput;
+    await api("updateMe", payload);
     await loadData();
     setEditingPerfil(false);
     setSaving(false);
