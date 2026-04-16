@@ -129,6 +129,7 @@ export default function PerfilPage() {
   const [loading, setLoading] = useState(true);
   const [editingPerfil, setEditingPerfil] = useState(false);
   const [perfilForm, setPerfilForm] = useState<Partial<PerfilData>>({});
+  const [cpfInput, setCpfInput] = useState("");
   const [enderecoForm, setEnderecoForm] = useState<EnderecoFields>(emptyEndereco);
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -378,8 +379,9 @@ export default function PerfilPage() {
               cor_raca: perfil?.cor_raca || "",
               escolaridade: perfil?.escolaridade || "",
               profissao: perfil?.profissao || "",
-              cpf: "",
+              cpf: undefined,
             });
+            setCpfInput("");
             setEnderecoForm({
               endereco_cep: perfil?.endereco_cep || "",
               endereco_logradouro: perfil?.endereco_logradouro || "",
