@@ -876,23 +876,36 @@ async function handleActivatePrompt(supabase: any, auth: AuthResult, body: any) 
 
 async function handleCreateApiKey(supabase: any, auth: AuthResult, body: any) {
   if (auth.via !== "session" || auth.isMagistrado) return json({ error: "Apenas admin" }, 403);
-  if (!body.tenant_id || !body.label) return json({ error: "tenant_id e label obrigatórios" }, 400);
+  if (!body.label) return json({ error: "label obrigatório" }, 400);
 
-  // Generate key
-  const rawKey = `trib_${crypto.randomUUID().replace(/-/g, "")}`;
+  const tipoSistema = body.tipo_sistema || "judicial";
+  if (!["judicial", "forca_seguranca", "outro"].includes(tipoSistema)) {
+    return json({ error: "tipo_sistema inválido (judicial | forca_seguranca | outro)" }, 400);
+  }
+
+  // tenant_id é opcional para forças de segurança / outros
+  if (tipoSistema === "judicial" && !body.tenant_id) {
+    return json({ error: "tenant_id obrigatório para sistemas judiciais" }, 400);
+  }
+
+  // Prefixo varia por tipo: trib_ (judicial), seg_ (força), ext_ (outro)
+  const prefix = tipoSistema === "forca_seguranca" ? "seg_" : tipoSistema === "outro" ? "ext_" : "trib_";
+  const rawKey = `${prefix}${crypto.randomUUID().replace(/-/g, "")}`;
   const keyHash = await sha256(rawKey);
   const keyPrefix = rawKey.substring(0, 12);
 
   const { data, error } = await supabase
     .from("tribunal_api_keys")
     .insert({
-      tenant_id: body.tenant_id,
+      tenant_id: body.tenant_id || null,
       key_hash: keyHash,
       key_prefix: keyPrefix,
       label: body.label,
+      tipo_sistema: tipoSistema,
+      orgao: body.orgao || null,
       expires_at: body.expires_at || null,
     })
-    .select("id, key_prefix, label, created_at")
+    .select("id, key_prefix, label, tipo_sistema, orgao, created_at")
     .single();
 
   if (error) return json({ error: error.message }, 500);
@@ -904,7 +917,7 @@ async function handleCreateApiKey(supabase: any, auth: AuthResult, body: any) {
 async function handleListApiKeys(supabase: any) {
   const { data, error } = await supabase
     .from("tribunal_api_keys")
-    .select("id, tenant_id, key_prefix, label, ativo, created_at, expires_at, tenants(nome, sigla)")
+    .select("id, tenant_id, key_prefix, label, tipo_sistema, orgao, ativo, created_at, expires_at, tenants(nome, sigla)")
     .order("created_at", { ascending: false });
   if (error) return json({ error: error.message }, 500);
   return json({ success: true, keys: data || [] });

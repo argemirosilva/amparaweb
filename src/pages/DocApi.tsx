@@ -1353,14 +1353,16 @@ export default function DocApiPage() {
         {/* AMPARA Campo - Integração Forças de Segurança */}
         <CampoApiSection />
 
-        {/* Tribunal API Keys */}
+        {/* API Keys de Integração Externa */}
         <div className="border-t border-border pt-6 mt-6">
           <div className="flex items-center gap-2 mb-4">
             <Key className="w-5 h-5 text-primary" />
-            <h2 className="text-lg font-semibold text-foreground">API Keys - AMPARA Tribunal</h2>
+            <h2 className="text-lg font-semibold text-foreground">API Keys - Integrações Externas</h2>
           </div>
           <p className="text-sm text-muted-foreground mb-4">
-            Gerencie as chaves de API para integração com sistemas judiciais externos.
+            Gerencie as chaves de API para integração com <strong>sistemas judiciais</strong> (tribunais, varas, MP) e
+            <strong> forças de segurança</strong> (PM, Polícia Civil, GCM, COPOM). Cada chave é vinculada ao tipo de
+            sistema e ao órgão usuário.
           </p>
           <TribunalApiKeys />
         </div>
