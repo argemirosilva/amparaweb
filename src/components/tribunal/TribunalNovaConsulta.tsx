@@ -6,11 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Loader2, Send, FileJson, FileText, BookOpen, Search, User, UserX, AlertTriangle, CheckCircle, ArrowRight, ArrowLeft, Shield, MapPin, Briefcase, Calendar } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Loader2, Send, FileJson, FileText, BookOpen, Search, User, UserX, AlertTriangle, CheckCircle, ArrowRight, ArrowLeft, Shield, MapPin, Briefcase, Calendar, Database, TrendingUp, BarChart3, Mic, FileWarning } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -57,6 +57,18 @@ interface AgressorResult {
   xingamentos_frequentes: string[] | null;
   tipo_vinculo?: string;
   status_relacao?: string;
+}
+
+interface AmparaSummary {
+  total_analises_micro: number;
+  analises_micro: { risco: string; contexto: string; fase_ciclo: string; data: string }[];
+  total_relatorios_macro: number;
+  relatorios_macro: { janela_dias: number; status: string; data: string; resumo: string | null }[];
+  total_avaliacoes_risco: number;
+  avaliacoes_risco: { score: number; nivel: string; tendencia: string; percentual_tendencia: number | null; resumo_tecnico: string | null; data: string }[];
+  total_gravacoes: number;
+  total_dados_externos: number;
+  dados_externos: { tipo: string; numero: string | null; resumo: string | null; data: string }[];
 }
 
 async function tribunalApi(sessionToken: string, body: Record<string, unknown>) {
@@ -107,10 +119,6 @@ export default function TribunalNovaConsulta({ onConsultaCriada }: Props) {
   const [processoResumo, setProcessoResumo] = useState("");
   const [processoConteudo, setProcessoConteudo] = useState("");
 
-  // Mode
-  const [modo, setModo] = useState("analitico");
-  const [incluirAmpara, setIncluirAmpara] = useState(true);
-
   // Result
   const [resultado, setResultado] = useState<any>(null);
 
@@ -134,7 +142,6 @@ export default function TribunalNovaConsulta({ onConsultaCriada }: Props) {
   async function selectVitima(v: VitimaResult) {
     setSelectedVitima(v);
     setVitimaResults([]);
-    // Auto-fetch linked agressors
     setLoading(true);
     try {
       const data = await tribunalApi(sessionToken!, { action: "getAgressoresVinculados", usuario_id: v.id });
@@ -177,8 +184,7 @@ export default function TribunalNovaConsulta({ onConsultaCriada }: Props) {
     try {
       const body: any = {
         action: "consulta",
-        modo_saida: modo,
-        incluir_dados_ampara: incluirAmpara,
+        incluir_dados_ampara: true,
       };
       if (selectedVitima) {
         body.dados_vitima = { nome: selectedVitima.nome_completo, telefone: selectedVitima.telefone };
@@ -196,7 +202,7 @@ export default function TribunalNovaConsulta({ onConsultaCriada }: Props) {
       if (!data?.success) throw new Error(data?.error || "Erro desconhecido");
       setResultado(data);
       setStep("resultado");
-      toast({ title: "Consulta realizada", description: `Modo: ${modo} - ID: ${data.consulta_id?.substring(0, 8)}` });
+      toast({ title: "Análise completa", description: `3 modos gerados - ID: ${data.consulta_id?.substring(0, 8)}` });
     } catch (e: any) {
       toast({ title: "Erro", description: e.message, variant: "destructive" });
     }
@@ -302,6 +308,105 @@ export default function TribunalNovaConsulta({ onConsultaCriada }: Props) {
     );
   }
 
+  function AmparaSummaryPanel({ summary }: { summary: AmparaSummary }) {
+    return (
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Database className="w-4 h-4" /> Dados obtidos do AMPARA
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* KPIs row */}
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+            {[
+              { label: "Análises MICRO", value: summary.total_analises_micro, icon: BarChart3 },
+              { label: "Relatórios MACRO", value: summary.total_relatorios_macro, icon: FileText },
+              { label: "Aval. de Risco", value: summary.total_avaliacoes_risco, icon: TrendingUp },
+              { label: "Gravações", value: summary.total_gravacoes, icon: Mic },
+              { label: "Dados Externos", value: summary.total_dados_externos, icon: FileWarning },
+            ].map((kpi) => (
+              <div key={kpi.label} className="rounded-lg border border-border p-2 text-center">
+                <kpi.icon className="w-3.5 h-3.5 mx-auto text-muted-foreground mb-1" />
+                <p className="text-lg font-bold text-foreground">{kpi.value}</p>
+                <p className="text-[10px] text-muted-foreground leading-tight">{kpi.label}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Risk assessments */}
+          {summary.avaliacoes_risco.length > 0 && (
+            <div className="space-y-1.5">
+              <p className="text-xs font-semibold text-muted-foreground uppercase">Últimas avaliações de risco</p>
+              {summary.avaliacoes_risco.map((r, i) => (
+                <div key={i} className="flex items-center gap-2 text-xs rounded border border-border p-2">
+                  <Badge variant={riskBadgeVariant(r.nivel)} className="text-[10px]">{r.nivel}</Badge>
+                  <span className={`font-bold ${riskColor(r.nivel)}`}>{r.score}</span>
+                  <span className="text-muted-foreground">
+                    {r.tendencia} {r.percentual_tendencia != null && `(${r.percentual_tendencia > 0 ? "+" : ""}${r.percentual_tendencia}%)`}
+                  </span>
+                  <span className="ml-auto text-muted-foreground">{new Date(r.data).toLocaleDateString("pt-BR")}</span>
+                </div>
+              ))}
+              {summary.avaliacoes_risco[0]?.resumo_tecnico && (
+                <p className="text-xs text-muted-foreground italic pl-1">{summary.avaliacoes_risco[0].resumo_tecnico}</p>
+              )}
+            </div>
+          )}
+
+          {/* Micro analyses */}
+          {summary.analises_micro.length > 0 && (
+            <div className="space-y-1.5">
+              <p className="text-xs font-semibold text-muted-foreground uppercase">Análises MICRO recentes</p>
+              <div className="flex flex-wrap gap-1">
+                {summary.analises_micro.map((m, i) => (
+                  <Badge key={i} variant={riskBadgeVariant(m.risco)} className="text-[10px]">
+                    {m.risco} - {m.contexto} - {m.fase_ciclo} ({new Date(m.data).toLocaleDateString("pt-BR")})
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Macro reports */}
+          {summary.relatorios_macro.length > 0 && (
+            <div className="space-y-1.5">
+              <p className="text-xs font-semibold text-muted-foreground uppercase">Relatórios MACRO</p>
+              {summary.relatorios_macro.map((m, i) => (
+                <div key={i} className="text-xs rounded border border-border p-2">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="text-[10px]">{m.janela_dias} dias</Badge>
+                    <span className="text-muted-foreground">{new Date(m.data).toLocaleDateString("pt-BR")}</span>
+                  </div>
+                  {m.resumo && <p className="text-muted-foreground mt-1 line-clamp-2">{m.resumo}</p>}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* External data */}
+          {summary.dados_externos.length > 0 && (
+            <div className="space-y-1.5">
+              <p className="text-xs font-semibold text-muted-foreground uppercase">Dados externos anteriores</p>
+              {summary.dados_externos.map((e, i) => (
+                <div key={i} className="text-xs flex items-center gap-2 rounded border border-border p-2">
+                  <Badge variant="outline" className="text-[10px]">{e.tipo}</Badge>
+                  {e.numero && <span className="text-muted-foreground">Nº {e.numero}</span>}
+                  {e.resumo && <span className="text-muted-foreground line-clamp-1 flex-1">{e.resumo}</span>}
+                  <span className="text-muted-foreground ml-auto">{new Date(e.data).toLocaleDateString("pt-BR")}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {summary.total_analises_micro === 0 && summary.total_avaliacoes_risco === 0 && summary.total_gravacoes === 0 && (
+            <p className="text-xs text-muted-foreground italic text-center py-2">Nenhum dado AMPARA encontrado para esta vítima/agressor.</p>
+          )}
+        </CardContent>
+      </Card>
+    );
+  }
+
   // ── Render steps ──
 
   return (
@@ -369,7 +474,6 @@ export default function TribunalNovaConsulta({ onConsultaCriada }: Props) {
             <CardTitle className="text-sm flex items-center gap-2"><UserX className="w-4 h-4" /> Identificar Agressor</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Linked agressors from victim */}
             {agressoresVinculados.length > 0 && (
               <div className="space-y-2">
                 <p className="text-xs font-semibold text-foreground">Agressores vinculados à vítima:</p>
@@ -431,36 +535,6 @@ export default function TribunalNovaConsulta({ onConsultaCriada }: Props) {
       {/* Step 3: Processo */}
       {step === "processo" && (
         <div className="space-y-4">
-          {/* Mode selector */}
-          <Card>
-            <CardHeader><CardTitle className="text-sm">Modo de Saída</CardTitle></CardHeader>
-            <CardContent>
-              <div className="flex gap-2">
-                {[
-                  { value: "analitico", label: "Analítico", icon: FileJson, desc: "JSON estruturado" },
-                  { value: "despacho", label: "Despacho", icon: FileText, desc: "Texto institucional" },
-                  { value: "parecer", label: "Parecer", icon: BookOpen, desc: "Parecer técnico" },
-                ].map((m) => (
-                  <button
-                    key={m.value}
-                    onClick={() => setModo(m.value)}
-                    className={`flex-1 p-3 rounded-lg border text-left transition-colors ${
-                      modo === m.value ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50"
-                    }`}
-                  >
-                    <m.icon className="w-4 h-4 mb-1" />
-                    <p className="text-sm font-medium">{m.label}</p>
-                    <p className="text-xs text-muted-foreground">{m.desc}</p>
-                  </button>
-                ))}
-              </div>
-              <div className="flex items-center gap-2 mt-4">
-                <Switch checked={incluirAmpara} onCheckedChange={setIncluirAmpara} />
-                <Label className="text-sm">Incluir dados internos AMPARA</Label>
-              </div>
-            </CardContent>
-          </Card>
-
           <Card>
             <CardHeader><CardTitle className="text-sm">Dados do Processo / Documento</CardTitle></CardHeader>
             <CardContent className="space-y-3">
@@ -483,6 +557,7 @@ export default function TribunalNovaConsulta({ onConsultaCriada }: Props) {
               </div>
               <div><Label className="text-xs">Resumo</Label><Textarea value={processoResumo} onChange={(e) => setProcessoResumo(e.target.value)} rows={2} placeholder="Resumo breve do documento" /></div>
               <div><Label className="text-xs">Conteúdo completo</Label><Textarea value={processoConteudo} onChange={(e) => setProcessoConteudo(e.target.value)} rows={6} placeholder="Cole aqui o conteúdo do documento, depoimento, relato..." /></div>
+              <p className="text-[11px] text-muted-foreground">A análise gerará automaticamente os 3 modos: Analítico (JSON), Despacho e Parecer Técnico.</p>
             </CardContent>
           </Card>
 
@@ -503,7 +578,6 @@ export default function TribunalNovaConsulta({ onConsultaCriada }: Props) {
           <Card>
             <CardHeader><CardTitle className="text-sm">Revisão da Consulta</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              {/* Summary */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <p className="text-xs font-semibold text-muted-foreground uppercase">Vítima</p>
@@ -539,12 +613,16 @@ export default function TribunalNovaConsulta({ onConsultaCriada }: Props) {
 
               <div className="flex items-center gap-4">
                 <div>
-                  <p className="text-xs font-semibold text-muted-foreground uppercase">Modo de Saída</p>
-                  <Badge>{modo === "analitico" ? "Analítico (JSON)" : modo === "despacho" ? "Despacho" : "Parecer Técnico"}</Badge>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase">Saída</p>
+                  <div className="flex gap-1 mt-1">
+                    <Badge variant="outline"><FileJson className="w-3 h-3 mr-1" />Analítico</Badge>
+                    <Badge variant="outline"><FileText className="w-3 h-3 mr-1" />Despacho</Badge>
+                    <Badge variant="outline"><BookOpen className="w-3 h-3 mr-1" />Parecer</Badge>
+                  </div>
                 </div>
                 <div>
                   <p className="text-xs font-semibold text-muted-foreground uppercase">Dados AMPARA</p>
-                  <Badge variant={incluirAmpara ? "default" : "secondary"}>{incluirAmpara ? "Incluídos" : "Não incluídos"}</Badge>
+                  <Badge>Incluídos automaticamente</Badge>
                 </div>
               </div>
             </CardContent>
@@ -556,7 +634,7 @@ export default function TribunalNovaConsulta({ onConsultaCriada }: Props) {
             </Button>
             <Button onClick={handleSubmit} disabled={loading} className="flex-1">
               {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
-              {loading ? "Analisando..." : "Gerar Análise"}
+              {loading ? "Gerando 3 análises..." : "Gerar Análise Completa"}
             </Button>
           </div>
         </div>
@@ -565,27 +643,70 @@ export default function TribunalNovaConsulta({ onConsultaCriada }: Props) {
       {/* Step 5: Resultado */}
       {step === "resultado" && resultado && (
         <div className="space-y-4">
+          {/* AMPARA Summary */}
+          {resultado.ampara_summary && (
+            <AmparaSummaryPanel summary={resultado.ampara_summary} />
+          )}
+
+          {/* Tabbed results */}
           <Card>
-            <CardHeader>
+            <CardHeader className="pb-2">
               <div className="flex items-center gap-2">
                 <CardTitle className="text-sm">Resultado da Análise</CardTitle>
-                <Badge>{modo === "analitico" ? "JSON" : modo === "despacho" ? "Despacho" : "Parecer"}</Badge>
                 {resultado.vitima_vinculada && <Badge variant="outline" className="text-xs">Vítima vinculada</Badge>}
                 {resultado.agressor_vinculado && <Badge variant="outline" className="text-xs">Agressor vinculado</Badge>}
               </div>
             </CardHeader>
             <CardContent>
-              <ScrollArea className="max-h-[60vh]">
-                {modo === "analitico" ? (
-                  <pre className="text-xs bg-muted p-3 rounded whitespace-pre-wrap">
-                    {JSON.stringify(resultado.analise, null, 2)}
-                  </pre>
-                ) : (
-                  <div className="prose prose-sm max-w-none whitespace-pre-wrap text-sm">
-                    {resultado.texto}
-                  </div>
-                )}
-              </ScrollArea>
+              <Tabs defaultValue="analitico" className="w-full">
+                <TabsList className="grid w-full grid-cols-3 mb-3">
+                  <TabsTrigger value="analitico" className="text-xs gap-1">
+                    <FileJson className="w-3.5 h-3.5" /> Analítico
+                  </TabsTrigger>
+                  <TabsTrigger value="despacho" className="text-xs gap-1">
+                    <FileText className="w-3.5 h-3.5" /> Despacho
+                  </TabsTrigger>
+                  <TabsTrigger value="parecer" className="text-xs gap-1">
+                    <BookOpen className="w-3.5 h-3.5" /> Parecer
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="analitico">
+                  <ScrollArea className="max-h-[55vh]">
+                    {resultado.resultados?.analitico?.error ? (
+                      <div className="text-sm text-destructive p-3 bg-destructive/10 rounded">Erro: {resultado.resultados.analitico.error}</div>
+                    ) : (
+                      <pre className="text-xs bg-muted p-3 rounded whitespace-pre-wrap">
+                        {JSON.stringify(resultado.resultados?.analitico?.analise, null, 2)}
+                      </pre>
+                    )}
+                  </ScrollArea>
+                </TabsContent>
+
+                <TabsContent value="despacho">
+                  <ScrollArea className="max-h-[55vh]">
+                    {resultado.resultados?.despacho?.error ? (
+                      <div className="text-sm text-destructive p-3 bg-destructive/10 rounded">Erro: {resultado.resultados.despacho.error}</div>
+                    ) : (
+                      <div className="prose prose-sm max-w-none whitespace-pre-wrap text-sm p-3">
+                        {resultado.resultados?.despacho?.texto}
+                      </div>
+                    )}
+                  </ScrollArea>
+                </TabsContent>
+
+                <TabsContent value="parecer">
+                  <ScrollArea className="max-h-[55vh]">
+                    {resultado.resultados?.parecer?.error ? (
+                      <div className="text-sm text-destructive p-3 bg-destructive/10 rounded">Erro: {resultado.resultados.parecer.error}</div>
+                    ) : (
+                      <div className="prose prose-sm max-w-none whitespace-pre-wrap text-sm p-3">
+                        {resultado.resultados?.parecer?.texto}
+                      </div>
+                    )}
+                  </ScrollArea>
+                </TabsContent>
+              </Tabs>
             </CardContent>
           </Card>
 
@@ -614,7 +735,8 @@ export default function TribunalNovaConsulta({ onConsultaCriada }: Props) {
         <Card className="flex items-center justify-center py-12">
           <div className="text-center space-y-3">
             <Loader2 className="w-8 h-8 animate-spin mx-auto text-primary" />
-            <p className="text-sm text-muted-foreground">Processando análise no modo {modo}...</p>
+            <p className="text-sm text-muted-foreground">Gerando análise nos 3 modos (Analítico, Despacho, Parecer)...</p>
+            <p className="text-xs text-muted-foreground">Isso pode levar alguns segundos.</p>
           </div>
         </Card>
       )}
