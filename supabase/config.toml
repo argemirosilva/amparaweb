@@ -86,3 +86,9 @@ verify_jwt = false
 
 [functions.fonar-worker]
 verify_jwt = false
+
+[functions.ril-engine]
+verify_jwt = false
+
+[functions.ril-api]
+verify_jwt = false

@@ -1536,6 +1536,128 @@ export type Database = {
           },
         ]
       }
+      ril_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          payload: Json
+          severity: string
+          snapshot_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          payload?: Json
+          severity?: string
+          snapshot_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          payload?: Json
+          severity?: string
+          snapshot_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ril_events_snapshot_id_fkey"
+            columns: ["snapshot_id"]
+            isOneToOne: false
+            referencedRelation: "risk_context_snapshots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ril_government_metrics: {
+        Row: {
+          computed_at: string
+          correlacao_ampara_fonar: Json
+          distribuicao_risco: Json
+          efetividade_intervencao: number | null
+          fatores_mais_comuns: Json
+          id: string
+          indicador_subnotificacao: number | null
+          k_anonymity_min: number
+          payload_extra: Json
+          period_end: string
+          period_start: string
+          scope_type: string
+          scope_value: string | null
+          taxa_atualizacao_fonar: number | null
+          taxa_escalada: number | null
+          taxa_recorrencia: number | null
+          tempo_medio_agravamento_dias: number | null
+          tendencia_temporal: Json
+          total_amostras: number
+        }
+        Insert: {
+          computed_at?: string
+          correlacao_ampara_fonar?: Json
+          distribuicao_risco?: Json
+          efetividade_intervencao?: number | null
+          fatores_mais_comuns?: Json
+          id?: string
+          indicador_subnotificacao?: number | null
+          k_anonymity_min?: number
+          payload_extra?: Json
+          period_end: string
+          period_start: string
+          scope_type?: string
+          scope_value?: string | null
+          taxa_atualizacao_fonar?: number | null
+          taxa_escalada?: number | null
+          taxa_recorrencia?: number | null
+          tempo_medio_agravamento_dias?: number | null
+          tendencia_temporal?: Json
+          total_amostras?: number
+        }
+        Update: {
+          computed_at?: string
+          correlacao_ampara_fonar?: Json
+          distribuicao_risco?: Json
+          efetividade_intervencao?: number | null
+          fatores_mais_comuns?: Json
+          id?: string
+          indicador_subnotificacao?: number | null
+          k_anonymity_min?: number
+          payload_extra?: Json
+          period_end?: string
+          period_start?: string
+          scope_type?: string
+          scope_value?: string | null
+          taxa_atualizacao_fonar?: number | null
+          taxa_escalada?: number | null
+          taxa_recorrencia?: number | null
+          tempo_medio_agravamento_dias?: number | null
+          tendencia_temporal?: Json
+          total_amostras?: number
+        }
+        Relationships: []
+      }
+      ril_settings: {
+        Row: {
+          chave: string
+          updated_at: string
+          valor: Json
+        }
+        Insert: {
+          chave: string
+          updated_at?: string
+          valor?: Json
+        }
+        Update: {
+          chave?: string
+          updated_at?: string
+          valor?: Json
+        }
+        Relationships: []
+      }
       risk_assessments: {
         Row: {
           computed_at: string
@@ -1588,6 +1710,72 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      risk_context_snapshots: {
+        Row: {
+          cidade: string | null
+          computed_at: string
+          confiabilidade_contexto: string
+          divergencia_entre_modelos: boolean
+          divergencia_magnitude: number
+          fatores_criticos_ativos: Json
+          fatores_reincidentes: Json
+          id: string
+          latest: boolean
+          nivel_prioridade_intervencao: string
+          origem_evento: string
+          recomendacao_acao: string | null
+          risco_ampara: string
+          risco_ampara_score: number
+          risco_fonar: string
+          risco_fonar_score: number
+          tendencia_risco: string
+          uf: string | null
+          user_id: string
+        }
+        Insert: {
+          cidade?: string | null
+          computed_at?: string
+          confiabilidade_contexto?: string
+          divergencia_entre_modelos?: boolean
+          divergencia_magnitude?: number
+          fatores_criticos_ativos?: Json
+          fatores_reincidentes?: Json
+          id?: string
+          latest?: boolean
+          nivel_prioridade_intervencao?: string
+          origem_evento?: string
+          recomendacao_acao?: string | null
+          risco_ampara?: string
+          risco_ampara_score?: number
+          risco_fonar?: string
+          risco_fonar_score?: number
+          tendencia_risco?: string
+          uf?: string | null
+          user_id: string
+        }
+        Update: {
+          cidade?: string | null
+          computed_at?: string
+          confiabilidade_contexto?: string
+          divergencia_entre_modelos?: boolean
+          divergencia_magnitude?: number
+          fatores_criticos_ativos?: Json
+          fatores_reincidentes?: Json
+          id?: string
+          latest?: boolean
+          nivel_prioridade_intervencao?: string
+          origem_evento?: string
+          recomendacao_acao?: string | null
+          risco_ampara?: string
+          risco_ampara_score?: number
+          risco_fonar?: string
+          risco_fonar_score?: number
+          tendencia_risco?: string
+          uf?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       support_access_grants: {
         Row: {
@@ -2659,6 +2847,7 @@ export type Database = {
         Returns: boolean
       }
       normalize_text: { Args: { input: string }; Returns: string }
+      ril_is_enabled: { Args: never; Returns: boolean }
       search_agressor_candidates:
         | {
             Args: {
