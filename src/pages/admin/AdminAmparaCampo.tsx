@@ -50,6 +50,13 @@ export default function AdminAmparaCampo() {
   const [ocorrencias, setOcorrencias] = useState<OcorrenciaRow[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Busca de vítima
+  const [agente, setAgente] = useState(() => localStorage.getItem("campo_agente") ?? "");
+  const [orgao, setOrgao] = useState(() => localStorage.getItem("campo_orgao") ?? "");
+  const [query, setQuery] = useState("");
+  const [buscando, setBuscando] = useState(false);
+  const [resultados, setResultados] = useState<VitimaResultado[] | null>(null);
+
   useEffect(() => {
     (async () => {
       const { ok, data } = await callCampoApi("listarAuditoria", { limit: 200 });
@@ -60,6 +67,26 @@ export default function AdminAmparaCampo() {
       setLoading(false);
     })();
   }, []);
+
+  const handleBuscar = async () => {
+    if (!agente.trim()) return toast.error("Informe sua identificação (matrícula).");
+    if (query.trim().length < 3) return toast.error("Termo de busca muito curto.");
+    localStorage.setItem("campo_agente", agente.trim());
+    localStorage.setItem("campo_orgao", orgao.trim());
+    setBuscando(true);
+    setResultados(null);
+    const { ok, data } = await callCampoApi("buscarVitima", {
+      query: query.trim(),
+      agente_identificacao: agente.trim(),
+      agente_orgao: orgao.trim(),
+    });
+    setBuscando(false);
+    if (!ok) return toast.error(data?.error ?? "Falha na consulta.");
+    setResultados(data.resultados ?? []);
+    if ((data.resultados ?? []).length === 0) {
+      toast.info("Nenhum registro encontrado.");
+    }
+  };
 
   return (
     <div className="space-y-6">
