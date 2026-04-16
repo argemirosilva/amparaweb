@@ -1,0 +1,2 @@
+ALTER TABLE public.tribunal_consultas DROP CONSTRAINT IF EXISTS tribunal_consultas_modo_saida_check;
+ALTER TABLE public.tribunal_consultas ADD CONSTRAINT tribunal_consultas_modo_saida_check CHECK (modo_saida IN ('analitico', 'despacho', 'parecer', 'todos'));
