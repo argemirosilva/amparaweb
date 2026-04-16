@@ -31,6 +31,7 @@ const ROLE_LABELS: Record<string, string> = {
   admin_tenant: "Operacional",
   operador: "Operacional",
   suporte: "Suporte",
+  magistrado: "Magistrado",
 };
 
 interface TenantOption {
