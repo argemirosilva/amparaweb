@@ -137,7 +137,26 @@ export default function TribunalConsultas() {
     };
   };
 
-  useEffect(() => { fetchConsultas(); }, [filtroModo]);
+  useEffect(() => { fetchConsultas(); }, [filtroPeriodo]);
+
+  // Filtro client-side por nível e busca textual
+  const consultasFiltradas = useMemo(() => {
+    const term = busca.trim().toLowerCase();
+    return consultas.filter((c) => {
+      if (filtroNivel !== "todos" && c.nivel_risco !== filtroNivel) return false;
+      if (term) {
+        const blob = [
+          c.vitima_nome,
+          c.vitima_cidade_uf,
+          c.agressor_nome,
+          c.agressor_cidade_uf,
+          c.id,
+        ].filter(Boolean).join(" ").toLowerCase();
+        if (!blob.includes(term)) return false;
+      }
+      return true;
+    });
+  }, [consultas, filtroNivel, busca]);
 
   // Determina se a consulta selecionada possui as 3 análises (modo "todos") ou apenas uma
   const isCompleta = selected?.modo_saida === "todos" && selected?.output_json;
