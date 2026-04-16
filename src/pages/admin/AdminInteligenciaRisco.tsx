@@ -3,12 +3,21 @@ import {
   fetchRilDashboardDirect,
   fetchRilReport,
   triggerRilConsolidate,
+  recomputeMetricsForWindow,
   type RilDashboard,
+  type RilWindow,
 } from "@/services/rilService";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Activity,
   AlertTriangle,
@@ -20,9 +29,18 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { toast } from "sonner";
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, BarChart, Bar, Legend } from "recharts";
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, BarChart, Bar } from "recharts";
 
 const fontStyle = { fontFamily: "Inter, Roboto, sans-serif" };
+
+const WINDOW_OPTIONS: Array<{ value: RilWindow; label: string }> = [
+  { value: "30", label: "Últimos 30 dias" },
+  { value: "90", label: "Últimos 90 dias" },
+  { value: "120", label: "Últimos 120 dias" },
+  { value: "365", label: "Último ano" },
+  { value: "1095", label: "Últimos 3 anos" },
+  { value: "all", label: "Toda a base" },
+];
 
 function pct(v: number | null | undefined) {
   if (v === null || v === undefined) return "—";
@@ -34,11 +52,12 @@ export default function AdminInteligenciaRisco() {
   const [loading, setLoading] = useState(true);
   const [report, setReport] = useState<string>("");
   const [reportLoading, setReportLoading] = useState(false);
+  const [windowSel, setWindowSel] = useState<RilWindow>("all");
 
-  async function load() {
+  async function load(w: RilWindow = windowSel) {
     setLoading(true);
     try {
-      const d = await fetchRilDashboardDirect();
+      const d = await fetchRilDashboardDirect(w);
       setData(d);
     } catch (e) {
       toast.error("Falha ao carregar inteligência de risco");
@@ -51,9 +70,9 @@ export default function AdminInteligenciaRisco() {
   async function gerarRelatorio() {
     setReportLoading(true);
     try {
-      const r = await fetchRilReport();
+      const r = await fetchRilReport(windowSel);
       setReport(r.report);
-    } catch (e) {
+    } catch {
       toast.error("Falha ao gerar relatório");
     } finally {
       setReportLoading(false);
@@ -61,7 +80,7 @@ export default function AdminInteligenciaRisco() {
   }
 
   async function reprocessar() {
-    toast.info("Reprocessando snapshots e indicadores…");
+    toast.info("Reprocessando snapshots e indicadores em todas as janelas…");
     try {
       await triggerRilConsolidate();
       toast.success("Atualização concluída");
@@ -71,9 +90,25 @@ export default function AdminInteligenciaRisco() {
     }
   }
 
+  async function recalcularJanela() {
+    toast.info(`Recalculando métricas para ${labelFor(windowSel)}…`);
+    try {
+      await recomputeMetricsForWindow(windowSel);
+      toast.success("Métricas atualizadas");
+      await load();
+    } catch {
+      toast.error("Falha ao recalcular");
+    }
+  }
+
+  function labelFor(w: RilWindow) {
+    return WINDOW_OPTIONS.find((o) => o.value === w)?.label ?? w;
+  }
+
   useEffect(() => {
-    load();
-  }, []);
+    load(windowSel);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [windowSel]);
 
   const m = data?.metrics;
   const dist = m?.distribuicao_risco ?? {};
@@ -97,9 +132,24 @@ export default function AdminInteligenciaRisco() {
         title="Inteligência de Risco"
         description="Camada interpretativa que correlaciona o risco do motor AMPARA com a autoavaliação FONAR. Indicadores agregados e anonimizados (k-anonymity ≥ 5) para uso institucional."
         actions={
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2 items-center">
+            <Select value={windowSel} onValueChange={(v) => setWindowSel(v as RilWindow)}>
+              <SelectTrigger className="w-[200px] h-9">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {WINDOW_OPTIONS.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button variant="outline" size="sm" onClick={recalcularJanela}>
+              <RefreshCw className="w-4 h-4 mr-2" /> Recalcular janela
+            </Button>
             <Button variant="outline" size="sm" onClick={reprocessar}>
-              <RefreshCw className="w-4 h-4 mr-2" /> Reprocessar
+              <RefreshCw className="w-4 h-4 mr-2" /> Reprocessar tudo
             </Button>
             <Button size="sm" onClick={gerarRelatorio} disabled={reportLoading}>
               <FileText className="w-4 h-4 mr-2" /> Gerar relatório
@@ -112,6 +162,15 @@ export default function AdminInteligenciaRisco() {
         <p className="text-sm text-muted-foreground">Carregando indicadores…</p>
       )}
 
+      {!loading && !m && (
+        <Card className="p-6">
+          <p className="text-sm text-muted-foreground">
+            Ainda não há indicadores computados para <strong>{labelFor(windowSel)}</strong>. Clique em
+            <em> "Recalcular janela"</em> para gerar a análise agora.
+          </p>
+        </Card>
+      )}
+
       {!loading && m && (
         <>
           {/* KPIs */}
@@ -119,7 +178,7 @@ export default function AdminInteligenciaRisco() {
             <KpiCard
               label="Amostras no período"
               value={String(m.total_amostras)}
-              hint={`${new Date(m.period_start).toLocaleDateString("pt-BR")} → ${new Date(m.period_end).toLocaleDateString("pt-BR")}`}
+              hint={`${labelFor(windowSel)} · ${new Date(m.period_start).toLocaleDateString("pt-BR")} → ${new Date(m.period_end).toLocaleDateString("pt-BR")}`}
               icon={<Activity className="w-4 h-4" />}
             />
             <KpiCard
@@ -146,7 +205,7 @@ export default function AdminInteligenciaRisco() {
           {/* Série temporal + Distribuição */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <Card className="p-5 lg:col-span-2">
-              <h3 className="text-sm font-semibold mb-4">Evolução diária — últimos 30 dias</h3>
+              <h3 className="text-sm font-semibold mb-4">Evolução diária — {labelFor(windowSel)}</h3>
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={data?.serie_temporal ?? []}>
@@ -252,7 +311,7 @@ export default function AdminInteligenciaRisco() {
           {report && (
             <Card className="p-6">
               <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                <FileText className="w-4 h-4" /> Relatório executivo
+                <FileText className="w-4 h-4" /> Relatório executivo · {labelFor(windowSel)}
               </h3>
               <pre className="whitespace-pre-wrap text-sm text-foreground font-sans leading-relaxed">
                 {report}
