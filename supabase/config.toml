@@ -77,3 +77,6 @@ verify_jwt = false
 
 [functions.agreggar-speed-dial]
 verify_jwt = false
+
+[functions.tribunal-api]
+verify_jwt = false
