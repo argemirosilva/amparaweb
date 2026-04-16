@@ -1837,6 +1837,252 @@ export type Database = {
         }
         Relationships: []
       }
+      tribunal_api_keys: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          expires_at: string | null
+          id: string
+          key_hash: string
+          key_prefix: string
+          label: string
+          tenant_id: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          key_hash: string
+          key_prefix: string
+          label?: string
+          tenant_id: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          key_hash?: string
+          key_prefix?: string
+          label?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tribunal_api_keys_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tribunal_consultas: {
+        Row: {
+          agressor_id: string | null
+          analysis_object: Json
+          api_key_id: string | null
+          created_at: string
+          created_by: string | null
+          error_message: string | null
+          id: string
+          input_hash: string | null
+          model: string | null
+          modo_saida: string
+          output_json: Json | null
+          output_text: string | null
+          prompt_version: string | null
+          status: string
+          tenant_id: string | null
+          usuario_id: string | null
+        }
+        Insert: {
+          agressor_id?: string | null
+          analysis_object?: Json
+          api_key_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          error_message?: string | null
+          id?: string
+          input_hash?: string | null
+          model?: string | null
+          modo_saida?: string
+          output_json?: Json | null
+          output_text?: string | null
+          prompt_version?: string | null
+          status?: string
+          tenant_id?: string | null
+          usuario_id?: string | null
+        }
+        Update: {
+          agressor_id?: string | null
+          analysis_object?: Json
+          api_key_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          error_message?: string | null
+          id?: string
+          input_hash?: string | null
+          model?: string | null
+          modo_saida?: string
+          output_json?: Json | null
+          output_text?: string | null
+          prompt_version?: string | null
+          status?: string
+          tenant_id?: string | null
+          usuario_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tribunal_consultas_agressor_id_fkey"
+            columns: ["agressor_id"]
+            isOneToOne: false
+            referencedRelation: "agressores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tribunal_consultas_api_key_id_fkey"
+            columns: ["api_key_id"]
+            isOneToOne: false
+            referencedRelation: "tribunal_api_keys"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tribunal_consultas_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tribunal_consultas_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tribunal_consultas_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tribunal_dados_externos: {
+        Row: {
+          agressor_id: string | null
+          consulta_id: string | null
+          created_at: string
+          dados_json: Json
+          data_referencia: string | null
+          id: string
+          numero_referencia: string | null
+          resumo: string | null
+          tenant_id: string | null
+          tipo_dado: string
+          usuario_id: string | null
+        }
+        Insert: {
+          agressor_id?: string | null
+          consulta_id?: string | null
+          created_at?: string
+          dados_json?: Json
+          data_referencia?: string | null
+          id?: string
+          numero_referencia?: string | null
+          resumo?: string | null
+          tenant_id?: string | null
+          tipo_dado?: string
+          usuario_id?: string | null
+        }
+        Update: {
+          agressor_id?: string | null
+          consulta_id?: string | null
+          created_at?: string
+          dados_json?: Json
+          data_referencia?: string | null
+          id?: string
+          numero_referencia?: string | null
+          resumo?: string | null
+          tenant_id?: string | null
+          tipo_dado?: string
+          usuario_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tribunal_dados_externos_agressor_id_fkey"
+            columns: ["agressor_id"]
+            isOneToOne: false
+            referencedRelation: "agressores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tribunal_dados_externos_consulta_id_fkey"
+            columns: ["consulta_id"]
+            isOneToOne: false
+            referencedRelation: "tribunal_consultas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tribunal_dados_externos_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tribunal_dados_externos_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tribunal_prompts: {
+        Row: {
+          ativo: boolean
+          conteudo: string
+          created_at: string
+          created_by: string | null
+          id: string
+          tipo: string
+          updated_at: string
+          versao: number
+        }
+        Insert: {
+          ativo?: boolean
+          conteudo: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          tipo: string
+          updated_at?: string
+          versao?: number
+        }
+        Update: {
+          ativo?: boolean
+          conteudo?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          tipo?: string
+          updated_at?: string
+          versao?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tribunal_prompts_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
