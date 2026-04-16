@@ -119,7 +119,7 @@ serve(async (req) => {
         return json({ error: "Órgão é obrigatório" }, 400);
       }
 
-      const allRoles = ["super_administrador", "administrador", "admin_master", "admin_tenant", "operador", "suporte"];
+      const allRoles = ["super_administrador", "administrador", "admin_master", "admin_tenant", "operador", "suporte", "magistrado"];
       const highRoles = ["super_administrador", "administrador"];
       let validRole = allRoles.includes(role) ? role : "operador";
 
