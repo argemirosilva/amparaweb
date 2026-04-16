@@ -206,7 +206,9 @@ async function computeForUser(
     }
   }
 
-  const panicked = (recentPanic?.length ?? 0) > 0;
+  const panicked = origem === "bootstrap"
+    ? (anyPanic?.length ?? 0) > 0
+    : (recentPanic?.length ?? 0) > 0;
   const priority = classifyPriority(ampN, fonN, panicked);
   const confidence = classifyConfidence(divergence, prevSnaps?.length ?? 0);
   const recomendacao = buildRecommendation({
