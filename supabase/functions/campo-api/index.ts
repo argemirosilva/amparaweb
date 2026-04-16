@@ -409,6 +409,21 @@ Deno.serve(async (req) => {
         });
       }
 
+      // Guard geográfico: bloqueia consulta fora do escopo
+      if (effectiveScope && !effectiveScope.isGlobal) {
+        const { data: vit } = await supabase
+          .from("usuarios")
+          .select("endereco_uf, endereco_cidade")
+          .eq("id", vitimaId)
+          .maybeSingle();
+        if (!vit || !isVitimaInScope(vit, effectiveScope)) {
+          return new Response(JSON.stringify({ error: "Vítima fora do escopo geográfico autorizado." }), {
+            status: 404,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      }
+
       const indicadores = await gerarIndicadores(vitimaId);
 
       await logAccess({
