@@ -601,6 +601,72 @@ async function handleGetConsulta(supabase: any, auth: AuthResult, body: any) {
   if (error) return json({ error: error.message }, 500);
   if (!data) return json({ error: "Consulta não encontrada" }, 404);
 
+  // Fetch linked victim/aggressor names (handles old consultas where names weren't in analysis_object)
+  let vitimaInfo: any = null;
+  let agressorInfo: any = null;
+  if (data.usuario_id) {
+    const { data: u } = await supabase
+      .from("usuarios")
+      .select("id, nome_completo, endereco_cidade, endereco_uf, profissao, mora_com_agressor, tem_filhos, cor_raca, escolaridade, data_nascimento")
+      .eq("id", data.usuario_id)
+      .maybeSingle();
+    if (u) {
+      vitimaInfo = {
+        nome: u.nome_completo,
+        cidade_uf: `${u.endereco_cidade || ""}${u.endereco_uf ? "/" + u.endereco_uf : ""}`,
+        profissao: u.profissao,
+        mora_com_agressor: u.mora_com_agressor,
+        tem_filhos: u.tem_filhos,
+        cor_raca: u.cor_raca,
+        escolaridade: u.escolaridade,
+        data_nascimento: u.data_nascimento,
+      };
+    }
+  }
+  if (data.agressor_id) {
+    const { data: a } = await supabase
+      .from("agressores")
+      .select("id, nome, primary_city_uf, profession, risk_score, risk_level, forca_seguranca, tem_arma_em_casa, cor_raca, escolaridade, data_nascimento, aliases, xingamentos_frequentes, violence_profile_probs, flags, last_incident_at, neighborhoods, vehicles")
+      .eq("id", data.agressor_id)
+      .maybeSingle();
+    if (a) {
+      agressorInfo = {
+        nome: a.nome,
+        cidade_uf: a.primary_city_uf,
+        profissao: a.profession,
+        risk_score: a.risk_score,
+        risk_level: a.risk_level,
+        forca_seguranca: a.forca_seguranca,
+        tem_arma: a.tem_arma_em_casa,
+        cor_raca: a.cor_raca,
+        escolaridade: a.escolaridade,
+        data_nascimento: a.data_nascimento,
+        aliases: a.aliases,
+        xingamentos: a.xingamentos_frequentes,
+        violence_profile: a.violence_profile_probs,
+        flags: a.flags,
+        last_incident_at: a.last_incident_at,
+        neighborhoods: a.neighborhoods,
+        vehicles: a.vehicles,
+      };
+    }
+  }
+
+  // Backfill into analysis_object so frontend reads from a single source
+  const ao = data.analysis_object || {};
+  const dadosAmpara = ao.dados_ampara_registros || {};
+  const enrichedAo = {
+    ...ao,
+    dados_ampara_registros: {
+      ...dadosAmpara,
+      vitima: dadosAmpara.vitima || vitimaInfo,
+      agressor: dadosAmpara.agressor || agressorInfo,
+      vitima_encontrada: dadosAmpara.vitima_encontrada ?? !!vitimaInfo,
+      agressor_encontrado: dadosAmpara.agressor_encontrado ?? !!agressorInfo,
+    },
+  };
+  data.analysis_object = enrichedAo;
+
   // Also fetch external data
   const { data: extData } = await supabase
     .from("tribunal_dados_externos")
