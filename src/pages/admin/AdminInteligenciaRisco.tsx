@@ -102,6 +102,18 @@ export default function AdminInteligenciaRisco() {
     }
   }
 
+  async function gerarHistorico() {
+    toast.info("Gerando snapshots históricos da base inteira… isso pode levar 1–2 min.");
+    try {
+      const r = await triggerRilBootstrap();
+      toast.success(`Snapshots gerados: ${r.snapshots_created ?? 0} de ${r.users_total ?? 0} usuárias.`);
+      await load();
+    } catch (e) {
+      console.error(e);
+      toast.error("Falha ao gerar histórico");
+    }
+  }
+
   function labelFor(w: RilWindow) {
     return WINDOW_OPTIONS.find((o) => o.value === w)?.label ?? w;
   }
