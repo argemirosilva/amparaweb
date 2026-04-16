@@ -800,7 +800,249 @@ function ErrorHandlingTable() {
   );
 }
 
-export default function DocApiPage() {
+const CAMPO_BASE_URL = "https://uogenwcycqykfsuongrl.supabase.co/functions/v1/campo-api";
+
+function CampoApiSection() {
+  const exemploBuscar = `curl -X POST "${CAMPO_BASE_URL}" \\
+  -H "Content-Type: application/json" \\
+  -H "apikey: <SUPABASE_ANON_KEY>" \\
+  -H "X-Campo-Api-Key: ack_xxxxxxxxxxxxxxxx..." \\
+  -d '{
+    "action": "buscarVitima",
+    "query": "Maria Silva",
+    "agente_identificacao": "PM-123456"
+  }'`;
+
+  const exemploIndicadores = `curl -X POST "${CAMPO_BASE_URL}" \\
+  -H "Content-Type: application/json" \\
+  -H "apikey: <SUPABASE_ANON_KEY>" \\
+  -H "X-Campo-Api-Key: ack_xxxxxxxxxxxxxxxx..." \\
+  -d '{
+    "action": "consultarIndicadores",
+    "vitima_id": "<uuid>",
+    "agente_identificacao": "PM-123456"
+  }'`;
+
+  const exemploOcorrencia = `curl -X POST "${CAMPO_BASE_URL}" \\
+  -H "Content-Type: application/json" \\
+  -H "apikey: <SUPABASE_ANON_KEY>" \\
+  -H "X-Campo-Api-Key: ack_xxxxxxxxxxxxxxxx..." \\
+  -d '{
+    "action": "registrarOcorrencia",
+    "vitima_id": "<uuid>",
+    "agente_identificacao": "PM-123456",
+    "situacao": "ocorrencia_confirmada",
+    "comportamento_requerido": "comportamento_agressivo",
+    "estado_vitima": "vitima_com_medo",
+    "contexto": ["consumo_alcool", "presenca_filhos"],
+    "observacao": "Vítima abalada, agressor evadiu",
+    "protocolo_externo": "BO-2026-12345",
+    "latitude": -8.7619,
+    "longitude": -63.9039
+  }'`;
+
+  return (
+    <div className="border-t border-border pt-6 mt-6">
+      <div className="flex items-center gap-2 mb-4">
+        <Key className="w-5 h-5 text-primary" />
+        <h2 className="text-lg font-semibold text-foreground">API - AMPARA Campo (Forças de Segurança)</h2>
+      </div>
+      <p className="text-sm text-muted-foreground mb-4">
+        API pública para integração com sistemas das forças de segurança (PM, GCM, Polícia Civil, COPOM/CIOSP).
+        Permite consulta de risco contextual de vítimas em atendimento de ocorrência, com auditoria completa.
+        As chaves são gerenciadas em <code className="text-primary">/admin/ampara-campo</code>.
+      </p>
+
+      <div className="space-y-4">
+        <Card>
+          <CardContent className="px-4 py-4 space-y-3">
+            <p className="text-sm font-semibold text-foreground">Informações de Conexão</p>
+            <div>
+              <p className="text-xs text-muted-foreground mb-1">Base URL</p>
+              <CodeBlock code={CAMPO_BASE_URL} />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground mb-1">Headers obrigatórios</p>
+              <CodeBlock code={`Content-Type: application/json\napikey: <SUPABASE_ANON_KEY>\nX-Campo-Api-Key: <chave_emitida_no_painel>`} />
+            </div>
+            <div className="rounded-md bg-amber-50 border border-amber-200 p-3 text-xs text-amber-900 dark:bg-amber-950/20 dark:border-amber-900 dark:text-amber-200">
+              <strong>⚠️ Importante:</strong> a chave <code>X-Campo-Api-Key</code> identifica o órgão integrado e é
+              auditada em <strong>todas</strong> as consultas. Nunca exponha a chave no front-end ou app público.
+              Mantenha-a em servidor backend do órgão.
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground mb-1">Método</p>
+              <p className="text-sm font-mono text-foreground">POST (todas as actions)</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Endpoints */}
+        <Card>
+          <CardContent className="px-4 py-4 space-y-4">
+            <p className="text-sm font-semibold text-foreground">Endpoints disponíveis</p>
+
+            {/* buscarVitima */}
+            <div className="space-y-2 border-l-2 border-primary/40 pl-3">
+              <div className="flex items-center gap-2">
+                <Badge className="font-mono text-xs">buscarVitima</Badge>
+                <span className="text-xs text-muted-foreground">Localiza vítimas cadastradas (nome, CPF ou telefone)</span>
+              </div>
+              <div>
+                <p className="text-[11px] uppercase text-muted-foreground mb-1">Parâmetros</p>
+                <ul className="text-xs text-muted-foreground list-disc list-inside ml-1 space-y-0.5">
+                  <li><code className="text-primary">query</code> (string, obrigatório, mín. 3 chars) - nome, CPF (com/sem pontuação) ou telefone</li>
+                  <li><code className="text-primary">agente_identificacao</code> (string, obrigatório) - matrícula/RG funcional do agente</li>
+                  <li><code className="text-primary">agente_orgao</code> (string, opcional) - sigla do órgão (preenchido automaticamente pela chave)</li>
+                </ul>
+              </div>
+              <div>
+                <p className="text-[11px] uppercase text-muted-foreground mb-1">Resposta</p>
+                <CodeBlock code={JSON.stringify({
+                  resultados: [
+                    { id: "uuid", nome_mascarado: "Maria S.", telefone_mascarado: "(**) ****-1234", cadastrada_desde: "2024-08-12T..." }
+                  ]
+                }, null, 2)} />
+              </div>
+              <CodeBlock code={exemploBuscar} label="cURL" />
+            </div>
+
+            {/* consultarIndicadores */}
+            <div className="space-y-2 border-l-2 border-primary/40 pl-3">
+              <div className="flex items-center gap-2">
+                <Badge className="font-mono text-xs">consultarIndicadores</Badge>
+                <span className="text-xs text-muted-foreground">Retorna nível de risco e tags operacionais</span>
+              </div>
+              <div>
+                <p className="text-[11px] uppercase text-muted-foreground mb-1">Parâmetros</p>
+                <ul className="text-xs text-muted-foreground list-disc list-inside ml-1 space-y-0.5">
+                  <li><code className="text-primary">vitima_id</code> (uuid, obrigatório) - retornado por buscarVitima</li>
+                  <li><code className="text-primary">agente_identificacao</code> (string, obrigatório)</li>
+                </ul>
+              </div>
+              <div>
+                <p className="text-[11px] uppercase text-muted-foreground mb-1">Resposta</p>
+                <CodeBlock code={JSON.stringify({
+                  nivel_risco: "alto",
+                  tags: ["risco_alto", "recorrente", "indicador_ameaca", "presenca_filhos", "alta_vulnerabilidade"],
+                  alerta_operacional: "Contexto com potencial de agravamento. Recomenda-se abordagem cautelosa e separação das partes.",
+                  ultima_atualizacao: "2026-04-15T20:33:00Z",
+                  resumo_indicadores: {
+                    total_gravacoes: 23, panicos_30d: 1,
+                    risco_ampara: "alto", risco_fonar: "alto", divergencia: false
+                  }
+                }, null, 2)} />
+              </div>
+              <CodeBlock code={exemploIndicadores} label="cURL" />
+            </div>
+
+            {/* registrarOcorrencia */}
+            <div className="space-y-2 border-l-2 border-primary/40 pl-3">
+              <div className="flex items-center gap-2">
+                <Badge className="font-mono text-xs">registrarOcorrencia</Badge>
+                <span className="text-xs text-muted-foreground">Registra desfecho da abordagem e alimenta o motor de risco (RIL)</span>
+              </div>
+              <div>
+                <p className="text-[11px] uppercase text-muted-foreground mb-1">Parâmetros</p>
+                <ul className="text-xs text-muted-foreground list-disc list-inside ml-1 space-y-0.5">
+                  <li><code className="text-primary">vitima_id</code> (uuid, obrigatório)</li>
+                  <li><code className="text-primary">agente_identificacao</code> (string, obrigatório)</li>
+                  <li><code className="text-primary">situacao</code> (enum, obrigatório): <code>ocorrencia_confirmada</code> | <code>sem_evidencia_no_local</code> | <code>conflito_verbal</code> | <code>violencia_fisica</code></li>
+                  <li><code className="text-primary">comportamento_requerido</code> (enum, opcional): <code>comportamento_agressivo</code> | <code>comportamento_intimidatorio</code> | <code>comportamento_colaborativo</code></li>
+                  <li><code className="text-primary">estado_vitima</code> (enum, opcional): <code>vitima_com_medo</code> | <code>vitima_retraida</code> | <code>vitima_estavel</code></li>
+                  <li><code className="text-primary">contexto</code> (string[], opcional) - tags de contexto livre</li>
+                  <li><code className="text-primary">observacao</code> (string, opcional, máx. 300 chars)</li>
+                  <li><code className="text-primary">protocolo_externo</code> (string, opcional) - nº do BO/ocorrência no sistema do órgão</li>
+                  <li><code className="text-primary">latitude</code>, <code className="text-primary">longitude</code> (number, opcional) - geolocalização da abordagem</li>
+                </ul>
+              </div>
+              <div>
+                <p className="text-[11px] uppercase text-muted-foreground mb-1">Resposta</p>
+                <CodeBlock code={JSON.stringify({ ok: true, ocorrencia_id: "uuid", criado_em: "2026-04-16T..." }, null, 2)} />
+              </div>
+              <CodeBlock code={exemploOcorrencia} label="cURL" />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Tags & níveis */}
+        <Card>
+          <CardContent className="px-4 py-4 space-y-3">
+            <p className="text-sm font-semibold text-foreground">Tags retornadas em <code className="text-primary">consultarIndicadores</code></p>
+            <p className="text-xs text-muted-foreground">
+              As tags são geradas a partir do histórico da vítima (gravações analisadas, FONAR, RIL, pânicos).
+              <strong> Nenhum dado bruto sensível é exposto</strong> - apenas indicadores agregados.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+              <div>
+                <p className="font-semibold text-foreground mb-1">Risco</p>
+                <ul className="text-muted-foreground list-disc list-inside space-y-0.5">
+                  <li><code className="text-primary">risco_baixo</code> | <code className="text-primary">risco_moderado</code></li>
+                  <li><code className="text-primary">risco_alto</code> | <code className="text-primary">risco_critico</code></li>
+                </ul>
+              </div>
+              <div>
+                <p className="font-semibold text-foreground mb-1">Dinâmica</p>
+                <ul className="text-muted-foreground list-disc list-inside space-y-0.5">
+                  <li><code className="text-primary">recorrente</code></li>
+                  <li><code className="text-primary">conflito_pontual</code></li>
+                  <li><code className="text-primary">escalada_recente</code></li>
+                  <li><code className="text-primary">historico_previo</code></li>
+                </ul>
+              </div>
+              <div>
+                <p className="font-semibold text-foreground mb-1">Indicadores comportamentais</p>
+                <ul className="text-muted-foreground list-disc list-inside space-y-0.5">
+                  <li><code className="text-primary">indicador_ameaca</code></li>
+                  <li><code className="text-primary">indicador_intimidacao</code></li>
+                  <li><code className="text-primary">indicador_controle</code></li>
+                  <li><code className="text-primary">indicador_coercao</code></li>
+                  <li><code className="text-primary">indicador_agressividade</code></li>
+                </ul>
+              </div>
+              <div>
+                <p className="font-semibold text-foreground mb-1">Contexto</p>
+                <ul className="text-muted-foreground list-disc list-inside space-y-0.5">
+                  <li><code className="text-primary">dependencia_financeira</code></li>
+                  <li><code className="text-primary">presenca_filhos</code></li>
+                  <li><code className="text-primary">convivencia_local</code></li>
+                  <li><code className="text-primary">isolamento_social</code></li>
+                  <li><code className="text-primary">alta_vulnerabilidade</code></li>
+                </ul>
+              </div>
+              <div className="sm:col-span-2">
+                <p className="font-semibold text-foreground mb-1">Consistência</p>
+                <ul className="text-muted-foreground list-disc list-inside space-y-0.5">
+                  <li><code className="text-primary">consistente_com_historico</code></li>
+                  <li><code className="text-primary">padrao_nao_identificado</code> (modelos divergentes - exigir cautela)</li>
+                  <li><code className="text-primary">indicadores_limitados</code></li>
+                  <li><code className="text-primary">sem_historico_relevante</code></li>
+                </ul>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Privacidade */}
+        <Card>
+          <CardContent className="px-4 py-4 space-y-2">
+            <p className="text-sm font-semibold text-foreground">🔒 Privacidade e Conformidade (LGPD)</p>
+            <ul className="text-xs text-muted-foreground space-y-1 list-disc list-inside">
+              <li>A API <strong>nunca</strong> retorna gravações, transcrições, conteúdo de mensagens ou nomes/telefones completos.</li>
+              <li><code className="text-primary">buscarVitima</code> retorna apenas nome e telefone <strong>mascarados</strong> + UUID interno.</li>
+              <li>Toda consulta é registrada em <code className="text-primary">campo_access_logs</code> com IP, user-agent, agente e chave usada.</li>
+              <li>O hash do termo de busca é guardado (não o termo em claro) para detectar abusos sem armazenar PII.</li>
+              <li>Ocorrências registradas via <code className="text-primary">registrarOcorrencia</code> alimentam o motor de risco e ficam disponíveis para auditoria do órgão emissor.</li>
+              <li>A chave pode ser revogada a qualquer momento sem afetar o histórico de auditoria.</li>
+            </ul>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+
   const fases = [
     { num: 1, label: "Autenticação & Sincronização" },
     { num: 2, label: "Sessão & Configuração" },
