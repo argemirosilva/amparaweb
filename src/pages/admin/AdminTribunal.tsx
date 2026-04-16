@@ -14,8 +14,9 @@ export default function AdminTribunal() {
     <div className="space-y-6">
       <AdminPageHeader
         icon={Scale}
+        breadcrumb="Tribunal"
         title="AMPARA Tribunal"
-        subtitle="Motor de análise multi-saída para o sistema judiciário"
+        description="Motor de análise multi-saída para o sistema judiciário"
       />
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
