@@ -64,18 +64,24 @@ async function logAccess(params: {
 
 async function buscarVitima(query: string) {
   const digits = onlyDigits(query);
-  const norm = normalize(query);
+  const trimmed = (query || "").trim();
+  const isMostlyDigits = digits.length >= 8 && digits.length / Math.max(trimmed.length, 1) > 0.6;
 
-  // Tenta CPF (11 dígitos), telefone (10-11 dígitos), depois nome
-  let q = supabase.from("usuarios").select("id, nome, cpf, telefone, criado_em").limit(10);
+  let q = supabase.from("usuarios").select("id, nome, cpf, telefone, criado_em").limit(20);
 
-  if (digits.length === 11) {
-    // pode ser CPF ou celular
+  if (digits.length === 11 && isMostlyDigits) {
+    // CPF completo OU celular completo
     q = q.or(`cpf.eq.${digits},telefone.ilike.%${digits.slice(-9)}%`);
-  } else if (digits.length >= 10) {
+  } else if (digits.length >= 10 && isMostlyDigits) {
+    // Telefone (com ou sem DDD)
     q = q.ilike("telefone", `%${digits.slice(-9)}%`);
-  } else if (norm.length >= 3) {
-    q = q.ilike("nome", `%${norm}%`);
+  } else if (digits.length >= 4 && isMostlyDigits) {
+    // CPF parcial (últimos dígitos) ou telefone parcial
+    q = q.or(`cpf.ilike.%${digits}%,telefone.ilike.%${digits}%`);
+  } else if (trimmed.length >= 3) {
+    // Busca por nome — case-insensitive direto via ilike (Postgres ilike ignora caixa, mas não acentos).
+    // Usamos o termo bruto para preservar acentuação no banco.
+    q = q.ilike("nome", `%${trimmed}%`);
   } else {
     return [];
   }
@@ -85,6 +91,18 @@ async function buscarVitima(query: string) {
     console.error("[campo-api] buscarVitima error", error);
     return [];
   }
+
+  // Fallback adicional: se busca por nome não retornou nada, tenta versão sem acentos
+  if ((data?.length ?? 0) === 0 && !isMostlyDigits && trimmed.length >= 3) {
+    const norm = normalize(trimmed);
+    const { data: data2 } = await supabase
+      .from("usuarios")
+      .select("id, nome, cpf, telefone, criado_em")
+      .ilike("nome", `%${norm}%`)
+      .limit(20);
+    return data2 ?? [];
+  }
+
   return data ?? [];
 }
 
