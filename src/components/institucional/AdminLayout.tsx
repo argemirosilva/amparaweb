@@ -4,7 +4,7 @@ import { useAdminRole } from "@/hooks/useAdminRole";
 import ProtectedAdminRoute from "./ProtectedAdminRoute";
 import {
   LayoutDashboard, Users, Building2, ClipboardCheck, FileText, Settings,
-  LogOut, Menu, X, Plug, AudioLines, Headset, BrainCircuit, FileCode2,
+  LogOut, Menu, X, Plug, AudioLines, Headset, BrainCircuit, FileCode2, Scale,
 } from "lucide-react";
 import amparaLogo from "@/assets/ampara-circle-logo.png";
 import { useState } from "react";
@@ -17,13 +17,14 @@ const TECNICO_PATHS = [
 const OPERACIONAL_PATHS = ["/admin", "/admin/relatorios"];
 const SUPORTE_PATHS = ["/admin/suporte", "/admin/curadoria"];
 const SUPER_ADMIN_ONLY_PATHS = ["/admin/integracoes", "/admin/doc-api"];
-const ADMIN_LEVEL_PATHS = ["/admin/curadoria"];
+const ADMIN_LEVEL_PATHS = ["/admin/curadoria", "/admin/tribunal"];
 
 const sidebarItems = [
   { label: "Dashboard", path: "/admin", icon: LayoutDashboard },
   { label: "Usuários", path: "/admin/usuarios", icon: Users },
   { label: "Suporte", path: "/admin/suporte", icon: Headset },
   { label: "Curadoria IA", path: "/admin/curadoria", icon: BrainCircuit },
+  { label: "Tribunal", path: "/admin/tribunal", icon: Scale },
   { label: "Entidades", path: "/admin/orgaos", icon: Building2 },
   { label: "Auditoria", path: "/admin/auditoria", icon: ClipboardCheck },
   { label: "Relatórios", path: "/admin/relatorios", icon: FileText },
