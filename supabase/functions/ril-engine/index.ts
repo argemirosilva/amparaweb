@@ -183,9 +183,9 @@ async function computeForUser(
 
   // Fatores críticos ativos
   const fatores: string[] = [];
-  const microJson = (lastMicro?.output_json ?? {}) as Record<string, unknown>;
+  const microJson = (lastMicro?.output_json ?? legacyAnalise?.analise_completa ?? {}) as Record<string, unknown>;
   const microRiskFactors = (microJson?.fatores_de_risco ?? microJson?.fatores ??
-    []) as string[];
+    microJson?.categorias ?? []) as string[];
   if (Array.isArray(microRiskFactors)) fatores.push(...microRiskFactors);
   const fonarFatores = (lastFonar?.fatores ?? {}) as Record<string, unknown>;
   if (Array.isArray(fonarFatores?.principais)) {
