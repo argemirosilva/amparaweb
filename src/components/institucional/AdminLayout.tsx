@@ -24,7 +24,7 @@ const sidebarItems = [
   { label: "Usuários", path: "/admin/usuarios", icon: Users },
   { label: "Suporte", path: "/admin/suporte", icon: Headset },
   { label: "Curadoria IA", path: "/admin/curadoria", icon: BrainCircuit },
-  { label: "Tribunal", path: "/admin/tribunal", icon: Scale },
+  { label: "Judiciário", path: "/admin/tribunal", icon: Scale },
   { label: "Entidades", path: "/admin/orgaos", icon: Building2 },
   { label: "Auditoria", path: "/admin/auditoria", icon: ClipboardCheck },
   { label: "Relatórios", path: "/admin/relatorios", icon: FileText },
