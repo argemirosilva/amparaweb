@@ -194,45 +194,94 @@ export default function TribunalConsultas() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-3">
-        <Select value={filtroModo} onValueChange={setFiltroModo}>
-          <SelectTrigger className="w-48 bg-white">
-            <SelectValue placeholder="Filtrar modo" />
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative flex-1 min-w-[220px] max-w-md">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            placeholder="Buscar por vítima, agressor, cidade..."
+            className="pl-8 pr-8 bg-white"
+          />
+          {busca && (
+            <button
+              type="button"
+              onClick={() => setBusca("")}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+        <Select value={filtroPeriodo} onValueChange={setFiltroPeriodo}>
+          <SelectTrigger className="w-40 bg-white">
+            <SelectValue placeholder="Período" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="todos_filtro">Todos os modos</SelectItem>
-            <SelectItem value="todos">Análise Completa</SelectItem>
-            <SelectItem value="analitico">Analítico</SelectItem>
-            <SelectItem value="despacho">Despacho</SelectItem>
-            <SelectItem value="parecer">Parecer Técnico</SelectItem>
+            <SelectItem value="7d">Últimos 7 dias</SelectItem>
+            <SelectItem value="30d">Últimos 30 dias</SelectItem>
+            <SelectItem value="90d">Últimos 90 dias</SelectItem>
+            <SelectItem value="365d">Último ano</SelectItem>
+            <SelectItem value="todos">Todo o período</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={filtroNivel} onValueChange={setFiltroNivel}>
+          <SelectTrigger className="w-40 bg-white">
+            <SelectValue placeholder="Criticidade" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Todas criticidades</SelectItem>
+            <SelectItem value="critico">Crítico</SelectItem>
+            <SelectItem value="alto">Alto</SelectItem>
+            <SelectItem value="moderado">Moderado</SelectItem>
+            <SelectItem value="sem_risco">Sem risco</SelectItem>
           </SelectContent>
         </Select>
         <Button variant="outline" size="sm" onClick={fetchConsultas} disabled={loading}>
           <RefreshCw className={`w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}`} />
           Atualizar
         </Button>
-        <span className="text-sm text-muted-foreground ml-auto">{consultas.length} consultas</span>
+        <span className="text-sm text-muted-foreground ml-auto">
+          {consultasFiltradas.length} {consultasFiltradas.length === 1 ? "consulta" : "consultas"}
+        </span>
       </div>
 
-      {consultas.length === 0 && !loading && (
+      {consultasFiltradas.length === 0 && !loading && (
         <Card><CardContent className="py-12 text-center text-muted-foreground">Nenhuma consulta encontrada</CardContent></Card>
       )}
 
       <div className="space-y-2">
-        {consultas.map((c) => {
+        {consultasFiltradas.map((c) => {
           const Icon = MODO_ICONS[c.modo_saida] || FileText;
+          const nivel = c.nivel_risco ? NIVEL_BADGE[c.nivel_risco] : null;
           return (
             <Card key={c.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => fetchDetail(c.id)}>
               <CardContent className="flex items-center gap-4 py-3 px-4">
                 <Icon className="w-5 h-5 text-muted-foreground shrink-0" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <Badge variant={c.status === "success" ? "default" : "destructive"} className="text-xs">
+                    <span className="text-sm font-medium text-foreground truncate">
+                      {c.vitima_nome || "Vítima não identificada"}
+                      {c.agressor_nome && (
+                        <span className="text-muted-foreground font-normal"> · {c.agressor_nome}</span>
+                      )}
+                    </span>
+                    {nivel && (
+                      <Badge className={`text-[10px] ${nivel.cls}`}>{nivel.label}</Badge>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap mt-0.5">
+                    <Badge variant={c.status === "success" ? "outline" : "destructive"} className="text-[10px]">
                       {MODO_LABELS[c.modo_saida] || c.modo_saida}
                     </Badge>
                     <span className="text-xs text-muted-foreground">
                       {new Date(c.created_at).toLocaleString("pt-BR")}
                     </span>
+                    {(c.vitima_cidade_uf || c.agressor_cidade_uf) && (
+                      <span className="text-xs text-muted-foreground">
+                        · {c.vitima_cidade_uf || c.agressor_cidade_uf}
+                      </span>
+                    )}
                   </div>
                 </div>
                 <Eye className="w-4 h-4 text-muted-foreground shrink-0" />
