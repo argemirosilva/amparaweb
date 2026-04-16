@@ -523,6 +523,101 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (action === "bootstrap") {
+      // Gera snapshots históricos para TODOS os usuários com dados (legado + novos)
+      // Coleta union de user_ids de fontes possíveis
+      const userIds = new Set<string>();
+
+      // gravacoes_analises (legado, 2k+ análises)
+      const PAGE = 1000;
+      let offset = 0;
+      while (true) {
+        const { data, error } = await supabase
+          .from("gravacoes_analises")
+          .select("user_id")
+          .range(offset, offset + PAGE - 1);
+        if (error) break;
+        if (!data || data.length === 0) break;
+        for (const r of data) if (r.user_id) userIds.add(r.user_id as string);
+        if (data.length < PAGE) break;
+        offset += PAGE;
+      }
+
+      // analysis_micro_results
+      offset = 0;
+      while (true) {
+        const { data } = await supabase
+          .from("analysis_micro_results")
+          .select("user_id")
+          .range(offset, offset + PAGE - 1);
+        if (!data || data.length === 0) break;
+        for (const r of data) if (r.user_id) userIds.add(r.user_id as string);
+        if (data.length < PAGE) break;
+        offset += PAGE;
+      }
+
+      // alertas_panico
+      offset = 0;
+      while (true) {
+        const { data } = await supabase
+          .from("alertas_panico")
+          .select("user_id")
+          .range(offset, offset + PAGE - 1);
+        if (!data || data.length === 0) break;
+        for (const r of data) if (r.user_id) userIds.add(r.user_id as string);
+        if (data.length < PAGE) break;
+        offset += PAGE;
+      }
+
+      // fonar_risk_assessments
+      offset = 0;
+      while (true) {
+        const { data } = await supabase
+          .from("fonar_risk_assessments")
+          .select("user_id")
+          .range(offset, offset + PAGE - 1);
+        if (!data || data.length === 0) break;
+        for (const r of data) if (r.user_id) userIds.add(r.user_id as string);
+        if (data.length < PAGE) break;
+        offset += PAGE;
+      }
+
+      const allUsers = Array.from(userIds);
+      let ok = 0;
+      let fail = 0;
+      for (const uid of allUsers) {
+        try {
+          await computeForUser(supabase, uid, "bootstrap");
+          ok++;
+        } catch (e) {
+          fail++;
+          console.error("bootstrap snapshot failed", uid, e);
+        }
+      }
+
+      // Recalcula métricas em todas as janelas
+      const windows: Array<number | "all"> = [30, 90, 120, 365, 1095, "all"];
+      const metricsAll: Record<string, unknown> = {};
+      for (const w of windows) {
+        try {
+          metricsAll[String(w)] = await computeGovernmentMetrics(supabase, w);
+        } catch (e) {
+          console.error("metrics failed for window", w, e);
+        }
+      }
+
+      return new Response(
+        JSON.stringify({
+          ok: true,
+          users_total: allUsers.length,
+          snapshots_created: ok,
+          failed: fail,
+          metrics: metricsAll,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
     return new Response(JSON.stringify({ error: "unknown action" }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
