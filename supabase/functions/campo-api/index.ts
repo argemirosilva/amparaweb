@@ -343,9 +343,9 @@ Deno.serve(async (req) => {
       // Mascarar dados retornados
       const masked = resultados.map((r: any) => ({
         id: r.id,
-        nome_mascarado: maskName(r.nome),
+        nome_mascarado: maskName(r.nome_completo),
         telefone_mascarado: maskPhone(r.telefone),
-        cadastrada_desde: r.criado_em,
+        cadastrada_desde: r.created_at,
       }));
 
       return new Response(JSON.stringify({ resultados: masked }), {
