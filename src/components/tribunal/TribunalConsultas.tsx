@@ -80,9 +80,16 @@ export default function TribunalConsultas() {
   const buildPdfPayload = (c: any) => {
     if (!c) return null;
     const ao = c.analysis_object || {};
-    const dadosAmpara = ao.dados_ampara_registros || ao;
-    const vitimaSrc = dadosAmpara.vitima || ao.vitima || null;
-    const agressorSrc = dadosAmpara.agressor || ao.agressor || null;
+    const dadosAmpara = ao.dados_ampara_registros || {};
+    const dadosInput = ao.dados_magistrado_input || {};
+    const vitimaSrc =
+      dadosAmpara.vitima ||
+      dadosInput.vitima ||
+      (ao.dados_vitima && Object.keys(ao.dados_vitima).length > 0 ? ao.dados_vitima : null);
+    const agressorSrc =
+      dadosAmpara.agressor ||
+      dadosInput.agressor ||
+      (ao.dados_agressor && Object.keys(ao.dados_agressor).length > 0 ? ao.dados_agressor : null);
 
     const ampara_summary = ao.ampara_summary || dadosAmpara.ampara_summary || null;
 
@@ -99,8 +106,12 @@ export default function TribunalConsultas() {
 
     return {
       consulta_id: c.id,
-      vitima_vinculada: vitimaSrc ? { nome: vitimaSrc.nome || vitimaSrc.nome_completo } : null,
-      agressor_vinculado: agressorSrc ? { nome: agressorSrc.nome } : null,
+      vitima_vinculada: vitimaSrc
+        ? { nome: vitimaSrc.nome || vitimaSrc.nome_completo || (vitimaSrc.cidade_uf ? `Vítima · ${vitimaSrc.cidade_uf}` : "Vítima identificada") }
+        : null,
+      agressor_vinculado: agressorSrc
+        ? { nome: agressorSrc.nome || (agressorSrc.cidade_uf ? `Agressor · ${agressorSrc.cidade_uf}` : "Agressor identificado") }
+        : null,
       ampara_summary,
       resultados,
     };
