@@ -386,6 +386,17 @@ serve(async (req) => {
         for (const key of allowed) {
           if (params[key] !== undefined) updates[key] = params[key];
         }
+        // Handle CPF: store hash + last4, never store full CPF
+        if (params.cpf && typeof params.cpf === "string") {
+          const cpfDigits = params.cpf.replace(/\D/g, "");
+          if (cpfDigits.length === 11) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(cpfDigits);
+            const buf = await crypto.subtle.digest("SHA-256", data);
+            updates.cpf_hash = Array.from(new Uint8Array(buf), (b) => b.toString(16).padStart(2, "0")).join("");
+            updates.cpf_last4 = cpfDigits.slice(-4);
+          }
+        }
         if (Object.keys(updates).length === 0) {
           return json({ error: "Nenhum campo para atualizar" }, 400);
         }

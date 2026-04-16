@@ -702,10 +702,19 @@ async function handleSearchVitima(supabase: any, _auth: AuthResult, body: any) {
   const { nome, telefone, cpf } = body;
   if (!nome && !telefone && !cpf) return json({ error: "Informe ao menos um campo: nome, telefone ou CPF" }, 400);
 
-  let query = supabase.from("usuarios").select("id, nome_completo, email, telefone, endereco_cidade, endereco_uf, cor_raca, escolaridade, profissao, mora_com_agressor, tem_filhos, data_nascimento, status");
+  let query = supabase.from("usuarios").select("id, nome_completo, email, telefone, endereco_cidade, endereco_uf, cor_raca, escolaridade, profissao, mora_com_agressor, tem_filhos, data_nascimento, status, cpf_last4");
   if (nome) query = query.ilike("nome_completo", `%${nome}%`);
   if (telefone) query = query.ilike("telefone", `%${telefone}%`);
-  if (cpf) query = query.ilike("email", `%${cpf}%`);
+  if (cpf) {
+    const cpfDigits = cpf.replace(/\D/g, "");
+    if (cpfDigits.length === 4) {
+      query = query.eq("cpf_last4", cpfDigits);
+    } else if (cpfDigits.length === 11) {
+      query = query.eq("cpf_last4", cpfDigits.slice(-4));
+    } else {
+      query = query.eq("cpf_last4", cpfDigits.slice(-4));
+    }
+  }
   const { data, error } = await query.limit(10);
   if (error) return json({ error: error.message }, 500);
   return json({ success: true, vitimas: data || [] });

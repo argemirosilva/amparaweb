@@ -52,6 +52,7 @@ interface PerfilData {
   cor_raca: string | null;
   escolaridade: string | null;
   profissao: string | null;
+  cpf_last4: string | null;
 }
 
 interface GuardiaoData {
