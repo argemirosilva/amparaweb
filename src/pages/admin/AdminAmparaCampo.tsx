@@ -60,7 +60,7 @@ export default function AdminAmparaCampo() {
   return (
     <div className="space-y-6">
       <AdminPageHeader
-        eyebrow="Forças de Segurança"
+        breadcrumb="Forças de Segurança"
         title="AMPARA Campo"
         description="Auditoria de consultas e ocorrências registradas em campo por agentes públicos."
         icon={Shield}
