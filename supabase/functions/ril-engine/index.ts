@@ -328,9 +328,10 @@ async function computeGovernmentMetrics(
       period_start: periodStart.toISOString(),
       period_end: periodEnd.toISOString(),
       scope_type: "nacional",
+      scope_value: windowDays === "all" ? "all" : `${windowDays}d`,
       total_amostras: total,
       k_anonymity_min: K_MIN,
-      payload_extra: { suprimido_por_k_anonymity: true },
+      payload_extra: { suprimido_por_k_anonymity: true, window: windowDays },
     });
     return { total, suppressed: true };
   }
