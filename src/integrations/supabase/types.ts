@@ -2469,7 +2469,9 @@ export type Database = {
           key_hash: string
           key_prefix: string
           label: string
-          tenant_id: string
+          orgao: string | null
+          tenant_id: string | null
+          tipo_sistema: string
         }
         Insert: {
           ativo?: boolean
@@ -2479,7 +2481,9 @@ export type Database = {
           key_hash: string
           key_prefix: string
           label?: string
-          tenant_id: string
+          orgao?: string | null
+          tenant_id?: string | null
+          tipo_sistema?: string
         }
         Update: {
           ativo?: boolean
@@ -2489,7 +2493,9 @@ export type Database = {
           key_hash?: string
           key_prefix?: string
           label?: string
-          tenant_id?: string
+          orgao?: string | null
+          tenant_id?: string | null
+          tipo_sistema?: string
         }
         Relationships: [
           {
