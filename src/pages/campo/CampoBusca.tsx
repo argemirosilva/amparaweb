@@ -80,14 +80,14 @@ export default function CampoBusca() {
           </div>
 
           <div>
-            <Label htmlFor="query">Buscar vítima (CPF, telefone ou nome)</Label>
+            <Label htmlFor="query">Buscar vítima por nome, CPF ou telefone</Label>
             <div className="flex gap-2 mt-1">
               <Input
                 id="query"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleBuscar()}
-                placeholder="000.000.000-00 ou (11) 99999-9999"
+                placeholder="Ex: Maria Silva, 000.000.000-00 ou (11) 99999-9999"
                 autoComplete="off"
               />
               <Button onClick={handleBuscar} disabled={loading} className="shrink-0">
@@ -95,6 +95,9 @@ export default function CampoBusca() {
                 <span className="ml-2 hidden sm:inline">Buscar</span>
               </Button>
             </div>
+            <p className="text-[11px] text-muted-foreground mt-1">
+              Aceita nome completo ou parcial, CPF (com ou sem pontuação) ou telefone.
+            </p>
           </div>
         </Card>
 
