@@ -80,9 +80,16 @@ export default function TribunalConsultas() {
   const buildPdfPayload = (c: any) => {
     if (!c) return null;
     const ao = c.analysis_object || {};
-    const dadosAmpara = ao.dados_ampara_registros || ao;
-    const vitimaSrc = dadosAmpara.vitima || ao.vitima || null;
-    const agressorSrc = dadosAmpara.agressor || ao.agressor || null;
+    const dadosAmpara = ao.dados_ampara_registros || {};
+    const dadosInput = ao.dados_magistrado_input || {};
+    const vitimaSrc =
+      dadosAmpara.vitima ||
+      dadosInput.vitima ||
+      (ao.dados_vitima && Object.keys(ao.dados_vitima).length > 0 ? ao.dados_vitima : null);
+    const agressorSrc =
+      dadosAmpara.agressor ||
+      dadosInput.agressor ||
+      (ao.dados_agressor && Object.keys(ao.dados_agressor).length > 0 ? ao.dados_agressor : null);
 
     const ampara_summary = ao.ampara_summary || dadosAmpara.ampara_summary || null;
 
@@ -99,8 +106,12 @@ export default function TribunalConsultas() {
 
     return {
       consulta_id: c.id,
-      vitima_vinculada: vitimaSrc ? { nome: vitimaSrc.nome || vitimaSrc.nome_completo } : null,
-      agressor_vinculado: agressorSrc ? { nome: agressorSrc.nome } : null,
+      vitima_vinculada: vitimaSrc
+        ? { nome: vitimaSrc.nome || vitimaSrc.nome_completo || (vitimaSrc.cidade_uf ? `Vítima · ${vitimaSrc.cidade_uf}` : "Vítima identificada") }
+        : null,
+      agressor_vinculado: agressorSrc
+        ? { nome: agressorSrc.nome || (agressorSrc.cidade_uf ? `Agressor · ${agressorSrc.cidade_uf}` : "Agressor identificado") }
+        : null,
       ampara_summary,
       resultados,
     };
@@ -117,9 +128,16 @@ export default function TribunalConsultas() {
   const ao = selected?.analysis_object || {};
   const dadosInput = ao.dados_magistrado_input || {};
   const dadosAmpara = ao.dados_ampara_registros || {};
-  const vitimaInfo = dadosAmpara.vitima || dadosInput.vitima || null;
-  const agressorInfo = dadosAmpara.agressor || dadosInput.agressor || null;
-  const processoInfo = dadosInput.processo || null;
+  // Fallback para consultas antigas que salvavam dados_vitima/dados_agressor no nível raiz
+  const vitimaInfo =
+    dadosAmpara.vitima ||
+    dadosInput.vitima ||
+    (ao.dados_vitima && Object.keys(ao.dados_vitima).length > 0 ? ao.dados_vitima : null);
+  const agressorInfo =
+    dadosAmpara.agressor ||
+    dadosInput.agressor ||
+    (ao.dados_agressor && Object.keys(ao.dados_agressor).length > 0 ? ao.dados_agressor : null);
+  const processoInfo = dadosInput.processo || ao.dados_processo || null;
 
   return (
     <div className="space-y-4">
@@ -238,8 +256,15 @@ export default function TribunalConsultas() {
                         </div>
                         {vitimaInfo ? (
                           <div className="space-y-0.5 text-sm">
-                            <p className="font-medium text-foreground">{vitimaInfo.nome || vitimaInfo.nome_completo || "—"}</p>
-                            {vitimaInfo.cidade && <p className="text-xs text-muted-foreground">{vitimaInfo.cidade}{vitimaInfo.uf ? `/${vitimaInfo.uf}` : ""}</p>}
+                            <p className="font-medium text-foreground">
+                              {vitimaInfo.nome || vitimaInfo.nome_completo || (vitimaInfo.cidade_uf || vitimaInfo.cidade ? "Vítima identificada" : "—")}
+                            </p>
+                            {(vitimaInfo.cidade_uf || vitimaInfo.cidade) && (
+                              <p className="text-xs text-muted-foreground">
+                                {vitimaInfo.cidade_uf || `${vitimaInfo.cidade}${vitimaInfo.uf ? `/${vitimaInfo.uf}` : ""}`}
+                              </p>
+                            )}
+                            {vitimaInfo.profissao && <p className="text-xs text-muted-foreground">Profissão: {vitimaInfo.profissao}</p>}
                           </div>
                         ) : (
                           <p className="text-xs text-muted-foreground italic">Não identificada</p>
@@ -253,7 +278,11 @@ export default function TribunalConsultas() {
                         </div>
                         {agressorInfo ? (
                           <div className="space-y-0.5 text-sm">
-                            <p className="font-medium text-foreground">{agressorInfo.nome || "—"}</p>
+                            <p className="font-medium text-foreground">
+                              {agressorInfo.nome || (agressorInfo.cidade_uf || agressorInfo.profissao ? "Agressor identificado" : "—")}
+                            </p>
+                            {agressorInfo.cidade_uf && <p className="text-xs text-muted-foreground">{agressorInfo.cidade_uf}</p>}
+                            {agressorInfo.profissao && <p className="text-xs text-muted-foreground">Profissão: {agressorInfo.profissao}</p>}
                             {agressorInfo.risk_level && (
                               <Badge variant="outline" className="text-[10px] mt-1">
                                 Risco: {agressorInfo.risk_level}{agressorInfo.risk_score != null ? ` · ${agressorInfo.risk_score}` : ""}
