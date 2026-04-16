@@ -46,6 +46,7 @@ async function logAccess(params: {
   agente_orgao?: string;
   ip_address?: string;
   user_agent?: string;
+  api_key_id?: string | null;
 }) {
   const hash = params.query_value ? await sha256Hex(params.query_value) : null;
   await supabase.from("campo_access_logs").insert({
@@ -57,7 +58,33 @@ async function logAccess(params: {
     agente_orgao: params.agente_orgao ?? null,
     ip_address: params.ip_address ?? null,
     user_agent: params.user_agent ?? null,
+    api_key_id: params.api_key_id ?? null,
   });
+}
+
+// ============== API Key auth (integrações externas) ==============
+// Aceita: header `X-Campo-Api-Key: <chave>` OU body.api_key
+// Se a chave for válida e ativa, retorna { id, orgao }. Caso contrário, null.
+async function validateApiKey(req: Request, body: any): Promise<{ id: string; orgao: string } | null> {
+  const headerKey = req.headers.get("x-campo-api-key") ?? req.headers.get("X-Campo-Api-Key");
+  const bodyKey = typeof body?.api_key === "string" ? body.api_key : null;
+  const raw = (headerKey || bodyKey || "").trim();
+  if (!raw || raw.length < 16) return null;
+
+  const hash = await sha256Hex(raw);
+  const { data: row } = await supabase
+    .from("campo_api_keys")
+    .select("id, orgao, ativo, expires_at")
+    .eq("key_hash", hash)
+    .maybeSingle();
+
+  if (!row || !row.ativo) return null;
+  if (row.expires_at && new Date(row.expires_at).getTime() < Date.now()) return null;
+
+  // Atualiza last_used (não-bloqueante)
+  supabase.from("campo_api_keys").update({ last_used_at: new Date().toISOString() }).eq("id", row.id).then(() => {});
+
+  return { id: row.id, orgao: row.orgao };
 }
 
 // ================== Busca de vítima ==================
@@ -318,11 +345,14 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const action = body.action as string;
 
+    // Tenta autenticar via API Key (header X-Campo-Api-Key ou body.api_key)
+    const apiKeyAuth = await validateApiKey(req, body);
+
     // -------- Buscar vítima --------
     if (action === "buscarVitima") {
       const query = String(body.query ?? "").trim();
       const agente = String(body.agente_identificacao ?? "").trim();
-      const orgao = String(body.agente_orgao ?? "").trim();
+      const orgao = String(body.agente_orgao ?? "").trim() || apiKeyAuth?.orgao || "";
 
       if (!query || query.length < 3) {
         return new Response(JSON.stringify({ error: "Termo de busca muito curto." }), {
@@ -348,9 +378,9 @@ Deno.serve(async (req) => {
         agente_orgao: orgao,
         ip_address: ip,
         user_agent: ua,
+        api_key_id: apiKeyAuth?.id ?? null,
       });
 
-      // Mascarar dados retornados
       const masked = resultados.map((r: any) => ({
         id: r.id,
         nome_mascarado: maskName(r.nome_completo),
@@ -367,7 +397,7 @@ Deno.serve(async (req) => {
     if (action === "consultarIndicadores") {
       const vitimaId = String(body.vitima_id ?? "");
       const agente = String(body.agente_identificacao ?? "").trim();
-      const orgao = String(body.agente_orgao ?? "").trim();
+      const orgao = String(body.agente_orgao ?? "").trim() || apiKeyAuth?.orgao || "";
 
       if (!vitimaId || !agente) {
         return new Response(JSON.stringify({ error: "vitima_id e agente_identificacao são obrigatórios." }), {
@@ -386,6 +416,7 @@ Deno.serve(async (req) => {
         agente_orgao: orgao,
         ip_address: ip,
         user_agent: ua,
+        api_key_id: apiKeyAuth?.id ?? null,
       });
 
       return new Response(JSON.stringify(indicadores), {
@@ -397,7 +428,7 @@ Deno.serve(async (req) => {
     if (action === "registrarOcorrencia") {
       const vitimaId = String(body.vitima_id ?? "");
       const agente = String(body.agente_identificacao ?? "").trim();
-      const orgao = String(body.agente_orgao ?? "").trim();
+      const orgao = String(body.agente_orgao ?? "").trim() || apiKeyAuth?.orgao || "";
 
       if (!vitimaId || !agente || !body.situacao) {
         return new Response(JSON.stringify({ error: "vitima_id, agente_identificacao e situacao são obrigatórios." }), {
@@ -406,7 +437,6 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Snapshot dos indicadores no momento do registro
       const indicadores = await gerarIndicadores(vitimaId);
 
       const { data: ocorrencia, error } = await supabase
@@ -427,6 +457,7 @@ Deno.serve(async (req) => {
           tags_snapshot: indicadores.tags,
           ip_address: ip,
           user_agent: ua,
+          api_key_id: apiKeyAuth?.id ?? null,
         })
         .select("id, created_at")
         .single();
@@ -447,9 +478,9 @@ Deno.serve(async (req) => {
         agente_orgao: orgao,
         ip_address: ip,
         user_agent: ua,
+        api_key_id: apiKeyAuth?.id ?? null,
       });
 
-      // Dispara sinal para o RIL recalcular (não-bloqueante)
       try {
         await supabase.from("ril_events").insert({
           user_id: vitimaId,
@@ -473,7 +504,6 @@ Deno.serve(async (req) => {
 
     // -------- Auditoria (admin) --------
     if (action === "listarAuditoria") {
-      // Lista logs e ocorrências para o painel admin
       const limit = Math.min(Number(body.limit ?? 100), 500);
       const [{ data: logs }, { data: ocorrencias }] = await Promise.all([
         supabase
@@ -489,6 +519,79 @@ Deno.serve(async (req) => {
       ]);
 
       return new Response(JSON.stringify({ logs: logs ?? [], ocorrencias: ocorrencias ?? [] }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // -------- Gestão de API Keys (admin) --------
+    if (action === "listarApiKeys") {
+      const { data } = await supabase
+        .from("campo_api_keys")
+        .select("id, orgao, label, key_prefix, ativo, created_at, expires_at, last_used_at, tenant_id")
+        .order("created_at", { ascending: false });
+      return new Response(JSON.stringify({ keys: data ?? [] }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (action === "criarApiKey") {
+      const orgao = String(body.orgao ?? "").trim();
+      const label = String(body.label ?? "").trim();
+      const tenant_id = body.tenant_id || null;
+      if (!orgao || !label) {
+        return new Response(JSON.stringify({ error: "orgao e label são obrigatórios." }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const bytes = new Uint8Array(32);
+      crypto.getRandomValues(bytes);
+      const rawKey = "ack_" + Array.from(bytes).map((b) => b.toString(16).padStart(2, "0")).join("");
+      const keyHash = await sha256Hex(rawKey);
+      const keyPrefix = rawKey.slice(0, 12);
+
+      const { data, error } = await supabase
+        .from("campo_api_keys")
+        .insert({
+          orgao,
+          label,
+          tenant_id,
+          key_hash: keyHash,
+          key_prefix: keyPrefix,
+          expires_at: body.expires_at ?? null,
+        })
+        .select("id, orgao, label, key_prefix, created_at")
+        .single();
+
+      if (error) {
+        console.error("[campo-api] criarApiKey", error);
+        return new Response(JSON.stringify({ error: "Falha ao criar chave." }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      return new Response(JSON.stringify({ ok: true, api_key: rawKey, ...data }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (action === "alternarApiKey") {
+      const keyId = String(body.key_id ?? "");
+      if (!keyId) return new Response(JSON.stringify({ error: "key_id obrigatório." }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      const { data: cur } = await supabase.from("campo_api_keys").select("ativo").eq("id", keyId).maybeSingle();
+      if (!cur) return new Response(JSON.stringify({ error: "Chave não encontrada." }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      await supabase.from("campo_api_keys").update({ ativo: !cur.ativo }).eq("id", keyId);
+      return new Response(JSON.stringify({ ok: true, ativo: !cur.ativo }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (action === "removerApiKey") {
+      const keyId = String(body.key_id ?? "");
+      if (!keyId) return new Response(JSON.stringify({ error: "key_id obrigatório." }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      await supabase.from("campo_api_keys").delete().eq("id", keyId);
+      return new Response(JSON.stringify({ ok: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }

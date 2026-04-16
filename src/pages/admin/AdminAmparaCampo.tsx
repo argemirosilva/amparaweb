@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { callCampoApi, type VitimaResultado } from "@/services/campoService";
+import CampoApiKeysCard from "@/components/admin/CampoApiKeysCard";
 import { Shield, FileText, Search, Loader2, ArrowRight, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 
@@ -159,6 +160,8 @@ export default function AdminAmparaCampo() {
           <p className="text-sm text-muted-foreground text-center py-3">Nenhum registro encontrado.</p>
         )}
       </Card>
+
+      <CampoApiKeysCard />
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card className="p-5">
