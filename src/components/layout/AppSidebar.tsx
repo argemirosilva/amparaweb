@@ -10,6 +10,7 @@ import {
   LogOut,
   Search,
   Headset,
+  Shield,
 } from "lucide-react";
 import {
   Sidebar,
@@ -28,6 +29,7 @@ const menuItems = [
   { title: "Dashboard", url: "/home", icon: LayoutDashboard },
   { title: "Gravações", url: "/gravacoes", icon: Mic },
   { title: "Pesquisar", url: "/busca-perfil", icon: Search },
+  { title: "Força de Segurança", url: "/campo/busca", icon: Shield },
   { title: "Perfil", url: "/perfil", icon: UserCircle },
   { title: "Config.", url: "/configuracoes", icon: Settings },
 ];
