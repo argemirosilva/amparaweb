@@ -663,6 +663,10 @@ async function handlePing(
     return errorResponse(error || "Sessão inválida", 401);
   }
 
+  // Check minimum app version (optional - legacy apps without versao_app pass through)
+  const versionBlock = await checkMinAppVersion(supabase, body.versao_app as string | undefined);
+  if (versionBlock) return versionBlock;
+
   const deviceId = body.device_id as string | undefined;
   const userId = (user as Record<string, unknown>).id as string;
 
