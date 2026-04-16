@@ -80,3 +80,9 @@ verify_jwt = false
 
 [functions.tribunal-api]
 verify_jwt = false
+
+[functions.fonar-api]
+verify_jwt = false
+
+[functions.fonar-worker]
+verify_jwt = false
