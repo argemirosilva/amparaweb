@@ -10,9 +10,11 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Send, FileJson, FileText, BookOpen, Search, User, UserX, AlertTriangle, CheckCircle, ArrowRight, ArrowLeft, Shield, MapPin, Briefcase, Calendar, Database, TrendingUp, BarChart3, Mic, FileWarning } from "lucide-react";
+import { Loader2, Send, FileJson, FileText, BookOpen, Search, User, UserX, AlertTriangle, CheckCircle, ArrowRight, ArrowLeft, Shield, MapPin, Briefcase, Calendar, Database, TrendingUp, BarChart3, Mic, FileWarning, Copy, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import TribunalAnaliticoView from "./TribunalAnaliticoView";
+import { generateTribunalPdf } from "@/services/tribunalPdfService";
 
 interface Props {
   onConsultaCriada?: () => void;
