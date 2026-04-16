@@ -625,6 +625,7 @@ export type Database = {
         Row: {
           agente_identificacao: string | null
           agente_orgao: string | null
+          api_key_id: string | null
           created_at: string
           found: boolean
           id: string
@@ -637,6 +638,7 @@ export type Database = {
         Insert: {
           agente_identificacao?: string | null
           agente_orgao?: string | null
+          api_key_id?: string | null
           created_at?: string
           found?: boolean
           id?: string
@@ -649,6 +651,7 @@ export type Database = {
         Update: {
           agente_identificacao?: string | null
           agente_orgao?: string | null
+          api_key_id?: string | null
           created_at?: string
           found?: boolean
           id?: string
@@ -658,7 +661,65 @@ export type Database = {
           user_agent?: string | null
           vitima_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "campo_access_logs_api_key_id_fkey"
+            columns: ["api_key_id"]
+            isOneToOne: false
+            referencedRelation: "campo_api_keys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campo_api_keys: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          created_by: string | null
+          expires_at: string | null
+          id: string
+          key_hash: string
+          key_prefix: string
+          label: string
+          last_used_at: string | null
+          orgao: string
+          tenant_id: string | null
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          key_hash: string
+          key_prefix: string
+          label: string
+          last_used_at?: string | null
+          orgao: string
+          tenant_id?: string | null
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          key_hash?: string
+          key_prefix?: string
+          label?: string
+          last_used_at?: string | null
+          orgao?: string
+          tenant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campo_api_keys_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       compartilhamento_gps: {
         Row: {
@@ -1450,6 +1511,7 @@ export type Database = {
         Row: {
           agente_identificacao: string | null
           agente_orgao: string | null
+          api_key_id: string | null
           comportamento_requerido: string | null
           contexto: string[] | null
           created_at: string
@@ -1469,6 +1531,7 @@ export type Database = {
         Insert: {
           agente_identificacao?: string | null
           agente_orgao?: string | null
+          api_key_id?: string | null
           comportamento_requerido?: string | null
           contexto?: string[] | null
           created_at?: string
@@ -1488,6 +1551,7 @@ export type Database = {
         Update: {
           agente_identificacao?: string | null
           agente_orgao?: string | null
+          api_key_id?: string | null
           comportamento_requerido?: string | null
           contexto?: string[] | null
           created_at?: string
@@ -1504,7 +1568,15 @@ export type Database = {
           user_agent?: string | null
           vitima_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "ocorrencias_campo_api_key_id_fkey"
+            columns: ["api_key_id"]
+            isOneToOne: false
+            referencedRelation: "campo_api_keys"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       palavras_triagem: {
         Row: {
