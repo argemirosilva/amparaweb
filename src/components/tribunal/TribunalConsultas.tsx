@@ -42,16 +42,28 @@ export default function TribunalConsultas() {
   const { toast } = useToast();
   const [consultas, setConsultas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filtroModo, setFiltroModo] = useState<string>("todos_filtro");
+  const [filtroNivel, setFiltroNivel] = useState<string>("todos");
+  const [filtroPeriodo, setFiltroPeriodo] = useState<string>("30d");
+  const [busca, setBusca] = useState<string>("");
   const [selected, setSelected] = useState<any>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [loadingDetail, setLoadingDetail] = useState(false);
 
+  const periodoToRange = (p: string): { ini?: string; fim?: string } => {
+    const now = new Date();
+    if (p === "todos") return {};
+    const dias = p === "7d" ? 7 : p === "30d" ? 30 : p === "90d" ? 90 : 365;
+    const ini = new Date(now.getTime() - dias * 24 * 60 * 60 * 1000);
+    return { ini: ini.toISOString() };
+  };
+
   const fetchConsultas = async () => {
     setLoading(true);
     try {
-      const body: any = { action: "listConsultas", session_token: sessionToken, limit: 50 };
-      if (filtroModo !== "todos_filtro") body.modo_saida = filtroModo;
+      const { ini, fim } = periodoToRange(filtroPeriodo);
+      const body: any = { action: "listConsultas", session_token: sessionToken, limit: 100 };
+      if (ini) body.data_inicio = ini;
+      if (fim) body.data_fim = fim;
 
       const { data } = await supabase.functions.invoke("tribunal-api", { body });
       setConsultas(data?.consultas || []);
