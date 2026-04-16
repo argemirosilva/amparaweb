@@ -4,6 +4,7 @@ import {
   fetchRilReport,
   triggerRilConsolidate,
   recomputeMetricsForWindow,
+  triggerRilBootstrap,
   type RilDashboard,
   type RilWindow,
 } from "@/services/rilService";
