@@ -119,10 +119,15 @@ const App = () => (
               <Route path="/admin/curadoria" element={<AdminCuradoria />} />
               <Route path="/admin/tribunal" element={<AdminTribunal />} />
               <Route path="/admin/inteligencia-risco" element={<AdminInteligenciaRisco />} />
+              <Route path="/admin/ampara-campo" element={<AdminAmparaCampo />} />
               
               <Route path="/admin/doc-api" element={<DocApi />} />
               <Route path="/admin/gerador-audios-ampara" element={<AdminGeradorAudios />} />
             </Route>
+            {/* AMPARA Campo - rota pública para forças de segurança */}
+            <Route path="/campo" element={<CampoBusca />} />
+            <Route path="/campo/vitima/:id" element={<CampoVitima />} />
+            <Route path="/campo/vitima/:id/registrar" element={<CampoRegistrar />} />
             <Route path="/suporte" element={<Suporte />} />
             <Route path="/privacidade" element={<Privacidade />} />
             <Route path="/:codigo" element={<Rastreamento />} />
