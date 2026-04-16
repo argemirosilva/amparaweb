@@ -92,7 +92,8 @@ export default function AdminInteligenciaRisco() {
   return (
     <div className="space-y-6" style={fontStyle}>
       <AdminPageHeader
-        label="Inteligência"
+        icon={Brain}
+        breadcrumb="Inteligência"
         title="Inteligência de Risco"
         description="Camada interpretativa que correlaciona o risco do motor AMPARA com a autoavaliação FONAR. Indicadores agregados e anonimizados (k-anonymity ≥ 5) para uso institucional."
         actions={
