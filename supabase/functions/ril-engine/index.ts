@@ -89,9 +89,9 @@ function buildRecommendation(args: {
 async function computeForUser(
   supabase: ReturnType<typeof createClient>,
   userId: string,
-  origem: "cron" | "trigger" | "manual",
+  origem: "cron" | "trigger" | "manual" | "bootstrap",
 ) {
-  // 1) Risco AMPARA (último micro/macro)
+  // 1) Risco AMPARA (último micro/macro) — fontes novas
   const { data: lastMicro } = await supabase
     .from("analysis_micro_results")
     .select("risk_level, cycle_phase, created_at, output_json")
@@ -107,6 +107,19 @@ async function computeForUser(
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
+
+  // 1b) Fallback legado: gravacoes_analises (base histórica)
+  let legacyAnalise: { nivel_risco?: string; analise_completa?: any; created_at?: string } | null = null;
+  if (!lastMicro) {
+    const { data } = await supabase
+      .from("gravacoes_analises")
+      .select("nivel_risco, analise_completa, created_at")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    legacyAnalise = data;
+  }
 
   // 2) Risco FONAR
   const { data: lastFonar } = await supabase
