@@ -156,14 +156,27 @@ Deno.serve(async (req) => {
     }
 
     if (action === "report") {
-      // Relatório executivo (texto técnico institucional)
-      const { data: m } = await supabase
+      const { label } = parseWindow(url.searchParams.get("window"));
+      // Relatório executivo (texto técnico institucional) — busca métrica da janela
+      let { data: m } = await supabase
         .from("ril_government_metrics")
         .select("*")
         .eq("scope_type", "nacional")
+        .eq("scope_value", label)
         .order("computed_at", { ascending: false })
         .limit(1)
         .maybeSingle();
+
+      if (!m) {
+        const { data: legacy } = await supabase
+          .from("ril_government_metrics")
+          .select("*")
+          .eq("scope_type", "nacional")
+          .order("computed_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        m = legacy ?? null;
+      }
 
       if (!m) {
         return new Response(
