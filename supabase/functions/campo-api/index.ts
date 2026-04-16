@@ -65,23 +65,38 @@ async function logAccess(params: {
 async function buscarVitima(query: string) {
   const digits = onlyDigits(query);
   const trimmed = (query || "").trim();
-  const isMostlyDigits = digits.length >= 8 && digits.length / Math.max(trimmed.length, 1) > 0.6;
+  const isMostlyDigits = digits.length >= 4 && digits.length / Math.max(trimmed.length, 1) > 0.6;
 
-  let q = supabase.from("usuarios").select("id, nome, cpf, telefone, criado_em").limit(20);
+  const SELECT_COLS = "id, nome_completo, telefone, cpf_hash, cpf_last4, created_at";
 
+  // CPF completo: faz duas queries (cpf_hash exato + telefone) e mescla
   if (digits.length === 11 && isMostlyDigits) {
-    // CPF completo OU celular completo
-    q = q.or(`cpf.eq.${digits},telefone.ilike.%${digits.slice(-9)}%`);
-  } else if (digits.length >= 10 && isMostlyDigits) {
+    const hash = await sha256Hex(digits);
+    const [{ data: byCpf, error: e1 }, { data: byPhone, error: e2 }] = await Promise.all([
+      supabase.from("usuarios").select(SELECT_COLS).eq("cpf_hash", hash).limit(20),
+      supabase.from("usuarios").select(SELECT_COLS).ilike("telefone", `%${digits.slice(-9)}%`).limit(20),
+    ]);
+    if (e1) console.error("[campo-api] busca cpf_hash error", e1);
+    if (e2) console.error("[campo-api] busca telefone error", e2);
+    const map = new Map<string, any>();
+    [...(byCpf ?? []), ...(byPhone ?? [])].forEach((r) => map.set(r.id, r));
+    return Array.from(map.values()).slice(0, 20);
+  }
+
+  let q = supabase.from("usuarios").select(SELECT_COLS).limit(20);
+
+  if (digits.length >= 10 && isMostlyDigits) {
     // Telefone (com ou sem DDD)
     q = q.ilike("telefone", `%${digits.slice(-9)}%`);
+  } else if (digits.length === 4 && isMostlyDigits) {
+    // CPF parcial (últimos 4 dígitos) ou telefone parcial
+    q = q.or(`cpf_last4.eq.${digits},telefone.ilike.%${digits}%`);
   } else if (digits.length >= 4 && isMostlyDigits) {
-    // CPF parcial (últimos dígitos) ou telefone parcial
-    q = q.or(`cpf.ilike.%${digits}%,telefone.ilike.%${digits}%`);
+    // Telefone parcial
+    q = q.ilike("telefone", `%${digits}%`);
   } else if (trimmed.length >= 3) {
-    // Busca por nome — case-insensitive direto via ilike (Postgres ilike ignora caixa, mas não acentos).
-    // Usamos o termo bruto para preservar acentuação no banco.
-    q = q.ilike("nome", `%${trimmed}%`);
+    // Busca por nome
+    q = q.ilike("nome_completo", `%${trimmed}%`);
   } else {
     return [];
   }
@@ -92,13 +107,13 @@ async function buscarVitima(query: string) {
     return [];
   }
 
-  // Fallback adicional: se busca por nome não retornou nada, tenta versão sem acentos
+  // Fallback: busca por nome sem acentos
   if ((data?.length ?? 0) === 0 && !isMostlyDigits && trimmed.length >= 3) {
     const norm = normalize(trimmed);
     const { data: data2 } = await supabase
       .from("usuarios")
-      .select("id, nome, cpf, telefone, criado_em")
-      .ilike("nome", `%${norm}%`)
+      .select(SELECT_COLS)
+      .ilike("nome_completo", `%${norm}%`)
       .limit(20);
     return data2 ?? [];
   }
@@ -338,9 +353,9 @@ Deno.serve(async (req) => {
       // Mascarar dados retornados
       const masked = resultados.map((r: any) => ({
         id: r.id,
-        nome_mascarado: maskName(r.nome),
+        nome_mascarado: maskName(r.nome_completo),
         telefone_mascarado: maskPhone(r.telefone),
-        cadastrada_desde: r.criado_em,
+        cadastrada_desde: r.created_at,
       }));
 
       return new Response(JSON.stringify({ resultados: masked }), {
