@@ -779,6 +779,261 @@ export type Database = {
           },
         ]
       }
+      fonar_logs: {
+        Row: {
+          context: Json | null
+          created_at: string
+          id: string
+          level: string
+          message: string
+          user_id: string | null
+        }
+        Insert: {
+          context?: Json | null
+          created_at?: string
+          id?: string
+          level?: string
+          message: string
+          user_id?: string | null
+        }
+        Update: {
+          context?: Json | null
+          created_at?: string
+          id?: string
+          level?: string
+          message?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      fonar_review_suggestions: {
+        Row: {
+          acted_action: string | null
+          acted_at: string | null
+          campos_sugeridos: string[] | null
+          created_at: string
+          id: string
+          motivo: string
+          relevance: string
+          signal_id: string | null
+          status: string
+          titulo: string
+          user_id: string
+        }
+        Insert: {
+          acted_action?: string | null
+          acted_at?: string | null
+          campos_sugeridos?: string[] | null
+          created_at?: string
+          id?: string
+          motivo: string
+          relevance?: string
+          signal_id?: string | null
+          status?: string
+          titulo: string
+          user_id: string
+        }
+        Update: {
+          acted_action?: string | null
+          acted_at?: string | null
+          campos_sugeridos?: string[] | null
+          created_at?: string
+          id?: string
+          motivo?: string
+          relevance?: string
+          signal_id?: string | null
+          status?: string
+          titulo?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fonar_review_suggestions_signal_id_fkey"
+            columns: ["signal_id"]
+            isOneToOne: false
+            referencedRelation: "fonar_signals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fonar_risk_assessments: {
+        Row: {
+          computed_at: string
+          fatores: Json
+          id: string
+          latest: boolean
+          risk_level: string
+          risk_score: number
+          user_id: string
+          version_id: string | null
+        }
+        Insert: {
+          computed_at?: string
+          fatores?: Json
+          id?: string
+          latest?: boolean
+          risk_level?: string
+          risk_score?: number
+          user_id: string
+          version_id?: string | null
+        }
+        Update: {
+          computed_at?: string
+          fatores?: Json
+          id?: string
+          latest?: boolean
+          risk_level?: string
+          risk_score?: number
+          user_id?: string
+          version_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fonar_risk_assessments_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "fonar_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fonar_settings: {
+        Row: {
+          chave: string
+          updated_at: string
+          valor: Json
+        }
+        Insert: {
+          chave: string
+          updated_at?: string
+          valor?: Json
+        }
+        Update: {
+          chave?: string
+          updated_at?: string
+          valor?: Json
+        }
+        Relationships: []
+      }
+      fonar_signals: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          event_namespace: string
+          event_source_id: string | null
+          event_source_table: string
+          id: string
+          payload: Json
+          processed_at: string | null
+          relevance: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          event_namespace: string
+          event_source_id?: string | null
+          event_source_table: string
+          id?: string
+          payload?: Json
+          processed_at?: string | null
+          relevance?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          event_namespace?: string
+          event_source_id?: string | null
+          event_source_table?: string
+          id?: string
+          payload?: Json
+          processed_at?: string | null
+          relevance?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      fonar_submissions: {
+        Row: {
+          created_at: string
+          current_step: number
+          current_version_id: string | null
+          id: string
+          respostas: Json
+          status: string
+          total_steps: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_step?: number
+          current_version_id?: string | null
+          id?: string
+          respostas?: Json
+          status?: string
+          total_steps?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_step?: number
+          current_version_id?: string | null
+          id?: string
+          respostas?: Json
+          status?: string
+          total_steps?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      fonar_versions: {
+        Row: {
+          created_at: string
+          id: string
+          origem: string
+          respostas: Json
+          submission_id: string
+          suggestion_id: string | null
+          user_id: string
+          versao: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          origem?: string
+          respostas?: Json
+          submission_id: string
+          suggestion_id?: string | null
+          user_id: string
+          versao: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          origem?: string
+          respostas?: Json
+          submission_id?: string
+          suggestion_id?: string | null
+          user_id?: string
+          versao?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fonar_versions_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "fonar_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gravacoes: {
         Row: {
           created_at: string
@@ -2387,6 +2642,7 @@ export type Database = {
     }
     Functions: {
       count_unanalyzed_gravacoes: { Args: never; Returns: number }
+      fonar_is_enabled: { Args: never; Returns: boolean }
       get_unanalyzed_gravacoes: {
         Args: { p_limit?: number }
         Returns: {
