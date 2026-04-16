@@ -4,6 +4,7 @@ import DeviceStatusCard from "@/components/dashboard/DeviceStatusCard";
 import AudioRecorderCard from "@/components/dashboard/AudioRecorderCard";
 import RiskEvolutionCard from "@/components/dashboard/RiskEvolutionCard";
 import AmparaPresenceCard from "@/components/dashboard/AmparaPresenceCard";
+import FonarHomeBlock from "@/components/fonar/FonarHomeBlock";
 import { UserSearch, ChevronRight } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -56,6 +57,9 @@ export default function HomePage() {
 
         {/* Monitoring */}
         <MonitoringStatusCard />
+
+        {/* FONAR — módulo observador independente */}
+        <FonarHomeBlock />
       </div>
     </div>
   );
