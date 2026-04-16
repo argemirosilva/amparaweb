@@ -121,9 +121,23 @@ export default function TribunalConsultas() {
 
   // Determina se a consulta selecionada possui as 3 análises (modo "todos") ou apenas uma
   const isCompleta = selected?.modo_saida === "todos" && selected?.output_json;
+
+  // Para consultas antigas: despacho/parecer ficavam dentro de output_text como JSON serializado
+  let legacyTextos: { despacho?: string; parecer?: string } = {};
+  if (isCompleta && selected?.output_text && (!selected.output_json?.despacho || !selected.output_json?.parecer)) {
+    try {
+      const parsed = JSON.parse(selected.output_text);
+      if (parsed && typeof parsed === "object") legacyTextos = parsed;
+    } catch { /* output_text não é JSON */ }
+  }
+
   const analiticoData = isCompleta ? selected.output_json.analitico : (selected?.modo_saida === "analitico" ? selected?.output_json : null);
-  const despachoTexto = isCompleta ? selected?.output_json?.despacho : (selected?.modo_saida === "despacho" ? selected?.output_text : null);
-  const parecerTexto = isCompleta ? selected?.output_json?.parecer : (selected?.modo_saida === "parecer" ? selected?.output_text : null);
+  const despachoTexto = isCompleta
+    ? (selected?.output_json?.despacho || legacyTextos.despacho || null)
+    : (selected?.modo_saida === "despacho" ? selected?.output_text : null);
+  const parecerTexto = isCompleta
+    ? (selected?.output_json?.parecer || legacyTextos.parecer || null)
+    : (selected?.modo_saida === "parecer" ? selected?.output_text : null);
 
   const ao = selected?.analysis_object || {};
   const dadosInput = ao.dados_magistrado_input || {};
