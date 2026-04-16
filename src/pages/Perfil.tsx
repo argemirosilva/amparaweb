@@ -399,6 +399,7 @@ export default function PerfilPage() {
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div><p className="text-muted-foreground">Telefone</p><p className="text-foreground">{perfil?.telefone || "-"}</p></div>
               <div><p className="text-muted-foreground">Nascimento</p><p className="text-foreground">{perfil?.data_nascimento || "-"}</p></div>
+              <div><p className="text-muted-foreground">CPF</p><p className="text-foreground">{perfil?.cpf_last4 ? `***.***.*${perfil.cpf_last4.slice(0,2)}-${perfil.cpf_last4.slice(2)}` : "-"}</p></div>
             </div>
 
             {perfilExpanded && (
