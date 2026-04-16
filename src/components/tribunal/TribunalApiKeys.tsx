@@ -41,6 +41,7 @@ export default function TribunalApiKeys() {
   const [formTenant, setFormTenant] = useState("");
   const [formOrgao, setFormOrgao] = useState("");
   const [formLabel, setFormLabel] = useState("");
+  const [tenantPopoverOpen, setTenantPopoverOpen] = useState(false);
 
   const fetchKeys = async () => {
     setLoading(true);
