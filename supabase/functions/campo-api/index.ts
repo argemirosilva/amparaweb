@@ -65,23 +65,28 @@ async function logAccess(params: {
 async function buscarVitima(query: string) {
   const digits = onlyDigits(query);
   const trimmed = (query || "").trim();
-  const isMostlyDigits = digits.length >= 8 && digits.length / Math.max(trimmed.length, 1) > 0.6;
+  const isMostlyDigits = digits.length >= 4 && digits.length / Math.max(trimmed.length, 1) > 0.6;
 
-  let q = supabase.from("usuarios").select("id, nome, cpf, telefone, criado_em").limit(20);
+  const SELECT_COLS = "id, nome_completo, telefone, cpf_hash, cpf_last4, created_at";
+
+  let q = supabase.from("usuarios").select(SELECT_COLS).limit(20);
 
   if (digits.length === 11 && isMostlyDigits) {
-    // CPF completo OU celular completo
-    q = q.or(`cpf.eq.${digits},telefone.ilike.%${digits.slice(-9)}%`);
+    // CPF completo: hash e compara com cpf_hash. Também tenta telefone (últimos 9 dígitos).
+    const hash = await sha256Hex(digits);
+    q = q.or(`cpf_hash.eq.${hash},telefone.ilike.%${digits.slice(-9)}%`);
   } else if (digits.length >= 10 && isMostlyDigits) {
     // Telefone (com ou sem DDD)
     q = q.ilike("telefone", `%${digits.slice(-9)}%`);
+  } else if (digits.length === 4 && isMostlyDigits) {
+    // CPF parcial (últimos 4 dígitos)
+    q = q.or(`cpf_last4.eq.${digits},telefone.ilike.%${digits}%`);
   } else if (digits.length >= 4 && isMostlyDigits) {
-    // CPF parcial (últimos dígitos) ou telefone parcial
-    q = q.or(`cpf.ilike.%${digits}%,telefone.ilike.%${digits}%`);
+    // Telefone parcial
+    q = q.ilike("telefone", `%${digits}%`);
   } else if (trimmed.length >= 3) {
-    // Busca por nome — case-insensitive direto via ilike (Postgres ilike ignora caixa, mas não acentos).
-    // Usamos o termo bruto para preservar acentuação no banco.
-    q = q.ilike("nome", `%${trimmed}%`);
+    // Busca por nome
+    q = q.ilike("nome_completo", `%${trimmed}%`);
   } else {
     return [];
   }
@@ -92,13 +97,13 @@ async function buscarVitima(query: string) {
     return [];
   }
 
-  // Fallback adicional: se busca por nome não retornou nada, tenta versão sem acentos
+  // Fallback: busca por nome sem acentos
   if ((data?.length ?? 0) === 0 && !isMostlyDigits && trimmed.length >= 3) {
     const norm = normalize(trimmed);
     const { data: data2 } = await supabase
       .from("usuarios")
-      .select("id, nome, cpf, telefone, criado_em")
-      .ilike("nome", `%${norm}%`)
+      .select(SELECT_COLS)
+      .ilike("nome_completo", `%${norm}%`)
       .limit(20);
     return data2 ?? [];
   }
