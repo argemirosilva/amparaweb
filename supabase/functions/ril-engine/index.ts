@@ -442,6 +442,15 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Helper: lê window do query string ou body (aceita "all" ou número de dias)
+    function parseWindow(raw: string | null | undefined): number | "all" {
+      if (!raw) return 30;
+      if (raw === "all") return "all";
+      const n = parseInt(raw, 10);
+      return Number.isFinite(n) && n > 0 ? n : 30;
+    }
+    const windowParam = parseWindow(url.searchParams.get("window"));
+
     if (action === "consolidate") {
       // Cron: processa usuárias com eventos pendentes nas últimas 6h
       const since = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
@@ -465,18 +474,26 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Recalcular indicadores agregados
-      const metrics = await computeGovernmentMetrics(supabase, 30);
+      // Recalcular indicadores agregados em TODAS as janelas suportadas
+      const windows: Array<number | "all"> = [30, 90, 120, 365, 1095, "all"];
+      const metricsAll: Record<string, unknown> = {};
+      for (const w of windows) {
+        try {
+          metricsAll[String(w)] = await computeGovernmentMetrics(supabase, w);
+        } catch (e) {
+          console.error("metrics failed for window", w, e);
+        }
+      }
 
       return new Response(
-        JSON.stringify({ ok: true, processed: results.length, metrics }),
+        JSON.stringify({ ok: true, processed: results.length, metrics: metricsAll }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
     if (action === "metrics") {
-      const m = await computeGovernmentMetrics(supabase, 30);
-      return new Response(JSON.stringify({ ok: true, ...m }), {
+      const m = await computeGovernmentMetrics(supabase, windowParam);
+      return new Response(JSON.stringify({ ok: true, window: windowParam, ...m }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
