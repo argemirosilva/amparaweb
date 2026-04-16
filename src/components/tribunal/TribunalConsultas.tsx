@@ -1,15 +1,16 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
-import { RefreshCw, Eye, FileJson, FileText, BookOpen, Copy, Download, User, UserX, Calendar, Hash, Database, AlertTriangle } from "lucide-react";
+import { RefreshCw, Eye, FileJson, FileText, BookOpen, Copy, Download, User, UserX, Calendar, Hash, Database, AlertTriangle, Search, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import TribunalAnaliticoView from "./TribunalAnaliticoView";
@@ -20,6 +21,13 @@ const MODO_LABELS: Record<string, string> = {
   despacho: "Despacho",
   parecer: "Parecer Técnico",
   todos: "Análise Completa",
+};
+
+const NIVEL_BADGE: Record<string, { label: string; cls: string }> = {
+  critico: { label: "Crítico", cls: "bg-red-600 text-white hover:bg-red-600" },
+  alto: { label: "Alto", cls: "bg-orange-500 text-white hover:bg-orange-500" },
+  moderado: { label: "Moderado", cls: "bg-yellow-500 text-white hover:bg-yellow-500" },
+  sem_risco: { label: "Sem risco", cls: "bg-emerald-600 text-white hover:bg-emerald-600" },
 };
 
 const MODO_ICONS: Record<string, any> = {
