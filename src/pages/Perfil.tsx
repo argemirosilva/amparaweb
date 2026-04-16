@@ -378,6 +378,7 @@ export default function PerfilPage() {
               cor_raca: perfil?.cor_raca || "",
               escolaridade: perfil?.escolaridade || "",
               profissao: perfil?.profissao || "",
+              cpf: "",
             });
             setEnderecoForm({
               endereco_cep: perfil?.endereco_cep || "",
