@@ -345,6 +345,12 @@ Deno.serve(async (req) => {
     // Tenta autenticar via API Key (header X-Campo-Api-Key ou body.api_key)
     const apiKeyAuth = await validateApiKey(req, body);
 
+    // Escopo geográfico (sessão de admin AMPARA - integrações por API key são tratadas como globais)
+    const sessionToken = String(body.session_token ?? "").trim();
+    const userScope = sessionToken ? await getUserScope(supabase, sessionToken) : null;
+    // API key externa = sem filtro geográfico (parceiro externo)
+    const effectiveScope = apiKeyAuth ? null : userScope;
+
     // -------- Buscar vítima --------
     if (action === "buscarVitima") {
       const query = String(body.query ?? "").trim();
