@@ -1042,7 +1042,7 @@ function CampoApiSection() {
   );
 }
 
-
+export default function DocApiPage() {
   const fases = [
     { num: 1, label: "Autenticação & Sincronização" },
     { num: 2, label: "Sessão & Configuração" },
