@@ -382,6 +382,7 @@ async function computeGovernmentMetrics(
     period_start: periodStart.toISOString(),
     period_end: periodEnd.toISOString(),
     scope_type: "nacional",
+    scope_value: windowDays === "all" ? "all" : `${windowDays}d`,
     total_amostras: total,
     k_anonymity_min: K_MIN,
     distribuicao_risco: distribuicao,
@@ -392,6 +393,7 @@ async function computeGovernmentMetrics(
     taxa_atualizacao_fonar: taxaAtualizacaoFonar,
     correlacao_ampara_fonar: { convergencia: convergencias, divergencia: divergencias },
     indicador_subnotificacao: subnotificacao,
+    payload_extra: { window: windowDays === "all" ? "all" : windowDays },
   };
 
   await supabase.from("ril_government_metrics").insert(metric);
