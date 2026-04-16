@@ -4,7 +4,7 @@ import { useAdminRole } from "@/hooks/useAdminRole";
 import ProtectedAdminRoute from "./ProtectedAdminRoute";
 import {
   LayoutDashboard, Users, Building2, ClipboardCheck, FileText, Settings,
-  LogOut, Menu, X, Plug, AudioLines, Headset, BrainCircuit, FileCode2, Scale,
+  LogOut, Menu, X, Plug, AudioLines, Headset, BrainCircuit, FileCode2, Scale, Brain,
 } from "lucide-react";
 import amparaLogo from "@/assets/ampara-circle-logo.png";
 import { useState } from "react";
@@ -12,15 +12,16 @@ import { useState } from "react";
 const TECNICO_PATHS = [
   "/admin", "/admin/relatorios",
   "/admin/usuarios", "/admin/suporte", "/admin/orgaos",
-  "/admin/auditoria", "/admin/configuracoes",
+  "/admin/auditoria", "/admin/configuracoes", "/admin/inteligencia-risco",
 ];
-const OPERACIONAL_PATHS = ["/admin", "/admin/relatorios"];
+const OPERACIONAL_PATHS = ["/admin", "/admin/relatorios", "/admin/inteligencia-risco"];
 const SUPORTE_PATHS = ["/admin/suporte", "/admin/curadoria"];
 const SUPER_ADMIN_ONLY_PATHS = ["/admin/integracoes", "/admin/doc-api"];
-const ADMIN_LEVEL_PATHS = ["/admin/curadoria", "/admin/tribunal"];
+const ADMIN_LEVEL_PATHS = ["/admin/curadoria", "/admin/tribunal", "/admin/inteligencia-risco"];
 
 const sidebarItems = [
   { label: "Dashboard", path: "/admin", icon: LayoutDashboard },
+  { label: "Inteligência de Risco", path: "/admin/inteligencia-risco", icon: Brain },
   { label: "Usuários", path: "/admin/usuarios", icon: Users },
   { label: "Suporte", path: "/admin/suporte", icon: Headset },
   { label: "Curadoria IA", path: "/admin/curadoria", icon: BrainCircuit },
