@@ -42,6 +42,7 @@ import AdminConfiguracoes from "./pages/admin/AdminConfiguracoes";
 import AdminIntegracoes from "./pages/admin/AdminIntegracoes";
 import AdminCuradoria from "./pages/admin/AdminCuradoria";
 import AdminTribunal from "./pages/admin/AdminTribunal";
+import AdminInteligenciaRisco from "./pages/admin/AdminInteligenciaRisco";
 
 import AdminLogin from "./pages/admin/AdminLogin";
 import ConfigurarConta from "./pages/ConfigurarConta";
