@@ -13,6 +13,7 @@ import {
   Activity,
   AlertTriangle,
   ArrowUpRight,
+  Brain,
   FileText,
   RefreshCw,
   ShieldCheck,
