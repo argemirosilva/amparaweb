@@ -259,6 +259,12 @@ serve(async (req) => {
     if (action === "createTenant") {
       const { tenant } = params;
       if (!tenant?.nome || !tenant?.sigla) return json({ error: "Nome e sigla são obrigatórios" }, 400);
+      // Sanitize telas_permitidas
+      if (tenant.telas_permitidas !== undefined) {
+        tenant.telas_permitidas = Array.isArray(tenant.telas_permitidas)
+          ? tenant.telas_permitidas.filter((p: any) => typeof p === "string" && p.startsWith("/admin"))
+          : [];
+      }
       const { data, error } = await supabase
         .from("tenants")
         .insert(tenant)
@@ -271,6 +277,12 @@ serve(async (req) => {
     if (action === "updateTenant") {
       const { id, updates } = params;
       if (!id) return json({ error: "ID não informado" }, 400);
+      // Sanitize telas_permitidas
+      if (updates && updates.telas_permitidas !== undefined) {
+        updates.telas_permitidas = Array.isArray(updates.telas_permitidas)
+          ? updates.telas_permitidas.filter((p: any) => typeof p === "string" && p.startsWith("/admin"))
+          : [];
+      }
       const { data, error } = await supabase
         .from("tenants")
         .update(updates)
