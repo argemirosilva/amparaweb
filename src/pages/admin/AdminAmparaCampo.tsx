@@ -4,8 +4,12 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { callCampoApi } from "@/services/campoService";
-import { Shield, FileText, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { callCampoApi, type VitimaResultado } from "@/services/campoService";
+import { Shield, FileText, Search, Loader2, ArrowRight, ExternalLink } from "lucide-react";
+import { toast } from "sonner";
 
 interface LogRow {
   id: string;
@@ -46,6 +50,13 @@ export default function AdminAmparaCampo() {
   const [ocorrencias, setOcorrencias] = useState<OcorrenciaRow[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Busca de vítima
+  const [agente, setAgente] = useState(() => localStorage.getItem("campo_agente") ?? "");
+  const [orgao, setOrgao] = useState(() => localStorage.getItem("campo_orgao") ?? "");
+  const [query, setQuery] = useState("");
+  const [buscando, setBuscando] = useState(false);
+  const [resultados, setResultados] = useState<VitimaResultado[] | null>(null);
+
   useEffect(() => {
     (async () => {
       const { ok, data } = await callCampoApi("listarAuditoria", { limit: 200 });
@@ -57,6 +68,26 @@ export default function AdminAmparaCampo() {
     })();
   }, []);
 
+  const handleBuscar = async () => {
+    if (!agente.trim()) return toast.error("Informe sua identificação (matrícula).");
+    if (query.trim().length < 3) return toast.error("Termo de busca muito curto.");
+    localStorage.setItem("campo_agente", agente.trim());
+    localStorage.setItem("campo_orgao", orgao.trim());
+    setBuscando(true);
+    setResultados(null);
+    const { ok, data } = await callCampoApi("buscarVitima", {
+      query: query.trim(),
+      agente_identificacao: agente.trim(),
+      agente_orgao: orgao.trim(),
+    });
+    setBuscando(false);
+    if (!ok) return toast.error(data?.error ?? "Falha na consulta.");
+    setResultados(data.resultados ?? []);
+    if ((data.resultados ?? []).length === 0) {
+      toast.info("Nenhum registro encontrado.");
+    }
+  };
+
   return (
     <div className="space-y-6">
       <AdminPageHeader
@@ -65,6 +96,69 @@ export default function AdminAmparaCampo() {
         description="Auditoria de consultas e ocorrências registradas em campo por agentes públicos."
         icon={Shield}
       />
+
+      {/* Busca de vítima (visão do agente) */}
+      <Card className="p-5 space-y-4">
+        <div className="flex items-center gap-2">
+          <Search className="w-4 h-4 text-muted-foreground" />
+          <h2 className="text-sm font-semibold">Buscar vítima (simulação da consulta de campo)</h2>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <Label htmlFor="agente">Sua identificação (matrícula) *</Label>
+            <Input id="agente" value={agente} onChange={(e) => setAgente(e.target.value)} placeholder="Ex: PM-123456" />
+          </div>
+          <div>
+            <Label htmlFor="orgao">Órgão</Label>
+            <Input id="orgao" value={orgao} onChange={(e) => setOrgao(e.target.value)} placeholder="Ex: PMSP, GCM, PCSP" />
+          </div>
+        </div>
+        <div>
+          <Label htmlFor="query">Buscar por nome, CPF ou telefone</Label>
+          <div className="flex gap-2 mt-1">
+            <Input
+              id="query"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleBuscar()}
+              placeholder="Ex: Maria Silva, 000.000.000-00 ou (11) 99999-9999"
+              autoComplete="off"
+            />
+            <Button onClick={handleBuscar} disabled={buscando} className="shrink-0">
+              {buscando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+              <span className="ml-2 hidden sm:inline">Buscar</span>
+            </Button>
+          </div>
+          <p className="text-[11px] text-muted-foreground mt-1">
+            Esta consulta também é auditada e aparece na lista de logs abaixo.
+          </p>
+        </div>
+
+        {resultados && resultados.length > 0 && (
+          <div className="border rounded-md divide-y">
+            {resultados.map((v) => (
+              <a
+                key={v.id}
+                href={`/campo/vitima/${v.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between p-3 hover:bg-muted/60 transition-colors"
+              >
+                <div>
+                  <p className="font-medium text-sm">{v.nome_mascarado}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {v.telefone_mascarado} · cadastrada desde {new Date(v.cadastrada_desde).toLocaleDateString("pt-BR")}
+                  </p>
+                </div>
+                <ExternalLink className="w-4 h-4 text-muted-foreground" />
+              </a>
+            ))}
+          </div>
+        )}
+        {resultados && resultados.length === 0 && (
+          <p className="text-sm text-muted-foreground text-center py-3">Nenhum registro encontrado.</p>
+        )}
+      </Card>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card className="p-5">
