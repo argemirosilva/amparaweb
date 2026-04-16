@@ -699,12 +699,13 @@ async function handleToggleApiKey(supabase: any, auth: AuthResult, body: any) {
 // ── Search handlers ──
 
 async function handleSearchVitima(supabase: any, _auth: AuthResult, body: any) {
-  const { nome, telefone } = body;
-  if (!nome && !telefone) return json({ error: "Informe nome ou telefone" }, 400);
+  const { nome, telefone, cpf } = body;
+  if (!nome && !telefone && !cpf) return json({ error: "Informe ao menos um campo: nome, telefone ou CPF" }, 400);
 
   let query = supabase.from("usuarios").select("id, nome_completo, email, telefone, endereco_cidade, endereco_uf, cor_raca, escolaridade, profissao, mora_com_agressor, tem_filhos, data_nascimento, status");
   if (nome) query = query.ilike("nome_completo", `%${nome}%`);
   if (telefone) query = query.ilike("telefone", `%${telefone}%`);
+  if (cpf) query = query.ilike("email", `%${cpf}%`);
   const { data, error } = await query.limit(10);
   if (error) return json({ error: error.message }, 500);
   return json({ success: true, vitimas: data || [] });
@@ -712,7 +713,7 @@ async function handleSearchVitima(supabase: any, _auth: AuthResult, body: any) {
 
 async function handleSearchAgressor(supabase: any, _auth: AuthResult, body: any) {
   const { nome, cpf_last4 } = body;
-  if (!nome && !cpf_last4) return json({ error: "Informe nome ou CPF" }, 400);
+  if (!nome && !cpf_last4) return json({ error: "Informe ao menos um campo: nome ou CPF (últimos 4)" }, 400);
 
   let query = supabase.from("agressores").select("id, nome, display_name_masked, risk_score, risk_level, forca_seguranca, tem_arma_em_casa, primary_city_uf, profession, aliases, cor_raca, escolaridade, data_nascimento, cpf_last4, last_incident_at, quality_score, neighborhoods, xingamentos_frequentes");
   if (cpf_last4) query = query.eq("cpf_last4", cpf_last4);

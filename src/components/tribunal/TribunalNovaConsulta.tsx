@@ -91,6 +91,7 @@ export default function TribunalNovaConsulta({ onConsultaCriada }: Props) {
   // Search state
   const [vitimaBusca, setVitimaBusca] = useState("");
   const [vitimaTelBusca, setVitimaTelBusca] = useState("");
+  const [vitimaCpfBusca, setVitimaCpfBusca] = useState("");
   const [vitimaResults, setVitimaResults] = useState<VitimaResult[]>([]);
   const [selectedVitima, setSelectedVitima] = useState<VitimaResult | null>(null);
 
@@ -115,11 +116,13 @@ export default function TribunalNovaConsulta({ onConsultaCriada }: Props) {
 
   // ── Search handlers ──
 
+  const vitimaSearchEnabled = !!(vitimaBusca || vitimaTelBusca || vitimaCpfBusca);
+
   async function searchVitima() {
-    if (!vitimaBusca && !vitimaTelBusca) return;
+    if (!vitimaSearchEnabled) return;
     setLoading(true);
     try {
-      const data = await tribunalApi(sessionToken!, { action: "searchVitima", nome: vitimaBusca || undefined, telefone: vitimaTelBusca || undefined });
+      const data = await tribunalApi(sessionToken!, { action: "searchVitima", nome: vitimaBusca || undefined, telefone: vitimaTelBusca || undefined, cpf: vitimaCpfBusca || undefined });
       setVitimaResults(data.vitimas || []);
       if (data.vitimas?.length === 0) toast({ title: "Nenhuma vítima encontrada", description: "Tente com outros termos" });
     } catch (e: any) {
@@ -141,8 +144,10 @@ export default function TribunalNovaConsulta({ onConsultaCriada }: Props) {
     setStep("busca_agressor");
   }
 
+  const agressorSearchEnabled = !!(agressorBusca || agressorCpfBusca);
+
   async function searchAgressor() {
-    if (!agressorBusca && !agressorCpfBusca) return;
+    if (!agressorSearchEnabled) return;
     setLoading(true);
     try {
       const data = await tribunalApi(sessionToken!, { action: "searchAgressor", nome: agressorBusca || undefined, cpf_last4: agressorCpfBusca || undefined });
