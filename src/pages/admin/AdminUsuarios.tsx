@@ -31,6 +31,7 @@ const ROLE_LABELS: Record<string, string> = {
   admin_tenant: "Operacional",
   operador: "Operacional",
   suporte: "Suporte",
+  magistrado: "Magistrado",
 };
 
 interface TenantOption {
@@ -503,6 +504,7 @@ export default function AdminUsuarios() {
                     <option value="admin_master">Técnico</option>
                     <option value="operador">Operacional</option>
                     <option value="suporte">Suporte</option>
+                    <option value="magistrado">Magistrado (acesso nacional ao Tribunal)</option>
                   </select>
                 </div>
                 <div>
@@ -880,6 +882,7 @@ export default function AdminUsuarios() {
                     <option value="operador">Operacional</option>
                     <option value="admin_tenant">Administrador do Órgão</option>
                     <option value="suporte">Suporte</option>
+                    <option value="magistrado">Magistrado (acesso nacional ao Tribunal)</option>
                   </select>
                 </div>
 

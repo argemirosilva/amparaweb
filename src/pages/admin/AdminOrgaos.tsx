@@ -35,9 +35,25 @@ interface Tenant {
   responsavel_email: string | null;
   ativo: boolean;
   max_usuarios: number;
+  telas_permitidas?: string[];
   usuarios_ativos?: number;
   created_at: string;
 }
+
+// Mesma lista do AdminLayout (sidebar)
+const AVAILABLE_SCREENS: { path: string; label: string }[] = [
+  { path: "/admin", label: "Dashboard" },
+  { path: "/admin/usuarios", label: "Usuários" },
+  { path: "/admin/suporte", label: "Suporte" },
+  { path: "/admin/curadoria", label: "Curadoria IA" },
+  { path: "/admin/tribunal", label: "Tribunal" },
+  { path: "/admin/orgaos", label: "Entidades" },
+  { path: "/admin/auditoria", label: "Auditoria" },
+  { path: "/admin/relatorios", label: "Relatórios" },
+  { path: "/admin/configuracoes", label: "Configurações" },
+  { path: "/admin/integracoes", label: "Integrações" },
+  { path: "/admin/doc-api", label: "Doc API" },
+];
 
 const emptyForm = {
   nome: "",
@@ -53,6 +69,7 @@ const emptyForm = {
   responsavel_email: null as string | null,
   ativo: true,
   max_usuarios: 50,
+  telas_permitidas: [] as string[],
 };
 
 export default function AdminOrgaos() {
@@ -101,8 +118,29 @@ export default function AdminOrgaos() {
       responsavel_email: t.responsavel_email,
       ativo: t.ativo,
       max_usuarios: t.max_usuarios,
+      telas_permitidas: Array.isArray(t.telas_permitidas) ? t.telas_permitidas : [],
     });
     setDialogOpen(true);
+  }
+
+  function toggleTela(path: string) {
+    setForm((f) => {
+      const has = f.telas_permitidas.includes(path);
+      return {
+        ...f,
+        telas_permitidas: has
+          ? f.telas_permitidas.filter((p) => p !== path)
+          : [...f.telas_permitidas, path],
+      };
+    });
+  }
+
+  function selectAllTelas() {
+    setForm((f) => ({ ...f, telas_permitidas: AVAILABLE_SCREENS.map((s) => s.path) }));
+  }
+
+  function clearAllTelas() {
+    setForm((f) => ({ ...f, telas_permitidas: [] }));
   }
 
   async function handleSave() {
@@ -263,6 +301,7 @@ export default function AdminOrgaos() {
                   <option value="ong">ONG</option>
                   <option value="parceiro">Parceiro</option>
                   <option value="interno">Interno (Suporte/Técnico)</option>
+                  <option value="tribunal">Tribunal / Magistratura</option>
                 </select>
               </div>
               <div>
@@ -304,6 +343,35 @@ export default function AdminOrgaos() {
               <div className="flex items-center gap-2 self-end pb-1">
                 <input type="checkbox" checked={form.ativo} onChange={(e) => setForm({ ...form, ativo: e.target.checked })} className="w-4 h-4" />
                 <label className="text-xs font-medium" style={{ color: "hsl(220 9% 46%)" }}>Ativo</label>
+              </div>
+
+              {/* Telas Permitidas */}
+              <div className="sm:col-span-2 border-t pt-3 mt-1" style={{ borderColor: "hsl(220 13% 91%)" }}>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs font-semibold" style={{ color: "hsl(220 13% 18%)" }}>
+                    Telas Permitidas
+                  </label>
+                  <div className="flex gap-2">
+                    <button type="button" onClick={selectAllTelas} className="text-[11px] underline text-primary">Selecionar todas</button>
+                    <button type="button" onClick={clearAllTelas} className="text-[11px] underline text-muted-foreground">Limpar</button>
+                  </div>
+                </div>
+                <p className="text-[11px] mb-2" style={{ color: "hsl(220 9% 46%)" }}>
+                  Quando vazio, todas as telas (conforme o papel do usuário) ficam disponíveis. Selecione para restringir.
+                </p>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {AVAILABLE_SCREENS.map((s) => (
+                    <label key={s.path} className="flex items-center gap-2 text-xs cursor-pointer rounded px-2 py-1 hover:bg-muted/40" style={{ color: "hsl(220 13% 18%)" }}>
+                      <input
+                        type="checkbox"
+                        checked={form.telas_permitidas.includes(s.path)}
+                        onChange={() => toggleTela(s.path)}
+                        className="w-3.5 h-3.5"
+                      />
+                      {s.label}
+                    </label>
+                  ))}
+                </div>
               </div>
             </div>
             <div className="flex gap-2 justify-end mt-5">

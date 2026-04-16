@@ -38,10 +38,11 @@ export default function AdminLayout() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { logout, usuario } = useAuth();
-  const { roles, hasRole, tenantSigla, isSuporte, isAdministrador, isSuperAdmin } = useAdminRole();
+  const { hasRole, tenantSigla, telasPermitidas, isSuporte, isMagistrado, isAdministrador, isSuperAdmin } = useAdminRole();
   const isTecnico = hasRole("super_administrador") || hasRole("administrador") || hasRole("admin_master");
   const isOperacional = hasRole("admin_tenant") || hasRole("operador");
-  const isSupportOnly = isSuporte && !isTecnico && !isOperacional;
+  const isSupportOnly = isSuporte && !isTecnico && !isOperacional && !isMagistrado;
+  const isMagistradoOnly = isMagistrado && !isTecnico && !isOperacional && !isSuporte;
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const handleLogout = async () => {
@@ -50,6 +51,36 @@ export default function AdminLayout() {
   };
 
   const fontStyle = { fontFamily: "Inter, Roboto, sans-serif" };
+
+  // Filtra itens conforme o papel + restrição de telas da entidade
+  const visibleItems = sidebarItems.filter((item) => {
+    // 1. Magistrado puro: somente Tribunal
+    if (isMagistradoOnly) {
+      return item.path === "/admin/tribunal";
+    }
+
+    // 2. Regras por papel
+    let allowedByRole = false;
+    if (SUPER_ADMIN_ONLY_PATHS.includes(item.path)) {
+      allowedByRole = isSuperAdmin;
+    } else if (ADMIN_LEVEL_PATHS.includes(item.path)) {
+      allowedByRole = isSuperAdmin || isAdministrador || isSuporte;
+    } else if (isSupportOnly) {
+      allowedByRole = SUPORTE_PATHS.includes(item.path);
+    } else if (isTecnico) {
+      allowedByRole = TECNICO_PATHS.includes(item.path);
+    } else if (isOperacional) {
+      allowedByRole = OPERACIONAL_PATHS.includes(item.path);
+    }
+
+    if (!allowedByRole) return false;
+
+    // 3. Filtro por telas permitidas da entidade (não aplica a Super Admin/Admin)
+    if (telasPermitidas.length > 0 && !isSuperAdmin && !isAdministrador) {
+      return telasPermitidas.includes(item.path);
+    }
+    return true;
+  });
 
   return (
     <ProtectedAdminRoute>
@@ -91,7 +122,17 @@ export default function AdminLayout() {
               {usuario?.nome_completo || "Administrador"}
             </p>
             <p className="text-xs uppercase" style={{ color: "hsl(0 0% 60%)" }}>
-              {isSuperAdmin ? "Super Admin" : isAdministrador ? "Administrador" : hasRole("admin_master") ? "Técnico" : isSupportOnly ? "Suporte" : "Operacional"}
+              {isSuperAdmin
+                ? "Super Admin"
+                : isAdministrador
+                ? "Administrador"
+                : hasRole("admin_master")
+                ? "Técnico"
+                : isMagistradoOnly
+                ? "Magistrado"
+                : isSupportOnly
+                ? "Suporte"
+                : "Operacional"}
             </p>
           </div>
           <button
@@ -115,16 +156,7 @@ export default function AdminLayout() {
           style={{ background: "hsl(220 15% 15%)", borderColor: "hsl(220 12% 24%)" }}
         >
           <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
-            {sidebarItems
-              .filter((item) => {
-                if (SUPER_ADMIN_ONLY_PATHS.includes(item.path)) return isSuperAdmin;
-                if (ADMIN_LEVEL_PATHS.includes(item.path)) return isSuperAdmin || isAdministrador || isSuporte;
-                if (isSupportOnly) return SUPORTE_PATHS.includes(item.path);
-                if (isTecnico) return TECNICO_PATHS.includes(item.path);
-                if (isOperacional) return OPERACIONAL_PATHS.includes(item.path);
-                return false;
-              })
-              .map((item) => {
+            {visibleItems.map((item) => {
               const isActive = pathname === item.path || (item.path !== "/admin" && pathname.startsWith(item.path));
               const Icon = item.icon;
               return (

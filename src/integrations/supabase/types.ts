@@ -1761,6 +1761,7 @@ export type Database = {
           responsavel_email: string | null
           responsavel_nome: string | null
           sigla: string
+          telas_permitidas: Json
           telefone_contato: string | null
           tipo: string
           uf: string | null
@@ -1779,6 +1780,7 @@ export type Database = {
           responsavel_email?: string | null
           responsavel_nome?: string | null
           sigla: string
+          telas_permitidas?: Json
           telefone_contato?: string | null
           tipo?: string
           uf?: string | null
@@ -1797,6 +1799,7 @@ export type Database = {
           responsavel_email?: string | null
           responsavel_nome?: string | null
           sigla?: string
+          telas_permitidas?: Json
           telefone_contato?: string | null
           tipo?: string
           uf?: string | null
@@ -2519,6 +2522,7 @@ export type Database = {
         | "suporte"
         | "administrador"
         | "super_administrador"
+        | "magistrado"
       support_access_scope:
         | "read_metadata"
         | "read_transcription"
@@ -2702,6 +2706,7 @@ export const Constants = {
         "suporte",
         "administrador",
         "super_administrador",
+        "magistrado",
       ],
       support_access_scope: [
         "read_metadata",
