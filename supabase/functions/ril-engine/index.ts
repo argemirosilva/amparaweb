@@ -89,9 +89,9 @@ function buildRecommendation(args: {
 async function computeForUser(
   supabase: ReturnType<typeof createClient>,
   userId: string,
-  origem: "cron" | "trigger" | "manual",
+  origem: "cron" | "trigger" | "manual" | "bootstrap",
 ) {
-  // 1) Risco AMPARA (último micro/macro)
+  // 1) Risco AMPARA (último micro/macro) — fontes novas
   const { data: lastMicro } = await supabase
     .from("analysis_micro_results")
     .select("risk_level, cycle_phase, created_at, output_json")
@@ -108,6 +108,19 @@ async function computeForUser(
     .limit(1)
     .maybeSingle();
 
+  // 1b) Fallback legado: gravacoes_analises (base histórica)
+  let legacyAnalise: { nivel_risco?: string; analise_completa?: any; created_at?: string } | null = null;
+  if (!lastMicro) {
+    const { data } = await supabase
+      .from("gravacoes_analises")
+      .select("nivel_risco, analise_completa, created_at")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    legacyAnalise = data;
+  }
+
   // 2) Risco FONAR
   const { data: lastFonar } = await supabase
     .from("fonar_risk_assessments")
@@ -116,13 +129,21 @@ async function computeForUser(
     .eq("latest", true)
     .maybeSingle();
 
-  // 3) Pânico recente (últimas 24h)
+  // 3) Pânico recente (últimas 24h) — para flag panicked
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
   const { data: recentPanic } = await supabase
     .from("alertas_panico")
     .select("id, criado_em")
     .eq("user_id", userId)
     .gte("criado_em", since)
+    .limit(1);
+
+  // 3b) Pânico em qualquer momento (para bootstrap histórico)
+  const { data: anyPanic } = await supabase
+    .from("alertas_panico")
+    .select("id, criado_em")
+    .eq("user_id", userId)
+    .order("criado_em", { ascending: false })
     .limit(1);
 
   // 4) Snapshots anteriores (tendência + recorrência)
@@ -135,7 +156,9 @@ async function computeForUser(
     .order("computed_at", { ascending: false })
     .limit(5);
 
-  const amparaLevel = (lastMicro?.risk_level ?? "sem_risco") as string;
+  // Mapeia nível AMPARA: prioriza micro novo, senão legacy gravacoes_analises
+  const legacyLevel = (legacyAnalise?.nivel_risco ?? "sem_risco") as string;
+  const amparaLevel = (lastMicro?.risk_level ?? legacyLevel) as string;
   const fonarLevel = (lastFonar?.risk_level ?? "sem_risco") as string;
   const ampN = normAmpara(amparaLevel);
   const fonN = normFonar(fonarLevel);
@@ -160,9 +183,9 @@ async function computeForUser(
 
   // Fatores críticos ativos
   const fatores: string[] = [];
-  const microJson = (lastMicro?.output_json ?? {}) as Record<string, unknown>;
+  const microJson = (lastMicro?.output_json ?? legacyAnalise?.analise_completa ?? {}) as Record<string, unknown>;
   const microRiskFactors = (microJson?.fatores_de_risco ?? microJson?.fatores ??
-    []) as string[];
+    microJson?.categorias ?? []) as string[];
   if (Array.isArray(microRiskFactors)) fatores.push(...microRiskFactors);
   const fonarFatores = (lastFonar?.fatores ?? {}) as Record<string, unknown>;
   if (Array.isArray(fonarFatores?.principais)) {
@@ -183,7 +206,9 @@ async function computeForUser(
     }
   }
 
-  const panicked = (recentPanic?.length ?? 0) > 0;
+  const panicked = origem === "bootstrap"
+    ? (anyPanic?.length ?? 0) > 0
+    : (recentPanic?.length ?? 0) > 0;
   const priority = classifyPriority(ampN, fonN, panicked);
   const confidence = classifyConfidence(divergence, prevSnaps?.length ?? 0);
   const recomendacao = buildRecommendation({
@@ -496,6 +521,101 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ ok: true, window: windowParam, ...m }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    if (action === "bootstrap") {
+      // Gera snapshots históricos para TODOS os usuários com dados (legado + novos)
+      // Coleta union de user_ids de fontes possíveis
+      const userIds = new Set<string>();
+
+      // gravacoes_analises (legado, 2k+ análises)
+      const PAGE = 1000;
+      let offset = 0;
+      while (true) {
+        const { data, error } = await supabase
+          .from("gravacoes_analises")
+          .select("user_id")
+          .range(offset, offset + PAGE - 1);
+        if (error) break;
+        if (!data || data.length === 0) break;
+        for (const r of data) if (r.user_id) userIds.add(r.user_id as string);
+        if (data.length < PAGE) break;
+        offset += PAGE;
+      }
+
+      // analysis_micro_results
+      offset = 0;
+      while (true) {
+        const { data } = await supabase
+          .from("analysis_micro_results")
+          .select("user_id")
+          .range(offset, offset + PAGE - 1);
+        if (!data || data.length === 0) break;
+        for (const r of data) if (r.user_id) userIds.add(r.user_id as string);
+        if (data.length < PAGE) break;
+        offset += PAGE;
+      }
+
+      // alertas_panico
+      offset = 0;
+      while (true) {
+        const { data } = await supabase
+          .from("alertas_panico")
+          .select("user_id")
+          .range(offset, offset + PAGE - 1);
+        if (!data || data.length === 0) break;
+        for (const r of data) if (r.user_id) userIds.add(r.user_id as string);
+        if (data.length < PAGE) break;
+        offset += PAGE;
+      }
+
+      // fonar_risk_assessments
+      offset = 0;
+      while (true) {
+        const { data } = await supabase
+          .from("fonar_risk_assessments")
+          .select("user_id")
+          .range(offset, offset + PAGE - 1);
+        if (!data || data.length === 0) break;
+        for (const r of data) if (r.user_id) userIds.add(r.user_id as string);
+        if (data.length < PAGE) break;
+        offset += PAGE;
+      }
+
+      const allUsers = Array.from(userIds);
+      let ok = 0;
+      let fail = 0;
+      for (const uid of allUsers) {
+        try {
+          await computeForUser(supabase, uid, "bootstrap");
+          ok++;
+        } catch (e) {
+          fail++;
+          console.error("bootstrap snapshot failed", uid, e);
+        }
+      }
+
+      // Recalcula métricas em todas as janelas
+      const windows: Array<number | "all"> = [30, 90, 120, 365, 1095, "all"];
+      const metricsAll: Record<string, unknown> = {};
+      for (const w of windows) {
+        try {
+          metricsAll[String(w)] = await computeGovernmentMetrics(supabase, w);
+        } catch (e) {
+          console.error("metrics failed for window", w, e);
+        }
+      }
+
+      return new Response(
+        JSON.stringify({
+          ok: true,
+          users_total: allUsers.length,
+          snapshots_created: ok,
+          failed: fail,
+          metrics: metricsAll,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
     }
 
     return new Response(JSON.stringify({ error: "unknown action" }), {

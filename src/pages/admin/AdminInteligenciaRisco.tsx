@@ -4,6 +4,7 @@ import {
   fetchRilReport,
   triggerRilConsolidate,
   recomputeMetricsForWindow,
+  triggerRilBootstrap,
   type RilDashboard,
   type RilWindow,
 } from "@/services/rilService";
@@ -101,6 +102,18 @@ export default function AdminInteligenciaRisco() {
     }
   }
 
+  async function gerarHistorico() {
+    toast.info("Gerando snapshots históricos da base inteira… isso pode levar 1–2 min.");
+    try {
+      const r = await triggerRilBootstrap();
+      toast.success(`Snapshots gerados: ${r.snapshots_created ?? 0} de ${r.users_total ?? 0} usuárias.`);
+      await load();
+    } catch (e) {
+      console.error(e);
+      toast.error("Falha ao gerar histórico");
+    }
+  }
+
   function labelFor(w: RilWindow) {
     return WINDOW_OPTIONS.find((o) => o.value === w)?.label ?? w;
   }
@@ -151,6 +164,9 @@ export default function AdminInteligenciaRisco() {
             <Button variant="outline" size="sm" onClick={reprocessar}>
               <RefreshCw className="w-4 h-4 mr-2" /> Reprocessar tudo
             </Button>
+            <Button variant="secondary" size="sm" onClick={gerarHistorico}>
+              <Brain className="w-4 h-4 mr-2" /> Gerar snapshots históricos
+            </Button>
             <Button size="sm" onClick={gerarRelatorio} disabled={reportLoading}>
               <FileText className="w-4 h-4 mr-2" /> Gerar relatório
             </Button>
@@ -165,8 +181,8 @@ export default function AdminInteligenciaRisco() {
       {!loading && !m && (
         <Card className="p-6">
           <p className="text-sm text-muted-foreground">
-            Ainda não há indicadores computados para <strong>{labelFor(windowSel)}</strong>. Clique em
-            <em> "Recalcular janela"</em> para gerar a análise agora.
+            Ainda não há indicadores computados para <strong>{labelFor(windowSel)}</strong>. Se a base ainda não tem snapshots, clique em
+            <em> "Gerar snapshots históricos"</em> para varrer todo o histórico (gravações, FONAR e pânico) e gerar a camada de inteligência.
           </p>
         </Card>
       )}

@@ -88,3 +88,13 @@ export async function recomputeMetricsForWindow(window: RilWindow) {
   });
   return await res.json();
 }
+
+export async function triggerRilBootstrap() {
+  const res = await fetch(buildUrl(FN_ENGINE, { action: "bootstrap" }), {
+    method: "POST",
+    headers: { ...authHeaders(), "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "bootstrap" }),
+  });
+  if (!res.ok) throw new Error(`RIL bootstrap error: ${res.status}`);
+  return await res.json();
+}
