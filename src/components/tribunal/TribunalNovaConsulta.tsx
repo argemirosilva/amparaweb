@@ -316,7 +316,7 @@ export default function TribunalNovaConsulta({ onConsultaCriada }: Props) {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="sm:col-span-2">
+              <div>
                 <Label className="text-xs">Nome completo</Label>
                 <Input value={vitimaBusca} onChange={(e) => setVitimaBusca(e.target.value)} placeholder="Nome da vítima" onKeyDown={(e) => e.key === "Enter" && searchVitima()} />
               </div>
@@ -324,9 +324,14 @@ export default function TribunalNovaConsulta({ onConsultaCriada }: Props) {
                 <Label className="text-xs">Telefone</Label>
                 <Input value={vitimaTelBusca} onChange={(e) => setVitimaTelBusca(e.target.value)} placeholder="(00)00000-0000" onKeyDown={(e) => e.key === "Enter" && searchVitima()} />
               </div>
+              <div>
+                <Label className="text-xs">CPF</Label>
+                <Input value={vitimaCpfBusca} onChange={(e) => setVitimaCpfBusca(e.target.value)} placeholder="000.000.000-00" onKeyDown={(e) => e.key === "Enter" && searchVitima()} />
+              </div>
             </div>
+            <p className="text-[11px] text-muted-foreground">Preencha ao menos um campo. Múltiplos campos refinam a busca.</p>
             <div className="flex gap-2">
-              <Button onClick={searchVitima} disabled={loading || (!vitimaBusca && !vitimaTelBusca)} size="sm">
+              <Button onClick={searchVitima} disabled={loading || !vitimaSearchEnabled} size="sm">
                 {loading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Search className="w-4 h-4 mr-1" />}
                 Buscar
               </Button>
@@ -389,7 +394,7 @@ export default function TribunalNovaConsulta({ onConsultaCriada }: Props) {
               </div>
             </div>
             <div className="flex gap-2">
-              <Button onClick={searchAgressor} disabled={loading || (!agressorBusca && !agressorCpfBusca)} size="sm">
+              <Button onClick={searchAgressor} disabled={loading || !agressorSearchEnabled} size="sm">
                 {loading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Search className="w-4 h-4 mr-1" />}
                 Buscar
               </Button>
