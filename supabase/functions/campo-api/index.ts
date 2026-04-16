@@ -15,6 +15,8 @@ const supabase = createClient(SUPABASE_URL, SERVICE_ROLE, {
   auth: { persistSession: false },
 });
 
+import { getUserScope, applyScopeToUsuariosQuery, isVitimaInScope } from "../_shared/scope.ts";
+
 // ================== Helpers ==================
 
 async function sha256Hex(input: string): Promise<string> {
@@ -89,20 +91,20 @@ async function validateApiKey(req: Request, body: any): Promise<{ id: string; or
 
 // ================== Busca de vítima ==================
 
-async function buscarVitima(query: string) {
+async function buscarVitima(query: string, scope?: any) {
   const digits = onlyDigits(query);
   const trimmed = (query || "").trim();
   const isMostlyDigits = digits.length >= 4 && digits.length / Math.max(trimmed.length, 1) > 0.6;
 
-  const SELECT_COLS = "id, nome_completo, telefone, cpf_hash, cpf_last4, created_at";
+  const SELECT_COLS = "id, nome_completo, telefone, cpf_hash, cpf_last4, created_at, endereco_uf, endereco_cidade";
 
   // CPF completo: faz duas queries (cpf_hash exato + telefone) e mescla
   if (digits.length === 11 && isMostlyDigits) {
     const hash = await sha256Hex(digits);
-    const [{ data: byCpf, error: e1 }, { data: byPhone, error: e2 }] = await Promise.all([
-      supabase.from("usuarios").select(SELECT_COLS).eq("cpf_hash", hash).limit(20),
-      supabase.from("usuarios").select(SELECT_COLS).ilike("telefone", `%${digits.slice(-9)}%`).limit(20),
-    ]);
+    let q1 = supabase.from("usuarios").select(SELECT_COLS).eq("cpf_hash", hash).limit(20);
+    let q2 = supabase.from("usuarios").select(SELECT_COLS).ilike("telefone", `%${digits.slice(-9)}%`).limit(20);
+    if (scope) { q1 = applyScopeToUsuariosQuery(q1, scope); q2 = applyScopeToUsuariosQuery(q2, scope); }
+    const [{ data: byCpf, error: e1 }, { data: byPhone, error: e2 }] = await Promise.all([q1, q2]);
     if (e1) console.error("[campo-api] busca cpf_hash error", e1);
     if (e2) console.error("[campo-api] busca telefone error", e2);
     const map = new Map<string, any>();
@@ -113,20 +115,18 @@ async function buscarVitima(query: string) {
   let q = supabase.from("usuarios").select(SELECT_COLS).limit(20);
 
   if (digits.length >= 10 && isMostlyDigits) {
-    // Telefone (com ou sem DDD)
     q = q.ilike("telefone", `%${digits.slice(-9)}%`);
   } else if (digits.length === 4 && isMostlyDigits) {
-    // CPF parcial (últimos 4 dígitos) ou telefone parcial
     q = q.or(`cpf_last4.eq.${digits},telefone.ilike.%${digits}%`);
   } else if (digits.length >= 4 && isMostlyDigits) {
-    // Telefone parcial
     q = q.ilike("telefone", `%${digits}%`);
   } else if (trimmed.length >= 3) {
-    // Busca por nome
     q = q.ilike("nome_completo", `%${trimmed}%`);
   } else {
     return [];
   }
+
+  if (scope) q = applyScopeToUsuariosQuery(q, scope);
 
   const { data, error } = await q;
   if (error) {
@@ -134,14 +134,11 @@ async function buscarVitima(query: string) {
     return [];
   }
 
-  // Fallback: busca por nome sem acentos
   if ((data?.length ?? 0) === 0 && !isMostlyDigits && trimmed.length >= 3) {
     const norm = normalize(trimmed);
-    const { data: data2 } = await supabase
-      .from("usuarios")
-      .select(SELECT_COLS)
-      .ilike("nome_completo", `%${norm}%`)
-      .limit(20);
+    let q3 = supabase.from("usuarios").select(SELECT_COLS).ilike("nome_completo", `%${norm}%`).limit(20);
+    if (scope) q3 = applyScopeToUsuariosQuery(q3, scope);
+    const { data: data2 } = await q3;
     return data2 ?? [];
   }
 
@@ -348,6 +345,12 @@ Deno.serve(async (req) => {
     // Tenta autenticar via API Key (header X-Campo-Api-Key ou body.api_key)
     const apiKeyAuth = await validateApiKey(req, body);
 
+    // Escopo geográfico (sessão de admin AMPARA - integrações por API key são tratadas como globais)
+    const sessionToken = String(body.session_token ?? "").trim();
+    const userScope = sessionToken ? await getUserScope(supabase, sessionToken) : null;
+    // API key externa = sem filtro geográfico (parceiro externo)
+    const effectiveScope = apiKeyAuth ? null : userScope;
+
     // -------- Buscar vítima --------
     if (action === "buscarVitima") {
       const query = String(body.query ?? "").trim();
@@ -367,7 +370,7 @@ Deno.serve(async (req) => {
         });
       }
 
-      const resultados = await buscarVitima(query);
+      const resultados = await buscarVitima(query, effectiveScope);
       const tipo = onlyDigits(query).length === 11 ? "busca_cpf" : onlyDigits(query).length >= 10 ? "busca_telefone" : "busca_nome";
 
       await logAccess({
@@ -404,6 +407,21 @@ Deno.serve(async (req) => {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
+      }
+
+      // Guard geográfico: bloqueia consulta fora do escopo
+      if (effectiveScope && !effectiveScope.isGlobal) {
+        const { data: vit } = await supabase
+          .from("usuarios")
+          .select("endereco_uf, endereco_cidade")
+          .eq("id", vitimaId)
+          .maybeSingle();
+        if (!vit || !isVitimaInScope(vit, effectiveScope)) {
+          return new Response(JSON.stringify({ error: "Vítima fora do escopo geográfico autorizado." }), {
+            status: 404,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
       }
 
       const indicadores = await gerarIndicadores(vitimaId);

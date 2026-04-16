@@ -2363,12 +2363,14 @@ export type Database = {
       }
       tenants: {
         Row: {
+          acesso_nacional: boolean
           ativo: boolean
           cidade: string | null
           cnpj: string | null
           created_at: string
           email_contato: string | null
           endereco: string | null
+          escopo_geografico: string
           id: string
           max_usuarios: number
           nome: string
@@ -2382,12 +2384,14 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          acesso_nacional?: boolean
           ativo?: boolean
           cidade?: string | null
           cnpj?: string | null
           created_at?: string
           email_contato?: string | null
           endereco?: string | null
+          escopo_geografico?: string
           id?: string
           max_usuarios?: number
           nome: string
@@ -2401,12 +2405,14 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          acesso_nacional?: boolean
           ativo?: boolean
           cidade?: string | null
           cnpj?: string | null
           created_at?: string
           email_contato?: string | null
           endereco?: string | null
+          escopo_geografico?: string
           id?: string
           max_usuarios?: number
           nome?: string
@@ -2703,22 +2709,31 @@ export type Database = {
       user_roles: {
         Row: {
           created_at: string
+          escopo_cidade: string | null
+          escopo_uf: string | null
           id: string
           role: Database["public"]["Enums"]["admin_role"]
+          telas_permitidas: Json
           tenant_id: string | null
           user_id: string
         }
         Insert: {
           created_at?: string
+          escopo_cidade?: string | null
+          escopo_uf?: string | null
           id?: string
           role: Database["public"]["Enums"]["admin_role"]
+          telas_permitidas?: Json
           tenant_id?: string | null
           user_id: string
         }
         Update: {
           created_at?: string
+          escopo_cidade?: string | null
+          escopo_uf?: string | null
           id?: string
           role?: Database["public"]["Enums"]["admin_role"]
+          telas_permitidas?: Json
           tenant_id?: string | null
           user_id?: string
         }

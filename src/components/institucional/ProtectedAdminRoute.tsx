@@ -11,7 +11,7 @@ const fontStyle = { fontFamily: "Inter, Roboto, sans-serif" };
 
 export default function ProtectedAdminRoute({ children, requiredRole }: ProtectedAdminRouteProps) {
   const { usuario, loading: authLoading } = useAuth();
-  const { hasAnyAdminAccess, hasRole, isMagistrado, isSuperAdmin, isAdministrador, telasPermitidas, loading: rolesLoading } = useAdminRole();
+  const { hasAnyAdminAccess, hasRole, isMagistrado, isSuporte, isSuperAdmin, isAdministrador, telasEfetivas, loading: rolesLoading } = useAdminRole();
   const { pathname } = useLocation();
 
   if (authLoading || rolesLoading) {
@@ -59,17 +59,17 @@ export default function ProtectedAdminRoute({ children, requiredRole }: Protecte
     }
   }
 
-  // Filtro por telas_permitidas da entidade (quando configurado)
-  // Não aplica para super_administrador/administrador (acesso total) e magistrado (já tratado acima)
+  // Filtro por telas EFETIVAS (intersecção entidade + user_role)
+  // Bypass: super_administrador / administrador / suporte / magistrado têm acesso total
   if (
-    telasPermitidas.length > 0 &&
+    telasEfetivas.length > 0 &&
     !isSuperAdmin &&
     !isAdministrador &&
+    !isSuporte &&
     !isMagistrado &&
     pathname.startsWith("/admin")
   ) {
-    // /admin/login é sempre liberado; o próprio /admin (dashboard) precisa estar na lista se restringido
-    const allowed = telasPermitidas.some((tela) => {
+    const allowed = telasEfetivas.some((tela) => {
       if (tela === "/admin") return pathname === "/admin";
       return pathname === tela || pathname.startsWith(tela + "/");
     });

@@ -63,7 +63,7 @@ function anonymizeJson(obj: any): any {
   return obj;
 }
 
-async function authenticateAdmin(supabase: any, sessionToken: string): Promise<string | null> {
+async function authenticateAdmin(supabase: any, sessionToken: string): Promise<{ userId: string; roles: string[]; tenantId: string | null } | null> {
   if (!sessionToken) return null;
   const tokenHash = await hashToken(sessionToken);
   const { data: session } = await supabase
@@ -74,16 +74,28 @@ async function authenticateAdmin(supabase: any, sessionToken: string): Promise<s
     .maybeSingle();
   if (!session || new Date(session.expires_at) < new Date()) return null;
 
-  const { data: roles } = await supabase
+  const { data: roleRows } = await supabase
     .from("user_roles")
-    .select("role")
+    .select("role, tenant_id")
     .eq("user_id", session.user_id);
 
-  const hasAdmin = (roles || []).some(
-    (r: any) => r.role === "super_administrador" || r.role === "administrador" || r.role === "admin_master" || r.role === "admin_tenant"
+  const roles = (roleRows || []).map((r: any) => r.role);
+  const hasAdmin = roles.some((r: string) =>
+    r === "super_administrador" || r === "administrador" || r === "admin_master" || r === "admin_tenant"
   );
   if (!hasAdmin) return null;
-  return session.user_id;
+  const tenantId = (roleRows || []).find((r: any) => r.tenant_id)?.tenant_id || null;
+  return { userId: session.user_id, roles, tenantId };
+}
+
+const GLOBAL_ROLES = new Set(["super_administrador", "administrador"]);
+const TENANT_SCOPED_ROLES = new Set(["admin_tenant"]);
+
+function isGlobalAdmin(roles: string[]): boolean {
+  return roles.some((r) => GLOBAL_ROLES.has(r));
+}
+function isTenantAdmin(roles: string[]): boolean {
+  return roles.some((r) => TENANT_SCOPED_ROLES.has(r));
 }
 
 serve(async (req) => {
@@ -98,12 +110,17 @@ serve(async (req) => {
 
     if (!session_token) return json({ error: "Sessão não informada" }, 401);
 
-    const userId = await authenticateAdmin(supabase, session_token);
-    if (!userId) return json({ error: "Acesso negado. Permissão de administrador necessária." }, 403);
+    const auth = await authenticateAdmin(supabase, session_token);
+    if (!auth) return json({ error: "Acesso negado. Permissão de administrador necessária." }, 403);
+    const userId = auth.userId;
+    const callerRoles = auth.roles;
+    const callerTenantId = auth.tenantId;
+    const callerIsGlobal = isGlobalAdmin(callerRoles);
+    const callerIsTenantAdmin = isTenantAdmin(callerRoles);
 
     // ========== CREATE USER (Admin invite) ==========
     if (action === "createUser") {
-      const { nome_completo, email, tenant_id, role, app_url } = params;
+      const { nome_completo, email, tenant_id, role, app_url, telas_permitidas, escopo_uf, escopo_cidade } = params;
 
       if (!nome_completo?.trim() || !email?.trim()) {
         return json({ error: "Nome e email são obrigatórios" }, 400);
@@ -115,25 +132,35 @@ serve(async (req) => {
         return json({ error: "Email inválido" }, 400);
       }
 
-      if (!tenant_id) {
-        return json({ error: "Entidade é obrigatória" }, 400);
-      }
-
       const allRoles = ["super_administrador", "administrador", "admin_master", "admin_tenant", "operador", "suporte", "magistrado"];
       const highRoles = ["super_administrador", "administrador"];
+      const tenantBoundRoles = ["admin_tenant", "operador", "admin_master"];
       let validRole = allRoles.includes(role) ? role : "operador";
 
-      // Only allow assigning high-level roles if the caller is also a high-level admin
-      if (highRoles.includes(validRole)) {
-        const { data: callerRoles } = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", userId);
-        const callerIsHighAdmin = (callerRoles || []).some((r: any) => highRoles.includes(r.role));
-        if (!callerIsHighAdmin) {
-          validRole = "operador";
+      // Tenant admin só pode criar 'operador' dentro da própria entidade
+      if (callerIsTenantAdmin && !callerIsGlobal) {
+        if (validRole !== "operador") {
+          return json({ error: "Administrador de entidade só pode criar usuários operacionais" }, 403);
+        }
+        if (!tenant_id || tenant_id !== callerTenantId) {
+          return json({ error: "Você só pode criar usuários da sua própria entidade" }, 403);
         }
       }
+
+      // Apenas highRoles podem criar high roles
+      if (highRoles.includes(validRole) && !callerIsGlobal) {
+        validRole = "operador";
+      }
+
+      // Roles vinculados a tenant exigem tenant_id
+      if (tenantBoundRoles.includes(validRole) && !tenant_id) {
+        return json({ error: "Entidade é obrigatória para esse papel" }, 400);
+      }
+
+      // Sanitiza telas_permitidas
+      const telasArr: string[] = Array.isArray(telas_permitidas)
+        ? telas_permitidas.filter((p: any) => typeof p === "string" && p.startsWith("/admin"))
+        : [];
 
       // Check if email already exists
       const { data: existing } = await supabase
@@ -173,18 +200,20 @@ serve(async (req) => {
         return json({ error: "Erro ao criar usuário: " + insertError.message }, 500);
       }
 
-      // Create user role
+      // Create user role (com telas e escopo individuais)
       const { error: roleError } = await supabase
         .from("user_roles")
         .insert({
           user_id: newUser.id,
           role: validRole,
-          tenant_id: tenant_id,
+          tenant_id: tenantBoundRoles.includes(validRole) ? tenant_id : (tenant_id || null),
+          telas_permitidas: telasArr,
+          escopo_uf: escopo_uf || null,
+          escopo_cidade: escopo_cidade || null,
         });
 
       if (roleError) {
         console.error("Insert role error:", roleError);
-        // Rollback user creation
         await supabase.from("usuarios").delete().eq("id", newUser.id);
         return json({ error: "Erro ao atribuir papel: " + roleError.message }, 500);
       }
@@ -194,7 +223,7 @@ serve(async (req) => {
         user_id: userId,
         action_type: "admin_create_user",
         success: true,
-        details: { created_user_id: newUser.id, email: emailClean, role: validRole, tenant_id },
+        details: { created_user_id: newUser.id, email: emailClean, role: validRole, tenant_id, telas_permitidas: telasArr, escopo_uf, escopo_cidade },
       });
 
       // Send invite email
@@ -258,12 +287,27 @@ serve(async (req) => {
 
     if (action === "createTenant") {
       const { tenant } = params;
+      if (!callerIsGlobal) return json({ error: "Apenas administradores podem criar entidades" }, 403);
       if (!tenant?.nome || !tenant?.sigla) return json({ error: "Nome e sigla são obrigatórios" }, 400);
       // Sanitize telas_permitidas
       if (tenant.telas_permitidas !== undefined) {
         tenant.telas_permitidas = Array.isArray(tenant.telas_permitidas)
           ? tenant.telas_permitidas.filter((p: any) => typeof p === "string" && p.startsWith("/admin"))
           : [];
+      }
+      // Normalizar escopo geográfico
+      const validEscopos = ["nacional", "estadual", "municipal"];
+      if (!validEscopos.includes(tenant.escopo_geografico)) {
+        tenant.escopo_geografico = "municipal";
+      }
+      // acesso_nacional é setado pelo trigger, mas mantemos consistência
+      tenant.acesso_nacional = tenant.escopo_geografico === "nacional";
+      // Para nacional, uf/cidade são opcionais; para estadual exige uf; para municipal exige uf+cidade
+      if (tenant.escopo_geografico === "estadual" && !tenant.uf) {
+        return json({ error: "UF é obrigatória para entidade estadual" }, 400);
+      }
+      if (tenant.escopo_geografico === "municipal" && (!tenant.uf || !tenant.cidade)) {
+        return json({ error: "UF e cidade são obrigatórias para entidade municipal" }, 400);
       }
       const { data, error } = await supabase
         .from("tenants")
@@ -276,12 +320,21 @@ serve(async (req) => {
 
     if (action === "updateTenant") {
       const { id, updates } = params;
+      if (!callerIsGlobal) return json({ error: "Apenas administradores podem editar entidades" }, 403);
       if (!id) return json({ error: "ID não informado" }, 400);
       // Sanitize telas_permitidas
       if (updates && updates.telas_permitidas !== undefined) {
         updates.telas_permitidas = Array.isArray(updates.telas_permitidas)
           ? updates.telas_permitidas.filter((p: any) => typeof p === "string" && p.startsWith("/admin"))
           : [];
+      }
+      // Normalizar escopo geográfico se fornecido
+      if (updates.escopo_geografico !== undefined) {
+        const validEscopos = ["nacional", "estadual", "municipal"];
+        if (!validEscopos.includes(updates.escopo_geografico)) {
+          updates.escopo_geografico = "municipal";
+        }
+        updates.acesso_nacional = updates.escopo_geografico === "nacional";
       }
       const { data, error } = await supabase
         .from("tenants")
@@ -328,9 +381,44 @@ serve(async (req) => {
       return json({ setting: data });
     }
 
+    // ========== LIST USERS (com filtro automático para admin_tenant) ==========
+    if (action === "listUsers") {
+      // Apenas para admin_tenant: força filtrar pelo próprio tenant
+      const forceTenant = callerIsTenantAdmin && !callerIsGlobal ? callerTenantId : null;
+      const { tenant_id: filterTenantId, search, status, offset = 0, limit = 50 } = params;
+      const effectiveTenant = forceTenant || filterTenantId || null;
+
+      let userIdsByTenant: string[] | null = null;
+      if (effectiveTenant) {
+        const { data: roleRows } = await supabase
+          .from("user_roles")
+          .select("user_id")
+          .eq("tenant_id", effectiveTenant);
+        userIdsByTenant = (roleRows || []).map((r: any) => r.user_id);
+        if (userIdsByTenant.length === 0) return json({ users: [], total: 0 });
+      }
+
+      let q = supabase
+        .from("usuarios")
+        .select("id, nome_completo, email, status, ultimo_acesso, created_at", { count: "exact" })
+        .order("created_at", { ascending: false })
+        .range(offset, offset + limit - 1);
+
+      if (search?.trim()) {
+        q = q.or(`nome_completo.ilike.%${search.trim()}%,email.ilike.%${search.trim()}%`);
+      }
+      if (status && ["ativo","pendente","inativo","bloqueado"].includes(status)) {
+        q = q.eq("status", status);
+      }
+      if (userIdsByTenant) q = q.in("id", userIdsByTenant);
+
+      const { data: users, count } = await q;
+      return json({ users: users || [], total: count || 0 });
+    }
+
     // ========== UPDATE USER ==========
     if (action === "updateUser") {
-      const { user_id: targetUserId, nome_completo, email, status, tenant_id, role } = params;
+      const { user_id: targetUserId, nome_completo, email, status, tenant_id, role, telas_permitidas, escopo_uf, escopo_cidade } = params;
 
       if (!targetUserId) return json({ error: "ID do usuário não informado" }, 400);
       if (!nome_completo?.trim()) return json({ error: "Nome é obrigatório" }, 400);
@@ -339,6 +427,24 @@ serve(async (req) => {
       const emailClean = email.trim().toLowerCase();
       const validStatuses = ["ativo", "pendente", "inativo", "bloqueado"];
       const finalStatus = validStatuses.includes(status) ? status : "pendente";
+
+      // Tenant admin: só pode editar usuários da própria entidade
+      if (callerIsTenantAdmin && !callerIsGlobal) {
+        const { data: targetRoles } = await supabase
+          .from("user_roles")
+          .select("role, tenant_id")
+          .eq("user_id", targetUserId);
+        const targetTenant = (targetRoles || []).find((r: any) => r.tenant_id)?.tenant_id;
+        if (targetTenant !== callerTenantId) {
+          return json({ error: "Você só pode editar usuários da sua própria entidade" }, 403);
+        }
+        if (role && role !== "operador") {
+          return json({ error: "Você só pode atribuir o papel operacional" }, 403);
+        }
+        if (tenant_id && tenant_id !== callerTenantId) {
+          return json({ error: "Você não pode mover usuários para outra entidade" }, 403);
+        }
+      }
 
       // Check if email is taken by another user
       const { data: existing } = await supabase
@@ -367,17 +473,14 @@ serve(async (req) => {
         return json({ error: "Erro ao atualizar: " + updateError.message }, 500);
       }
 
-      // Restrict 'super_administrador' and 'administrador' role assignment to existing super_administrador/administrador
-      if (role === "super_administrador" || role === "administrador") {
-        const { data: callerRoles } = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", userId);
-        const isCallerAdmin = (callerRoles || []).some((r: any) => r.role === "super_administrador" || r.role === "administrador");
-        if (!isCallerAdmin) {
-          return json({ error: "Somente administradores podem atribuir esse nível" }, 403);
-        }
+      // Restrict high roles
+      if ((role === "super_administrador" || role === "administrador") && !callerIsGlobal) {
+        return json({ error: "Somente administradores podem atribuir esse nível" }, 403);
       }
+
+      const telasArr: string[] = Array.isArray(telas_permitidas)
+        ? telas_permitidas.filter((p: any) => typeof p === "string" && p.startsWith("/admin"))
+        : [];
 
       // Update role / tenant association
       await supabase.from("user_roles").delete().eq("user_id", targetUserId);
@@ -386,6 +489,9 @@ serve(async (req) => {
           user_id: targetUserId,
           role: role,
           tenant_id: tenant_id || null,
+          telas_permitidas: telasArr,
+          escopo_uf: escopo_uf || null,
+          escopo_cidade: escopo_cidade || null,
         });
       }
 
@@ -394,7 +500,7 @@ serve(async (req) => {
         user_id: userId,
         action_type: "admin_update_user",
         success: true,
-        details: { updated_user_id: targetUserId, email: emailClean, status: finalStatus, tenant_id },
+        details: { updated_user_id: targetUserId, email: emailClean, status: finalStatus, tenant_id, telas_permitidas: telasArr, escopo_uf, escopo_cidade },
       });
 
       return json({ success: true });
