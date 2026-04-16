@@ -319,7 +319,7 @@ async function computeGovernmentMetrics(
     from += PAGE;
   }
 
-  const total = snaps?.length ?? 0;
+  const total = snaps.length;
   const K_MIN = 5;
 
   if (total < K_MIN) {
@@ -343,7 +343,7 @@ async function computeGovernmentMetrics(
   let recorrentes = 0;
   const usersComSnapshot = new Set<string>();
 
-  for (const s of snaps!) {
+  for (const s of snaps) {
     usersComSnapshot.add(s.user_id as string);
     const fonScore = normFonar(s.risco_fonar as string);
     if (fonScore === 1) distribuicao.moderado++;
@@ -373,7 +373,7 @@ async function computeGovernmentMetrics(
     : 0;
 
   // Subnotificação: alto risco AMPARA mas fonar não atualizado
-  const subnotificacao = snaps!.filter((s) =>
+  const subnotificacao = snaps.filter((s) =>
     normAmpara(s.risco_ampara as string) >= 2 &&
     normFonar(s.risco_fonar as string) === 0
   ).length / total;
