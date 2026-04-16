@@ -69,17 +69,27 @@ async function buscarVitima(query: string) {
 
   const SELECT_COLS = "id, nome_completo, telefone, cpf_hash, cpf_last4, created_at";
 
+  // CPF completo: faz duas queries (cpf_hash exato + telefone) e mescla
+  if (digits.length === 11 && isMostlyDigits) {
+    const hash = await sha256Hex(digits);
+    const [{ data: byCpf, error: e1 }, { data: byPhone, error: e2 }] = await Promise.all([
+      supabase.from("usuarios").select(SELECT_COLS).eq("cpf_hash", hash).limit(20),
+      supabase.from("usuarios").select(SELECT_COLS).ilike("telefone", `%${digits.slice(-9)}%`).limit(20),
+    ]);
+    if (e1) console.error("[campo-api] busca cpf_hash error", e1);
+    if (e2) console.error("[campo-api] busca telefone error", e2);
+    const map = new Map<string, any>();
+    [...(byCpf ?? []), ...(byPhone ?? [])].forEach((r) => map.set(r.id, r));
+    return Array.from(map.values()).slice(0, 20);
+  }
+
   let q = supabase.from("usuarios").select(SELECT_COLS).limit(20);
 
-  if (digits.length === 11 && isMostlyDigits) {
-    // CPF completo: hash e compara com cpf_hash. Também tenta telefone (últimos 9 dígitos).
-    const hash = await sha256Hex(digits);
-    q = q.or(`cpf_hash.eq.${hash},telefone.ilike.%${digits.slice(-9)}%`);
-  } else if (digits.length >= 10 && isMostlyDigits) {
+  if (digits.length >= 10 && isMostlyDigits) {
     // Telefone (com ou sem DDD)
     q = q.ilike("telefone", `%${digits.slice(-9)}%`);
   } else if (digits.length === 4 && isMostlyDigits) {
-    // CPF parcial (últimos 4 dígitos)
+    // CPF parcial (últimos 4 dígitos) ou telefone parcial
     q = q.or(`cpf_last4.eq.${digits},telefone.ilike.%${digits}%`);
   } else if (digits.length >= 4 && isMostlyDigits) {
     // Telefone parcial
