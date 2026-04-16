@@ -29,6 +29,43 @@ const corsHeaders = {
 
 // ── Utility functions ──
 
+/** Compare two semver strings. Returns -1 if a < b, 0 if equal, 1 if a > b. */
+function compareSemver(a: string, b: string): number {
+  const pa = a.split(".").map(Number);
+  const pb = b.split(".").map(Number);
+  for (let i = 0; i < 3; i++) {
+    const va = pa[i] || 0;
+    const vb = pb[i] || 0;
+    if (va < vb) return -1;
+    if (va > vb) return 1;
+  }
+  return 0;
+}
+
+/** Check versao_app against admin_settings.versao_minima_app. Returns error Response or null. */
+async function checkMinAppVersion(
+  supabase: ReturnType<typeof createClient>,
+  versaoApp: string | undefined
+): Promise<Response | null> {
+  // If client doesn't send version, allow (legacy apps)
+  if (!versaoApp) return null;
+  const { data: setting } = await supabase
+    .from("admin_settings")
+    .select("valor")
+    .eq("chave", "versao_minima_app")
+    .maybeSingle();
+  if (!setting?.valor) return null;
+  if (compareSemver(versaoApp, setting.valor) < 0) {
+    return jsonResponse({
+      success: false,
+      error: "APP_VERSION_OUTDATED",
+      versao_minima: setting.valor,
+      message: `Atualize o aplicativo para a versão ${setting.valor} ou superior.`,
+    }, 426);
+  }
+  return null;
+}
+
 function generateToken(length = 64): string {
   const array = new Uint8Array(length);
   crypto.getRandomValues(array);
@@ -626,6 +663,10 @@ async function handlePing(
     return errorResponse(error || "Sessão inválida", 401);
   }
 
+  // Check minimum app version (optional - legacy apps without versao_app pass through)
+  const versionBlock = await checkMinAppVersion(supabase, body.versao_app as string | undefined);
+  if (versionBlock) return versionBlock;
+
   const deviceId = body.device_id as string | undefined;
   const userId = (user as Record<string, unknown>).id as string;
 
@@ -768,6 +809,10 @@ async function handleSyncConfig(
   if (sessionError || !sessionUser) {
     return errorResponse(sessionError || "Sessão inválida", 401);
   }
+
+  // Check minimum app version (optional - legacy apps without versao_app pass through)
+  const syncVersionBlock = await checkMinAppVersion(supabase, body.versao_app as string | undefined);
+  if (syncVersionBlock) return syncVersionBlock;
 
   const userId = (sessionUser as Record<string, unknown>).id as string;
 
