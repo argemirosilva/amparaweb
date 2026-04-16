@@ -152,14 +152,48 @@ export default function TribunalApiKeys() {
                 {formTipo === "judicial" ? (
                   <div>
                     <Label className="text-xs">Entidade judicial</Label>
-                    <Select value={formTenant} onValueChange={setFormTenant}>
-                      <SelectTrigger><SelectValue placeholder="Selecione a entidade" /></SelectTrigger>
-                      <SelectContent>
-                        {tenants.map((t) => (
-                          <SelectItem key={t.id} value={t.id}>{t.sigla} - {t.nome}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Popover open={tenantPopoverOpen} onOpenChange={setTenantPopoverOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          aria-expanded={tenantPopoverOpen}
+                          className="w-full justify-between font-normal"
+                        >
+                          {formTenant
+                            ? (() => {
+                                const t = tenants.find((x) => x.id === formTenant);
+                                return t ? `${t.sigla} - ${t.nome}` : "Selecione a entidade";
+                              })()
+                            : "Selecione a entidade"}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                        <Command>
+                          <CommandInput placeholder="Buscar entidade..." />
+                          <CommandList>
+                            <CommandEmpty>Nenhuma entidade encontrada.</CommandEmpty>
+                            <CommandGroup>
+                              {tenants.map((t) => (
+                                <CommandItem
+                                  key={t.id}
+                                  value={`${t.sigla} ${t.nome}`}
+                                  onSelect={() => {
+                                    setFormTenant(t.id);
+                                    setTenantPopoverOpen(false);
+                                  }}
+                                >
+                                  <Check className={cn("mr-2 h-4 w-4", formTenant === t.id ? "opacity-100" : "opacity-0")} />
+                                  <span className="font-medium">{t.sigla}</span>
+                                  <span className="ml-2 text-muted-foreground">{t.nome}</span>
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                   </div>
                 ) : (
                   <div>
