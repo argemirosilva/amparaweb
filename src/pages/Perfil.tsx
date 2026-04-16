@@ -438,6 +438,18 @@ export default function PerfilPage() {
             <input type="date" className="ampara-input" value={perfilForm.data_nascimento || ""}
               onChange={e => setPerfilForm({ ...perfilForm, data_nascimento: e.target.value })} />
             <div>
+              <label className="block text-sm font-medium text-foreground mb-1.5">CPF</label>
+              <input type="text" className="ampara-input" placeholder={perfil?.cpf_last4 ? `***.***.*${perfil.cpf_last4.slice(0,2)}-${perfil.cpf_last4.slice(2)} (informar completo para alterar)` : "000.000.000-00"} value={cpfInput}
+                onChange={e => {
+                  const digits = e.target.value.replace(/\D/g, "").slice(0, 11);
+                  let formatted = digits;
+                  if (digits.length > 9) formatted = `${digits.slice(0,3)}.${digits.slice(3,6)}.${digits.slice(6,9)}-${digits.slice(9)}`;
+                  else if (digits.length > 6) formatted = `${digits.slice(0,3)}.${digits.slice(3,6)}.${digits.slice(6)}`;
+                  else if (digits.length > 3) formatted = `${digits.slice(0,3)}.${digits.slice(3)}`;
+                  setCpfInput(formatted);
+                }} maxLength={14} />
+            </div>
+            <div>
               <label className="block text-sm font-medium text-foreground mb-1.5">Cor / Raça</label>
               <select className="ampara-input" value={perfilForm.cor_raca || ""}
                 onChange={e => setPerfilForm({ ...perfilForm, cor_raca: e.target.value })}>
