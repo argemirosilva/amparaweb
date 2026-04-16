@@ -1,5 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 
+export type RilWindow = "30" | "90" | "120" | "365" | "1095" | "all";
+
 export interface RilMetrics {
   computed_at: string;
   period_start: string;
@@ -14,9 +16,11 @@ export interface RilMetrics {
   taxa_atualizacao_fonar: number | null;
   correlacao_ampara_fonar: { convergencia?: number; divergencia?: number };
   indicador_subnotificacao: number | null;
+  scope_value?: string | null;
 }
 
 export interface RilDashboard {
+  window?: string;
   metrics: RilMetrics | null;
   serie_temporal: Array<{ day: string; total: number; urgente: number; grave: number }>;
   critical_events: Array<{
@@ -39,60 +43,48 @@ export interface RilDashboard {
 const FN_API = "ril-api";
 const FN_ENGINE = "ril-engine";
 
-export async function fetchRilDashboard(): Promise<RilDashboard> {
-  const { data, error } = await supabase.functions.invoke(FN_API, {
-    method: "GET",
-    body: null,
-    headers: {},
-  });
-  // Fallback caso invoke não suporte query params
-  if (error || !data) {
-    const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${FN_API}?action=dashboard`;
-    const res = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-      },
-    });
-    return await res.json();
-  }
-  return data as RilDashboard;
+function buildUrl(fn: string, params: Record<string, string>) {
+  const qs = new URLSearchParams(params).toString();
+  return `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${fn}?${qs}`;
 }
 
-export async function fetchRilDashboardDirect(): Promise<RilDashboard> {
-  const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${FN_API}?action=dashboard`;
-  const res = await fetch(url, {
-    headers: {
-      Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-      apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-    },
+function authHeaders() {
+  return {
+    Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+    apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+  };
+}
+
+export async function fetchRilDashboardDirect(window: RilWindow = "30"): Promise<RilDashboard> {
+  const res = await fetch(buildUrl(FN_API, { action: "dashboard", window }), {
+    headers: authHeaders(),
   });
   if (!res.ok) throw new Error(`RIL dashboard error: ${res.status}`);
   return await res.json();
 }
 
-export async function fetchRilReport(): Promise<{ report: string; metrics: RilMetrics }> {
-  const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${FN_API}?action=report`;
-  const res = await fetch(url, {
-    headers: {
-      Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-      apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-    },
+export async function fetchRilReport(window: RilWindow = "30"): Promise<{ report: string; metrics: RilMetrics }> {
+  const res = await fetch(buildUrl(FN_API, { action: "report", window }), {
+    headers: authHeaders(),
   });
   if (!res.ok) throw new Error(`RIL report error: ${res.status}`);
   return await res.json();
 }
 
 export async function triggerRilConsolidate() {
-  const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${FN_ENGINE}?action=consolidate`;
-  const res = await fetch(url, {
+  const res = await fetch(buildUrl(FN_ENGINE, { action: "consolidate" }), {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-      apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-      "Content-Type": "application/json",
-    },
+    headers: { ...authHeaders(), "Content-Type": "application/json" },
     body: JSON.stringify({ action: "consolidate" }),
+  });
+  return await res.json();
+}
+
+export async function recomputeMetricsForWindow(window: RilWindow) {
+  const res = await fetch(buildUrl(FN_ENGINE, { action: "metrics", window }), {
+    method: "POST",
+    headers: { ...authHeaders(), "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "metrics", window }),
   });
   return await res.json();
 }
