@@ -653,10 +653,21 @@ export default function TribunalNovaConsulta({ onConsultaCriada }: Props) {
           {/* Tabbed results */}
           <Card>
             <CardHeader className="pb-2">
-              <div className="flex items-center gap-2">
-                <CardTitle className="text-sm">Resultado da Análise</CardTitle>
-                {resultado.vitima_vinculada && <Badge variant="outline" className="text-xs">Vítima vinculada</Badge>}
-                {resultado.agressor_vinculado && <Badge variant="outline" className="text-xs">Agressor vinculado</Badge>}
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <CardTitle className="text-sm">Resultado da Análise</CardTitle>
+                  {resultado.vitima_vinculada && <Badge variant="outline" className="text-xs">Vítima vinculada</Badge>}
+                  {resultado.agressor_vinculado && <Badge variant="outline" className="text-xs">Agressor vinculado</Badge>}
+                </div>
+                <Button
+                  size="sm"
+                  variant="default"
+                  onClick={() => generateTribunalPdf(resultado)}
+                  className="gap-1.5"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  Baixar PDF Consolidado
+                </Button>
               </div>
             </CardHeader>
             <CardContent>
@@ -674,37 +685,80 @@ export default function TribunalNovaConsulta({ onConsultaCriada }: Props) {
                 </TabsList>
 
                 <TabsContent value="analitico">
-                  <ScrollArea className="max-h-[55vh]">
+                  <div className="flex justify-end mb-2">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        navigator.clipboard.writeText(JSON.stringify(resultado.resultados?.analitico?.analise, null, 2));
+                        toast({ title: "Copiado", description: "Conteúdo analítico (JSON) copiado." });
+                      }}
+                      className="gap-1.5 text-xs"
+                    >
+                      <Copy className="w-3 h-3" /> Copiar JSON
+                    </Button>
+                  </div>
+                  <ScrollArea className="max-h-[60vh]">
                     {resultado.resultados?.analitico?.error ? (
                       <div className="text-sm text-destructive p-3 bg-destructive/10 rounded">Erro: {resultado.resultados.analitico.error}</div>
                     ) : (
-                      <pre className="text-xs bg-muted p-3 rounded whitespace-pre-wrap">
-                        {JSON.stringify(resultado.resultados?.analitico?.analise, null, 2)}
-                      </pre>
+                      <TribunalAnaliticoView data={resultado.resultados?.analitico?.analise || {}} />
                     )}
                   </ScrollArea>
                 </TabsContent>
 
                 <TabsContent value="despacho">
-                  <ScrollArea className="max-h-[55vh]">
+                  <div className="flex justify-end mb-2">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        navigator.clipboard.writeText(resultado.resultados?.despacho?.texto || "");
+                        toast({ title: "Copiado", description: "Despacho copiado para a área de transferência." });
+                      }}
+                      className="gap-1.5 text-xs"
+                    >
+                      <Copy className="w-3 h-3" /> Copiar texto
+                    </Button>
+                  </div>
+                  <ScrollArea className="max-h-[60vh]">
                     {resultado.resultados?.despacho?.error ? (
                       <div className="text-sm text-destructive p-3 bg-destructive/10 rounded">Erro: {resultado.resultados.despacho.error}</div>
                     ) : (
-                      <div className="prose prose-sm max-w-none whitespace-pre-wrap text-sm p-3">
-                        {resultado.resultados?.despacho?.texto}
-                      </div>
+                      <Textarea
+                        readOnly
+                        value={resultado.resultados?.despacho?.texto || ""}
+                        className="text-sm min-h-[400px] font-serif leading-relaxed bg-card"
+                        onFocus={(e) => e.currentTarget.select()}
+                      />
                     )}
                   </ScrollArea>
                 </TabsContent>
 
                 <TabsContent value="parecer">
-                  <ScrollArea className="max-h-[55vh]">
+                  <div className="flex justify-end mb-2">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        navigator.clipboard.writeText(resultado.resultados?.parecer?.texto || "");
+                        toast({ title: "Copiado", description: "Parecer copiado para a área de transferência." });
+                      }}
+                      className="gap-1.5 text-xs"
+                    >
+                      <Copy className="w-3 h-3" /> Copiar texto
+                    </Button>
+                  </div>
+                  <ScrollArea className="max-h-[60vh]">
                     {resultado.resultados?.parecer?.error ? (
                       <div className="text-sm text-destructive p-3 bg-destructive/10 rounded">Erro: {resultado.resultados.parecer.error}</div>
                     ) : (
-                      <div className="prose prose-sm max-w-none whitespace-pre-wrap text-sm p-3">
-                        {resultado.resultados?.parecer?.texto}
-                      </div>
+                      <Textarea
+                        readOnly
+                        value={resultado.resultados?.parecer?.texto || ""}
+                        className="text-sm min-h-[400px] font-serif leading-relaxed bg-card"
+                        onFocus={(e) => e.currentTarget.select()}
+                      />
                     )}
                   </ScrollArea>
                 </TabsContent>
