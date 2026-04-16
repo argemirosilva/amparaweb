@@ -120,7 +120,7 @@ serve(async (req) => {
 
     // ========== CREATE USER (Admin invite) ==========
     if (action === "createUser") {
-      const { nome_completo, email, tenant_id, role, app_url } = params;
+      const { nome_completo, email, tenant_id, role, app_url, telas_permitidas, escopo_uf, escopo_cidade } = params;
 
       if (!nome_completo?.trim() || !email?.trim()) {
         return json({ error: "Nome e email são obrigatórios" }, 400);
@@ -132,25 +132,35 @@ serve(async (req) => {
         return json({ error: "Email inválido" }, 400);
       }
 
-      if (!tenant_id) {
-        return json({ error: "Entidade é obrigatória" }, 400);
-      }
-
       const allRoles = ["super_administrador", "administrador", "admin_master", "admin_tenant", "operador", "suporte", "magistrado"];
       const highRoles = ["super_administrador", "administrador"];
+      const tenantBoundRoles = ["admin_tenant", "operador", "admin_master"];
       let validRole = allRoles.includes(role) ? role : "operador";
 
-      // Only allow assigning high-level roles if the caller is also a high-level admin
-      if (highRoles.includes(validRole)) {
-        const { data: callerRoles } = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", userId);
-        const callerIsHighAdmin = (callerRoles || []).some((r: any) => highRoles.includes(r.role));
-        if (!callerIsHighAdmin) {
-          validRole = "operador";
+      // Tenant admin só pode criar 'operador' dentro da própria entidade
+      if (callerIsTenantAdmin && !callerIsGlobal) {
+        if (validRole !== "operador") {
+          return json({ error: "Administrador de entidade só pode criar usuários operacionais" }, 403);
+        }
+        if (!tenant_id || tenant_id !== callerTenantId) {
+          return json({ error: "Você só pode criar usuários da sua própria entidade" }, 403);
         }
       }
+
+      // Apenas highRoles podem criar high roles
+      if (highRoles.includes(validRole) && !callerIsGlobal) {
+        validRole = "operador";
+      }
+
+      // Roles vinculados a tenant exigem tenant_id
+      if (tenantBoundRoles.includes(validRole) && !tenant_id) {
+        return json({ error: "Entidade é obrigatória para esse papel" }, 400);
+      }
+
+      // Sanitiza telas_permitidas
+      const telasArr: string[] = Array.isArray(telas_permitidas)
+        ? telas_permitidas.filter((p: any) => typeof p === "string" && p.startsWith("/admin"))
+        : [];
 
       // Check if email already exists
       const { data: existing } = await supabase
@@ -190,18 +200,20 @@ serve(async (req) => {
         return json({ error: "Erro ao criar usuário: " + insertError.message }, 500);
       }
 
-      // Create user role
+      // Create user role (com telas e escopo individuais)
       const { error: roleError } = await supabase
         .from("user_roles")
         .insert({
           user_id: newUser.id,
           role: validRole,
-          tenant_id: tenant_id,
+          tenant_id: tenantBoundRoles.includes(validRole) ? tenant_id : (tenant_id || null),
+          telas_permitidas: telasArr,
+          escopo_uf: escopo_uf || null,
+          escopo_cidade: escopo_cidade || null,
         });
 
       if (roleError) {
         console.error("Insert role error:", roleError);
-        // Rollback user creation
         await supabase.from("usuarios").delete().eq("id", newUser.id);
         return json({ error: "Erro ao atribuir papel: " + roleError.message }, 500);
       }
@@ -211,7 +223,7 @@ serve(async (req) => {
         user_id: userId,
         action_type: "admin_create_user",
         success: true,
-        details: { created_user_id: newUser.id, email: emailClean, role: validRole, tenant_id },
+        details: { created_user_id: newUser.id, email: emailClean, role: validRole, tenant_id, telas_permitidas: telasArr, escopo_uf, escopo_cidade },
       });
 
       // Send invite email
