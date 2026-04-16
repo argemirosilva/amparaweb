@@ -117,9 +117,16 @@ export default function TribunalConsultas() {
   const ao = selected?.analysis_object || {};
   const dadosInput = ao.dados_magistrado_input || {};
   const dadosAmpara = ao.dados_ampara_registros || {};
-  const vitimaInfo = dadosAmpara.vitima || dadosInput.vitima || null;
-  const agressorInfo = dadosAmpara.agressor || dadosInput.agressor || null;
-  const processoInfo = dadosInput.processo || null;
+  // Fallback para consultas antigas que salvavam dados_vitima/dados_agressor no nível raiz
+  const vitimaInfo =
+    dadosAmpara.vitima ||
+    dadosInput.vitima ||
+    (ao.dados_vitima && Object.keys(ao.dados_vitima).length > 0 ? ao.dados_vitima : null);
+  const agressorInfo =
+    dadosAmpara.agressor ||
+    dadosInput.agressor ||
+    (ao.dados_agressor && Object.keys(ao.dados_agressor).length > 0 ? ao.dados_agressor : null);
+  const processoInfo = dadosInput.processo || ao.dados_processo || null;
 
   return (
     <div className="space-y-4">
