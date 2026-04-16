@@ -4,7 +4,7 @@ import { useAdminRole } from "@/hooks/useAdminRole";
 import ProtectedAdminRoute from "./ProtectedAdminRoute";
 import {
   LayoutDashboard, Users, Building2, ClipboardCheck, FileText, Settings,
-  LogOut, Menu, X, Plug, AudioLines, Headset, BrainCircuit, FileCode2, Scale, Brain,
+  LogOut, Menu, X, Plug, AudioLines, Headset, BrainCircuit, FileCode2, Scale, Brain, Shield,
 } from "lucide-react";
 import amparaLogo from "@/assets/ampara-circle-logo.png";
 import { useState } from "react";
