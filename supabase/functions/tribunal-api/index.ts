@@ -209,7 +209,7 @@ async function gatherAmparaData(supabase: any, usuarioId: string | null, agresso
 
 // ── Analysis object builder ──
 
-function buildAnalysisObject(amparaData: any, dadosProcesso: any, agressor: any, usuario: any) {
+function buildAnalysisObject(amparaData: any, dadosProcesso: any, agressor: any, usuario: any, dadosMagistradoInput: any) {
   const riskAssessment = amparaData.risk_assessments[0];
   const microResults = amparaData.micro_analyses;
 
@@ -253,7 +253,66 @@ function buildAnalysisObject(amparaData: any, dadosProcesso: any, agressor: any,
     padroes.push({ padrao: "Fases do ciclo de violência", descricao: cyclePhases.join(", "), frequencia: "recorrente" });
   }
 
+  // ── Cross-reference section: magistrate input vs AMPARA records ──
+  const dados_magistrado_input = {
+    vitima: dadosMagistradoInput?.dados_vitima || null,
+    agressor: dadosMagistradoInput?.dados_agressor || null,
+    processo: dadosMagistradoInput?.dados_processo || null,
+  };
+
+  const dados_ampara_registros = {
+    vitima_encontrada: !!usuario,
+    vitima: usuario ? {
+      nome: usuario.nome_completo,
+      cidade_uf: `${usuario.endereco_cidade || ""}/${usuario.endereco_uf || ""}`,
+      mora_com_agressor: usuario.mora_com_agressor,
+      tem_filhos: usuario.tem_filhos,
+      cor_raca: usuario.cor_raca,
+      escolaridade: usuario.escolaridade,
+      profissao: usuario.profissao,
+      data_nascimento: usuario.data_nascimento,
+    } : null,
+    agressor_encontrado: !!agressor,
+    agressor: agressor ? {
+      nome: agressor.nome,
+      risk_score: agressor.risk_score,
+      risk_level: agressor.risk_level,
+      forca_seguranca: agressor.forca_seguranca,
+      tem_arma: agressor.tem_arma_em_casa,
+      cidade_uf: agressor.primary_city_uf,
+      profissao: agressor.profession,
+      cor_raca: agressor.cor_raca,
+      escolaridade: agressor.escolaridade,
+      data_nascimento: agressor.data_nascimento,
+      aliases: agressor.aliases,
+      xingamentos: agressor.xingamentos_frequentes,
+      violence_profile: agressor.violence_profile_probs,
+      flags: agressor.flags,
+      last_incident_at: agressor.last_incident_at,
+      neighborhoods: agressor.neighborhoods,
+      vehicles: agressor.vehicles,
+    } : null,
+    historico_analises: {
+      total_micro: microResults.length,
+      niveis_risco_encontrados: [...new Set(riskLevels)],
+      contextos: [...new Set(contextTypes)],
+      fases_ciclo: cyclePhases,
+      analises_alto_critico: riskLevels.filter((r: string) => r === "alto" || r === "critico").length,
+    },
+    avaliacao_risco_atual: riskAssessment ? {
+      score: riskAssessment.risk_score,
+      nivel: riskAssessment.risk_level,
+      tendencia: riskAssessment.trend,
+      resumo: riskAssessment.resumo_tecnico,
+    } : null,
+    total_gravacoes_processadas: amparaData.recordings_summary.length,
+    total_relatorios_macro: amparaData.macro_reports.length,
+    dados_externos_anteriores: amparaData.external_data.length,
+  };
+
   return {
+    dados_magistrado_input,
+    dados_ampara_registros,
     risco: {
       score: riskAssessment?.risk_score ?? null,
       nivel: riskAssessment?.risk_level ?? "nao_avaliado",
