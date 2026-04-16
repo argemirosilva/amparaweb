@@ -1,11 +1,12 @@
 import { useEffect, useState, useRef } from "react";
-import { Settings, Save, RotateCcw, Plus, X, ChevronDown, ChevronRight, Tags, AlertTriangle, BrainCircuit } from "lucide-react";
+import { Settings, Save, RotateCcw, Plus, X, ChevronDown, ChevronRight, Tags, AlertTriangle, BrainCircuit, Scale } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import AdminTiposAlerta from "./AdminTiposAlerta";
 import AdminPalavrasTriagem from "./AdminPalavrasTriagem";
 import AdminPromptsIA from "@/components/admin/AdminPromptsIA";
+import TribunalPrompts from "@/components/tribunal/TribunalPrompts";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -57,6 +58,7 @@ export default function AdminConfiguracoes() {
   const [tiposOpen, setTiposOpen] = useState(false);
   const [triagemOpen, setTriagemOpen] = useState(false);
   const [promptsOpen, setPromptsOpen] = useState(false);
+  const [tribunalPromptsOpen, setTribunalPromptsOpen] = useState(false);
 
   async function loadSettings() {
     if (!sessionToken) return;
@@ -280,6 +282,23 @@ export default function AdminConfiguracoes() {
         {promptsOpen && (
           <div className="p-4">
             <AdminPromptsIA />
+          </div>
+        )}
+      </div>
+      {/* Prompts Tribunal - Collapsible */}
+      <div className="mt-4 rounded-lg border border-border bg-card shadow-sm overflow-hidden">
+        <button
+          onClick={() => setTribunalPromptsOpen((v) => !v)}
+          className="w-full px-4 py-3 flex items-center gap-2 bg-muted/50 hover:bg-muted/70 transition-colors text-left"
+        >
+          <Scale className="w-4 h-4 text-primary" />
+          <h2 className="text-sm font-semibold text-foreground flex-1">Prompts Tribunal</h2>
+          <span className="text-xs text-muted-foreground mr-2">Prompts do motor AMPARA Tribunal (Base, Analítico, Despacho, Parecer)</span>
+          {tribunalPromptsOpen ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
+        </button>
+        {tribunalPromptsOpen && (
+          <div className="p-4">
+            <TribunalPrompts />
           </div>
         )}
       </div>
