@@ -1108,6 +1108,9 @@ export default function DocApiPage() {
           );
         })}
 
+        {/* AMPARA Campo - Integração Forças de Segurança */}
+        <CampoApiSection />
+
         {/* Tribunal API Keys */}
         <div className="border-t border-border pt-6 mt-6">
           <div className="flex items-center gap-2 mb-4">
