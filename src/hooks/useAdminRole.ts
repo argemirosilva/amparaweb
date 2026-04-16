@@ -54,7 +54,7 @@ export function useAdminRole() {
 
       // user_role: telas e escopo individual (subset)
       const ut = roleWithTenant?.telas_permitidas;
-      setUserTelas(Array.isArray(ut) ? ut : []);
+      setUserTelas(Array.isArray(ut) ? (ut as any[]).filter((x) => typeof x === "string") as string[] : []);
       setEscopoUf(roleWithTenant?.escopo_uf || null);
       setEscopoCidade(roleWithTenant?.escopo_cidade || null);
 
