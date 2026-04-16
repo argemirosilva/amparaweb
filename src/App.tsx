@@ -53,6 +53,8 @@ import SupportHome from "./pages/support/SupportHome";
 import SupportNew from "./pages/support/SupportNew";
 import SupportTicketDetail from "./pages/support/SupportTicketDetail";
 import SupportAudit from "./pages/support/SupportAudit";
+import Fonar from "./pages/Fonar";
+import FonarHistorico from "./pages/FonarHistorico";
 
 const queryClient = new QueryClient();
 
@@ -86,6 +88,8 @@ const App = () => (
               <Route path="/support/new" element={<SupportNew />} />
               <Route path="/support/tickets/:sessionId" element={<SupportTicketDetail />} />
               <Route path="/support/audit" element={<SupportAudit />} />
+              <Route path="/fonar" element={<Fonar />} />
+              <Route path="/fonar/historico" element={<FonarHistorico />} />
             </Route>
             {/* Portal Público de Transparência */}
             <Route element={<PortalLayout />}>
