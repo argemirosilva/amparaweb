@@ -116,7 +116,7 @@ serve(async (req) => {
       }
 
       if (!tenant_id) {
-        return json({ error: "Órgão é obrigatório" }, 400);
+        return json({ error: "Entidade é obrigatória" }, 400);
       }
 
       const allRoles = ["super_administrador", "administrador", "admin_master", "admin_tenant", "operador", "suporte", "magistrado"];

@@ -27,7 +27,7 @@ const ADMIN_ACTION_TYPES = [
 const ACTION_LABELS: Record<string, string> = {
   admin_login: "Login Admin",
   admin_atualizar_setting: "Alterou Configuração",
-  admin_criar_orgao: "Criou Órgão",
+  admin_criar_orgao: "Criou Entidade",
   admin_gerar_relatorio: "Gerou Relatório",
   admin_update_user: "Alterou Usuário",
   admin_visualizar_usuarios: "Visualizou Usuários",
