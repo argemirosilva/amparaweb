@@ -164,6 +164,9 @@ export default function AdminInteligenciaRisco() {
             <Button variant="outline" size="sm" onClick={reprocessar}>
               <RefreshCw className="w-4 h-4 mr-2" /> Reprocessar tudo
             </Button>
+            <Button variant="secondary" size="sm" onClick={gerarHistorico}>
+              <Brain className="w-4 h-4 mr-2" /> Gerar snapshots históricos
+            </Button>
             <Button size="sm" onClick={gerarRelatorio} disabled={reportLoading}>
               <FileText className="w-4 h-4 mr-2" /> Gerar relatório
             </Button>
@@ -178,8 +181,8 @@ export default function AdminInteligenciaRisco() {
       {!loading && !m && (
         <Card className="p-6">
           <p className="text-sm text-muted-foreground">
-            Ainda não há indicadores computados para <strong>{labelFor(windowSel)}</strong>. Clique em
-            <em> "Recalcular janela"</em> para gerar a análise agora.
+            Ainda não há indicadores computados para <strong>{labelFor(windowSel)}</strong>. Se a base ainda não tem snapshots, clique em
+            <em> "Gerar snapshots históricos"</em> para varrer todo o histórico (gravações, FONAR e pânico) e gerar a camada de inteligência.
           </p>
         </Card>
       )}
