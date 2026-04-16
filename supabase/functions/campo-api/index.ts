@@ -46,6 +46,7 @@ async function logAccess(params: {
   agente_orgao?: string;
   ip_address?: string;
   user_agent?: string;
+  api_key_id?: string | null;
 }) {
   const hash = params.query_value ? await sha256Hex(params.query_value) : null;
   await supabase.from("campo_access_logs").insert({
@@ -57,7 +58,33 @@ async function logAccess(params: {
     agente_orgao: params.agente_orgao ?? null,
     ip_address: params.ip_address ?? null,
     user_agent: params.user_agent ?? null,
+    api_key_id: params.api_key_id ?? null,
   });
+}
+
+// ============== API Key auth (integrações externas) ==============
+// Aceita: header `X-Campo-Api-Key: <chave>` OU body.api_key
+// Se a chave for válida e ativa, retorna { id, orgao }. Caso contrário, null.
+async function validateApiKey(req: Request, body: any): Promise<{ id: string; orgao: string } | null> {
+  const headerKey = req.headers.get("x-campo-api-key") ?? req.headers.get("X-Campo-Api-Key");
+  const bodyKey = typeof body?.api_key === "string" ? body.api_key : null;
+  const raw = (headerKey || bodyKey || "").trim();
+  if (!raw || raw.length < 16) return null;
+
+  const hash = await sha256Hex(raw);
+  const { data: row } = await supabase
+    .from("campo_api_keys")
+    .select("id, orgao, ativo, expires_at")
+    .eq("key_hash", hash)
+    .maybeSingle();
+
+  if (!row || !row.ativo) return null;
+  if (row.expires_at && new Date(row.expires_at).getTime() < Date.now()) return null;
+
+  // Atualiza last_used (não-bloqueante)
+  supabase.from("campo_api_keys").update({ last_used_at: new Date().toISOString() }).eq("id", row.id).then(() => {});
+
+  return { id: row.id, orgao: row.orgao };
 }
 
 // ================== Busca de vítima ==================
