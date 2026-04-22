@@ -2787,6 +2787,17 @@ serve(async (req) => {
       case "gerarTokenSSO":
         return await handleIssueWebSsoToken(body, supabase, ip, req);
 
+      // ── Cadastro de novas usuárias (mobile) ──
+      case "registerMobile":
+      case "cadastrarUsuario":
+        return await handleRegisterMobile(body, supabase, ip);
+      case "verifyEmailMobile":
+      case "verificarEmail":
+        return await handleVerifyEmailMobile(body, supabase, ip);
+      case "resendVerificationCodeMobile":
+      case "reenviarCodigoVerificacao":
+        return await handleResendVerificationMobile(body, supabase, ip);
+
       default:
         return errorResponse("Action desconhecida", 400);
     }
