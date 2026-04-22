@@ -19,3 +19,26 @@ export async function callWebApi(action: string, sessionToken: string, params: R
 
   return { ok: res.ok, status: res.status, data };
 }
+
+/**
+ * Consume an SSO token issued by the mobile app to bootstrap a web session.
+ * Does NOT include a session_token in the body. Failures are silent (caller
+ * decides what to do).
+ */
+export async function consumeSsoToken(ssoToken: string) {
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/web-api`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      apikey: SUPABASE_KEY,
+    },
+    body: JSON.stringify({ action: "consumeWebSsoToken", sso_token: ssoToken }),
+  });
+  let data: any = null;
+  try {
+    data = await res.json();
+  } catch {
+    data = null;
+  }
+  return { ok: res.ok, status: res.status, data };
+}

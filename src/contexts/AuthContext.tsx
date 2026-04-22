@@ -21,6 +21,7 @@ interface AuthContextType {
   verifyEmail: (email: string, codigo: string) => Promise<{ success: boolean; error?: string }>;
   resendCode: (email: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
+  setSessionFromToken: (token: string) => Promise<void>;
 }
 
 interface RegisterData {
@@ -149,8 +150,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUsuario(null);
   };
 
+  /**
+   * Hidrata a sessão a partir de um token recebido externamente
+   * (ex: fluxo SSO vindo do app mobile). Não faz reload da página.
+   */
+  const setSessionFromToken = async (token: string) => {
+    localStorage.setItem("ampara_session_token", token);
+    setSessionToken(token);
+    try {
+      const { ok, data } = await callFunction("auth-session", { session_token: token });
+      if (ok && data.valid) {
+        setUsuario(data.usuario);
+      }
+    } catch {
+      // silencioso: chamador trata redirecionamento
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ usuario, sessionToken, loading, login, register, verifyEmail, resendCode, logout }}>
+    <AuthContext.Provider value={{ usuario, sessionToken, loading, login, register, verifyEmail, resendCode, logout, setSessionFromToken }}>
       {children}
     </AuthContext.Provider>
   );

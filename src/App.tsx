@@ -60,6 +60,7 @@ import CampoBusca from "./pages/campo/CampoBusca";
 import CampoVitima from "./pages/campo/CampoVitima";
 import CampoRegistrar from "./pages/campo/CampoRegistrar";
 import AdminAmparaCampo from "./pages/admin/AdminAmparaCampo";
+import SSOEntry from "./pages/SSOEntry";
 
 const queryClient = new QueryClient();
 
@@ -73,6 +74,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<LandingPage />} />
             <Route path="/apresentacao" element={<Apresentacao />} />
+            <Route path="/sso" element={<SSOEntry />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/cadastro" element={<Cadastro />} />
             <Route path="/validar-email" element={<ValidarEmail />} />
