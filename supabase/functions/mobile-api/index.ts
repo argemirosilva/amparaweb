@@ -2703,6 +2703,10 @@ serve(async (req) => {
       case "finalizarGravacao":
         return await handleReportarStatusGravacao(body, supabase, ip);
 
+      // ── SSO Web (acesso direto ao portal pelo app) ──
+      case "issueWebSsoToken":
+        return await handleIssueWebSsoToken(body, supabase, ip, req);
+
       default:
         return errorResponse("Action desconhecida", 400);
     }

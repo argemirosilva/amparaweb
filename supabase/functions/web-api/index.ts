@@ -364,6 +364,121 @@ serve(async (req) => {
     const body = await req.json();
     const { action, session_token, ...params } = body;
 
+    // ========== PUBLIC ACTIONS (no session required) ==========
+    if (action === "consumeWebSsoToken") {
+      const ssoToken = (params.sso_token as string | undefined)?.trim();
+      const ip = req.headers.get("x-forwarded-for") || req.headers.get("cf-connecting-ip") || "unknown";
+      const ua = req.headers.get("user-agent") || null;
+      const genericFail = () => json({ success: false }, 401);
+
+      // Format check: 128 hex chars
+      if (!ssoToken || !/^[a-f0-9]{128}$/i.test(ssoToken)) {
+        await supabase.from("audit_logs").insert({
+          action_type: "web_sso_consumed_failed",
+          success: false,
+          ip_address: ip,
+          details: { reason: "invalid_format" },
+        });
+        return genericFail();
+      }
+
+      const adminSupabase = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+      );
+
+      const tokenHash = await hashToken(ssoToken);
+      const { data: tokenRow } = await adminSupabase
+        .from("web_sso_tokens")
+        .select("id, user_id, mobile_session_id, device_id, expires_at, consumed_at, revoked_at")
+        .eq("token_hash", tokenHash)
+        .maybeSingle();
+
+      const failWithReason = async (reason: string) => {
+        await adminSupabase.from("audit_logs").insert({
+          action_type: "web_sso_consumed_failed",
+          success: false,
+          ip_address: ip,
+          user_id: tokenRow?.user_id ?? null,
+          details: { reason },
+        });
+        return genericFail();
+      };
+
+      if (!tokenRow) return await failWithReason("not_found");
+      if (tokenRow.consumed_at) return await failWithReason("already_consumed");
+      if (tokenRow.revoked_at) return await failWithReason("revoked");
+      if (new Date(tokenRow.expires_at) < new Date()) return await failWithReason("expired");
+
+      const { data: user } = await adminSupabase
+        .from("usuarios")
+        .select("id, email, nome_completo, email_verificado, status, onboarding_completo, avatar_url")
+        .eq("id", tokenRow.user_id)
+        .maybeSingle();
+
+      if (!user || !user.email_verificado || user.status !== "ativo") {
+        return await failWithReason("user_inactive");
+      }
+
+      // Mark token consumed (one-shot guard via .is consumed_at null)
+      const { data: updated, error: updErr } = await adminSupabase
+        .from("web_sso_tokens")
+        .update({
+          consumed_at: new Date().toISOString(),
+          consumed_ip: ip,
+          consumed_user_agent: ua,
+        })
+        .eq("id", tokenRow.id)
+        .is("consumed_at", null)
+        .select("id")
+        .maybeSingle();
+
+      if (updErr || !updated) {
+        // Race: another consumer beat us to it
+        return await failWithReason("race_consumed");
+      }
+
+      // Generate web session
+      const newToken = (() => {
+        const a = new Uint8Array(64);
+        crypto.getRandomValues(a);
+        return Array.from(a, (b) => b.toString(16).padStart(2, "0")).join("");
+      })();
+      const newTokenHash = await hashToken(newToken);
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+
+      await adminSupabase.from("user_sessions").insert({
+        user_id: user.id,
+        token_hash: newTokenHash,
+        expires_at: expiresAt,
+        ip_address: ip,
+        user_agent: ua,
+        origin: "web_sso",
+      });
+
+      await adminSupabase.from("usuarios").update({ ultimo_acesso: new Date().toISOString() }).eq("id", user.id);
+
+      await adminSupabase.from("audit_logs").insert({
+        user_id: user.id,
+        action_type: "web_sso_consumed_success",
+        success: true,
+        ip_address: ip,
+        details: { mobile_session_id: tokenRow.mobile_session_id, device_id: tokenRow.device_id },
+      });
+
+      return json({
+        success: true,
+        session: { token: newToken, expires_at: expiresAt },
+        usuario: {
+          id: user.id,
+          email: user.email,
+          nome_completo: user.nome_completo,
+          onboarding_completo: user.onboarding_completo || false,
+          avatar_url: user.avatar_url || null,
+        },
+      });
+    }
+
     const userId = await authenticateSession(supabase, session_token);
     if (!userId) {
       return json({ error: "Sessão inválida ou expirada" }, 401);
