@@ -2977,6 +2977,54 @@ export type Database = {
           },
         ]
       }
+      web_sso_tokens: {
+        Row: {
+          consumed_at: string | null
+          consumed_ip: string | null
+          consumed_user_agent: string | null
+          created_at: string
+          device_id: string | null
+          expires_at: string
+          id: string
+          issued_ip: string | null
+          issued_user_agent: string | null
+          mobile_session_id: string | null
+          revoked_at: string | null
+          token_hash: string
+          user_id: string
+        }
+        Insert: {
+          consumed_at?: string | null
+          consumed_ip?: string | null
+          consumed_user_agent?: string | null
+          created_at?: string
+          device_id?: string | null
+          expires_at: string
+          id?: string
+          issued_ip?: string | null
+          issued_user_agent?: string | null
+          mobile_session_id?: string | null
+          revoked_at?: string | null
+          token_hash: string
+          user_id: string
+        }
+        Update: {
+          consumed_at?: string | null
+          consumed_ip?: string | null
+          consumed_user_agent?: string | null
+          created_at?: string
+          device_id?: string | null
+          expires_at?: string
+          id?: string
+          issued_ip?: string | null
+          issued_user_agent?: string | null
+          mobile_session_id?: string | null
+          revoked_at?: string | null
+          token_hash?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       whatsapp_imports: {
         Row: {
           analyzed_chunks: number
