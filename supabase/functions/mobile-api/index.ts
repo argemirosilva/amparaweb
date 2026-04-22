@@ -2672,6 +2672,269 @@ async function handleIssueWebSsoToken(
   });
 }
 
+// ── Cadastro de novas usuárias via app mobile ──────────────────────
+async function handleRegisterMobile(
+  body: Record<string, any>,
+  supabase: ReturnType<typeof createClient>,
+  ip: string
+): Promise<Response> {
+  const nome_completo = (body.nome_completo ?? body.nome ?? "").toString().trim();
+  const telefone = (body.telefone ?? "").toString();
+  const emailRaw = (body.email ?? "").toString();
+  const senha = (body.senha ?? body.password ?? "").toString();
+  const termos_aceitos = body.termos_aceitos === true || body.termos_aceitos === "true";
+
+  const emailClean = emailRaw.trim().toLowerCase();
+
+  if (!nome_completo || !emailClean || !telefone || !senha) {
+    return errorResponse("Todos os campos são obrigatórios", 400);
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(emailClean)) {
+    return errorResponse("Email inválido", 400);
+  }
+
+  const phoneDigits = telefone.replace(/\D/g, "");
+  if (phoneDigits.length < 10 || phoneDigits.length > 11) {
+    return errorResponse("Telefone deve ter 10 ou 11 dígitos", 400);
+  }
+
+  if (senha.length < 6) {
+    return errorResponse("Senha deve ter no mínimo 6 caracteres", 400);
+  }
+
+  // Rate limit: 5 tentativas em 15 min por email
+  const fifteenMinAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+  const { count: attempts } = await supabase
+    .from("rate_limit_attempts")
+    .select("*", { count: "exact", head: true })
+    .eq("identifier", emailClean)
+    .eq("action_type", "register_mobile")
+    .gte("attempted_at", fifteenMinAgo);
+
+  if ((attempts || 0) >= 5) {
+    return errorResponse("Muitas tentativas. Aguarde 15 minutos", 429);
+  }
+
+  await supabase.from("rate_limit_attempts").insert({
+    identifier: emailClean,
+    action_type: "register_mobile",
+  });
+
+  // Verifica se email já existe
+  const { data: existing } = await supabase
+    .from("usuarios")
+    .select("id, email_verificado")
+    .eq("email", emailClean)
+    .maybeSingle();
+
+  if (existing) {
+    return errorResponse("Este email já está cadastrado", 409);
+  }
+
+  // Código de verificação (5 dígitos)
+  const codigo = String(Math.floor(Math.random() * 100000)).padStart(5, "0");
+  const codigoExpira = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+
+  const senhaHash = bcrypt.hashSync(senha);
+
+  const { data: user, error: insertError } = await supabase
+    .from("usuarios")
+    .insert({
+      nome_completo,
+      telefone: phoneDigits,
+      email: emailClean,
+      status: "pendente",
+      email_verificado: false,
+      codigo_verificacao: codigo,
+      codigo_verificacao_expira: codigoExpira,
+      senha_hash: senhaHash,
+      termos_aceitos_em: termos_aceitos ? new Date().toISOString() : null,
+    })
+    .select("id")
+    .single();
+
+  if (insertError) {
+    console.error("[registerMobile] Insert error:", insertError);
+    return errorResponse("Erro ao criar conta", 500);
+  }
+
+  await supabase.from("audit_logs").insert({
+    user_id: user.id,
+    action_type: "register_mobile",
+    success: true,
+    ip_address: ip,
+    details: { email: emailClean, origem: "mobile" },
+  });
+
+  // Envia email com código de verificação
+  try {
+    const emailRes = await fetch(
+      `${Deno.env.get("SUPABASE_URL")}/functions/v1/auth-send-email`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+        },
+        body: JSON.stringify({ email: emailClean, codigo, nome: nome_completo }),
+      }
+    );
+    if (!emailRes.ok) {
+      console.error("[registerMobile] Email send failed:", await emailRes.text());
+    }
+  } catch (e) {
+    console.error("[registerMobile] Email send error:", e);
+  }
+
+  return jsonResponse({
+    success: true,
+    email: emailClean,
+    message: "Conta criada. Verifique seu email para confirmar o cadastro.",
+  }, 201);
+}
+
+async function handleVerifyEmailMobile(
+  body: Record<string, any>,
+  supabase: ReturnType<typeof createClient>,
+  ip: string
+): Promise<Response> {
+  const emailClean = (body.email ?? "").toString().trim().toLowerCase();
+  const codigo = (body.codigo ?? body.code ?? "").toString().trim();
+
+  if (!emailClean || !codigo) {
+    return errorResponse("Email e código são obrigatórios", 400);
+  }
+
+  const { data: user } = await supabase
+    .from("usuarios")
+    .select("id, email_verificado, codigo_verificacao, codigo_verificacao_expira")
+    .eq("email", emailClean)
+    .maybeSingle();
+
+  if (!user) {
+    return errorResponse("Usuário não encontrado", 404);
+  }
+
+  if (user.email_verificado) {
+    return jsonResponse({ success: true, already_verified: true });
+  }
+
+  if (!user.codigo_verificacao || user.codigo_verificacao !== codigo) {
+    await supabase.from("audit_logs").insert({
+      user_id: user.id,
+      action_type: "verify_email_mobile",
+      success: false,
+      ip_address: ip,
+      details: { email: emailClean, motivo: "codigo_invalido" },
+    });
+    return errorResponse("Código inválido", 400);
+  }
+
+  if (user.codigo_verificacao_expira && new Date(user.codigo_verificacao_expira) < new Date()) {
+    return errorResponse("Código expirado. Solicite um novo.", 400);
+  }
+
+  await supabase
+    .from("usuarios")
+    .update({
+      email_verificado: true,
+      status: "ativo",
+      codigo_verificacao: null,
+      codigo_verificacao_expira: null,
+    })
+    .eq("id", user.id);
+
+  await supabase.from("audit_logs").insert({
+    user_id: user.id,
+    action_type: "verify_email_mobile",
+    success: true,
+    ip_address: ip,
+    details: { email: emailClean },
+  });
+
+  return jsonResponse({ success: true, verified: true });
+}
+
+async function handleResendVerificationMobile(
+  body: Record<string, any>,
+  supabase: ReturnType<typeof createClient>,
+  ip: string
+): Promise<Response> {
+  const emailClean = (body.email ?? "").toString().trim().toLowerCase();
+  if (!emailClean) {
+    return errorResponse("Email é obrigatório", 400);
+  }
+
+  // Rate limit reenvio: 3 em 15 min
+  const fifteenMinAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+  const { count: attempts } = await supabase
+    .from("rate_limit_attempts")
+    .select("*", { count: "exact", head: true })
+    .eq("identifier", emailClean)
+    .eq("action_type", "resend_verify_mobile")
+    .gte("attempted_at", fifteenMinAgo);
+
+  if ((attempts || 0) >= 3) {
+    return errorResponse("Muitas solicitações. Aguarde alguns minutos.", 429);
+  }
+
+  await supabase.from("rate_limit_attempts").insert({
+    identifier: emailClean,
+    action_type: "resend_verify_mobile",
+  });
+
+  const { data: user } = await supabase
+    .from("usuarios")
+    .select("id, nome_completo, email_verificado")
+    .eq("email", emailClean)
+    .maybeSingle();
+
+  if (!user) {
+    // Não revela existência
+    return jsonResponse({ success: true });
+  }
+
+  if (user.email_verificado) {
+    return jsonResponse({ success: true, already_verified: true });
+  }
+
+  const codigo = String(Math.floor(Math.random() * 100000)).padStart(5, "0");
+  const codigoExpira = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+
+  await supabase
+    .from("usuarios")
+    .update({
+      codigo_verificacao: codigo,
+      codigo_verificacao_expira: codigoExpira,
+    })
+    .eq("id", user.id);
+
+  try {
+    await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/auth-send-email`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+      },
+      body: JSON.stringify({ email: emailClean, codigo, nome: user.nome_completo }),
+    });
+  } catch (e) {
+    console.error("[resendVerificationMobile] Email send error:", e);
+  }
+
+  await supabase.from("audit_logs").insert({
+    user_id: user.id,
+    action_type: "resend_verify_mobile",
+    success: true,
+    ip_address: ip,
+    details: { email: emailClean },
+  });
+
+  return jsonResponse({ success: true });
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
