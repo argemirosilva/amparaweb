@@ -60,6 +60,72 @@ const ENDPOINTS: Endpoint[] = [
     },
   },
   {
+    action: "cadastrarUsuario",
+    fase: 1,
+    description: "Cria uma nova conta de usuária com status 'pendente' e envia código de verificação de 5 dígitos por email (validade: 15 min). A senha é armazenada com hash bcrypt. Rate limit: 5 cadastros / 15 min por email.",
+    auth: "nenhuma",
+    aliases: ["registerMobile"],
+    usageGuide: "Use no fluxo de cadastro inicial do app. Após sucesso (201), navegue para a tela de verificação de email passando o email retornado. Valide os campos no cliente antes de enviar: email com regex padrão, telefone apenas com dígitos (10 ou 11 com DDD), senha com mínimo 6 caracteres. O checkbox de termos é obrigatório (termos_aceitos: true). Em caso de erro 409 (email já cadastrado), ofereça à usuária a opção de ir para a tela de login. Em caso de 429, mostre o tempo de espera estimado.",
+    params: [
+      { name: "nome_completo", type: "string", required: true, description: "Nome completo (mínimo 3 caracteres)" },
+      { name: "telefone", type: "string", required: true, description: "Apenas dígitos, 10 ou 11 (com DDD)" },
+      { name: "email", type: "string", required: true, description: "Email válido. Será normalizado para lowercase" },
+      { name: "senha", type: "string", required: true, description: "Mínimo 6 caracteres" },
+      { name: "termos_aceitos", type: "boolean", required: true, description: "Deve ser true. Aceitação dos termos e política de privacidade" },
+    ],
+    response: {
+      success: true,
+      email: "maria@exemplo.com",
+      message: "Cadastro realizado. Verifique seu email para o código de ativação.",
+    },
+    notes: [
+      "Status do usuário criado: 'pendente'. Só passa para 'ativo' após verificação do código.",
+      "Erros possíveis: 400 (validação), 409 (email duplicado), 429 (rate limit).",
+      "O código de 5 dígitos é enviado automaticamente pelo serviço de email transacional.",
+    ],
+  },
+  {
+    action: "verificarEmail",
+    fase: 1,
+    description: "Valida o código de 5 dígitos enviado por email durante o cadastro. Em caso de sucesso, ativa a conta (status: 'ativo', email_verificado: true).",
+    auth: "nenhuma",
+    aliases: ["verifyEmailMobile"],
+    usageGuide: "Após o cadastro, exiba uma tela com input numérico de 5 dígitos (estilo OTP, com foco automático no próximo dígito). Ao confirmar, chame esta action. Se retornar 'already_verified: true', trate como sucesso (a usuária pode ter clicado duas vezes). Após verificação, faça login automático chamando 'loginCustomizado' com email + senha já digitados no cadastro e navegue para a Home.",
+    params: [
+      { name: "email", type: "string", required: true, description: "Email da usuária cadastrada" },
+      { name: "codigo", type: "string", required: true, description: "Código de 5 dígitos recebido por email" },
+    ],
+    response: {
+      success: true,
+      verified: true,
+      message: "Email verificado com sucesso.",
+    },
+    notes: [
+      "Erros possíveis: 400 ('Código inválido' ou 'Código expirado'), 404 ('Usuário não encontrado').",
+      "Se o código já foi usado e a conta já está ativa, retorna { already_verified: true } - trate como sucesso.",
+      "Código tem validade de 15 minutos a partir da geração.",
+    ],
+  },
+  {
+    action: "reenviarCodigoVerificacao",
+    fase: 1,
+    description: "Gera e reenvia um novo código de 5 dígitos por email para uma conta ainda não verificada. Rate limit: 3 reenvios / 15 min por email.",
+    auth: "nenhuma",
+    aliases: ["resendVerificationCodeMobile"],
+    usageGuide: "Disponibilize um botão 'Reenviar código' na tela de verificação com cooldown visível de 60 segundos no cliente para evitar cliques repetidos. Em caso de 429, exiba uma mensagem amigável ('Aguarde alguns minutos antes de solicitar novamente'). Não permita reenvio se a conta já estiver ativa.",
+    params: [
+      { name: "email", type: "string", required: true, description: "Email da usuária cadastrada e ainda não verificada" },
+    ],
+    response: {
+      success: true,
+      message: "Novo código enviado para o email.",
+    },
+    notes: [
+      "Erros possíveis: 400 ('Conta já verificada'), 404 ('Usuário não encontrado'), 429 (rate limit).",
+      "Cada reenvio invalida o código anterior e reinicia o TTL de 15 minutos.",
+    ],
+  },
+  {
     action: "pingMobile",
     fase: 1,
     description: "Heartbeat do dispositivo (1s normal / 1s pânico). Atualiza status de bateria, gravação, monitoramento. Se latitude/longitude estiverem presentes, registra localização automaticamente (vincula a alerta de pânico ativo se existir). Device único por usuária - novo device_id substitui o anterior. O frontend aplica snap-to-road (Mapbox Map Matching API) para exibir o marcador na via mais próxima. ⚠️ Deduplicação GPS: se timestamp_gps já existir para a usuária, o registro é ignorado silenciosamente.",
