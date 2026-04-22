@@ -2662,7 +2662,7 @@ async function handleIssueWebSsoToken(
     .eq("chave", "portal_web_url")
     .maybeSingle();
   const portalBase = (setting?.valor as string) || "https://amparamulher.com.br";
-  const portalUrl = `${portalBase.replace(/\/$/, "")}/sso?t=${raw}`;
+  const portalUrl = `${portalBase.replace(/\/$/, "")}/home?t=${raw}`;
 
   return jsonResponse({
     success: true,
