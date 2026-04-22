@@ -2593,6 +2593,85 @@ async function handleReportarStatusGravacao(
 }
 
 // ── Main Router ──
+/**
+ * Issue a one-time SSO token for the web portal. The mobile app trades a valid
+ * mobile session for a short-lived (60s) web bootstrap token, then opens the
+ * portal at /sso?t=<token>. Token is stored hashed; raw value never persisted.
+ */
+async function handleIssueWebSsoToken(
+  body: Record<string, unknown>,
+  supabase: ReturnType<typeof createClient>,
+  ip: string,
+  req: Request
+): Promise<Response> {
+  const sessionToken = body.session_token as string;
+  if (!sessionToken) return errorResponse("session_token obrigatório", 401);
+
+  const tokenHash = await hashToken(sessionToken);
+  const { data: session } = await supabase
+    .from("user_sessions")
+    .select("id, user_id, expires_at, revoked_at, origin")
+    .eq("token_hash", tokenHash)
+    .is("revoked_at", null)
+    .maybeSingle();
+
+  if (!session || new Date(session.expires_at as string) < new Date()) {
+    return errorResponse("Sessão inválida ou expirada", 401);
+  }
+
+  const userId = session.user_id as string;
+  const deviceId = (body.device_id as string) || null;
+
+  // Generate raw 64-byte hex token (128 chars)
+  const raw = (() => {
+    const a = new Uint8Array(64);
+    crypto.getRandomValues(a);
+    return Array.from(a, (b) => b.toString(16).padStart(2, "0")).join("");
+  })();
+  const ssoTokenHash = await hashToken(raw);
+  const expiresAt = new Date(Date.now() + 60 * 1000).toISOString();
+  const ua = req.headers.get("user-agent") || null;
+
+  const { error: insErr } = await supabase.from("web_sso_tokens").insert({
+    token_hash: ssoTokenHash,
+    user_id: userId,
+    mobile_session_id: session.id as string,
+    device_id: deviceId,
+    issued_ip: ip,
+    issued_user_agent: ua,
+    expires_at: expiresAt,
+  });
+
+  if (insErr) {
+    console.error("issueWebSsoToken insert error", insErr);
+    return errorResponse("Erro ao emitir token", 500);
+  }
+
+  await supabase.from("audit_logs").insert({
+    user_id: userId,
+    action_type: "web_sso_token_issued",
+    success: true,
+    ip_address: ip,
+    details: { mobile_session_id: session.id, device_id: deviceId },
+  });
+
+  // Portal host: configurable via admin_settings.portal_web_url, fallback amparamulher.com.br
+  const { data: setting } = await supabase
+    .from("admin_settings")
+    .select("valor")
+    .eq("chave", "portal_web_url")
+    .maybeSingle();
+  const portalBase = (setting?.valor as string) || "https://amparamulher.com.br";
+  const portalUrl = `${portalBase.replace(/\/$/, "")}/sso?t=${raw}`;
+
+  return jsonResponse({
+    success: true,
+    sso_token: raw,
+    expires_at: expiresAt,
+    portal_url: portalUrl,
+  });
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
