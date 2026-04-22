@@ -2784,6 +2784,7 @@ serve(async (req) => {
 
       // ── SSO Web (acesso direto ao portal pelo app) ──
       case "issueWebSsoToken":
+      case "gerarTokenSSO":
         return await handleIssueWebSsoToken(body, supabase, ip, req);
 
       default:
