@@ -230,29 +230,29 @@ export default function LandingPage() {
       </header>
 
       {/* ══════ HERO ══════ */}
-      <section className="relative overflow-hidden min-h-[420px] md:min-h-[520px] bg-background" style={{ paddingBottom: 0 }}>
+      <section className="relative overflow-hidden min-h-[640px] md:min-h-[780px] lg:min-h-[860px] bg-background" style={{ paddingBottom: 0 }}>
 
-        {/* Floating hero image - desktop */}
+        {/* Hero image filling the background - desktop */}
         <img
           src={heroWoman}
           alt=""
           aria-hidden="true"
-          className="hidden md:block absolute right-0 bottom-0 w-[55%] h-auto object-contain object-right-bottom pointer-events-none select-none opacity-[0.85]"
+          className="hidden md:block absolute right-0 top-0 h-full w-auto max-w-[80%] object-contain object-right-bottom pointer-events-none select-none opacity-[0.9]"
           style={{
-            maskImage: 'linear-gradient(to left, transparent 0%, black 20%, black 70%, transparent 100%)',
-            WebkitMaskImage: 'linear-gradient(to left, transparent 0%, black 20%, black 70%, transparent 100%)',
+            maskImage: 'linear-gradient(to left, black 55%, transparent 100%)',
+            WebkitMaskImage: 'linear-gradient(to left, black 55%, transparent 100%)',
           }}
         />
 
-        {/* Floating hero image - mobile */}
+        {/* Hero image filling the background - mobile */}
         <img
           src={heroWoman}
           alt=""
           aria-hidden="true"
-          className="block md:hidden absolute right-0 bottom-0 h-[200px] w-auto object-contain pointer-events-none select-none opacity-70"
+          className="block md:hidden absolute right-0 bottom-0 h-[80%] w-auto object-contain pointer-events-none select-none opacity-60"
           style={{
-            maskImage: 'linear-gradient(to top, transparent 0%, black 25%, black 100%), linear-gradient(to left, transparent 0%, black 20%, black 100%)',
-            WebkitMaskImage: 'linear-gradient(to top, transparent 0%, black 25%, black 100%), linear-gradient(to left, transparent 0%, black 20%, black 100%)',
+            maskImage: 'linear-gradient(to top, transparent 0%, black 30%, black 100%), linear-gradient(to left, transparent 0%, black 35%, black 100%)',
+            WebkitMaskImage: 'linear-gradient(to top, transparent 0%, black 30%, black 100%), linear-gradient(to left, transparent 0%, black 35%, black 100%)',
             maskComposite: 'intersect',
             WebkitMaskComposite: 'source-in',
           }}
