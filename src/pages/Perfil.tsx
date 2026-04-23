@@ -5,7 +5,17 @@ import { callWebApi } from "@/services/webApiService";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { UserCircle, Users, AlertTriangle, Loader2, Plus, Trash2, Edit2, X, Check, Camera, ChevronDown, ChevronUp } from "lucide-react";
+import { UserCircle, Users, AlertTriangle, Loader2, Plus, Trash2, Edit2, X, Check, Camera, ChevronDown, ChevronUp, ShieldAlert } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { EnderecoForm, emptyEndereco, EnderecoFields } from "@/components/EnderecoForm";
 import { useToast } from "@/hooks/use-toast";
 
@@ -121,7 +131,7 @@ interface AgressorEditForm {
 }
 
 export default function PerfilPage() {
-  const { usuario, sessionToken } = useAuth();
+  const { usuario, sessionToken, logout } = useAuth();
   const { toast } = useToast();
   const [perfil, setPerfil] = useState<PerfilData | null>(null);
   const [guardioes, setGuardioes] = useState<GuardiaoData[]>([]);
@@ -148,6 +158,12 @@ export default function PerfilPage() {
   const [perfilExpanded, setPerfilExpanded] = useState(false);
   const [agressorForm, setAgressorForm] = useState<AgressorEditForm | null>(null);
   const [editingVinculoId, setEditingVinculoId] = useState<string | null>(null);
+
+  // Account deletion
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deleting, setDeleting] = useState(false);
 
   const api = (action: string, params: Record<string, any> = {}) =>
     callWebApi(action, sessionToken!, params);
@@ -331,6 +347,29 @@ export default function PerfilPage() {
       toast({ title: "Erro ao salvar", description: res.data?.error, variant: "destructive" });
     }
     setSaving(false);
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!deletePassword || deleteConfirmText !== "EXCLUIR") return;
+    setDeleting(true);
+    const res = await api("deleteMyAccount", {
+      senha: deletePassword,
+      confirmacao: deleteConfirmText,
+    });
+    if (res.ok && res.data?.success) {
+      toast({ title: "Conta excluída", description: "Sua conta e seus dados foram removidos permanentemente." });
+      setDeleteDialogOpen(false);
+      // Encerra sessão local e redireciona
+      await logout();
+      window.location.href = "/login";
+    } else {
+      toast({
+        title: "Não foi possível excluir",
+        description: res.data?.error || "Tente novamente.",
+        variant: "destructive",
+      });
+      setDeleting(false);
+    }
   };
 
   if (loading) {
@@ -806,6 +845,107 @@ export default function PerfilPage() {
           </div>
         )}
       </div>
+
+      {/* Danger zone: exclusão permanente da conta */}
+      <div className="ampara-card border-destructive/30 space-y-4">
+        <div className="flex items-start gap-3">
+          <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center shrink-0">
+            <ShieldAlert className="w-5 h-5 text-destructive" />
+          </div>
+          <div className="flex-1">
+            <h3 className="font-semibold text-foreground">Excluir minha conta</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              Esta ação é permanente. Seus dados pessoais, gravações, análises, guardiões e vínculos serão removidos e não poderão ser recuperados.
+            </p>
+          </div>
+        </div>
+        <Button
+          variant="destructive"
+          size="sm"
+          onClick={() => {
+            setDeletePassword("");
+            setDeleteConfirmText("");
+            setDeleteDialogOpen(true);
+          }}
+        >
+          <Trash2 className="w-4 h-4 mr-1" /> Excluir conta permanentemente
+        </Button>
+      </div>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={(open) => {
+        if (!deleting) setDeleteDialogOpen(open);
+      }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-destructive" />
+              Excluir conta permanentemente
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                <p>
+                  Você está prestes a excluir sua conta na Ampara. Esta ação é
+                  irreversível e remove todos os seus dados, incluindo:
+                </p>
+                <ul className="list-disc pl-5 text-sm space-y-1">
+                  <li>Perfil, endereço e fotos</li>
+                  <li>Gravações, transcrições e análises</li>
+                  <li>Guardiões cadastrados</li>
+                  <li>Histórico de risco e configurações</li>
+                </ul>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <div className="space-y-3 py-2">
+            <div>
+              <label className="block text-xs font-medium text-foreground mb-1">
+                Confirme com sua senha
+              </label>
+              <input
+                type="password"
+                className="ampara-input text-sm"
+                placeholder="Sua senha atual"
+                value={deletePassword}
+                onChange={(e) => setDeletePassword(e.target.value)}
+                disabled={deleting}
+                autoComplete="current-password"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-foreground mb-1">
+                Digite <span className="font-mono font-bold">EXCLUIR</span> para confirmar
+              </label>
+              <input
+                type="text"
+                className="ampara-input text-sm"
+                placeholder="EXCLUIR"
+                value={deleteConfirmText}
+                onChange={(e) => setDeleteConfirmText(e.target.value.toUpperCase())}
+                disabled={deleting}
+              />
+            </div>
+          </div>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                handleDeleteAccount();
+              }}
+              disabled={deleting || !deletePassword || deleteConfirmText !== "EXCLUIR"}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? (
+                <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Excluindo...</>
+              ) : (
+                <>Excluir definitivamente</>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
