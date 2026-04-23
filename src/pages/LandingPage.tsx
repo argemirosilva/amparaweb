@@ -237,7 +237,7 @@ export default function LandingPage() {
           src={heroWoman}
           alt=""
           aria-hidden="true"
-          className="hidden md:block absolute right-0 top-0 h-full w-auto max-w-[80%] object-contain object-right-bottom pointer-events-none select-none opacity-[0.9]"
+          className="hidden md:block absolute right-0 top-0 h-full w-auto max-w-[80%] object-contain object-right-top pointer-events-none select-none opacity-[0.9]"
           style={{
             maskImage: 'linear-gradient(to left, black 55%, transparent 100%)',
             WebkitMaskImage: 'linear-gradient(to left, black 55%, transparent 100%)',
