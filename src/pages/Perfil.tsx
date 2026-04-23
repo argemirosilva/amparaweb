@@ -5,7 +5,17 @@ import { callWebApi } from "@/services/webApiService";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { UserCircle, Users, AlertTriangle, Loader2, Plus, Trash2, Edit2, X, Check, Camera, ChevronDown, ChevronUp } from "lucide-react";
+import { UserCircle, Users, AlertTriangle, Loader2, Plus, Trash2, Edit2, X, Check, Camera, ChevronDown, ChevronUp, ShieldAlert } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { EnderecoForm, emptyEndereco, EnderecoFields } from "@/components/EnderecoForm";
 import { useToast } from "@/hooks/use-toast";
 
