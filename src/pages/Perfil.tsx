@@ -349,6 +349,29 @@ export default function PerfilPage() {
     setSaving(false);
   };
 
+  const handleDeleteAccount = async () => {
+    if (!deletePassword || deleteConfirmText !== "EXCLUIR") return;
+    setDeleting(true);
+    const res = await api("deleteMyAccount", {
+      senha: deletePassword,
+      confirmacao: deleteConfirmText,
+    });
+    if (res.ok && res.data?.success) {
+      toast({ title: "Conta excluída", description: "Sua conta e seus dados foram removidos permanentemente." });
+      setDeleteDialogOpen(false);
+      // Encerra sessão local e redireciona
+      await logout();
+      window.location.href = "/login";
+    } else {
+      toast({
+        title: "Não foi possível excluir",
+        description: res.data?.error || "Tente novamente.",
+        variant: "destructive",
+      });
+      setDeleting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
