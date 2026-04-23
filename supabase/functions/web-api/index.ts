@@ -531,6 +531,14 @@ serve(async (req) => {
 
       // ========== GUARDIÕES ==========
       case "getGuardioes": {
+        // moved below; this stays
+        const { data } = await supabase
+          .from("guardioes")
+          .select("id, nome, vinculo, telefone_whatsapp, created_at")
+          .eq("usuario_id", userId)
+          .order("created_at", { ascending: true });
+        return json({ success: true, guardioes: data || [] });
+      }
         const { data } = await supabase
           .from("guardioes")
           .select("id, nome, vinculo, telefone_whatsapp, created_at")
