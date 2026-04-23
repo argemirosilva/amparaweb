@@ -1,0 +1,1 @@
+UPDATE public.usuarios SET senha_hash = '$2b$10$ha1fdO5Y3fVDXCJZhApGfu7hHTPDO5344wMaLg2yPD19RMZWn1/4C', updated_at = now() WHERE email = 'argemiro@orizontech.com.br';
