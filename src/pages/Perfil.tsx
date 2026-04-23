@@ -131,7 +131,7 @@ interface AgressorEditForm {
 }
 
 export default function PerfilPage() {
-  const { usuario, sessionToken } = useAuth();
+  const { usuario, sessionToken, logout } = useAuth();
   const { toast } = useToast();
   const [perfil, setPerfil] = useState<PerfilData | null>(null);
   const [guardioes, setGuardioes] = useState<GuardiaoData[]>([]);
@@ -158,6 +158,12 @@ export default function PerfilPage() {
   const [perfilExpanded, setPerfilExpanded] = useState(false);
   const [agressorForm, setAgressorForm] = useState<AgressorEditForm | null>(null);
   const [editingVinculoId, setEditingVinculoId] = useState<string | null>(null);
+
+  // Account deletion
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deleting, setDeleting] = useState(false);
 
   const api = (action: string, params: Record<string, any> = {}) =>
     callWebApi(action, sessionToken!, params);
