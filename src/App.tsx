@@ -133,6 +133,7 @@ const App = () => (
             <Route path="/campo/vitima/:id/registrar" element={<CampoRegistrar />} />
             <Route path="/suporte" element={<Suporte />} />
             <Route path="/privacidade" element={<Privacidade />} />
+            <Route path="/excluir-conta" element={<ExcluirConta />} />
             <Route path="/:codigo" element={<Rastreamento />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
