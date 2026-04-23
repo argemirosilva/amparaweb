@@ -20,6 +20,7 @@ import DocApi from "./pages/DocApi";
 import Rastreamento from "./pages/Rastreamento";
 import Suporte from "./pages/Suporte";
 import Privacidade from "./pages/Privacidade";
+import ExcluirConta from "./pages/ExcluirConta";
 import LandingPage from "./pages/LandingPage";
 import Apresentacao from "./pages/Apresentacao";
 
@@ -132,6 +133,7 @@ const App = () => (
             <Route path="/campo/vitima/:id/registrar" element={<CampoRegistrar />} />
             <Route path="/suporte" element={<Suporte />} />
             <Route path="/privacidade" element={<Privacidade />} />
+            <Route path="/excluir-conta" element={<ExcluirConta />} />
             <Route path="/:codigo" element={<Rastreamento />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
