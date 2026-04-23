@@ -529,16 +529,67 @@ serve(async (req) => {
         return json({ success: true });
       }
 
+      // ========== EXCLUSÃO DE CONTA (auto-serviço) ==========
+      case "deleteMyAccount": {
+        const { senha, confirmacao } = params as { senha?: string; confirmacao?: string };
+        if (!senha || typeof senha !== "string") {
+          return json({ error: "Informe sua senha para confirmar a exclusão" }, 400);
+        }
+        if (confirmacao !== "EXCLUIR") {
+          return json({ error: 'Digite "EXCLUIR" para confirmar' }, 400);
+        }
+
+        // Verifica senha (aceita senha principal ou de coação)
+        const { data: userRow } = await supabase
+          .from("usuarios")
+          .select("id, email, nome_completo, senha_hash, senha_coacao_hash")
+          .eq("id", userId)
+          .maybeSingle();
+
+        if (!userRow || !userRow.senha_hash) {
+          return json({ error: "Usuária não encontrada" }, 404);
+        }
+
+        const ok = bcrypt.compareSync(senha, userRow.senha_hash) ||
+          (userRow.senha_coacao_hash && bcrypt.compareSync(senha, userRow.senha_coacao_hash));
+        if (!ok) {
+          await supabase.from("audit_logs").insert({
+            user_id: userId,
+            action_type: "self_delete_account_failed",
+            success: false,
+            details: { reason: "senha_invalida" },
+          });
+          return json({ error: "Senha incorreta" }, 401);
+        }
+
+        // Audit antes de excluir (preserva trilha)
+        await supabase.from("audit_logs").insert({
+          user_id: userId,
+          action_type: "self_delete_account",
+          success: true,
+          details: { email: userRow.email, nome: userRow.nome_completo },
+        });
+
+        // Limpa dados relacionados que não estão em CASCADE
+        await supabase.from("user_roles").delete().eq("user_id", userId);
+        await supabase.from("user_sessions").delete().eq("user_id", userId);
+        await supabase.from("refresh_tokens").delete().eq("user_id", userId);
+        await supabase.from("guardioes").delete().eq("usuario_id", userId);
+
+        // Exclui usuária (demais dados caem por ON DELETE CASCADE)
+        const { error: delErr } = await supabase
+          .from("usuarios")
+          .delete()
+          .eq("id", userId);
+        if (delErr) {
+          return json({ error: "Erro ao excluir conta: " + delErr.message }, 500);
+        }
+
+        return json({ success: true });
+      }
+
       // ========== GUARDIÕES ==========
       case "getGuardioes": {
-        // moved below; this stays
-        const { data } = await supabase
-          .from("guardioes")
-          .select("id, nome, vinculo, telefone_whatsapp, created_at")
-          .eq("usuario_id", userId)
-          .order("created_at", { ascending: true });
-        return json({ success: true, guardioes: data || [] });
-      }
         const { data } = await supabase
           .from("guardioes")
           .select("id, nome, vinculo, telefone_whatsapp, created_at")
