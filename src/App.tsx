@@ -20,6 +20,7 @@ import DocApi from "./pages/DocApi";
 import Rastreamento from "./pages/Rastreamento";
 import Suporte from "./pages/Suporte";
 import Privacidade from "./pages/Privacidade";
+import ExcluirConta from "./pages/ExcluirConta";
 import LandingPage from "./pages/LandingPage";
 import Apresentacao from "./pages/Apresentacao";
 
