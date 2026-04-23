@@ -845,6 +845,107 @@ export default function PerfilPage() {
           </div>
         )}
       </div>
+
+      {/* Danger zone: exclusão permanente da conta */}
+      <div className="ampara-card border-destructive/30 space-y-4">
+        <div className="flex items-start gap-3">
+          <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center shrink-0">
+            <ShieldAlert className="w-5 h-5 text-destructive" />
+          </div>
+          <div className="flex-1">
+            <h3 className="font-semibold text-foreground">Excluir minha conta</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              Esta ação é permanente. Seus dados pessoais, gravações, análises, guardiões e vínculos serão removidos e não poderão ser recuperados.
+            </p>
+          </div>
+        </div>
+        <Button
+          variant="destructive"
+          size="sm"
+          onClick={() => {
+            setDeletePassword("");
+            setDeleteConfirmText("");
+            setDeleteDialogOpen(true);
+          }}
+        >
+          <Trash2 className="w-4 h-4 mr-1" /> Excluir conta permanentemente
+        </Button>
+      </div>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={(open) => {
+        if (!deleting) setDeleteDialogOpen(open);
+      }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-destructive" />
+              Excluir conta permanentemente
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                <p>
+                  Você está prestes a excluir sua conta na Ampara. Esta ação é
+                  irreversível e remove todos os seus dados, incluindo:
+                </p>
+                <ul className="list-disc pl-5 text-sm space-y-1">
+                  <li>Perfil, endereço e fotos</li>
+                  <li>Gravações, transcrições e análises</li>
+                  <li>Guardiões cadastrados</li>
+                  <li>Histórico de risco e configurações</li>
+                </ul>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <div className="space-y-3 py-2">
+            <div>
+              <label className="block text-xs font-medium text-foreground mb-1">
+                Confirme com sua senha
+              </label>
+              <input
+                type="password"
+                className="ampara-input text-sm"
+                placeholder="Sua senha atual"
+                value={deletePassword}
+                onChange={(e) => setDeletePassword(e.target.value)}
+                disabled={deleting}
+                autoComplete="current-password"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-foreground mb-1">
+                Digite <span className="font-mono font-bold">EXCLUIR</span> para confirmar
+              </label>
+              <input
+                type="text"
+                className="ampara-input text-sm"
+                placeholder="EXCLUIR"
+                value={deleteConfirmText}
+                onChange={(e) => setDeleteConfirmText(e.target.value.toUpperCase())}
+                disabled={deleting}
+              />
+            </div>
+          </div>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                handleDeleteAccount();
+              }}
+              disabled={deleting || !deletePassword || deleteConfirmText !== "EXCLUIR"}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? (
+                <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Excluindo...</>
+              ) : (
+                <>Excluir definitivamente</>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
